@@ -1,0 +1,114 @@
+-- Base de données MySQL pour le module Bloc Opératoire
+-- Adapté depuis le schéma PostgreSQL pour MySQL/XAMPP
+
+-- Créer la base de données si elle n'existe pas
+CREATE DATABASE IF NOT EXISTS bd_bloc_op CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE bd_bloc_op;
+
+-- Patients planifiés en salle d'opération
+CREATE TABLE bloc_patient (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  patient_id VARCHAR(50) NOT NULL UNIQUE,
+  nom VARCHAR(100) NOT NULL,
+  prenom VARCHAR(100) NOT NULL,
+  intervention TEXT NOT NULL,
+  heure TIME,
+  duree_prevue VARCHAR(20),
+  depart_bloc VARCHAR(20),
+  priorite ENUM('STAT', 'URGENT', 'NORMAL') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Patients gérés en salle de réveil
+CREATE TABLE salle_reveil_patient (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  patient_id VARCHAR(50) NOT NULL UNIQUE,
+  nom VARCHAR(100) NOT NULL,
+  prenom VARCHAR(100) NOT NULL,
+  intervention TEXT NOT NULL,
+  salle_lit VARCHAR(20),
+  duree_prevue VARCHAR(20),
+  statut VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Score SCCRE associé à un patient en salle de réveil
+CREATE TABLE score_sccre (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  patient_reveil_id CHAR(36) NOT NULL,
+  motricite TINYINT NOT NULL CHECK (motricite BETWEEN 0 AND 2),
+  respiration TINYINT NOT NULL CHECK (respiration BETWEEN 0 AND 2),
+  pression TINYINT NOT NULL CHECK (pression BETWEEN 0 AND 2),
+  conscience TINYINT NOT NULL CHECK (conscience BETWEEN 0 AND 2),
+  coloration TINYINT NOT NULL CHECK (coloration BETWEEN 0 AND 2),
+  total TINYINT GENERATED ALWAYS AS (motricite + respiration + pression + conscience + coloration) STORED,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (patient_reveil_id) REFERENCES salle_reveil_patient(id) ON DELETE CASCADE
+);
+
+-- Patients après sortie de la salle de réveil
+CREATE TABLE sortie_patient (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  patient_id VARCHAR(50) NOT NULL UNIQUE,
+  nom VARCHAR(100) NOT NULL,
+  prenom VARCHAR(100) NOT NULL,
+  id_dossier VARCHAR(50) NOT NULL,
+  chambre VARCHAR(20),
+  intervention TEXT NOT NULL,
+  statut ENUM('stable', 'instable', 'critique') NOT NULL,
+  score_sccre TINYINT NOT NULL,
+  heure_validation TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Services de destination autorisés pour l'orientation patient
+CREATE TABLE service_destination (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  label VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Services choisis pour un patient en sortie de réveil
+CREATE TABLE patient_destination_service (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  sortie_patient_id CHAR(36) NOT NULL,
+  service_destination_id CHAR(36) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sortie_patient_id) REFERENCES sortie_patient(id) ON DELETE CASCADE,
+  FOREIGN KEY (service_destination_id) REFERENCES service_destination(id) ON DELETE RESTRICT
+);
+
+-- Stockage de données de checklist en JSON
+CREATE TABLE sortie_checklist (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  sortie_patient_id CHAR(36) NOT NULL,
+  data JSON NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sortie_patient_id) REFERENCES sortie_patient(id) ON DELETE CASCADE
+);
+
+-- Insérer des données de base pour les services de destination
+INSERT INTO service_destination (label) VALUES
+('Médecine Interne'),
+('Chirurgie'),
+('Réanimation'),
+('Soins Intensifs'),
+('Unité de Surveillance Continue'),
+('Médecine d''Urgence'),
+('Cardiologie'),
+('Pneumologie'),
+('Neurologie'),
+('Gastro-entérologie');
+
+-- Créer un utilisateur de test (mot de passe: "password123" hashé avec bcrypt)
+-- Note: En production, utilisez toujours un hash sécurisé
+-- Cette insertion sera faite après la création des tables via TypeORM
+
+-- Index pour optimiser les performances
+CREATE INDEX idx_bloc_patient_priorite ON bloc_patient(priorite);
+CREATE INDEX idx_salle_reveil_statut ON salle_reveil_patient(statut);
+CREATE INDEX idx_score_sccre_patient ON score_sccre(patient_reveil_id);
+CREATE INDEX idx_sortie_patient_statut ON sortie_patient(statut);
+CREATE INDEX idx_patient_destination_sortie ON patient_destination_service(sortie_patient_id);

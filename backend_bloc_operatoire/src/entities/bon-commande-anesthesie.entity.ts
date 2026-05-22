@@ -1,0 +1,58 @@
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Patient } from './patient.entity';
+import { VPA } from './vpa.entity';
+import { Medecin } from './medecin.entity';
+import { ItemCommande } from './item-commande.entity';
+
+export enum StatutBonCommande {
+  EN_ATTENTE = 'EN_ATTENTE',
+  VALIDE = 'VALIDE',
+}
+
+@Entity('bons_commande')
+export class BonCommandeAnesthesie {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => Patient, { eager: true })
+  patient: Patient;
+
+  @Column()
+  patientId: string;
+
+  @ManyToOne(() => VPA, { eager: true })
+  vpa: VPA;
+
+  @Column()
+  vpaId: string;
+
+  @ManyToOne(() => Medecin, { eager: true })
+  chirurgien: Medecin;
+
+  @Column()
+  chirurgienId: string;
+
+  @ManyToOne(() => Medecin, { eager: true })
+  anesthesiste: Medecin;
+
+  @Column()
+  anesthesisteId: string;
+
+  @Column({ type: 'date' })
+  dateCreation: Date;
+
+  @OneToMany(() => ItemCommande, (item) => item.bonCommande, { cascade: true })
+  items: ItemCommande[];
+
+  @Column('simple-array')
+  consommables: string[];
+
+  @Column({ type: 'enum', enum: StatutBonCommande, default: StatutBonCommande.EN_ATTENTE })
+  statut: StatutBonCommande;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

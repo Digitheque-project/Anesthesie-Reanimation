@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: chu-bloc-backend
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://blocdatabase_user:ZzYhj3w7t7fnFgRzTADuildmY4rYxpM7@dpg-d883v1p9rddc73b4uc50-a.virginia-postgres.render.com/blocdatabase
+      - key: JWT_SECRET
+        value: chuchu_secret_key_change_me_in_production_2025
+      - key: JWT_EXPIRATION
+        value: "86400"

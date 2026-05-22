@@ -1,0 +1,88 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Between } from 'typeorm';
+import { Patient } from '../entities/patient.entity';
+import { ActivitePerOp } from '../entities/activite-per-op.entity';
+import { ScoreSCCRE } from '../entities/score-sccre.entity';
+import { Medecin } from '../entities/medecin.entity';
+import { CPA } from '../entities/cpa.entity';
+import { NotificationCPA } from '../entities/notification-cpa.entity';
+
+@Injectable()
+export class RapportsService {
+  constructor(
+    @InjectRepository(Patient) private patientRepo: Repository<Patient>,
+    @InjectRepository(ActivitePerOp) private activiteRepo: Repository<ActivitePerOp>,
+    @InjectRepository(ScoreSCCRE) private scoreRepo: Repository<ScoreSCCRE>,
+    @InjectRepository(Medecin) private medecinRepo: Repository<Medecin>,
+    @InjectRepository(CPA) private cpaRepository: Repository<CPA>,
+    @InjectRepository(NotificationCPA) private notifRepo: Repository<NotificationCPA>,
+  ) {}
+
+  async statistiquesGenerales(dateDebut?: string, dateFin?: string) {
+    const whereAct = dateDebut && dateFin ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) } : {};
+
+    const [
+      totalPatients, totalOperations, totalUrgences, totalScores,
+      patientsParStatut, urgencesParNiveau, totalMedecins,
+    ] = await Promise.all([
+      this.patientRepo.count(),
+      this.activiteRepo.count({ where: whereAct }),
+      this.patientRepo.count({ where: { niveauUrgence: 'URGENT' as any } }),
+      this.scoreRepo.count(),
+      this.patientRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
+      this.patientRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').groupBy('p.niveauUrgence').getRawMany(),
+      this.medecinRepo.count(),
+    ]);
+
+    return {
+      totalPatients,
+      totalOperations,
+      totalUrgences,
+      totalScores,
+      totalMedecins,
+      patientsParStatut,
+      urgencesParNiveau,
+    };
+  }
+
+  async activiteParChirurgien(dateDebut?: string, dateFin?: string) {
+    const whereAct = dateDebut && dateFin ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) } : {};
+    return this.activiteRepo
+      .createQueryBuilder('a')
+      .leftJoin('a.chirurgien', 'm')
+      .select('m.id', 'medecinId')
+      .addSelect("CONCAT(m.prenom, ' ', m.nom)", 'nomComplet')
+      .addSelect('COUNT(*)', 'nbOperations')
+      .where(whereAct)
+      .groupBy('m.id')
+      .orderBy('nbOperations', 'DESC')
+      .getRawMany();
+  }
+
+  async cpaEnAttente() {
+    return this.notifRepo.find({ where: { statut: 'EN_ATTENTE' as any }, relations: ['patient', 'chirurgien'], order: { createdAt: 'ASC' } });
+  }
+
+  async tauxOccupation(periode: string = 'mois') {
+    // Simplifié : retourne les dates d'opération groupées
+    return this.activiteRepo
+      .createQueryBuilder('a')
+      .select('DATE(a.dateOperation)', 'date')
+      .addSelect('COUNT(*)', 'nbOperations')
+      .groupBy('DATE(a.dateOperation)')
+      .orderBy('date', 'ASC')
+      .getRawMany();
+  }
+
+  async exportStatistiques(type: string, dateDebut?: string, dateFin?: string) {
+    const stats = await this.statistiquesGenerales(dateDebut, dateFin);
+    const activite = await this.activiteParChirurgien(dateDebut, dateFin);
+    return {
+      type,
+      genereLe: new Date().toISOString(),
+      statistiques: stats,
+      activiteParChirurgien: activite,
+    };
+  }
+}
