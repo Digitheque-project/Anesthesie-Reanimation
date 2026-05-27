@@ -1,0 +1,82 @@
+import { NotificationCPA } from '@/types/bloc'
+
+export const mockNotificationsCPA: NotificationCPA[] = [
+  {
+    id: '1',
+    heurePrescription: '08:30',
+    patient: { nom: 'Jean Dupont', idDossier: '#PAT-88219' },
+    intervention: 'Appendicectomie',
+    chirurgien: { initiales: 'AT', nom: 'Dr. Aris Thorne' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+  {
+    id: '2',
+    heurePrescription: '09:15',
+    patient: { nom: 'Sophie Morel', idDossier: '#PAT-11045' },
+    intervention: 'Cholécystectomie',
+    chirurgien: { initiales: 'SC', nom: 'Dr. Sofia Chen' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+  {
+    id: '3',
+    heurePrescription: '09:40',
+    patient: { nom: 'Marc Lefebvre', idDossier: '#PAT-55210' },
+    intervention: 'Urgence Vitale',
+    chirurgien: { initiales: 'AT', nom: 'Dr. Aris Thorne' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: true,
+  },
+  {
+    id: '4',
+    heurePrescription: '10:15',
+    patient: { nom: 'Lucas Bernard', idDossier: '#PAT-22941' },
+    intervention: 'Hernie Inguinale',
+    chirurgien: { initiales: 'JL', nom: 'Dr. Julie Leroy' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+  {
+    id: '5',
+    heurePrescription: '10:45',
+    patient: { nom: 'Camille Petit', idDossier: '#PAT-99302' },
+    intervention: 'Arthroplastie hanche',
+    chirurgien: { initiales: 'SC', nom: 'Dr. Sofia Chen' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+  {
+    id: '6',
+    heurePrescription: '11:20',
+    patient: { nom: 'Thomas Girard', idDossier: '#PAT-44123' },
+    intervention: 'Thyroïdectomie',
+    chirurgien: { initiales: 'AT', nom: 'Dr. Aris Thorne' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+  {
+    id: '7',
+    heurePrescription: '11:55',
+    patient: { nom: 'Emma Roussel', idDossier: '#PAT-77283' },
+    intervention: 'Mastectomie',
+    chirurgien: { initiales: 'JL', nom: 'Dr. Julie Leroy' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+  {
+    id: '8',
+    heurePrescription: '13:30',
+    patient: { nom: 'Hugo Martin', idDossier: '#PAT-11562' },
+    intervention: 'Gastrectomie',
+    chirurgien: { initiales: 'SC', nom: 'Dr. Sofia Chen' },
+    professeurCPA: 'Pr. Martin L.',
+    estUrgent: false,
+  },
+]
+
+export const mockStatsNotification = {
+  enAttente: 5,
+  prioriteHaute: 4,
+  rdvFixes24h: 42,
+}
