@@ -1,3 +1,4 @@
+import { WebhookNotificationModule } from "./webhook-notification/webhook-notification.module";
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -25,9 +26,11 @@ import { ChecklistApresOpModule } from './checklist-apres-op/checklist-apres-op.
 
 @Module({
   imports: [
+    WebhookNotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [
+    WebhookNotificationModule,ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
