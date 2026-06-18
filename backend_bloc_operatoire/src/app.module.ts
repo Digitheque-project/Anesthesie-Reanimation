@@ -1,3 +1,4 @@
+import { PrescriptionModule } from "./prescription/prescription.module";
 import { WebhookNotificationModule } from "./webhook-notification/webhook-notification.module";
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -26,10 +27,12 @@ import { ChecklistApresOpModule } from './checklist-apres-op/checklist-apres-op.
 
 @Module({
   imports: [
+    PrescriptionModule,
     WebhookNotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [
+    PrescriptionModule,
     WebhookNotificationModule,ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

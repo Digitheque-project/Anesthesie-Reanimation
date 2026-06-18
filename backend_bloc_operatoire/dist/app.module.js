@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
+const prescription_module_1 = require("./prescription/prescription.module");
 const webhook_notification_module_1 = require("./webhook-notification/webhook-notification.module");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
@@ -38,10 +39,12 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            prescription_module_1.PrescriptionModule,
             webhook_notification_module_1.WebhookNotificationModule,
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [
+                    prescription_module_1.PrescriptionModule,
                     webhook_notification_module_1.WebhookNotificationModule, config_1.ConfigModule
                 ],
                 inject: [config_1.ConfigService],
