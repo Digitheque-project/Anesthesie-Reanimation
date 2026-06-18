@@ -10,6 +10,6 @@ export declare class WebhookNotificationController {
         timestamp: string;
     }>;
     getUnreadCount(): Promise<{
-        unread: any;
+        unread: number;
     }>;
 }

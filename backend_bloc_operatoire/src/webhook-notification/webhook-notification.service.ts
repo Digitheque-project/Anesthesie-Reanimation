@@ -27,7 +27,7 @@ export class WebhookNotificationService {
         urgence: payload.urgence,
         payload: payload.payload,
         channels: payload.channels,
-        processed: true,
+        processed: false, // ✅ initialisé à false pour être compté comme non lu
       });
 
       await this.webhookRepo.save(notification);
@@ -38,8 +38,8 @@ export class WebhookNotificationService {
       return true;
     }
   }
-}
 
   async getUnreadCount(): Promise<number> {
     return this.webhookRepo.count({ where: { processed: false } });
   }
+}

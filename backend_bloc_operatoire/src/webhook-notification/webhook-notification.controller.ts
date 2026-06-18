@@ -25,7 +25,6 @@ export class WebhookNotificationController {
   @Get('unread/count')
   @ApiOperation({ summary: 'Nombre de notifications non lues (pour la cloche)' })
   async getUnreadCount() {
-    // 🔥 On compte les notifications dans webhook_notifications
     const count = await this.service.getUnreadCount();
     return { unread: count };
   }

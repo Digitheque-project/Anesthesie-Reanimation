@@ -38,7 +38,7 @@ let WebhookNotificationService = WebhookNotificationService_1 = class WebhookNot
                 urgence: payload.urgence,
                 payload: payload.payload,
                 channels: payload.channels,
-                processed: true,
+                processed: false,
             });
             await this.webhookRepo.save(notification);
             this.logger.log(`✅ Notification stockée dans webhook_notifications (ID: ${notification.id})`);
@@ -49,6 +49,9 @@ let WebhookNotificationService = WebhookNotificationService_1 = class WebhookNot
             return true;
         }
     }
+    async getUnreadCount() {
+        return this.webhookRepo.count({ where: { processed: false } });
+    }
 };
 exports.WebhookNotificationService = WebhookNotificationService;
 exports.WebhookNotificationService = WebhookNotificationService = WebhookNotificationService_1 = __decorate([
@@ -56,9 +59,4 @@ exports.WebhookNotificationService = WebhookNotificationService = WebhookNotific
     __param(0, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], WebhookNotificationService);
-async;
-getUnreadCount();
-Promise < number > {
-    return: this.webhookRepo.count({ where: { processed: false } })
-};
 //# sourceMappingURL=webhook-notification.service.js.map
