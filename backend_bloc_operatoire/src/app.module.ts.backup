@@ -1,3 +1,6 @@
+import { NotificationCPAModule } from "./notification-cpa/notification-cpa.module";
+import { PrescriptionModule } from "./prescription/prescription.module";
+import { WebhookNotificationModule } from "./webhook-notification/webhook-notification.module";
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,7 +15,6 @@ import { ActivitePerOpModule } from './activite-per-op/activite-per-op.module';
 import { ProtocoleOperatoireModule } from './protocole-operatoire/protocole-operatoire.module';
 import { ScoreSCCREModule } from './score-sccre/score-sccre.module';
 import { SortieReveilModule } from './sortie-reveil/sortie-reveil.module';
-import { NotificationCPAModule } from './notification-cpa/notification-cpa.module';
 import { AuthModule } from './auth/auth.module';
 import { ArchivesModule } from './archives/archives.module';
 import { RapportsModule } from './rapports/rapports.module';
@@ -22,14 +24,18 @@ import { ExportsModule } from './exports/exports.module';
 import { ChecklistAvantOpModule } from './checklist-avant-op/checklist-avant-op.module';
 import { ChecklistPendantOpModule } from './checklist-pendant-op/checklist-pendant-op.module';
 import { ChecklistApresOpModule } from './checklist-apres-op/checklist-apres-op.module';
-import { WebhookNotificationModule } from './webhook-notification/webhook-notification.module';
-import { PrescriptionModule } from './prescription/prescription.module';
 
 @Module({
   imports: [
+    NotificationCPAModule,
+    PrescriptionModule,
+    WebhookNotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [
+    NotificationCPAModule,
+    PrescriptionModule,
+    WebhookNotificationModule,ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
@@ -39,27 +45,11 @@ import { PrescriptionModule } from './prescription/prescription.module';
         synchronize: false,
       }),
     }),
-    PatientModule,
-    MedecinModule,
-    CPAModule,
-    VPAModule,
-    BonCommandeModule,
-    ActivitePerOpModule,
-    ProtocoleOperatoireModule,
-    ScoreSCCREModule,
-    SortieReveilModule,
-    NotificationCPAModule,
-    AuthModule,
-    ArchivesModule,
-    RapportsModule,
-    PlanningModule,
-    TracabiliteModule,
-    ExportsModule,
-    ChecklistAvantOpModule,
-    ChecklistPendantOpModule,
-    ChecklistApresOpModule,
-    WebhookNotificationModule,
-    PrescriptionModule,
+    PatientModule, MedecinModule, CPAModule, VPAModule, BonCommandeModule,
+    ActivitePerOpModule, ProtocoleOperatoireModule,
+    AuthModule, ArchivesModule, RapportsModule, PlanningModule,
+    TracabiliteModule, ExportsModule,
+    ChecklistAvantOpModule, ChecklistPendantOpModule, ChecklistApresOpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
