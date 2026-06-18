@@ -40,27 +40,27 @@ __decorate([
     __metadata("design:type", String)
 ], WebhookNotification.prototype, "motif", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'patientId', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], WebhookNotification.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'sourceServiceId', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], WebhookNotification.prototype, "sourceServiceId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'sourceServiceName', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], WebhookNotification.prototype, "sourceServiceName", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'targetServiceId', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], WebhookNotification.prototype, "targetServiceId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'targetServiceName', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], WebhookNotification.prototype, "targetServiceName", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'int', nullable: true }),
     __metadata("design:type", Number)
 ], WebhookNotification.prototype, "urgence", void 0);
 __decorate([

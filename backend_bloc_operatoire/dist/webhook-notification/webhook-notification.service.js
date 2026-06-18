@@ -17,30 +17,35 @@ exports.WebhookNotificationService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
+const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 let WebhookNotificationService = WebhookNotificationService_1 = class WebhookNotificationService {
-    notificationRepo;
+    webhookRepo;
     logger = new common_1.Logger(WebhookNotificationService_1.name);
-    constructor(notificationRepo) {
-        this.notificationRepo = notificationRepo;
+    constructor(webhookRepo) {
+        this.webhookRepo = webhookRepo;
     }
     async processIncomingNotification(payload, sourceService) {
         this.logger.log(`📦 Webhook reçu: ${JSON.stringify(payload)}`);
         try {
-            const notification = new notification_cpa_entity_1.NotificationCPA();
-            notification.heurePrescription = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            notification.patientId = payload.patientId || payload.targetId || 'webhook-inconnu';
-            notification.intervention = payload.motif || payload.message || 'Notification externe';
-            notification.chirurgienId = payload.sourceServiceId || payload.chirurgienId || null;
-            notification.professeurCPA = payload.sourceServiceName || sourceService || 'Service externe';
-            notification.estUrgent = payload.urgence === 3 || payload.estUrgent === true;
-            notification.statut = notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE;
-            await this.notificationRepo.save(notification);
-            this.logger.log(`✅ Notification externe stockée en base (ID: ${notification.id})`);
+            const notification = this.webhookRepo.create({
+                type: payload.type,
+                motif: payload.motif || payload.message,
+                patientId: payload.patientId || payload.targetId,
+                sourceServiceId: payload.sourceServiceId,
+                sourceServiceName: payload.sourceServiceName || sourceService,
+                targetServiceId: payload.targetServiceId,
+                targetServiceName: payload.targetServiceName,
+                urgence: payload.urgence,
+                payload: payload.payload,
+                channels: payload.channels,
+                processed: true,
+            });
+            await this.webhookRepo.save(notification);
+            this.logger.log(`✅ Notification stockée dans table dédiée (ID: ${notification.id})`);
             return true;
         }
         catch (error) {
-            this.logger.error(`❌ Erreur stockage: ${error.message}`);
+            this.logger.error(`❌ Erreur: ${error.message}`);
             return true;
         }
     }
@@ -48,7 +53,7 @@ let WebhookNotificationService = WebhookNotificationService_1 = class WebhookNot
 exports.WebhookNotificationService = WebhookNotificationService;
 exports.WebhookNotificationService = WebhookNotificationService = WebhookNotificationService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
+    __param(0, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], WebhookNotificationService);
 //# sourceMappingURL=webhook-notification.service.js.map

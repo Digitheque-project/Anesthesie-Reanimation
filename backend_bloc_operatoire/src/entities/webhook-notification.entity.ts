@@ -11,22 +11,22 @@ export class WebhookNotification {
   @Column({ nullable: true })
   motif: string;
 
-  @Column({ name: 'patientId', nullable: true })
+  @Column({ nullable: true })
   patientId: string;
 
-  @Column({ name: 'sourceServiceId', nullable: true })
+  @Column({ nullable: true })
   sourceServiceId: string;
 
-  @Column({ name: 'sourceServiceName', nullable: true })
+  @Column({ nullable: true })
   sourceServiceName: string;
 
-  @Column({ name: 'targetServiceId', nullable: true })
+  @Column({ nullable: true })
   targetServiceId: string;
 
-  @Column({ name: 'targetServiceName', nullable: true })
+  @Column({ nullable: true })
   targetServiceName: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   urgence: number;
 
   @Column({ type: 'jsonb', nullable: true })

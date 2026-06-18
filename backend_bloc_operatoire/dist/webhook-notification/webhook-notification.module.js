@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebhookNotificationModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
+const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 const webhook_notification_controller_1 = require("./webhook-notification.controller");
 const webhook_notification_service_1 = require("./webhook-notification.service");
 let WebhookNotificationModule = class WebhookNotificationModule {
@@ -17,7 +17,7 @@ let WebhookNotificationModule = class WebhookNotificationModule {
 exports.WebhookNotificationModule = WebhookNotificationModule;
 exports.WebhookNotificationModule = WebhookNotificationModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([notification_cpa_entity_1.NotificationCPA])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([webhook_notification_entity_1.WebhookNotification])],
         controllers: [webhook_notification_controller_1.WebhookNotificationController],
         providers: [webhook_notification_service_1.WebhookNotificationService],
     })
