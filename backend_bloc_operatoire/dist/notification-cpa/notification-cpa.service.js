@@ -42,9 +42,14 @@ let NotificationCPAService = class NotificationCPAService {
         });
         const merged = [...internalData, ...externalData];
         merged.sort((a, b) => {
-            const dateA = a.createdAt || a.receivedAt;
-            const dateB = b.createdAt || b.receivedAt;
-            return new Date(dateB).getTime() - new Date(dateA).getTime();
+            const getDate = (item) => {
+                if (item.createdAt)
+                    return new Date(item.createdAt).getTime();
+                if (item.receivedAt)
+                    return new Date(item.receivedAt).getTime();
+                return 0;
+            };
+            return getDate(b) - getDate(a);
         });
         const start = (page - 1) * limite;
         const end = start + limite;

@@ -21,7 +21,7 @@ export class NotificationCPAService {
   }
 
   async findAll(page = 1, limite = 10) {
-    // 1. Récupérer les notifications internes (CPA)
+    // 1. Récupérer les notifications internes
     const [internalData, internalTotal] = await this.notificationRepo.findAndCount({
       relations: ['patient', 'chirurgien'],
       skip: (page - 1) * limite,
@@ -29,22 +29,25 @@ export class NotificationCPAService {
       order: { createdAt: 'DESC' },
     });
 
-    // 2. Récupérer les notifications externes (webhook)
+    // 2. Récupérer les notifications externes
     const externalData = await this.webhookRepo.find({
       order: { receivedAt: 'DESC' },
       take: limite,
     });
 
-    // 3. Fusionner les deux listes
+    // 3. Fusionner et trier (avec gestion des dates)
     const merged = [...internalData, ...externalData];
-    // Trier par date (la plus récente en premier)
     merged.sort((a, b) => {
-      const dateA = a.createdAt || a.receivedAt;
-      const dateB = b.createdAt || b.receivedAt;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
+      // Extraire la date selon le type
+      const getDate = (item: any) => {
+        if (item.createdAt) return new Date(item.createdAt).getTime();
+        if (item.receivedAt) return new Date(item.receivedAt).getTime();
+        return 0;
+      };
+      return getDate(b) - getDate(a);
     });
 
-    // 4. Paginer manuellement (simplifié)
+    // 4. Paginer
     const start = (page - 1) * limite;
     const end = start + limite;
     const paginated = merged.slice(start, end);
@@ -81,7 +84,6 @@ export class NotificationCPAService {
   }
 
   async getUnreadCount(): Promise<number> {
-    // Compter les notifications non lues dans les DEUX tables
     const internalUnread = await this.notificationRepo.count({
       where: { statut: StatutNotificationCPA.EN_ATTENTE },
     });
