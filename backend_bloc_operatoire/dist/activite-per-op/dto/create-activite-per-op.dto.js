@@ -27,6 +27,7 @@ __decorate([
 ], ConstanteDto.prototype, "heure", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], ConstanteDto.prototype, "fc", void 0);
 __decorate([
@@ -36,18 +37,22 @@ __decorate([
 ], ConstanteDto.prototype, "ta", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], ConstanteDto.prototype, "spo2", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], ConstanteDto.prototype, "temperature", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], ConstanteDto.prototype, "capnie", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], ConstanteDto.prototype, "score", void 0);
 class CreateActivitePerOpDto {
@@ -67,15 +72,17 @@ class CreateActivitePerOpDto {
 }
 exports.CreateActivitePerOpDto = CreateActivitePerOpDto;
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateActivitePerOpDto.prototype, "patientId", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateActivitePerOpDto.prototype, "chirurgienId", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateActivitePerOpDto.prototype, "anesthesisteId", void 0);
 __decorate([

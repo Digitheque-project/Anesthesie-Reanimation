@@ -9,8 +9,8 @@ declare class ConstanteDto {
 }
 export declare class CreateActivitePerOpDto {
     patientId: string;
-    chirurgienId: string;
-    anesthesisteId: string;
+    chirurgienId?: string;
+    anesthesisteId?: string;
     dateOperation: string;
     perfusions?: string;
     transfusions?: string;
@@ -19,7 +19,13 @@ export declare class CreateActivitePerOpDto {
     intubationOT: boolean;
     sArme: boolean;
     masqueLarynge: boolean;
-    ventilation?: any;
+    ventilation?: {
+        spontanee?: string;
+        assistee?: string;
+        controlee?: string;
+        peep?: string;
+        circuitFerme?: string;
+    };
     etatArrivee?: string[];
 }
 export {};

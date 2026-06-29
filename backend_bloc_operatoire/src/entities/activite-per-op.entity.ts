@@ -48,7 +48,7 @@ export class ActivitePerOp {
   @Column('text', { nullable: true })
   journalSorties: string;
 
-  // Constantes (relevées toutes les 5-10 min)
+  // ✅ Plusieurs constantes (surveillances)
   @OneToMany(() => ConstantePerOp, (c) => c.activitePerOp, { cascade: true })
   constantes: ConstantePerOp[];
 
@@ -73,7 +73,7 @@ export class ActivitePerOp {
 
   // État à l’arrivée (plusieurs valeurs possibles)
   @Column('simple-array', { nullable: true })
-  etatArrivee: string[];  // CALME, DETENDU, ANXIEUX, AGITE
+  etatArrivee: string[];
 
   @CreateDateColumn()
   createdAt: Date;
