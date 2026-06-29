@@ -12,7 +12,7 @@ export default function VisitePreAnesthesiquePage() {
       <VisitePreAnesthesiquePageContent />
     </Suspense>
   );
-  }
+}
 
 function VisitePreAnesthesiquePageContent() {
   const searchParams = useSearchParams()
@@ -25,7 +25,7 @@ function VisitePreAnesthesiquePageContent() {
   const [form, setForm] = useState({
     dateVisite: new Date().toISOString().split('T')[0],
     identiteConfirmee: true, jeuneRespected: true, instructionsRespectees: true, premedicationFaite: true,
-    jeune: '', examensComplementaires: '', heureDepart: '08:45',
+    jeune: '', examensComplementaires: '', heureDepart: '09:00',
   })
 
   useEffect(() => {
@@ -46,42 +46,22 @@ function VisitePreAnesthesiquePageContent() {
     }
     setLoading(true)
     try {
-      await apiClient.post('/vpa', { patientId: patientId || patient?.id, cpaId, ...form })
+      await apiClient.post('/vpa', { 
+        patientId: patientId || patient?.id, 
+        cpaId, 
+        ...form 
+      })
       alert('✅ VPA validée avec succès !')
       router.push('/bloc/rendez-vous/vpa')
-    } catch (err) { console.error(err); alert('❌ Erreur') }
+    } catch (err) { 
+      console.error(err); 
+      alert('❌ Erreur lors de la validation VPA') 
+    }
     finally { setLoading(false) }
   }
 
   return (
     <main className="p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-extrabold text-primary font-headline tracking-tight">Visite pré-Anesthésique</h1>
-        <div className="flex items-center gap-6">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline">
-            <span className="material-symbols-outlined">arrow_back</span> Retour
-          </button>
-          <div className="flex items-center gap-2">
-            <button className="p-2.5 hover:bg-surface-container rounded-full transition-all text-on-surface-variant">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
-            <button className="p-2.5 hover:bg-surface-container rounded-full transition-all text-on-surface-variant">
-              <span className="material-symbols-outlined">settings</span>
-            </button>
-          </div>
-          <div className="h-10 w-[1px] bg-outline-variant/30"></div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-xs font-bold text-on-surface">Dr. Jean-Pierre Moretti</p>
-              <p className="text-[10px] text-on-surface-variant font-medium">Anesthésiste-Réanimateur</p>
-            </div>
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
-              <img alt="Profil" className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqzn9s5fqmyi9el1jun6a_rEKedcoFpoY8qUKPPQMjmAVKf345JK69VC_87yOZIc8wlCW1LJE_GOkE8VzTBh_w13JSOhhbEUh9xSFbQisNiM17bqM5AVjm4YT1_l4pRDRKr742GmPxCDUdm0kLRi8AnavxSoPcqr6REojX2Qyc_r767jATTQz-WJ2iJOhWsAMV7piqH7CxbIVV0HNeKHMrMzNAIua5Tpuf2TFRU8FEGpK-bz_6w7zVKAqf3tYTl8QebeTasnN44DA" />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Patient Context Header */}
       <div className="p-6 bg-white rounded-xl flex flex-wrap items-center justify-between gap-6 shadow-sm border border-outline-variant/30">
         <div className="flex items-center gap-4">
@@ -91,9 +71,9 @@ function VisitePreAnesthesiquePageContent() {
           <div>
             <h2 className="text-2xl font-extrabold text-primary tracking-tight">{patientNom}</h2>
             <div className="flex gap-4 text-sm text-on-surface-variant font-medium">
-              <span className="">{patient?.dateNaissance ? `Née le ${new Date(patient.dateNaissance).toLocaleDateString('fr-FR')} (${new Date().getFullYear() - new Date(patient.dateNaissance).getFullYear()} ans)` : '—'}</span>
+              <span>{patient?.dateNaissance ? `Née le ${new Date(patient.dateNaissance).toLocaleDateString('fr-FR')} (${new Date().getFullYear() - new Date(patient.dateNaissance).getFullYear()} ans)` : '—'}</span>
               <span className="text-outline-variant">•</span>
-              <span className="">IPP: {patient?.idDossier || '—'}</span>
+              <span>IPP: {patient?.idDossier || '—'}</span>
             </div>
           </div>
         </div>
@@ -192,25 +172,35 @@ function VisitePreAnesthesiquePageContent() {
           </div>
         </section>
 
-        {/* Footer Actions */}
+        {/* Footer Actions - CORRIGÉ */}
         <section className="lg:col-span-12 flex flex-col md:flex-row items-center justify-between gap-6 p-8 bg-surface-container text-on-surface rounded-xl shadow-sm border border-outline-variant/30">
-          <div className="flex flex-col md:flex-row gap-8 items-center">
-            <div className="flex flex-col items-center md:items-start">
-              <label className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Heure de départ au bloc</label>
-              <div className="flex items-center gap-3 text-3xl font-black">
-                <span className="material-symbols-outlined text-4xl text-primary">schedule</span>
-                <input className="bg-transparent border-none focus:ring-0 text-3xl p-0 font-black cursor-pointer text-primary w-24" type="time" value={form.heureDepart} onChange={e => setForm({...form, heureDepart: e.target.value})} />
-              </div>
+          <div className="flex flex-col items-center md:items-start">
+            <label className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">HEURE DE DÉPART AU BLOC</label>
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-3xl text-primary">schedule</span>
+              <input 
+                type="time" 
+                value={form.heureDepart} 
+                onChange={e => setForm({...form, heureDepart: e.target.value})} 
+                className="bg-transparent border border-primary/30 rounded-lg px-4 py-2 text-2xl font-black text-primary focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                style={{ width: '140px' }}
+              />
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            <button onClick={() => router.push('/bloc/checklist-oms')} className="px-6 py-4 border-2 border-primary/30 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-all flex items-center justify-center gap-2">
+            <button 
+              onClick={() => router.push('/bloc/checklist-oms')} 
+              className="px-6 py-4 border-2 border-primary/30 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+            >
               <span className="material-symbols-outlined text-[20px]">fact_check</span> ACCÉDER À LA CHECKLIST-OMS
             </button>
-            <button onClick={handleSubmit} disabled={loading || !cpaId}
-              className={`px-10 py-4 rounded-lg font-extrabold text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 ${
+            <button 
+              onClick={handleSubmit} 
+              disabled={loading || !cpaId}
+              className={`px-10 py-4 rounded-lg font-extrabold text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 whitespace-nowrap ${
                 cpaId ? 'bg-primary text-on-primary hover:bg-primary/90' : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-              }`}>
+              }`}
+            >
               <span className="material-symbols-outlined font-bold">check_circle</span>
               {!cpaId ? 'CPA REQUISE' : loading ? 'VALIDATION...' : 'VALIDER LA VPA'}
             </button>
@@ -219,4 +209,4 @@ function VisitePreAnesthesiquePageContent() {
       </div>
     </main>
   )
-  }
+}

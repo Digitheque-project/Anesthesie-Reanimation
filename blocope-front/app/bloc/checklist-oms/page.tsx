@@ -11,7 +11,7 @@ export default function ChecklistAvantOpPage() {
       <ChecklistAvantOpPageContent />
     </Suspense>
   );
-  }
+}
 
 function ChecklistAvantOpPageContent() {
   const searchParams = useSearchParams()
@@ -29,17 +29,22 @@ function ChecklistAvantOpPageContent() {
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
-    if (!form.medicamentsRemplis) {
-      alert('⚠️ Vous devez d\'abord remplir les médicaments.')
-      router.push(`/bloc/medicaments-anesthesie?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)
-      return
-    }
+    // ✅ SUPPRIMÉ : Vérification des médicaments
+    // La validation est maintenant directe vers l'activité per-op
+    
     setLoading(true)
     try {
+      // Envoyer la checklist au backend
       await apiClient.post('/checklists-avant-op', { patientId, ...form })
-      alert('✅ Checklist avant opération validée !')
+      console.log('✅ Checklist avant opération validée')
+      
+      // Rediriger directement vers l'activité pendant l'opération
       router.push(`/bloc/activite-pendant-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
-    } catch (err) { console.error(err); alert('❌ Erreur') }
+      
+    } catch (err) { 
+      console.error('❌ Erreur validation checklist:', err)
+      alert('❌ Erreur lors de la validation de la checklist')
+    }
     finally { setLoading(false) }
   }
 
@@ -56,11 +61,7 @@ function ChecklistAvantOpPageContent() {
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             <span className="text-sm">Retour</span>
           </button>
-          <button onClick={() => router.push(`/bloc/medicaments-anesthesie?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)}
-            className="flex items-center space-x-2 px-6 py-2.5 bg-[#001b3d] text-white rounded-lg hover:bg-[#001b3d]/90 transition-all font-semibold shadow-sm">
-            <span className="material-symbols-outlined text-[20px]">medication</span>
-            <span className="text-sm">Médicament</span>
-          </button>
+          {/* ✅ BOUTON MÉDICAMENTS SUPPRIMÉ */}
         </div>
       </header>
 
@@ -166,17 +167,18 @@ function ChecklistAvantOpPageContent() {
             <div className="bg-white p-4 rounded-lg border border-outline-variant/10">
               <p className="text-sm font-bold text-secondary mb-3">6- Vérification « ultime » croisée au sein de l'équipe :</p>
               <div className="space-y-3">
-                {[
-                  { label: 'Identité patient correct', key: 'identiteConfirmee' },
-                  { label: 'Intervention prévue confirmée', key: 'interventionSiteConfirmes' },
-                ].map(item => (
-                  <div key={item.key} className="flex items-center justify-between">
-                    <span className="text-xs">- {item.label}</span>
-                    <label className="flex items-center text-xs cursor-pointer">
-                      <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form[item.key as keyof typeof form] as boolean} onChange={e => setForm({...form, [item.key]: e.target.checked})} /> oui
-                    </label>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">- Identité patient correct</span>
+                  <label className="flex items-center text-xs cursor-pointer">
+                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.identiteConfirmee} onChange={e => setForm({...form, identiteConfirmee: e.target.checked})} /> oui
+                  </label>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">- Intervention prévue confirmée</span>
+                  <label className="flex items-center text-xs cursor-pointer">
+                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.interventionSiteConfirmes} onChange={e => setForm({...form, interventionSiteConfirmes: e.target.checked})} /> oui
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -223,4 +225,4 @@ function ChecklistAvantOpPageContent() {
       </div>
     </main>
   )
-  }
+}

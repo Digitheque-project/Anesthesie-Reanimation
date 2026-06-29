@@ -1,23 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface NotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   notifications: any[];
-  onMarkAsRead?: (notificationId: string) => void; // Callback pour marquer comme lue
+  onMarkAsRead?: (notificationId: string) => void; // ← Appelé quand une notif est lue
+  onNotificationRead?: (notificationId: string) => void; // ← NOUVEAU
 }
 
 export default function NotificationModal({
   isOpen,
   onClose,
   notifications,
-  onMarkAsRead
+  onMarkAsRead,
+  onNotificationRead // ← NOUVEAU
 }: NotificationModalProps) {
   const router = useRouter();
   const [readNotifications, setReadNotifications] = useState<Set<string>>(new Set());
+
+  // Calculer le nombre de notifications non lues
+  const unreadCount = notifications.filter(n => !readNotifications.has(n.id)).length;
 
   if (!isOpen || !notifications || notifications.length === 0) return null;
 
@@ -36,19 +41,42 @@ export default function NotificationModal({
   };
 
   const handleVoirPrescription = (notification: any) => {
-    // Marquer comme lue
+    // Marquer comme lue si ce n'est pas déjà fait
     if (notification.id && !readNotifications.has(notification.id)) {
       const newRead = new Set(readNotifications);
       newRead.add(notification.id);
       setReadNotifications(newRead);
+      
       if (onMarkAsRead) {
         onMarkAsRead(notification.id);
+      }
+      
+      // ← NOUVEAU: Notifier le parent que la notification a été lue
+      if (onNotificationRead) {
+        onNotificationRead(notification.id);
       }
     }
 
     if (notification.patientId) {
       router.push(`/bloc/dossier-patient/${notification.patientId}`);
     }
+  };
+
+  // ← NOUVEAU: Marquer toutes comme lues
+  const handleMarkAllAsRead = () => {
+    const newRead = new Set(readNotifications);
+    notifications.forEach(n => {
+      if (n.id && !newRead.has(n.id)) {
+        newRead.add(n.id);
+        if (onMarkAsRead) {
+          onMarkAsRead(n.id);
+        }
+        if (onNotificationRead) {
+          onNotificationRead(n.id);
+        }
+      }
+    });
+    setReadNotifications(newRead);
   };
 
   const allRead = notifications.every(n => readNotifications.has(n.id));
@@ -61,15 +89,32 @@ export default function NotificationModal({
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔔</span>
             <h3 className="text-white font-bold text-xl">
-              Notifications ({notifications.filter(n => !readNotifications.has(n.id)).length} non lues)
+              Notifications
+              {/* ← MODIFIÉ: Afficher le compteur seulement s'il y a des non lues */}
+              {unreadCount > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white transition-colors text-2xl leading-none"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {/* ← NOUVEAU: Bouton "Tout marquer comme lu" */}
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllAsRead}
+                className="text-white/80 hover:text-white transition-colors text-xs bg-white/20 px-3 py-1 rounded-full"
+              >
+                Tout marquer lu ✓
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-white/80 hover:text-white transition-colors text-2xl leading-none"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Statut "Toutes lues" */}
@@ -93,7 +138,6 @@ export default function NotificationModal({
                   isRead ? 'border-green-300 bg-green-50/50' : 'border-gray-200'
                 }`}
               >
-                {/* En-tête de la carte : Type + Urgence + Statut lu */}
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
                     {notification.type || 'Notification'}
@@ -107,24 +151,22 @@ export default function NotificationModal({
                         ✓ Lu
                       </span>
                     )}
+                    {!isRead && (
+                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    )}
                   </div>
                 </div>
 
-                {/* Motif */}
                 <p className="text-sm font-semibold text-gray-800 mb-3">
                   {notification.motif || notification.message || 'Aucun motif'}
                 </p>
 
-                {/* Grille d'informations */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3">
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Patient</p>
                     <p className="text-sm font-medium text-gray-800">
                       {notification.patientNom || notification.patientId || 'Inconnu'}
                     </p>
-                    {notification.patientId && (
-                      <p className="text-xs text-gray-500 font-mono">{notification.patientId}</p>
-                    )}
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Reçue le</p>
@@ -142,7 +184,6 @@ export default function NotificationModal({
                   </div>
                 </div>
 
-                {/* Service source (uniquement) */}
                 <div className="mb-3">
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Service source</p>
                   <p className="text-sm font-medium text-gray-800">
@@ -150,7 +191,6 @@ export default function NotificationModal({
                   </p>
                 </div>
 
-                {/* Bouton Voir prescription (jaune) */}
                 <button
                   onClick={() => handleVoirPrescription(notification)}
                   className={`w-full py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
@@ -160,7 +200,7 @@ export default function NotificationModal({
                   }`}
                 >
                   <span className="text-lg">📋</span>
-                  {isRead ? 'Déjà lu' : 'Voir prescription'}
+                  {isRead ? 'Déjà lu ✓' : 'Voir prescription'}
                 </button>
               </div>
             );
@@ -168,7 +208,10 @@ export default function NotificationModal({
         </div>
 
         {/* Pied de page */}
-        <div className="bg-gray-50 px-6 py-4 flex justify-end border-t border-gray-100">
+        <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
+          <span className="text-xs text-gray-500">
+            {unreadCount > 0 ? `${unreadCount} notification(s) non lue(s)` : '✅ Toutes lues'}
+          </span>
           <button
             onClick={onClose}
             className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition shadow-md"

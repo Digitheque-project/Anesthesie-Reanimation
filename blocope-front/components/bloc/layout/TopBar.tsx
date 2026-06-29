@@ -14,13 +14,21 @@ export default function TopBar() {
 
   const fetchData = async () => {
     try {
-      // Récupérer le compteur
-      const countRes = await notificationService.getUnreadCount();
-      setUnreadCount(countRes.unread || 0);
-
       // Récupérer la liste des notifications
       const notifsRes = await notificationService.getAll(1, 50);
-      setNotifications(notifsRes.data || []);
+      const notifs = notifsRes.data || [];
+      setNotifications(notifs);
+
+      // ← MODIFIÉ: Compter les notifications non lues
+      const unread = notifs.filter((n: any) => {
+        // Pour les notifications internes (avec statut)
+        if (n.statut) return n.statut === 'EN_ATTENTE';
+        // Pour les notifications webhook (avec processed)
+        if (n.processed !== undefined) return !n.processed;
+        // Par défaut, compter comme non lue
+        return true;
+      }).length;
+      setUnreadCount(unread);
     } catch (err) {
       console.error('Erreur chargement notifications:', err);
     }
@@ -33,6 +41,16 @@ export default function TopBar() {
   }, []);
 
   if (pathname === '/login') return null;
+
+  // ← NOUVEAU: Marquer une notification comme lue
+  const handleNotificationRead = (notificationId: string) => {
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === notificationId ? { ...n, statut: 'LU', processed: true } : n
+      )
+    );
+  };
 
   const handleClocheClick = () => {
     setIsModalOpen(true);
@@ -57,17 +75,13 @@ export default function TopBar() {
           aria-label="Voir les notifications"
         >
           <span className="material-symbols-outlined text-primary text-xl">notifications</span>
+          {/* ← MODIFIÉ: Le badge disparaît quand unreadCount = 0 */}
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </button>
-
-        {/* Supprimer l'icône paramètres si tu veux */}
-        {/* <button className="p-2 hover:bg-surface-container rounded-full transition-all">
-          <span className="material-symbols-outlined text-primary text-xl">settings</span>
-        </button> */}
 
         <div className="flex items-center gap-3 pl-2 border-l border-outline-variant/30">
           <div className="text-right hidden sm:block">
@@ -80,11 +94,11 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Modal de notification */}
       <NotificationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         notifications={notifications}
+        onNotificationRead={handleNotificationRead}
       />
     </header>
   );

@@ -38,6 +38,13 @@ export default function RendezVousPage() {
     return new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  // Fonction pour rediriger vers la page médicaments
+  const handleMedicaments = (patient: any) => {
+    const patientId = patient?.id || '';
+    const patientNom = encodeURIComponent(`${patient?.nom || ''} ${patient?.prenom || ''}`.trim());
+    router.push(`/bloc/medicaments-anesthesie?patientId=${patientId}&patientNom=${patientNom}`);
+  };
+
   return (
     <div className="p-6 flex flex-col gap-6">
       {/* Header */}
@@ -129,13 +136,33 @@ export default function RendezVousPage() {
                     }`}>{c.statut || '—'}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {c.type === 'CPA' ? (
-                      <button onClick={() => router.push(`/bloc/consultation-cpa?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
-                        className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90">Réaliser CPA</button>
-                    ) : (
-                      <button onClick={() => router.push(`/bloc/visite-pre-anesthesique?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
-                        className="px-4 py-2 bg-secondary text-white rounded-lg text-xs font-bold hover:bg-secondary/90">Réaliser VPA</button>
-                    )}
+                    <div className="flex flex-col sm:flex-row gap-2 items-center justify-center">
+                      {c.type === 'CPA' ? (
+                        <button 
+                          onClick={() => router.push(`/bloc/consultation-cpa?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 whitespace-nowrap"
+                        >
+                          Réaliser CPA
+                        </button>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => router.push(`/bloc/visite-pre-anesthesique?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
+                            className="px-4 py-2 bg-secondary text-white rounded-lg text-xs font-bold hover:bg-secondary/90 whitespace-nowrap"
+                          >
+                            Réaliser VPA
+                          </button>
+                          {/* ✅ NOUVEAU BOUTON MÉDICAMENT */}
+                          <button 
+                            onClick={() => handleMedicaments(c.patient)}
+                            className="px-4 py-2 bg-[#001b3d] text-white rounded-lg text-xs font-bold hover:bg-[#001b3d]/90 whitespace-nowrap flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-sm">medication</span>
+                            Médicament
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

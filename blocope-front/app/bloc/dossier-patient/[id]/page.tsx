@@ -35,7 +35,7 @@ export default function DossierPatientPage() {
         <span className="material-symbols-outlined">arrow_back</span> Retour
       </button>
 
-      <h1 className="text-3xl font-extrabold text-on-surface mb-2">📋 Dossier Patient</h1>
+      <h1 className="text-3xl font-extrabold text-on-surface mb-2">📋 Detail prescription</h1>
       <p className="text-sm text-on-surface-variant mb-4">Prescription et informations médicales</p>
 
       {/* En-tête Patient */}
