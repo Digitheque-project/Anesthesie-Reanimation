@@ -51,14 +51,12 @@ export default function Sidebar() {
       {/* Logo and Brand */}
       <div className="px-6 py-8 flex flex-col items-center">
         <div className="relative w-36 h-36 mb-4">
-          <Image
-            src="/images/chu-main-logo.svg"
-            alt="Logo CHU Andrainjato"
-            fill
-            sizes="144px"
-            className="object-contain"
-            priority
-          />
+          <Image 
+          src="/images/CHU-logos.png" 
+          alt="CHU" 
+          width={150} 
+          height={150} 
+          className="rounded-full object-cover border-2 border-blue-500 shadow-md" />
         </div>
         <h1 className="font-headline font-extrabold text-primary text-center text-xl tracking-tight leading-tight">
           Bloc Opératoire
