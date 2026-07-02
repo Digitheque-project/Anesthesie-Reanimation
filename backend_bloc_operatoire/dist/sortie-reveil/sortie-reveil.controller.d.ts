@@ -6,12 +6,14 @@ export declare class SortieReveilController {
     constructor(service: SortieReveilService);
     create(dto: CreateSortieReveilDto): Promise<import("../entities").SortieReveil>;
     findAll(p?: number, l?: number): Promise<{
-        data: import("../entities").SortieReveil[];
+        data: (import("../entities").SortieReveil & {
+            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+        })[];
         total: number;
         page: number;
         pages: number;
     }>;
-    findOne(id: string): Promise<import("../entities").SortieReveil>;
+    findOne(id: string): Promise<any>;
     update(id: string, dto: UpdateSortieReveilDto): Promise<import("../entities").SortieReveil>;
     remove(id: string): Promise<{
         message: string;

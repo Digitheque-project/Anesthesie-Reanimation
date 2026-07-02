@@ -1,4 +1,3 @@
-import { Patient } from './patient.entity';
 import { VPA } from './vpa.entity';
 import { Medecin } from './medecin.entity';
 import { ItemCommande } from './item-commande.entity';
@@ -8,7 +7,6 @@ export declare enum StatutBonCommande {
 }
 export declare class BonCommandeAnesthesie {
     id: string;
-    patient: Patient;
     patientId: string;
     vpa: VPA;
     vpaId: string;

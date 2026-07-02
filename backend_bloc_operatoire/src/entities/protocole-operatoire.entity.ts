@@ -6,8 +6,8 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 import { Drainage } from './drainage.entity';
 
@@ -16,9 +16,7 @@ export class ProtocoleOperatoire {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

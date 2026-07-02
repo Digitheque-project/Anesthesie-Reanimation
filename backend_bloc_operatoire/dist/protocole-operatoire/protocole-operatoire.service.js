@@ -18,12 +18,15 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const protocole_operatoire_entity_1 = require("../entities/protocole-operatoire.entity");
 const drainage_entity_1 = require("../entities/drainage.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     repo;
     drainageRepo;
-    constructor(repo, drainageRepo) {
+    accueilClient;
+    constructor(repo, drainageRepo, accueilClient) {
         this.repo = repo;
         this.drainageRepo = drainageRepo;
+        this.accueilClient = accueilClient;
     }
     async create(dto) {
         const { drainages, ...data } = dto;
@@ -35,17 +38,30 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         return this.findOne(saved.id);
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ relations: ['patient', 'chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        const [data, total] = await this.repo.findAndCount({ relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const p = await this.repo.findOne({ where: { id }, relations: ['patient', 'chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'] });
+        const p = await this.repo.findOne({ where: { id }, relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'] });
         if (!p)
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
-        return p;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([p]);
+        return enriched;
     }
-    async update(id, dto) { const p = await this.findOne(id); return this.repo.save(Object.assign(p, dto)); }
-    async remove(id) { await this.findOne(id); await this.repo.delete(id); return { message: 'Protocole supprimé' }; }
+    async update(id, dto) {
+        const p = await this.repo.findOne({ where: { id } });
+        if (!p)
+            throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
+        return this.repo.save(Object.assign(p, dto));
+    }
+    async remove(id) {
+        const p = await this.repo.findOne({ where: { id } });
+        if (!p)
+            throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
+        await this.repo.delete(id);
+        return { message: 'Protocole supprimé' };
+    }
 };
 exports.ProtocoleOperatoireService = ProtocoleOperatoireService;
 exports.ProtocoleOperatoireService = ProtocoleOperatoireService = __decorate([
@@ -53,6 +69,7 @@ exports.ProtocoleOperatoireService = ProtocoleOperatoireService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(protocole_operatoire_entity_1.ProtocoleOperatoire)),
     __param(1, (0, typeorm_1.InjectRepository)(drainage_entity_1.Drainage)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], ProtocoleOperatoireService);
 //# sourceMappingURL=protocole-operatoire.service.js.map

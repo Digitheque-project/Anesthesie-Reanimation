@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CPA } from '../entities/cpa.entity';
-import { Patient, PatientStatut } from '../entities/patient.entity';
+import { CPA, DecisionCPA } from '../entities/cpa.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { Premedicament } from '../entities/premedicament.entity';
+import { AccueilClient } from '../external/accueil.client';
+import { EndoscopieClient } from '../external/endoscopie.client';
+import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-externe.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
 
@@ -11,8 +14,11 @@ import { UpdateCPADto } from './dto/update-cpa.dto';
 export class CPAService {
   constructor(
     @InjectRepository(CPA) private cpaRepository: Repository<CPA>,
-    @InjectRepository(Patient) private patientRepo: Repository<Patient>,
+    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(Premedicament) private premedRepository: Repository<Premedicament>,
+    private accueilClient: AccueilClient,
+    private endoscopieClient: EndoscopieClient,
+    private demandeCpaExterneService: DemandeCpaExterneService,
   ) {}
 
   async create(dto: CreateCPADto): Promise<CPA> {
@@ -27,7 +33,18 @@ export class CPAService {
     }
 
     if (dto.patientId) {
-      await this.patientRepo.update(dto.patientId, { statut: PatientStatut.CPA_REALISE });
+      await this.patientBlocRepo.update(dto.patientId, { statut: PatientStatut.CPA_REALISE });
+
+      // Si une demande de CPA externe (ex: Endoscopie) est ouverte pour ce patient, la lier et notifier la source.
+      const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
+      if (demande) {
+        const apte = saved.decision === DecisionCPA.APTE;
+        await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
+        await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
+          dateCpa: saved.dateConsultation,
+          observations: saved.notesIncidents,
+        });
+      }
     }
 
     return this.findOne(saved.id);
@@ -35,26 +52,30 @@ export class CPAService {
 
   async findAll(page = 1, limite = 10) {
     const [data, total] = await this.cpaRepository.findAndCount({
-      relations: ['patient', 'anesthesiste', 'premedicaments'],
+      relations: ['anesthesiste', 'premedicaments'],
       skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' }
     });
-    return { data, total, page, pages: Math.ceil(total / limite) };
+    const enriched = await this.accueilClient.enrichWithIdentity(data);
+    return { data: enriched, total, page, pages: Math.ceil(total / limite) };
   }
 
-  async findOne(id: string): Promise<CPA> {
-    const cpa = await this.cpaRepository.findOne({ where: { id }, relations: ['patient', 'anesthesiste', 'premedicaments'] });
+  async findOne(id: string): Promise<any> {
+    const cpa = await this.cpaRepository.findOne({ where: { id }, relations: ['anesthesiste', 'premedicaments'] });
     if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
-    return cpa;
+    const [enriched] = await this.accueilClient.enrichWithIdentity([cpa]);
+    return enriched;
   }
 
   async update(id: string, dto: UpdateCPADto): Promise<CPA> {
-    const cpa = await this.findOne(id);
+    const cpa = await this.cpaRepository.findOne({ where: { id } });
+    if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
     Object.assign(cpa, dto);
     return this.cpaRepository.save(cpa);
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    await this.findOne(id);
+    const cpa = await this.cpaRepository.findOne({ where: { id } });
+    if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
     await this.cpaRepository.delete(id);
     return { message: 'CPA supprimée' };
   }

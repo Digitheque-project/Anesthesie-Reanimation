@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PatientModule } from './patient/patient.module';
+import { PatientBlocModule } from './patient-bloc/patient-bloc.module';
 import { MedecinModule } from './medecin/medecin.module';
 import { CPAModule } from './cpa/cpa.module';
 import { VPAModule } from './vpa/vpa.module';
@@ -24,10 +24,14 @@ import { ChecklistPendantOpModule } from './checklist-pendant-op/checklist-penda
 import { ChecklistApresOpModule } from './checklist-apres-op/checklist-apres-op.module';
 import { WebhookNotificationModule } from './webhook-notification/webhook-notification.module';
 import { PrescriptionModule } from './prescription/prescription.module';
+import { DemandeCpaExterneModule } from './demande-cpa-externe/demande-cpa-externe.module';
+import { ExternalModule } from './external/external.module';
+import externalServicesConfig from './config/external-services.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, load: [externalServicesConfig] }),
+    ExternalModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -39,7 +43,7 @@ import { PrescriptionModule } from './prescription/prescription.module';
         synchronize: true,
       }),
     }),
-    PatientModule,
+    PatientBlocModule,
     MedecinModule,
     CPAModule,
     VPAModule,
@@ -60,6 +64,7 @@ import { PrescriptionModule } from './prescription/prescription.module';
     ChecklistApresOpModule,
     WebhookNotificationModule,
     PrescriptionModule,
+    DemandeCpaExterneModule,
   ],
   controllers: [AppController],
   providers: [AppService],

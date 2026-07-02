@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
 import { VPA } from '../entities/vpa.entity';
 import { BonCommandeAnesthesie } from '../entities/bon-commande-anesthesie.entity';
@@ -10,8 +10,9 @@ import { SortieReveil } from '../entities/sortie-reveil.entity';
 import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
+import { AccueilClient } from '../external/accueil.client';
 export declare class ArchivesService {
-    private patientRepo;
+    private patientBlocRepo;
     private cpaRepository;
     private vpaRepository;
     private bonRepo;
@@ -22,7 +23,9 @@ export declare class ArchivesService {
     private checklistAvantRepo;
     private checklistPendantRepo;
     private checklistApresRepo;
-    constructor(patientRepo: Repository<Patient>, cpaRepository: Repository<CPA>, vpaRepository: Repository<VPA>, bonRepo: Repository<BonCommandeAnesthesie>, activiteRepo: Repository<ActivitePerOp>, protocoleRepo: Repository<ProtocoleOperatoire>, scoreRepo: Repository<ScoreSCCRE>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>);
+    private accueilClient;
+    constructor(patientBlocRepo: Repository<PatientBloc>, cpaRepository: Repository<CPA>, vpaRepository: Repository<VPA>, bonRepo: Repository<BonCommandeAnesthesie>, activiteRepo: Repository<ActivitePerOp>, protocoleRepo: Repository<ProtocoleOperatoire>, scoreRepo: Repository<ScoreSCCRE>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, accueilClient: AccueilClient);
+    private getPatientEnrichi;
     getDossierComplet(patientId: string): Promise<any>;
     getResumePatient(patientId: string): Promise<any>;
 }

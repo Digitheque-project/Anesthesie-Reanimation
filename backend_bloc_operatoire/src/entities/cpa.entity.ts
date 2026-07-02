@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  Index,
 } from 'typeorm';
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 import { Premedicament } from './premedicament.entity';
 
@@ -37,9 +37,7 @@ export class CPA {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

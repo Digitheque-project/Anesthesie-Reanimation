@@ -5,8 +5,8 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
-import { Patient } from './patient.entity';
 import { ScoreSCCRE } from './score-sccre.entity';
 import { Medecin } from './medecin.entity';
 
@@ -20,9 +20,7 @@ export class SortieReveil {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

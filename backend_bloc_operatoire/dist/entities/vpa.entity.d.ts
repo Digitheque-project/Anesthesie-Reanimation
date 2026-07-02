@@ -1,4 +1,3 @@
-import { Patient } from './patient.entity';
 import { CPA } from './cpa.entity';
 import { Medecin } from './medecin.entity';
 export declare enum StatutVPA {
@@ -7,7 +6,6 @@ export declare enum StatutVPA {
 }
 export declare class VPA {
     id: string;
-    patient: Patient;
     patientId: string;
     cpa: CPA;
     cpaId: string;

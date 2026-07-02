@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RapportsModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const score_sccre_entity_1 = require("../entities/score-sccre.entity");
 const medecin_entity_1 = require("../entities/medecin.entity");
@@ -22,7 +22,7 @@ let RapportsModule = class RapportsModule {
 exports.RapportsModule = RapportsModule;
 exports.RapportsModule = RapportsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([patient_entity_1.Patient, activite_per_op_entity_1.ActivitePerOp, score_sccre_entity_1.ScoreSCCRE, medecin_entity_1.Medecin, cpa_entity_1.CPA, notification_cpa_entity_1.NotificationCPA])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, activite_per_op_entity_1.ActivitePerOp, score_sccre_entity_1.ScoreSCCRE, medecin_entity_1.Medecin, cpa_entity_1.CPA, notification_cpa_entity_1.NotificationCPA])],
         controllers: [rapports_controller_1.RapportsController],
         providers: [rapports_service_1.RapportsService],
         exports: [rapports_service_1.RapportsService],

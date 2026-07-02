@@ -1,12 +1,14 @@
 import { Repository } from 'typeorm';
 import { NotificationCPA } from '../entities/notification-cpa.entity';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
+import { AccueilClient } from '../external/accueil.client';
 export declare class NotificationAlerteService {
     private notifRepo;
-    private patientRepo;
+    private patientBlocRepo;
     private creneauRepo;
-    constructor(notifRepo: Repository<NotificationCPA>, patientRepo: Repository<Patient>, creneauRepo: Repository<CreneauBloc>);
+    private accueilClient;
+    constructor(notifRepo: Repository<NotificationCPA>, patientBlocRepo: Repository<PatientBloc>, creneauRepo: Repository<CreneauBloc>, accueilClient: AccueilClient);
     getAlertesUrgentes(): Promise<any>;
     getResumeJour(): Promise<any>;
 }

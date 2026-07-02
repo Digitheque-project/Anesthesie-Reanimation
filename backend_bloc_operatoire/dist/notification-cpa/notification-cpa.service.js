@@ -18,24 +18,28 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let NotificationCPAService = class NotificationCPAService {
     notificationRepo;
     webhookRepo;
-    constructor(notificationRepo, webhookRepo) {
+    accueilClient;
+    constructor(notificationRepo, webhookRepo, accueilClient) {
         this.notificationRepo = notificationRepo;
         this.webhookRepo = webhookRepo;
+        this.accueilClient = accueilClient;
     }
     async create(dto) {
         const saved = await this.notificationRepo.save(this.notificationRepo.create(dto));
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async findAll(page = 1, limite = 10) {
-        const [internalData, internalTotal] = await this.notificationRepo.findAndCount({
-            relations: ['patient', 'chirurgien'],
+        const [internalDataRaw, internalTotal] = await this.notificationRepo.findAndCount({
+            relations: ['chirurgien'],
             skip: (page - 1) * limite,
             take: limite,
             order: { createdAt: 'DESC' },
         });
+        const internalData = await this.accueilClient.enrichWithIdentity(internalDataRaw);
         const externalData = await this.webhookRepo.find({
             order: { receivedAt: 'DESC' },
             take: limite,
@@ -62,22 +66,29 @@ let NotificationCPAService = class NotificationCPAService {
         };
     }
     async findOne(id) {
-        const n = await this.notificationRepo.findOne({ where: { id }, relations: ['patient', 'chirurgien'] });
+        const n = await this.notificationRepo.findOne({ where: { id }, relations: ['chirurgien'] });
         if (!n)
             throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
-        return n;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([n]);
+        return enriched;
     }
     async planifierRDV(id, dto) {
-        const n = await this.findOne(id);
+        const n = await this.notificationRepo.findOne({ where: { id } });
+        if (!n)
+            throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         n.statut = notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE;
         return this.notificationRepo.save(n);
     }
     async update(id, dto) {
-        const n = await this.findOne(id);
+        const n = await this.notificationRepo.findOne({ where: { id } });
+        if (!n)
+            throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         return this.notificationRepo.save(Object.assign(n, dto));
     }
     async remove(id) {
-        await this.findOne(id);
+        const n = await this.notificationRepo.findOne({ where: { id } });
+        if (!n)
+            throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         await this.notificationRepo.delete(id);
         return { message: 'Notification supprimée' };
     }
@@ -97,6 +108,7 @@ exports.NotificationCPAService = NotificationCPAService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __param(1, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], NotificationCPAService);
 //# sourceMappingURL=notification-cpa.service.js.map

@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebhookNotification = exports.User = exports.HistoriqueModification = exports.TypeRDV = exports.StatutCreneau = exports.CreneauBloc = exports.StatutNotificationCPA = exports.NotificationCPA = exports.StatutSortieReveil = exports.SortieReveil = exports.StatutScoreSCCRE = exports.ScoreSCCRE = exports.ProtocoleOperatoire = exports.CoteDrainage = exports.ModeDrainage = exports.TypeDrainage = exports.Drainage = exports.ActivitePerOp = exports.ConstantePerOp = exports.ChecklistApresOp = exports.ChecklistPendantOp = exports.StatutChecklist = exports.ChecklistAvantOp = exports.ItemCommande = exports.StatutBonCommande = exports.BonCommandeAnesthesie = exports.Premedicament = exports.StatutVPA = exports.VPA = exports.StatutCPA = exports.DecisionCPA = exports.ScoreASA = exports.CPA = exports.OrdreProfessionnel = exports.RoleMedecin = exports.Medecin = exports.Sexe = exports.NiveauUrgence = exports.PatientStatut = exports.Patient = void 0;
-var patient_entity_1 = require("./patient.entity");
-Object.defineProperty(exports, "Patient", { enumerable: true, get: function () { return patient_entity_1.Patient; } });
-Object.defineProperty(exports, "PatientStatut", { enumerable: true, get: function () { return patient_entity_1.PatientStatut; } });
-Object.defineProperty(exports, "NiveauUrgence", { enumerable: true, get: function () { return patient_entity_1.NiveauUrgence; } });
-Object.defineProperty(exports, "Sexe", { enumerable: true, get: function () { return patient_entity_1.Sexe; } });
+exports.StatutDemandeCpaExterne = exports.DemandeCpaExterne = exports.WebhookNotification = exports.User = exports.HistoriqueModification = exports.TypeRDV = exports.StatutCreneau = exports.CreneauBloc = exports.StatutNotificationCPA = exports.NotificationCPA = exports.StatutSortieReveil = exports.SortieReveil = exports.StatutScoreSCCRE = exports.ScoreSCCRE = exports.ProtocoleOperatoire = exports.CoteDrainage = exports.ModeDrainage = exports.TypeDrainage = exports.Drainage = exports.ActivitePerOp = exports.ConstantePerOp = exports.ChecklistApresOp = exports.ChecklistPendantOp = exports.StatutChecklist = exports.ChecklistAvantOp = exports.ItemCommande = exports.StatutBonCommande = exports.BonCommandeAnesthesie = exports.Premedicament = exports.StatutVPA = exports.VPA = exports.StatutCPA = exports.DecisionCPA = exports.ScoreASA = exports.CPA = exports.OrdreProfessionnel = exports.RoleMedecin = exports.Medecin = exports.NiveauUrgence = exports.PatientStatut = exports.PatientBloc = void 0;
+var patient_bloc_entity_1 = require("./patient-bloc.entity");
+Object.defineProperty(exports, "PatientBloc", { enumerable: true, get: function () { return patient_bloc_entity_1.PatientBloc; } });
+Object.defineProperty(exports, "PatientStatut", { enumerable: true, get: function () { return patient_bloc_entity_1.PatientStatut; } });
+Object.defineProperty(exports, "NiveauUrgence", { enumerable: true, get: function () { return patient_bloc_entity_1.NiveauUrgence; } });
 var medecin_entity_1 = require("./medecin.entity");
 Object.defineProperty(exports, "Medecin", { enumerable: true, get: function () { return medecin_entity_1.Medecin; } });
 Object.defineProperty(exports, "RoleMedecin", { enumerable: true, get: function () { return medecin_entity_1.RoleMedecin; } });
@@ -62,4 +61,7 @@ var user_entity_1 = require("../user/user.entity");
 Object.defineProperty(exports, "User", { enumerable: true, get: function () { return user_entity_1.User; } });
 var webhook_notification_entity_1 = require("./webhook-notification.entity");
 Object.defineProperty(exports, "WebhookNotification", { enumerable: true, get: function () { return webhook_notification_entity_1.WebhookNotification; } });
+var demande_cpa_externe_entity_1 = require("./demande-cpa-externe.entity");
+Object.defineProperty(exports, "DemandeCpaExterne", { enumerable: true, get: function () { return demande_cpa_externe_entity_1.DemandeCpaExterne; } });
+Object.defineProperty(exports, "StatutDemandeCpaExterne", { enumerable: true, get: function () { return demande_cpa_externe_entity_1.StatutDemandeCpaExterne; } });
 //# sourceMappingURL=index.js.map

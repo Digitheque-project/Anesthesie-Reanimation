@@ -2,34 +2,36 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreneauBloc, StatutCreneau, TypeRDV } from '../entities/creneau-bloc.entity';
-import { Patient, PatientStatut } from '../entities/patient.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
+import { AccueilClient } from '../external/accueil.client';
 
 @Injectable()
 export class PlanningService {
   constructor(
     @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
-    @InjectRepository(Patient) private patientRepo: Repository<Patient>,
+    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
+    private accueilClient: AccueilClient,
   ) {}
 
   async getPlanningJour(jour: string, type?: TypeRDV) {
     const qb = this.creneauRepo.createQueryBuilder('c')
-      .leftJoinAndSelect('c.patient', 'p')
       .leftJoinAndSelect('c.chirurgien', 'm')
       .where('c.date = :date', { date: jour })
       .orderBy('c.heureDebut', 'ASC');
     if (type) qb.andWhere('c.type = :type', { type });
-    return qb.getMany();
+    const data = await qb.getMany();
+    return this.accueilClient.enrichWithIdentity(data);
   }
 
   async getPlanningSemaine(debut: string, fin: string, type?: TypeRDV) {
     const qb = this.creneauRepo.createQueryBuilder('c')
-      .leftJoinAndSelect('c.patient', 'p')
       .leftJoinAndSelect('c.chirurgien', 'm')
       .where('c.date >= :debut', { debut })
       .andWhere('c.date <= :fin', { fin })
       .orderBy('c.date', 'ASC').addOrderBy('c.heureDebut', 'ASC');
     if (type) qb.andWhere('c.type = :type', { type });
-    return qb.getMany();
+    const data = await qb.getMany();
+    return this.accueilClient.enrichWithIdentity(data);
   }
 
   async reserverCreneau(dto: any) {
@@ -45,16 +47,17 @@ export class PlanningService {
   }
 
   async getUrgencesEnAttente() {
-    return this.creneauRepo.find({ where: { estUrgence: true }, relations: ['patient', 'chirurgien'] });
+    const data = await this.creneauRepo.find({ where: { estUrgence: true }, relations: ['chirurgien'] });
+    return this.accueilClient.enrichWithIdentity(data);
   }
 
-  // NOUVEAU : Transférer CPA vers VPA
+  // Transférer CPA vers VPA
   async transfererCpaVersVpa(dto: { patientId: string; chirurgienId: string; dateVPA: string; heureDebut: string; salle: string }) {
-    const patient = await this.patientRepo.findOne({ where: { id: dto.patientId } });
+    const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
     if (!patient) throw new NotFoundException('Patient non trouvé');
-    
+
     patient.statut = PatientStatut.EN_ATTENTE_VPA;
-    await this.patientRepo.save(patient);
+    await this.patientBlocRepo.save(patient);
 
     const creneau = this.creneauRepo.create({
       patientId: dto.patientId,
@@ -68,13 +71,13 @@ export class PlanningService {
     return this.creneauRepo.save(creneau);
   }
 
-  // NOUVEAU : Transférer VPA vers Patient du jour
+  // Transférer VPA vers Patient du jour
   async transfererVpaVersPatientJour(dto: { patientId: string; chirurgienId: string; date: string; heureDebut: string; salle: string }) {
-    const patient = await this.patientRepo.findOne({ where: { id: dto.patientId } });
+    const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
     if (!patient) throw new NotFoundException('Patient non trouvé');
-    
+
     patient.statut = PatientStatut.PRET_POUR_BLOC;
-    await this.patientRepo.save(patient);
+    await this.patientBlocRepo.save(patient);
 
     const creneau = this.creneauRepo.create({
       patientId: dto.patientId,

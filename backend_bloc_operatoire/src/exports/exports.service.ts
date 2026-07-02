@@ -1,19 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
+import { AccueilClient } from '../external/accueil.client';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class ExportsService {
   constructor(
-    @InjectRepository(Patient) private patientRepo: Repository<Patient>,
+    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(ActivitePerOp) private activiteRepo: Repository<ActivitePerOp>,
+    private accueilClient: AccueilClient,
   ) {}
 
   async exportPatientsExcel(): Promise<ExcelJS.Buffer> {
-    const patients = await this.patientRepo.find({ order: { nom: 'ASC' } });
+    const patients = await this.patientBlocRepo.find({ order: { createdAt: 'DESC' } });
+    const enriched = await this.accueilClient.enrichWithIdentity(patients);
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Patients');
 
@@ -26,12 +29,20 @@ export class ExportsService {
       { header: 'Chambre', key: 'chambre', width: 10 },
     ];
 
-    patients.forEach((p) => sheet.addRow(p));
+    enriched.forEach((p) => sheet.addRow({
+      idDossier: p.idDossier,
+      nom: p.patient?.nom ?? '',
+      prenom: p.patient?.prenom ?? '',
+      statut: p.statut,
+      niveauUrgence: p.niveauUrgence,
+      chambre: p.chambre,
+    }));
     return workbook.xlsx.writeBuffer();
   }
 
   async exportPlanningExcel(date: string): Promise<ExcelJS.Buffer> {
-    const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) }, relations: ['patient', 'chirurgien'] });
+    const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) }, relations: ['chirurgien'] });
+    const enriched = await this.accueilClient.enrichWithIdentity(activites);
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Planning');
 
@@ -41,13 +52,18 @@ export class ExportsService {
       { header: 'Date', key: 'date', width: 15 },
     ];
 
-    activites.forEach((a) => sheet.addRow({ patient: `${a.patient.nom} ${a.patient.prenom}`, chirurgien: `${a.chirurgien.nom} ${a.chirurgien.prenom}`, date: a.dateOperation }));
+    enriched.forEach((a) => sheet.addRow({
+      patient: a.patient ? `${a.patient.nom} ${a.patient.prenom}` : a.patientId,
+      chirurgien: `${a.chirurgien.nom} ${a.chirurgien.prenom}`,
+      date: a.dateOperation,
+    }));
     return workbook.xlsx.writeBuffer();
   }
 
   async exportPatientJSON(patientId: string): Promise<any> {
-    const patient = await this.patientRepo.findOne({ where: { id: patientId } });
+    const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
     if (!patient) throw new NotFoundException('Patient non trouvé');
-    return patient;
+    const identite = await this.accueilClient.getPatient(patientId);
+    return { ...patient, ...identite, patientId };
   }
 }

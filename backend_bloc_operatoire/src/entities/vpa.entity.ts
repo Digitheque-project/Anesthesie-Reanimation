@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Patient } from './patient.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { CPA } from './cpa.entity';
 import { Medecin } from './medecin.entity';
 
@@ -13,9 +12,7 @@ export class VPA {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column({ nullable: true })
   patientId: string;
 

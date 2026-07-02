@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
-import { Patient } from './patient.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate, Index } from 'typeorm';
 import { Medecin } from './medecin.entity';
 
 export enum StatutScoreSCCRE {
@@ -12,9 +11,7 @@ export class ScoreSCCRE {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-  @Column() patientId: string;
+  @Index() @Column() patientId: string;
 
   @ManyToOne(() => Medecin, { eager: true })
   anesthesiste: Medecin;

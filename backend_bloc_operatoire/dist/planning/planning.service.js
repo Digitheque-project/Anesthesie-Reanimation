@@ -17,34 +17,37 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let PlanningService = class PlanningService {
     creneauRepo;
-    patientRepo;
-    constructor(creneauRepo, patientRepo) {
+    patientBlocRepo;
+    accueilClient;
+    constructor(creneauRepo, patientBlocRepo, accueilClient) {
         this.creneauRepo = creneauRepo;
-        this.patientRepo = patientRepo;
+        this.patientBlocRepo = patientBlocRepo;
+        this.accueilClient = accueilClient;
     }
     async getPlanningJour(jour, type) {
         const qb = this.creneauRepo.createQueryBuilder('c')
-            .leftJoinAndSelect('c.patient', 'p')
             .leftJoinAndSelect('c.chirurgien', 'm')
             .where('c.date = :date', { date: jour })
             .orderBy('c.heureDebut', 'ASC');
         if (type)
             qb.andWhere('c.type = :type', { type });
-        return qb.getMany();
+        const data = await qb.getMany();
+        return this.accueilClient.enrichWithIdentity(data);
     }
     async getPlanningSemaine(debut, fin, type) {
         const qb = this.creneauRepo.createQueryBuilder('c')
-            .leftJoinAndSelect('c.patient', 'p')
             .leftJoinAndSelect('c.chirurgien', 'm')
             .where('c.date >= :debut', { debut })
             .andWhere('c.date <= :fin', { fin })
             .orderBy('c.date', 'ASC').addOrderBy('c.heureDebut', 'ASC');
         if (type)
             qb.andWhere('c.type = :type', { type });
-        return qb.getMany();
+        const data = await qb.getMany();
+        return this.accueilClient.enrichWithIdentity(data);
     }
     async reserverCreneau(dto) {
         const creneau = this.creneauRepo.create({ ...dto, type: dto.type || creneau_bloc_entity_1.TypeRDV.CPA });
@@ -58,14 +61,15 @@ let PlanningService = class PlanningService {
         return this.creneauRepo.save(creneau);
     }
     async getUrgencesEnAttente() {
-        return this.creneauRepo.find({ where: { estUrgence: true }, relations: ['patient', 'chirurgien'] });
+        const data = await this.creneauRepo.find({ where: { estUrgence: true }, relations: ['chirurgien'] });
+        return this.accueilClient.enrichWithIdentity(data);
     }
     async transfererCpaVersVpa(dto) {
-        const patient = await this.patientRepo.findOne({ where: { id: dto.patientId } });
+        const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
-        patient.statut = patient_entity_1.PatientStatut.EN_ATTENTE_VPA;
-        await this.patientRepo.save(patient);
+        patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VPA;
+        await this.patientBlocRepo.save(patient);
         const creneau = this.creneauRepo.create({
             patientId: dto.patientId,
             chirurgienId: dto.chirurgienId,
@@ -78,11 +82,11 @@ let PlanningService = class PlanningService {
         return this.creneauRepo.save(creneau);
     }
     async transfererVpaVersPatientJour(dto) {
-        const patient = await this.patientRepo.findOne({ where: { id: dto.patientId } });
+        const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
-        patient.statut = patient_entity_1.PatientStatut.PRET_POUR_BLOC;
-        await this.patientRepo.save(patient);
+        patient.statut = patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC;
+        await this.patientBlocRepo.save(patient);
         const creneau = this.creneauRepo.create({
             patientId: dto.patientId,
             chirurgienId: dto.chirurgienId,
@@ -100,8 +104,9 @@ exports.PlanningService = PlanningService;
 exports.PlanningService = PlanningService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
-    __param(1, (0, typeorm_1.InjectRepository)(patient_entity_1.Patient)),
+    __param(1, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], PlanningService);
 //# sourceMappingURL=planning.service.js.map

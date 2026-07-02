@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChecklistAvantOp = exports.StatutChecklist = void 0;
 const typeorm_1 = require("typeorm");
-const patient_entity_1 = require("./patient.entity");
 var StatutChecklist;
 (function (StatutChecklist) {
     StatutChecklist["EN_COURS"] = "EN_COURS";
@@ -19,7 +18,6 @@ var StatutChecklist;
 })(StatutChecklist || (exports.StatutChecklist = StatutChecklist = {}));
 let ChecklistAvantOp = class ChecklistAvantOp {
     id;
-    patient;
     patientId;
     dateCreation;
     identiteConfirmee;
@@ -42,10 +40,7 @@ __decorate([
     __metadata("design:type", String)
 ], ChecklistAvantOp.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => patient_entity_1.Patient, { eager: true }),
-    __metadata("design:type", patient_entity_1.Patient)
-], ChecklistAvantOp.prototype, "patient", void 0);
-__decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], ChecklistAvantOp.prototype, "patientId", void 0);

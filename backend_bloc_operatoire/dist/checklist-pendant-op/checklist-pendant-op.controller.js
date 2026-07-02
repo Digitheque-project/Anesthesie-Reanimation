@@ -18,16 +18,26 @@ const swagger_1 = require("@nestjs/swagger");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const checklist_pendant_op_entity_1 = require("../entities/checklist-pendant-op.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let ChecklistPendantOpController = class ChecklistPendantOpController {
     repo;
-    constructor(repo) {
+    accueilClient;
+    constructor(repo, accueilClient) {
         this.repo = repo;
+        this.accueilClient = accueilClient;
     }
     create(dto) { return this.repo.save(this.repo.create(dto)); }
-    findAll(patientId) {
-        return this.repo.find({ where: patientId ? { patientId } : {}, relations: ['patient'] });
+    async findAll(patientId) {
+        const data = await this.repo.find({ where: patientId ? { patientId } : {} });
+        return this.accueilClient.enrichWithIdentity(data);
     }
-    findOne(id) { return this.repo.findOne({ where: { id }, relations: ['patient'] }); }
+    async findOne(id) {
+        const checklist = await this.repo.findOne({ where: { id } });
+        if (!checklist)
+            return null;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
+        return enriched;
+    }
     update(id, dto) { return this.repo.update(id, dto); }
 };
 exports.ChecklistPendantOpController = ChecklistPendantOpController;
@@ -45,18 +55,18 @@ __decorate([
     __param(0, (0, common_1.Query)('patientId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ChecklistPendantOpController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ChecklistPendantOpController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -66,6 +76,7 @@ exports.ChecklistPendantOpController = ChecklistPendantOpController = __decorate
     (0, swagger_1.ApiTags)('Checklist Pendant Op'),
     (0, common_1.Controller)('checklists-pendant-op'),
     __param(0, (0, typeorm_1.InjectRepository)(checklist_pendant_op_entity_1.ChecklistPendantOp)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], ChecklistPendantOpController);
 //# sourceMappingURL=checklist-pendant-op.controller.js.map

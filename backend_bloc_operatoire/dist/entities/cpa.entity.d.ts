@@ -1,4 +1,3 @@
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 import { Premedicament } from './premedicament.entity';
 export declare enum ScoreASA {
@@ -21,7 +20,6 @@ export declare enum StatutCPA {
 }
 export declare class CPA {
     id: string;
-    patient: Patient;
     patientId: string;
     anesthesiste: Medecin;
     anesthesisteId: string;

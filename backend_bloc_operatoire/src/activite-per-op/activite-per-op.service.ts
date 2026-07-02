@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ConstantePerOp } from '../entities/constante-per-op.entity';
+import { AccueilClient } from '../external/accueil.client';
 import { CreateActivitePerOpDto } from './dto/create-activite-per-op.dto';
 import { UpdateActivitePerOpDto } from './dto/update-activite-per-op.dto';
 
@@ -11,6 +12,7 @@ export class ActivitePerOpService {
   constructor(
     @InjectRepository(ActivitePerOp) private repo: Repository<ActivitePerOp>,
     @InjectRepository(ConstantePerOp) private constanteRepo: Repository<ConstantePerOp>,
+    private accueilClient: AccueilClient,
   ) {}
 
   async create(dto: CreateActivitePerOpDto): Promise<ActivitePerOp> {
@@ -38,30 +40,34 @@ export class ActivitePerOpService {
 
   async findAll(page = 1, limite = 10) {
     const [data, total] = await this.repo.findAndCount({
-      relations: ['patient', 'chirurgien', 'anesthesiste', 'constantes'],
+      relations: ['chirurgien', 'anesthesiste', 'constantes'],
       skip: (page - 1) * limite,
       take: limite,
       order: { createdAt: 'DESC' },
     });
-    return { data, total, page, pages: Math.ceil(total / limite) };
+    const enriched = await this.accueilClient.enrichWithIdentity(data);
+    return { data: enriched, total, page, pages: Math.ceil(total / limite) };
   }
 
-  async findOne(id: string): Promise<ActivitePerOp> {
+  async findOne(id: string): Promise<any> {
     const a = await this.repo.findOne({
       where: { id },
-      relations: ['patient', 'chirurgien', 'anesthesiste', 'constantes'],
+      relations: ['chirurgien', 'anesthesiste', 'constantes'],
     });
     if (!a) throw new NotFoundException(`Activité ${id} non trouvée`);
-    return a;
+    const [enriched] = await this.accueilClient.enrichWithIdentity([a]);
+    return enriched;
   }
 
   async update(id: string, dto: UpdateActivitePerOpDto): Promise<ActivitePerOp> {
-    const a = await this.findOne(id);
+    const a = await this.repo.findOne({ where: { id } });
+    if (!a) throw new NotFoundException(`Activité ${id} non trouvée`);
     return this.repo.save(Object.assign(a, dto));
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    await this.findOne(id);
+    const a = await this.repo.findOne({ where: { id } });
+    if (!a) throw new NotFoundException(`Activité ${id} non trouvée`);
     await this.repo.delete(id);
     return { message: 'Activité supprimée' };
   }

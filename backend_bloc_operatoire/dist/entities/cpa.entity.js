@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CPA = exports.StatutCPA = exports.DecisionCPA = exports.ScoreASA = void 0;
 const typeorm_1 = require("typeorm");
-const patient_entity_1 = require("./patient.entity");
 const medecin_entity_1 = require("./medecin.entity");
 const premedicament_entity_1 = require("./premedicament.entity");
 var ScoreASA;
@@ -37,7 +36,6 @@ var StatutCPA;
 })(StatutCPA || (exports.StatutCPA = StatutCPA = {}));
 let CPA = class CPA {
     id;
-    patient;
     patientId;
     anesthesiste;
     anesthesisteId;
@@ -79,10 +77,7 @@ __decorate([
     __metadata("design:type", String)
 ], CPA.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => patient_entity_1.Patient, { eager: true }),
-    __metadata("design:type", patient_entity_1.Patient)
-], CPA.prototype, "patient", void 0);
-__decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], CPA.prototype, "patientId", void 0);

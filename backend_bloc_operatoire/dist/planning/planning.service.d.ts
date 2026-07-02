@@ -1,15 +1,23 @@
 import { Repository } from 'typeorm';
 import { CreneauBloc, TypeRDV } from '../entities/creneau-bloc.entity';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
+import { AccueilClient } from '../external/accueil.client';
 export declare class PlanningService {
     private creneauRepo;
-    private patientRepo;
-    constructor(creneauRepo: Repository<CreneauBloc>, patientRepo: Repository<Patient>);
-    getPlanningJour(jour: string, type?: TypeRDV): Promise<CreneauBloc[]>;
-    getPlanningSemaine(debut: string, fin: string, type?: TypeRDV): Promise<CreneauBloc[]>;
+    private patientBlocRepo;
+    private accueilClient;
+    constructor(creneauRepo: Repository<CreneauBloc>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient);
+    getPlanningJour(jour: string, type?: TypeRDV): Promise<(CreneauBloc & {
+        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+    })[]>;
+    getPlanningSemaine(debut: string, fin: string, type?: TypeRDV): Promise<(CreneauBloc & {
+        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+    })[]>;
     reserverCreneau(dto: any): Promise<CreneauBloc[]>;
     annulerCreneau(id: string): Promise<CreneauBloc>;
-    getUrgencesEnAttente(): Promise<CreneauBloc[]>;
+    getUrgencesEnAttente(): Promise<(CreneauBloc & {
+        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+    })[]>;
     transfererCpaVersVpa(dto: {
         patientId: string;
         chirurgienId: string;

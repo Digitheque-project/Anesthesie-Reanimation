@@ -6,12 +6,14 @@ export declare class ScoreSCCREController {
     constructor(service: ScoreSCCREService);
     create(dto: CreateScoreSCCREDto): Promise<import("../entities").ScoreSCCRE>;
     findAll(p?: number, l?: number): Promise<{
-        data: import("../entities").ScoreSCCRE[];
+        data: (import("../entities").ScoreSCCRE & {
+            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+        })[];
         total: number;
         page: number;
         pages: number;
     }>;
-    findOne(id: string): Promise<import("../entities").ScoreSCCRE>;
+    findOne(id: string): Promise<any>;
     update(id: string, dto: UpdateScoreSCCREDto): Promise<import("../entities").ScoreSCCRE>;
     remove(id: string): Promise<{
         message: string;

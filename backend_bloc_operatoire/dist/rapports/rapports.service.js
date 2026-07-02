@@ -16,36 +16,39 @@ exports.RapportsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const score_sccre_entity_1 = require("../entities/score-sccre.entity");
 const medecin_entity_1 = require("../entities/medecin.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let RapportsService = class RapportsService {
-    patientRepo;
+    patientBlocRepo;
     activiteRepo;
     scoreRepo;
     medecinRepo;
     cpaRepository;
     notifRepo;
-    constructor(patientRepo, activiteRepo, scoreRepo, medecinRepo, cpaRepository, notifRepo) {
-        this.patientRepo = patientRepo;
+    accueilClient;
+    constructor(patientBlocRepo, activiteRepo, scoreRepo, medecinRepo, cpaRepository, notifRepo, accueilClient) {
+        this.patientBlocRepo = patientBlocRepo;
         this.activiteRepo = activiteRepo;
         this.scoreRepo = scoreRepo;
         this.medecinRepo = medecinRepo;
         this.cpaRepository = cpaRepository;
         this.notifRepo = notifRepo;
+        this.accueilClient = accueilClient;
     }
     async statistiquesGenerales(dateDebut, dateFin) {
         const whereAct = dateDebut && dateFin ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
         const [totalPatients, totalOperations, totalUrgences, totalScores, patientsParStatut, urgencesParNiveau, totalMedecins,] = await Promise.all([
-            this.patientRepo.count(),
+            this.patientBlocRepo.count(),
             this.activiteRepo.count({ where: whereAct }),
-            this.patientRepo.count({ where: { niveauUrgence: 'URGENT' } }),
+            this.patientBlocRepo.count({ where: { niveauUrgence: 'URGENT' } }),
             this.scoreRepo.count(),
-            this.patientRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
-            this.patientRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').groupBy('p.niveauUrgence').getRawMany(),
+            this.patientBlocRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
+            this.patientBlocRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').groupBy('p.niveauUrgence').getRawMany(),
             this.medecinRepo.count(),
         ]);
         return {
@@ -72,7 +75,8 @@ let RapportsService = class RapportsService {
             .getRawMany();
     }
     async cpaEnAttente() {
-        return this.notifRepo.find({ where: { statut: 'EN_ATTENTE' }, relations: ['patient', 'chirurgien'], order: { createdAt: 'ASC' } });
+        const data = await this.notifRepo.find({ where: { statut: 'EN_ATTENTE' }, relations: ['chirurgien'], order: { createdAt: 'ASC' } });
+        return this.accueilClient.enrichWithIdentity(data);
     }
     async tauxOccupation(periode = 'mois') {
         return this.activiteRepo
@@ -97,7 +101,7 @@ let RapportsService = class RapportsService {
 exports.RapportsService = RapportsService;
 exports.RapportsService = RapportsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(patient_entity_1.Patient)),
+    __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(activite_per_op_entity_1.ActivitePerOp)),
     __param(2, (0, typeorm_1.InjectRepository)(score_sccre_entity_1.ScoreSCCRE)),
     __param(3, (0, typeorm_1.InjectRepository)(medecin_entity_1.Medecin)),
@@ -108,6 +112,7 @@ exports.RapportsService = RapportsService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], RapportsService);
 //# sourceMappingURL=rapports.service.js.map

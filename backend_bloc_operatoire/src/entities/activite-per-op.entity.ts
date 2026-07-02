@@ -6,8 +6,8 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 import { ConstantePerOp } from './constante-per-op.entity';
 
@@ -16,9 +16,7 @@ export class ActivitePerOp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Res, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { ExportsService } from './exports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -25,7 +25,7 @@ export class ExportsController {
   }
 
   @Get('patient/:id/pdf')
-  async exportPatientJSON(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+  async exportPatientJSON(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.exportsService.exportPatientJSON(id);
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename=dossier_json_${id}.pdf`);

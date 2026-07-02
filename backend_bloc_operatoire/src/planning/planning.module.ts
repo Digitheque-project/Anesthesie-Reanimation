@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { PlanningService } from './planning.service';
 import { PlanningController } from './planning.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CreneauBloc, Patient])],
+  imports: [TypeOrmModule.forFeature([CreneauBloc, PatientBloc])],
   controllers: [PlanningController],
   providers: [PlanningService],
   exports: [PlanningService],

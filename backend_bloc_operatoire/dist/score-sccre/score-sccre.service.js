@@ -17,29 +17,46 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const score_sccre_entity_1 = require("../entities/score-sccre.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let ScoreSCCREService = class ScoreSCCREService {
     repo;
-    constructor(repo) {
+    accueilClient;
+    constructor(repo, accueilClient) {
         this.repo = repo;
+        this.accueilClient = accueilClient;
     }
     async create(dto) { const saved = await this.repo.save(this.repo.create(dto)); return Array.isArray(saved) ? saved[0] : saved; }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ relations: ['patient', 'anesthesiste'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        const [data, total] = await this.repo.findAndCount({ relations: ['anesthesiste'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const s = await this.repo.findOne({ where: { id }, relations: ['patient', 'anesthesiste'] });
+        const s = await this.repo.findOne({ where: { id }, relations: ['anesthesiste'] });
         if (!s)
             throw new common_1.NotFoundException(`Score ${id} non trouvé`);
-        return s;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([s]);
+        return enriched;
     }
-    async update(id, dto) { const s = await this.findOne(id); return this.repo.save(Object.assign(s, dto)); }
-    async remove(id) { await this.findOne(id); await this.repo.delete(id); return { message: 'Score supprimé' }; }
+    async update(id, dto) {
+        const s = await this.repo.findOne({ where: { id } });
+        if (!s)
+            throw new common_1.NotFoundException(`Score ${id} non trouvé`);
+        return this.repo.save(Object.assign(s, dto));
+    }
+    async remove(id) {
+        const s = await this.repo.findOne({ where: { id } });
+        if (!s)
+            throw new common_1.NotFoundException(`Score ${id} non trouvé`);
+        await this.repo.delete(id);
+        return { message: 'Score supprimé' };
+    }
 };
 exports.ScoreSCCREService = ScoreSCCREService;
 exports.ScoreSCCREService = ScoreSCCREService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(score_sccre_entity_1.ScoreSCCRE)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], ScoreSCCREService);
 //# sourceMappingURL=score-sccre.service.js.map

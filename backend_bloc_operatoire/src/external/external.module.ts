@@ -1,0 +1,13 @@
+import { Global, Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
+import { AccueilClient } from './accueil.client';
+import { ServiceChuClient } from './service-chu.client';
+import { EndoscopieClient } from './endoscopie.client';
+
+@Global()
+@Module({
+  imports: [HttpModule.register({ timeout: 45000 })],
+  providers: [AccueilClient, ServiceChuClient, EndoscopieClient],
+  exports: [AccueilClient, ServiceChuClient, EndoscopieClient],
+})
+export class ExternalModule {}

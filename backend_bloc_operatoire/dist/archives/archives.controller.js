@@ -31,14 +31,14 @@ let ArchivesController = class ArchivesController {
 exports.ArchivesController = ArchivesController;
 __decorate([
     (0, common_1.Get)('dossier/:patientId'),
-    __param(0, (0, common_1.Param)('patientId', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('patientId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], ArchivesController.prototype, "getDossierComplet", null);
 __decorate([
     (0, common_1.Get)('resume/:patientId'),
-    __param(0, (0, common_1.Param)('patientId', common_1.ParseUUIDPipe)),
+    __param(0, (0, common_1.Param)('patientId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)

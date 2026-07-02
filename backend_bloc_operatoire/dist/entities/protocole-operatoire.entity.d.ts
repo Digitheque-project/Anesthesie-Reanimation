@@ -1,9 +1,7 @@
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 import { Drainage } from './drainage.entity';
 export declare class ProtocoleOperatoire {
     id: string;
-    patient: Patient;
     patientId: string;
     dateOperation: Date;
     chirurgien: Medecin;

@@ -17,29 +17,46 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const sortie_reveil_entity_1 = require("../entities/sortie-reveil.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let SortieReveilService = class SortieReveilService {
     repo;
-    constructor(repo) {
+    accueilClient;
+    constructor(repo, accueilClient) {
         this.repo = repo;
+        this.accueilClient = accueilClient;
     }
     async create(dto) { const saved = await this.repo.save(this.repo.create(dto)); return Array.isArray(saved) ? saved[0] : saved; }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ relations: ['patient', 'scoreSCCRE', 'medecin'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        const [data, total] = await this.repo.findAndCount({ relations: ['scoreSCCRE', 'medecin'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const s = await this.repo.findOne({ where: { id }, relations: ['patient', 'scoreSCCRE', 'medecin'] });
+        const s = await this.repo.findOne({ where: { id }, relations: ['scoreSCCRE', 'medecin'] });
         if (!s)
             throw new common_1.NotFoundException(`Sortie ${id} non trouvée`);
-        return s;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([s]);
+        return enriched;
     }
-    async update(id, dto) { const s = await this.findOne(id); return this.repo.save(Object.assign(s, dto)); }
-    async remove(id) { await this.findOne(id); await this.repo.delete(id); return { message: 'Sortie supprimée' }; }
+    async update(id, dto) {
+        const s = await this.repo.findOne({ where: { id } });
+        if (!s)
+            throw new common_1.NotFoundException(`Sortie ${id} non trouvée`);
+        return this.repo.save(Object.assign(s, dto));
+    }
+    async remove(id) {
+        const s = await this.repo.findOne({ where: { id } });
+        if (!s)
+            throw new common_1.NotFoundException(`Sortie ${id} non trouvée`);
+        await this.repo.delete(id);
+        return { message: 'Sortie supprimée' };
+    }
 };
 exports.SortieReveilService = SortieReveilService;
 exports.SortieReveilService = SortieReveilService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(sortie_reveil_entity_1.SortieReveil)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], SortieReveilService);
 //# sourceMappingURL=sortie-reveil.service.js.map

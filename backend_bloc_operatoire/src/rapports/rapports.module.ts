@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ScoreSCCRE } from '../entities/score-sccre.entity';
 import { Medecin } from '../entities/medecin.entity';
@@ -10,7 +10,7 @@ import { RapportsService } from './rapports.service';
 import { RapportsController } from './rapports.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Patient, ActivitePerOp, ScoreSCCRE, Medecin, CPA, NotificationCPA])],
+  imports: [TypeOrmModule.forFeature([PatientBloc, ActivitePerOp, ScoreSCCRE, Medecin, CPA, NotificationCPA])],
   controllers: [RapportsController],
   providers: [RapportsService],
   exports: [RapportsService],

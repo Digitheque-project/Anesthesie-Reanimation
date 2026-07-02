@@ -6,12 +6,14 @@ export declare class ProtocoleOperatoireController {
     constructor(service: ProtocoleOperatoireService);
     create(dto: CreateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
     findAll(p?: number, l?: number): Promise<{
-        data: import("../entities").ProtocoleOperatoire[];
+        data: (import("../entities").ProtocoleOperatoire & {
+            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+        })[];
         total: number;
         page: number;
         pages: number;
     }>;
-    findOne(id: string): Promise<import("../entities").ProtocoleOperatoire>;
+    findOne(id: string): Promise<any>;
     update(id: string, dto: UpdateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
     remove(id: string): Promise<{
         message: string;

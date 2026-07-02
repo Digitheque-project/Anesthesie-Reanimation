@@ -16,7 +16,7 @@ exports.ArchivesService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const vpa_entity_1 = require("../entities/vpa.entity");
 const bon_commande_anesthesie_entity_1 = require("../entities/bon-commande-anesthesie.entity");
@@ -27,8 +27,9 @@ const sortie_reveil_entity_1 = require("../entities/sortie-reveil.entity");
 const checklist_avant_op_entity_1 = require("../entities/checklist-avant-op.entity");
 const checklist_pendant_op_entity_1 = require("../entities/checklist-pendant-op.entity");
 const checklist_apres_op_entity_1 = require("../entities/checklist-apres-op.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let ArchivesService = class ArchivesService {
-    patientRepo;
+    patientBlocRepo;
     cpaRepository;
     vpaRepository;
     bonRepo;
@@ -39,8 +40,9 @@ let ArchivesService = class ArchivesService {
     checklistAvantRepo;
     checklistPendantRepo;
     checklistApresRepo;
-    constructor(patientRepo, cpaRepository, vpaRepository, bonRepo, activiteRepo, protocoleRepo, scoreRepo, sortieRepo, checklistAvantRepo, checklistPendantRepo, checklistApresRepo) {
-        this.patientRepo = patientRepo;
+    accueilClient;
+    constructor(patientBlocRepo, cpaRepository, vpaRepository, bonRepo, activiteRepo, protocoleRepo, scoreRepo, sortieRepo, checklistAvantRepo, checklistPendantRepo, checklistApresRepo, accueilClient) {
+        this.patientBlocRepo = patientBlocRepo;
         this.cpaRepository = cpaRepository;
         this.vpaRepository = vpaRepository;
         this.bonRepo = bonRepo;
@@ -51,11 +53,17 @@ let ArchivesService = class ArchivesService {
         this.checklistAvantRepo = checklistAvantRepo;
         this.checklistPendantRepo = checklistPendantRepo;
         this.checklistApresRepo = checklistApresRepo;
+        this.accueilClient = accueilClient;
+    }
+    async getPatientEnrichi(patientId) {
+        const suivi = await this.patientBlocRepo.findOne({ where: { patientId } });
+        if (!suivi)
+            throw new common_1.NotFoundException('Patient non trouvé');
+        const identite = await this.accueilClient.getPatient(patientId);
+        return { ...suivi, ...identite, patientId };
     }
     async getDossierComplet(patientId) {
-        const patient = await this.patientRepo.findOne({ where: { id: patientId } });
-        if (!patient)
-            throw new common_1.NotFoundException('Patient non trouvé');
+        const patient = await this.getPatientEnrichi(patientId);
         const [cpa, vpa, bons, checklistsAvant, checklistsPendant, checklistsApres, activites, protocoles, scores, sorties] = await Promise.all([
             this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments', 'anesthesiste'] }),
             this.vpaRepository.find({ where: { patientId }, relations: ['anesthesiste'] }),
@@ -84,9 +92,7 @@ let ArchivesService = class ArchivesService {
         };
     }
     async getResumePatient(patientId) {
-        const patient = await this.patientRepo.findOne({ where: { id: patientId } });
-        if (!patient)
-            throw new common_1.NotFoundException('Patient non trouvé');
+        const patient = await this.getPatientEnrichi(patientId);
         const nbInterventions = await this.activiteRepo.count({ where: { patientId } });
         const dernierScore = await this.scoreRepo.findOne({ where: { patientId }, order: { createdAt: 'DESC' } });
         return { patient, nombreInterventions: nbInterventions, dernierScoreSCCRE: dernierScore?.scoreTotal || null, statutActuel: patient.statut };
@@ -95,7 +101,7 @@ let ArchivesService = class ArchivesService {
 exports.ArchivesService = ArchivesService;
 exports.ArchivesService = ArchivesService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(patient_entity_1.Patient)),
+    __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
     __param(2, (0, typeorm_1.InjectRepository)(vpa_entity_1.VPA)),
     __param(3, (0, typeorm_1.InjectRepository)(bon_commande_anesthesie_entity_1.BonCommandeAnesthesie)),
@@ -116,6 +122,7 @@ exports.ArchivesService = ArchivesService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], ArchivesService);
 //# sourceMappingURL=archives.service.js.map

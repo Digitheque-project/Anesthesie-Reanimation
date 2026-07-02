@@ -30,7 +30,7 @@ async function bootstrap() {
   // ✅ Swagger accessible à /bloc/api/docs
   SwaggerModule.setup('bloc/api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3333;
   await app.listen(port);
   console.log(`🚀 Backend démarré sur le port ${port}`);
 }

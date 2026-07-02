@@ -17,16 +17,25 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const cpa_entity_1 = require("../entities/cpa.entity");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const premedicament_entity_1 = require("../entities/premedicament.entity");
+const accueil_client_1 = require("../external/accueil.client");
+const endoscopie_client_1 = require("../external/endoscopie.client");
+const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cpa-externe.service");
 let CPAService = class CPAService {
     cpaRepository;
-    patientRepo;
+    patientBlocRepo;
     premedRepository;
-    constructor(cpaRepository, patientRepo, premedRepository) {
+    accueilClient;
+    endoscopieClient;
+    demandeCpaExterneService;
+    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, demandeCpaExterneService) {
         this.cpaRepository = cpaRepository;
-        this.patientRepo = patientRepo;
+        this.patientBlocRepo = patientBlocRepo;
         this.premedRepository = premedRepository;
+        this.accueilClient = accueilClient;
+        this.endoscopieClient = endoscopieClient;
+        this.demandeCpaExterneService = demandeCpaExterneService;
     }
     async create(dto) {
         const { premedicaments, ...cpaData } = dto;
@@ -38,30 +47,45 @@ let CPAService = class CPAService {
             await this.premedRepository.save(premeds);
         }
         if (dto.patientId) {
-            await this.patientRepo.update(dto.patientId, { statut: patient_entity_1.PatientStatut.CPA_REALISE });
+            await this.patientBlocRepo.update(dto.patientId, { statut: patient_bloc_entity_1.PatientStatut.CPA_REALISE });
+            const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
+            if (demande) {
+                const apte = saved.decision === cpa_entity_1.DecisionCPA.APTE;
+                await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
+                await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
+                    dateCpa: saved.dateConsultation,
+                    observations: saved.notesIncidents,
+                });
+            }
         }
         return this.findOne(saved.id);
     }
     async findAll(page = 1, limite = 10) {
         const [data, total] = await this.cpaRepository.findAndCount({
-            relations: ['patient', 'anesthesiste', 'premedicaments'],
+            relations: ['anesthesiste', 'premedicaments'],
             skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' }
         });
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const cpa = await this.cpaRepository.findOne({ where: { id }, relations: ['patient', 'anesthesiste', 'premedicaments'] });
+        const cpa = await this.cpaRepository.findOne({ where: { id }, relations: ['anesthesiste', 'premedicaments'] });
         if (!cpa)
             throw new common_1.NotFoundException(`CPA ${id} non trouvée`);
-        return cpa;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([cpa]);
+        return enriched;
     }
     async update(id, dto) {
-        const cpa = await this.findOne(id);
+        const cpa = await this.cpaRepository.findOne({ where: { id } });
+        if (!cpa)
+            throw new common_1.NotFoundException(`CPA ${id} non trouvée`);
         Object.assign(cpa, dto);
         return this.cpaRepository.save(cpa);
     }
     async remove(id) {
-        await this.findOne(id);
+        const cpa = await this.cpaRepository.findOne({ where: { id } });
+        if (!cpa)
+            throw new common_1.NotFoundException(`CPA ${id} non trouvée`);
         await this.cpaRepository.delete(id);
         return { message: 'CPA supprimée' };
     }
@@ -70,10 +94,13 @@ exports.CPAService = CPAService;
 exports.CPAService = CPAService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
-    __param(1, (0, typeorm_1.InjectRepository)(patient_entity_1.Patient)),
+    __param(1, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(2, (0, typeorm_1.InjectRepository)(premedicament_entity_1.Premedicament)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient,
+        endoscopie_client_1.EndoscopieClient,
+        demande_cpa_externe_service_1.DemandeCpaExterneService])
 ], CPAService);
 //# sourceMappingURL=cpa.service.js.map

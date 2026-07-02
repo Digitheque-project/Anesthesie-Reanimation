@@ -1,4 +1,3 @@
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 export declare enum StatutCreneau {
     PLANIFIE = "PLANIFIE",
@@ -16,7 +15,6 @@ export declare class CreneauBloc {
     heureDebut: string;
     heureFin: string;
     salle: string;
-    patient: Patient;
     patientId: string;
     chirurgien: Medecin;
     chirurgienId: string;

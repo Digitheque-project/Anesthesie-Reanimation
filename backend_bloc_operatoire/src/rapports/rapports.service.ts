@@ -1,22 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ScoreSCCRE } from '../entities/score-sccre.entity';
 import { Medecin } from '../entities/medecin.entity';
 import { CPA } from '../entities/cpa.entity';
 import { NotificationCPA } from '../entities/notification-cpa.entity';
+import { AccueilClient } from '../external/accueil.client';
 
 @Injectable()
 export class RapportsService {
   constructor(
-    @InjectRepository(Patient) private patientRepo: Repository<Patient>,
+    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(ActivitePerOp) private activiteRepo: Repository<ActivitePerOp>,
     @InjectRepository(ScoreSCCRE) private scoreRepo: Repository<ScoreSCCRE>,
     @InjectRepository(Medecin) private medecinRepo: Repository<Medecin>,
     @InjectRepository(CPA) private cpaRepository: Repository<CPA>,
     @InjectRepository(NotificationCPA) private notifRepo: Repository<NotificationCPA>,
+    private accueilClient: AccueilClient,
   ) {}
 
   async statistiquesGenerales(dateDebut?: string, dateFin?: string) {
@@ -26,12 +28,12 @@ export class RapportsService {
       totalPatients, totalOperations, totalUrgences, totalScores,
       patientsParStatut, urgencesParNiveau, totalMedecins,
     ] = await Promise.all([
-      this.patientRepo.count(),
+      this.patientBlocRepo.count(),
       this.activiteRepo.count({ where: whereAct }),
-      this.patientRepo.count({ where: { niveauUrgence: 'URGENT' as any } }),
+      this.patientBlocRepo.count({ where: { niveauUrgence: 'URGENT' as any } }),
       this.scoreRepo.count(),
-      this.patientRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
-      this.patientRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').groupBy('p.niveauUrgence').getRawMany(),
+      this.patientBlocRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
+      this.patientBlocRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').groupBy('p.niveauUrgence').getRawMany(),
       this.medecinRepo.count(),
     ]);
 
@@ -61,7 +63,8 @@ export class RapportsService {
   }
 
   async cpaEnAttente() {
-    return this.notifRepo.find({ where: { statut: 'EN_ATTENTE' as any }, relations: ['patient', 'chirurgien'], order: { createdAt: 'ASC' } });
+    const data = await this.notifRepo.find({ where: { statut: 'EN_ATTENTE' as any }, relations: ['chirurgien'], order: { createdAt: 'ASC' } });
+    return this.accueilClient.enrichWithIdentity(data);
   }
 
   async tauxOccupation(periode: string = 'mois') {

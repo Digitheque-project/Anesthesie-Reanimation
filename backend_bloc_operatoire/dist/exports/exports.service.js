@@ -49,18 +49,22 @@ exports.ExportsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
+const accueil_client_1 = require("../external/accueil.client");
 const ExcelJS = __importStar(require("exceljs"));
 let ExportsService = class ExportsService {
-    patientRepo;
+    patientBlocRepo;
     activiteRepo;
-    constructor(patientRepo, activiteRepo) {
-        this.patientRepo = patientRepo;
+    accueilClient;
+    constructor(patientBlocRepo, activiteRepo, accueilClient) {
+        this.patientBlocRepo = patientBlocRepo;
         this.activiteRepo = activiteRepo;
+        this.accueilClient = accueilClient;
     }
     async exportPatientsExcel() {
-        const patients = await this.patientRepo.find({ order: { nom: 'ASC' } });
+        const patients = await this.patientBlocRepo.find({ order: { createdAt: 'DESC' } });
+        const enriched = await this.accueilClient.enrichWithIdentity(patients);
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Patients');
         sheet.columns = [
@@ -71,11 +75,19 @@ let ExportsService = class ExportsService {
             { header: 'Urgence', key: 'niveauUrgence', width: 15 },
             { header: 'Chambre', key: 'chambre', width: 10 },
         ];
-        patients.forEach((p) => sheet.addRow(p));
+        enriched.forEach((p) => sheet.addRow({
+            idDossier: p.idDossier,
+            nom: p.patient?.nom ?? '',
+            prenom: p.patient?.prenom ?? '',
+            statut: p.statut,
+            niveauUrgence: p.niveauUrgence,
+            chambre: p.chambre,
+        }));
         return workbook.xlsx.writeBuffer();
     }
     async exportPlanningExcel(date) {
-        const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) }, relations: ['patient', 'chirurgien'] });
+        const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) }, relations: ['chirurgien'] });
+        const enriched = await this.accueilClient.enrichWithIdentity(activites);
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Planning');
         sheet.columns = [
@@ -83,22 +95,28 @@ let ExportsService = class ExportsService {
             { header: 'Chirurgien', key: 'chirurgien', width: 30 },
             { header: 'Date', key: 'date', width: 15 },
         ];
-        activites.forEach((a) => sheet.addRow({ patient: `${a.patient.nom} ${a.patient.prenom}`, chirurgien: `${a.chirurgien.nom} ${a.chirurgien.prenom}`, date: a.dateOperation }));
+        enriched.forEach((a) => sheet.addRow({
+            patient: a.patient ? `${a.patient.nom} ${a.patient.prenom}` : a.patientId,
+            chirurgien: `${a.chirurgien.nom} ${a.chirurgien.prenom}`,
+            date: a.dateOperation,
+        }));
         return workbook.xlsx.writeBuffer();
     }
     async exportPatientJSON(patientId) {
-        const patient = await this.patientRepo.findOne({ where: { id: patientId } });
+        const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
-        return patient;
+        const identite = await this.accueilClient.getPatient(patientId);
+        return { ...patient, ...identite, patientId };
     }
 };
 exports.ExportsService = ExportsService;
 exports.ExportsService = ExportsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(patient_entity_1.Patient)),
+    __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(activite_per_op_entity_1.ActivitePerOp)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], ExportsService);
 //# sourceMappingURL=exports.service.js.map

@@ -1,9 +1,7 @@
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 import { ConstantePerOp } from './constante-per-op.entity';
 export declare class ActivitePerOp {
     id: string;
-    patient: Patient;
     patientId: string;
     chirurgien: Medecin;
     chirurgienId: string;

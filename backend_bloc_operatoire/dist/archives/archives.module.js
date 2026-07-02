@@ -9,7 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ArchivesModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const patient_entity_1 = require("../entities/patient.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const vpa_entity_1 = require("../entities/vpa.entity");
 const bon_commande_anesthesie_entity_1 = require("../entities/bon-commande-anesthesie.entity");
@@ -29,7 +29,7 @@ exports.ArchivesModule = ArchivesModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([
-                patient_entity_1.Patient, cpa_entity_1.CPA, vpa_entity_1.VPA, bon_commande_anesthesie_entity_1.BonCommandeAnesthesie,
+                patient_bloc_entity_1.PatientBloc, cpa_entity_1.CPA, vpa_entity_1.VPA, bon_commande_anesthesie_entity_1.BonCommandeAnesthesie,
                 activite_per_op_entity_1.ActivitePerOp, protocole_operatoire_entity_1.ProtocoleOperatoire,
                 score_sccre_entity_1.ScoreSCCRE, sortie_reveil_entity_1.SortieReveil,
                 checklist_avant_op_entity_1.ChecklistAvantOp, checklist_pendant_op_entity_1.ChecklistPendantOp, checklist_apres_op_entity_1.ChecklistApresOp,

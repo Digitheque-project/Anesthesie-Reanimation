@@ -6,7 +6,9 @@ export declare class NotificationCPAController {
     constructor(service: NotificationCPAService);
     create(d: CreateNotificationCPADto): Promise<import("../entities").NotificationCPA>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").NotificationCPA | import("../entities").WebhookNotification)[];
+        data: (import("../entities").WebhookNotification | (import("../entities").NotificationCPA & {
+            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+        }))[];
         total: number;
         page: number;
         pages: number;
@@ -14,7 +16,7 @@ export declare class NotificationCPAController {
     getUnreadCount(): Promise<{
         unread: number;
     }>;
-    findOne(id: string): Promise<import("../entities").NotificationCPA>;
+    findOne(id: string): Promise<any>;
     update(id: string, d: UpdateNotificationCPADto): Promise<import("../entities").NotificationCPA>;
     planifier(id: string, dto: any): Promise<import("../entities").NotificationCPA>;
     remove(id: string): Promise<{

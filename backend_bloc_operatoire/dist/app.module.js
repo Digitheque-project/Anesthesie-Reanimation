@@ -5,6 +5,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
@@ -12,7 +15,7 @@ const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const patient_module_1 = require("./patient/patient.module");
+const patient_bloc_module_1 = require("./patient-bloc/patient-bloc.module");
 const medecin_module_1 = require("./medecin/medecin.module");
 const cpa_module_1 = require("./cpa/cpa.module");
 const vpa_module_1 = require("./vpa/vpa.module");
@@ -33,13 +36,17 @@ const checklist_pendant_op_module_1 = require("./checklist-pendant-op/checklist-
 const checklist_apres_op_module_1 = require("./checklist-apres-op/checklist-apres-op.module");
 const webhook_notification_module_1 = require("./webhook-notification/webhook-notification.module");
 const prescription_module_1 = require("./prescription/prescription.module");
+const demande_cpa_externe_module_1 = require("./demande-cpa-externe/demande-cpa-externe.module");
+const external_module_1 = require("./external/external.module");
+const external_services_config_1 = __importDefault(require("./config/external-services.config"));
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({ isGlobal: true }),
+            config_1.ConfigModule.forRoot({ isGlobal: true, load: [external_services_config_1.default] }),
+            external_module_1.ExternalModule,
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
@@ -51,7 +58,7 @@ exports.AppModule = AppModule = __decorate([
                     synchronize: true,
                 }),
             }),
-            patient_module_1.PatientModule,
+            patient_bloc_module_1.PatientBlocModule,
             medecin_module_1.MedecinModule,
             cpa_module_1.CPAModule,
             vpa_module_1.VPAModule,
@@ -72,6 +79,7 @@ exports.AppModule = AppModule = __decorate([
             checklist_apres_op_module_1.ChecklistApresOpModule,
             webhook_notification_module_1.WebhookNotificationModule,
             prescription_module_1.PrescriptionModule,
+            demande_cpa_externe_module_1.DemandeCpaExterneModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { Drainage } from '../entities/drainage.entity';
+import { AccueilClient } from '../external/accueil.client';
 import { CreateProtocoleOperatoireDto } from './dto/create-protocole-operatoire.dto';
 import { UpdateProtocoleOperatoireDto } from './dto/update-protocole-operatoire.dto';
 
@@ -11,6 +12,7 @@ export class ProtocoleOperatoireService {
   constructor(
     @InjectRepository(ProtocoleOperatoire) private repo: Repository<ProtocoleOperatoire>,
     @InjectRepository(Drainage) private drainageRepo: Repository<Drainage>,
+    private accueilClient: AccueilClient,
   ) {}
   async create(dto: CreateProtocoleOperatoireDto): Promise<ProtocoleOperatoire> {
     const { drainages, ...data } = dto as any;
@@ -20,14 +22,25 @@ export class ProtocoleOperatoireService {
     return this.findOne(saved.id);
   }
   async findAll(page = 1, limite = 10) {
-    const [data, total] = await this.repo.findAndCount({ relations: ['patient', 'chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-    return { data, total, page, pages: Math.ceil(total / limite) };
+    const [data, total] = await this.repo.findAndCount({ relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+    const enriched = await this.accueilClient.enrichWithIdentity(data);
+    return { data: enriched, total, page, pages: Math.ceil(total / limite) };
   }
-  async findOne(id: string): Promise<ProtocoleOperatoire> {
-    const p = await this.repo.findOne({ where: { id }, relations: ['patient', 'chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'] });
+  async findOne(id: string): Promise<any> {
+    const p = await this.repo.findOne({ where: { id }, relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'] });
     if (!p) throw new NotFoundException(`Protocole ${id} non trouvé`);
-    return p;
+    const [enriched] = await this.accueilClient.enrichWithIdentity([p]);
+    return enriched;
   }
-  async update(id: string, dto: UpdateProtocoleOperatoireDto): Promise<ProtocoleOperatoire> { const p = await this.findOne(id); return this.repo.save(Object.assign(p, dto)); }
-  async remove(id: string): Promise<{ message: string }> { await this.findOne(id); await this.repo.delete(id); return { message: 'Protocole supprimé' }; }
+  async update(id: string, dto: UpdateProtocoleOperatoireDto): Promise<ProtocoleOperatoire> {
+    const p = await this.repo.findOne({ where: { id } });
+    if (!p) throw new NotFoundException(`Protocole ${id} non trouvé`);
+    return this.repo.save(Object.assign(p, dto));
+  }
+  async remove(id: string): Promise<{ message: string }> {
+    const p = await this.repo.findOne({ where: { id } });
+    if (!p) throw new NotFoundException(`Protocole ${id} non trouvé`);
+    await this.repo.delete(id);
+    return { message: 'Protocole supprimé' };
+  }
 }

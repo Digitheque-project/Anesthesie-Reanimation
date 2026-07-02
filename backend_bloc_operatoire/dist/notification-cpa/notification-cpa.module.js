@@ -11,17 +11,21 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const notification_cpa_service_1 = require("./notification-cpa.service");
 const notification_cpa_controller_1 = require("./notification-cpa.controller");
+const notification_alerte_service_1 = require("./notification-alerte.service");
+const notification_alerte_controller_1 = require("./notification-alerte.controller");
 let NotificationCPAModule = class NotificationCPAModule {
 };
 exports.NotificationCPAModule = NotificationCPAModule;
 exports.NotificationCPAModule = NotificationCPAModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([notification_cpa_entity_1.NotificationCPA, webhook_notification_entity_1.WebhookNotification])],
-        controllers: [notification_cpa_controller_1.NotificationCPAController],
-        providers: [notification_cpa_service_1.NotificationCPAService],
-        exports: [notification_cpa_service_1.NotificationCPAService],
+        imports: [typeorm_1.TypeOrmModule.forFeature([notification_cpa_entity_1.NotificationCPA, webhook_notification_entity_1.WebhookNotification, patient_bloc_entity_1.PatientBloc, creneau_bloc_entity_1.CreneauBloc])],
+        controllers: [notification_cpa_controller_1.NotificationCPAController, notification_alerte_controller_1.NotificationAlerteController],
+        providers: [notification_cpa_service_1.NotificationCPAService, notification_alerte_service_1.NotificationAlerteService],
+        exports: [notification_cpa_service_1.NotificationCPAService, notification_alerte_service_1.NotificationAlerteService],
     })
 ], NotificationCPAModule);
 //# sourceMappingURL=notification-cpa.module.js.map

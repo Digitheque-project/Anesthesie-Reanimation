@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Patient } from './patient.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { VPA } from './vpa.entity';
 import { Medecin } from './medecin.entity';
 import { ItemCommande } from './item-commande.entity';
@@ -14,9 +13,7 @@ export class BonCommandeAnesthesie {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

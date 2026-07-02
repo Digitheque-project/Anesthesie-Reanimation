@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Patient } from './patient.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 export enum StatutChecklist {
   EN_COURS = 'EN_COURS',
@@ -11,9 +10,7 @@ export class ChecklistPendantOp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-  @Column() patientId: string;
+  @Index() @Column() patientId: string;
 
   @Column({ type: 'date' }) dateCreation: Date;
   @Column({ default: false }) identiteUltimeConfirmee: boolean;

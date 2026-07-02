@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Patient } from '../entities/patient.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
 import { VPA } from '../entities/vpa.entity';
 import { BonCommandeAnesthesie } from '../entities/bon-commande-anesthesie.entity';
@@ -12,11 +12,12 @@ import { SortieReveil } from '../entities/sortie-reveil.entity';
 import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
+import { AccueilClient } from '../external/accueil.client';
 
 @Injectable()
 export class ArchivesService {
   constructor(
-    @InjectRepository(Patient) private patientRepo: Repository<Patient>,
+    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(CPA) private cpaRepository: Repository<CPA>,
     @InjectRepository(VPA) private vpaRepository: Repository<VPA>,
     @InjectRepository(BonCommandeAnesthesie) private bonRepo: Repository<BonCommandeAnesthesie>,
@@ -27,11 +28,18 @@ export class ArchivesService {
     @InjectRepository(ChecklistAvantOp) private checklistAvantRepo: Repository<ChecklistAvantOp>,
     @InjectRepository(ChecklistPendantOp) private checklistPendantRepo: Repository<ChecklistPendantOp>,
     @InjectRepository(ChecklistApresOp) private checklistApresRepo: Repository<ChecklistApresOp>,
+    private accueilClient: AccueilClient,
   ) {}
 
+  private async getPatientEnrichi(patientId: string) {
+    const suivi = await this.patientBlocRepo.findOne({ where: { patientId } });
+    if (!suivi) throw new NotFoundException('Patient non trouvé');
+    const identite = await this.accueilClient.getPatient(patientId);
+    return { ...suivi, ...identite, patientId };
+  }
+
   async getDossierComplet(patientId: string): Promise<any> {
-    const patient = await this.patientRepo.findOne({ where: { id: patientId } });
-    if (!patient) throw new NotFoundException('Patient non trouvé');
+    const patient = await this.getPatientEnrichi(patientId);
 
     const [cpa, vpa, bons, checklistsAvant, checklistsPendant, checklistsApres, activites, protocoles, scores, sorties] = await Promise.all([
       this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments', 'anesthesiste'] }),
@@ -63,8 +71,7 @@ export class ArchivesService {
   }
 
   async getResumePatient(patientId: string): Promise<any> {
-    const patient = await this.patientRepo.findOne({ where: { id: patientId } });
-    if (!patient) throw new NotFoundException('Patient non trouvé');
+    const patient = await this.getPatientEnrichi(patientId);
     const nbInterventions = await this.activiteRepo.count({ where: { patientId } });
     const dernierScore = await this.scoreRepo.findOne({ where: { patientId }, order: { createdAt: 'DESC' } });
     return { patient, nombreInterventions: nbInterventions, dernierScoreSCCRE: dernierScore?.scoreTotal || null, statutActuel: patient.statut };

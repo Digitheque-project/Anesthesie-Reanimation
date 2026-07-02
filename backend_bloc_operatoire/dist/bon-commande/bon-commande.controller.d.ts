@@ -6,12 +6,14 @@ export declare class BonCommandeController {
     constructor(service: BonCommandeService);
     create(dto: CreateBonCommandeDto): Promise<import("../entities").BonCommandeAnesthesie>;
     findAll(p?: number, l?: number): Promise<{
-        data: import("../entities").BonCommandeAnesthesie[];
+        data: (import("../entities").BonCommandeAnesthesie & {
+            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
+        })[];
         total: number;
         page: number;
         pages: number;
     }>;
-    findOne(id: string): Promise<import("../entities").BonCommandeAnesthesie>;
+    findOne(id: string): Promise<any>;
     update(id: string, dto: UpdateBonCommandeDto): Promise<import("../entities").BonCommandeAnesthesie>;
     remove(id: string): Promise<{
         message: string;

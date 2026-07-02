@@ -18,12 +18,15 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const constante_per_op_entity_1 = require("../entities/constante-per-op.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let ActivitePerOpService = class ActivitePerOpService {
     repo;
     constanteRepo;
-    constructor(repo, constanteRepo) {
+    accueilClient;
+    constructor(repo, constanteRepo, accueilClient) {
         this.repo = repo;
         this.constanteRepo = constanteRepo;
+        this.accueilClient = accueilClient;
     }
     async create(dto) {
         const { constantes, ...data } = dto;
@@ -42,28 +45,34 @@ let ActivitePerOpService = class ActivitePerOpService {
     }
     async findAll(page = 1, limite = 10) {
         const [data, total] = await this.repo.findAndCount({
-            relations: ['patient', 'chirurgien', 'anesthesiste', 'constantes'],
+            relations: ['chirurgien', 'anesthesiste', 'constantes'],
             skip: (page - 1) * limite,
             take: limite,
             order: { createdAt: 'DESC' },
         });
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
         const a = await this.repo.findOne({
             where: { id },
-            relations: ['patient', 'chirurgien', 'anesthesiste', 'constantes'],
+            relations: ['chirurgien', 'anesthesiste', 'constantes'],
         });
         if (!a)
             throw new common_1.NotFoundException(`Activité ${id} non trouvée`);
-        return a;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([a]);
+        return enriched;
     }
     async update(id, dto) {
-        const a = await this.findOne(id);
+        const a = await this.repo.findOne({ where: { id } });
+        if (!a)
+            throw new common_1.NotFoundException(`Activité ${id} non trouvée`);
         return this.repo.save(Object.assign(a, dto));
     }
     async remove(id) {
-        await this.findOne(id);
+        const a = await this.repo.findOne({ where: { id } });
+        if (!a)
+            throw new common_1.NotFoundException(`Activité ${id} non trouvée`);
         await this.repo.delete(id);
         return { message: 'Activité supprimée' };
     }
@@ -74,6 +83,7 @@ exports.ActivitePerOpService = ActivitePerOpService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(activite_per_op_entity_1.ActivitePerOp)),
     __param(1, (0, typeorm_1.InjectRepository)(constante_per_op_entity_1.ConstantePerOp)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], ActivitePerOpService);
 //# sourceMappingURL=activite-per-op.service.js.map

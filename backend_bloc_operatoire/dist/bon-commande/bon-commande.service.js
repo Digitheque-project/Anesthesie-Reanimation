@@ -18,12 +18,15 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bon_commande_anesthesie_entity_1 = require("../entities/bon-commande-anesthesie.entity");
 const item_commande_entity_1 = require("../entities/item-commande.entity");
+const accueil_client_1 = require("../external/accueil.client");
 let BonCommandeService = class BonCommandeService {
     bonRepo;
     itemRepo;
-    constructor(bonRepo, itemRepo) {
+    accueilClient;
+    constructor(bonRepo, itemRepo, accueilClient) {
         this.bonRepo = bonRepo;
         this.itemRepo = itemRepo;
+        this.accueilClient = accueilClient;
     }
     async create(dto) {
         const { items, ...data } = dto;
@@ -35,17 +38,30 @@ let BonCommandeService = class BonCommandeService {
         return this.findOne(saved.id);
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.bonRepo.findAndCount({ relations: ['patient', 'vpa', 'chirurgien', 'anesthesiste', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        const [data, total] = await this.bonRepo.findAndCount({ relations: ['vpa', 'chirurgien', 'anesthesiste', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const bon = await this.bonRepo.findOne({ where: { id }, relations: ['patient', 'vpa', 'chirurgien', 'anesthesiste', 'items'] });
+        const bon = await this.bonRepo.findOne({ where: { id }, relations: ['vpa', 'chirurgien', 'anesthesiste', 'items'] });
         if (!bon)
             throw new common_1.NotFoundException(`Bon ${id} non trouvé`);
-        return bon;
+        const [enriched] = await this.accueilClient.enrichWithIdentity([bon]);
+        return enriched;
     }
-    async update(id, dto) { const bon = await this.findOne(id); return this.bonRepo.save(Object.assign(bon, dto)); }
-    async remove(id) { await this.findOne(id); await this.bonRepo.delete(id); return { message: 'Bon supprimé' }; }
+    async update(id, dto) {
+        const bon = await this.bonRepo.findOne({ where: { id } });
+        if (!bon)
+            throw new common_1.NotFoundException(`Bon ${id} non trouvé`);
+        return this.bonRepo.save(Object.assign(bon, dto));
+    }
+    async remove(id) {
+        const bon = await this.bonRepo.findOne({ where: { id } });
+        if (!bon)
+            throw new common_1.NotFoundException(`Bon ${id} non trouvé`);
+        await this.bonRepo.delete(id);
+        return { message: 'Bon supprimé' };
+    }
 };
 exports.BonCommandeService = BonCommandeService;
 exports.BonCommandeService = BonCommandeService = __decorate([
@@ -53,6 +69,7 @@ exports.BonCommandeService = BonCommandeService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(bon_commande_anesthesie_entity_1.BonCommandeAnesthesie)),
     __param(1, (0, typeorm_1.InjectRepository)(item_commande_entity_1.ItemCommande)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient])
 ], BonCommandeService);
 //# sourceMappingURL=bon-commande.service.js.map

@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
-import { Patient } from './patient.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Index } from 'typeorm';
 import { Medecin } from './medecin.entity';
 
 export enum StatutCreneau {
@@ -31,9 +30,7 @@ export class CreneauBloc {
   @Column({ length: 50 })
   salle: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

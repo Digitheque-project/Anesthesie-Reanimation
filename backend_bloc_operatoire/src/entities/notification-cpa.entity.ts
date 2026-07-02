@@ -5,8 +5,8 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
-import { Patient } from './patient.entity';
 import { Medecin } from './medecin.entity';
 
 export enum StatutNotificationCPA {
@@ -23,9 +23,7 @@ export class NotificationCPA {
   @Column()
   heurePrescription: string;
 
-  @ManyToOne(() => Patient, { eager: true })
-  patient: Patient;
-
+  @Index()
   @Column()
   patientId: string;
 

@@ -1,4 +1,4 @@
-export { Patient, PatientStatut, NiveauUrgence, Sexe } from './patient.entity';
+export { PatientBloc, PatientStatut, NiveauUrgence } from './patient-bloc.entity';
 export { Medecin, RoleMedecin, OrdreProfessionnel } from './medecin.entity';
 export { CPA, ScoreASA, DecisionCPA, StatutCPA } from './cpa.entity';
 export { VPA, StatutVPA } from './vpa.entity';
@@ -19,3 +19,4 @@ export { CreneauBloc, StatutCreneau, TypeRDV } from './creneau-bloc.entity';
 export { HistoriqueModification } from './historique-modification.entity';
 export { User } from '../user/user.entity';
 export { WebhookNotification } from "./webhook-notification.entity";
+export { DemandeCpaExterne, StatutDemandeCpaExterne } from "./demande-cpa-externe.entity";

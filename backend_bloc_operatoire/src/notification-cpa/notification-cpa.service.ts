@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
+import { AccueilClient } from '../external/accueil.client';
 import { CreateNotificationCPADto } from './dto/create-notification-cpa.dto';
 import { UpdateNotificationCPADto } from './dto/update-notification-cpa.dto';
 
@@ -13,6 +14,7 @@ export class NotificationCPAService {
     private readonly notificationRepo: Repository<NotificationCPA>,
     @InjectRepository(WebhookNotification)
     private readonly webhookRepo: Repository<WebhookNotification>,
+    private accueilClient: AccueilClient,
   ) {}
 
   async create(dto: CreateNotificationCPADto): Promise<NotificationCPA> {
@@ -22,12 +24,13 @@ export class NotificationCPAService {
 
   async findAll(page = 1, limite = 10) {
     // 1. Récupérer les notifications internes
-    const [internalData, internalTotal] = await this.notificationRepo.findAndCount({
-      relations: ['patient', 'chirurgien'],
+    const [internalDataRaw, internalTotal] = await this.notificationRepo.findAndCount({
+      relations: ['chirurgien'],
       skip: (page - 1) * limite,
       take: limite,
       order: { createdAt: 'DESC' },
     });
+    const internalData = await this.accueilClient.enrichWithIdentity(internalDataRaw);
 
     // 2. Récupérer les notifications externes
     const externalData = await this.webhookRepo.find({
@@ -60,25 +63,29 @@ export class NotificationCPAService {
     };
   }
 
-  async findOne(id: string): Promise<NotificationCPA> {
-    const n = await this.notificationRepo.findOne({ where: { id }, relations: ['patient', 'chirurgien'] });
+  async findOne(id: string): Promise<any> {
+    const n = await this.notificationRepo.findOne({ where: { id }, relations: ['chirurgien'] });
     if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
-    return n;
+    const [enriched] = await this.accueilClient.enrichWithIdentity([n]);
+    return enriched;
   }
 
   async planifierRDV(id: string, dto: any): Promise<NotificationCPA> {
-    const n = await this.findOne(id);
+    const n = await this.notificationRepo.findOne({ where: { id } });
+    if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
     n.statut = StatutNotificationCPA.RDV_PLANIFIE;
     return this.notificationRepo.save(n);
   }
 
   async update(id: string, dto: UpdateNotificationCPADto): Promise<NotificationCPA> {
-    const n = await this.findOne(id);
+    const n = await this.notificationRepo.findOne({ where: { id } });
+    if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
     return this.notificationRepo.save(Object.assign(n, dto));
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    await this.findOne(id);
+    const n = await this.notificationRepo.findOne({ where: { id } });
+    if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
     await this.notificationRepo.delete(id);
     return { message: 'Notification supprimée' };
   }
