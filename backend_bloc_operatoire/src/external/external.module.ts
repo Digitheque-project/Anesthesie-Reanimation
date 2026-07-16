@@ -14,7 +14,7 @@ import { NotificationBackClient } from './notification-back.client';
   providers: [
     {
       provide: AccueilClient,
-      useFactory: (config: ConfigService) => new AccueilClient(config.get<string>('externalServices.accueilApiUrl')),
+      useFactory: (config: ConfigService) => new AccueilClient(config.getOrThrow<string>('externalServices.accueilApiUrl')),
       inject: [ConfigService],
     },
     ServiceChuClient,

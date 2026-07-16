@@ -9,7 +9,7 @@ function isAxiosError(error: any): boolean {
 export class AccueilClient {
   private readonly baseUrl: string;
 
-  constructor(baseUrl: string = 'https://api.example.com') {
+  constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
