@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavItem } from "@/types/bloc";
+import { effacerSession, redirigerVersLogin } from "@/lib/auth/central-session";
 
 const navItems: NavItem[] = [
   {
@@ -95,7 +96,7 @@ export default function Sidebar() {
       <div className="mt-auto p-4 border-t border-surface-variant/20 space-y-1">
         <button
           className="w-full flex items-center gap-3 px-4 py-2 text-[#424752] hover:text-error transition-all group"
-          onClick={() => console.log("Logout")}
+          onClick={() => { effacerSession(); redirigerVersLogin(); }}
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>
           <span className="text-xs font-medium">Déconnexion</span>

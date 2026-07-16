@@ -7,12 +7,16 @@ import { usePathname } from 'next/navigation';
 import NotificationModal from '@/components/bloc/notification-cpa/NotificationModal';
 import { connecterNotificationsTempsReel, NotificationTempsReel } from '@/lib/notifications/socket';
 import { jouerSonPrescription, jouerSonPrescriptionUrgente } from '@/lib/notifications/sound';
+import { obtenirSessionValide } from '@/lib/auth/central-session';
 
 export default function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [session, setSession] = useState<ReturnType<typeof obtenirSessionValide>>(null);
   const pathname = usePathname();
+
+  useEffect(() => { setSession(obtenirSessionValide()); }, []);
 
   const fetchData = async () => {
     try {
@@ -108,8 +112,12 @@ export default function TopBar() {
 
         <div className="flex items-center gap-3 pl-2 border-l border-outline-variant/30">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold text-on-surface leading-tight">Dr. A. Durand</p>
-            <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-tighter">Anesthésiste-Réanimateur</p>
+            <p className="text-xs font-bold text-on-surface leading-tight">
+              {session ? `${session.payload.firstname} ${session.payload.name}` : '—'}
+            </p>
+            <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-tighter">
+              {session?.acces.roleName || ''}
+            </p>
           </div>
           <div className="w-10 h-10 rounded-full bg-primary-container overflow-hidden ring-2 ring-primary/10">
             <Image src="/images/avatar-default.png" alt="Avatar" width={40} height={40} className="object-cover" />

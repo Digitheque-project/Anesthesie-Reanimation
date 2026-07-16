@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -27,13 +28,17 @@ import { WebhookNotificationModule } from './webhook-notification/webhook-notifi
 import { PrescriptionModule } from './prescription/prescription.module';
 import { DemandeCpaExterneModule } from './demande-cpa-externe/demande-cpa-externe.module';
 import { ExternalModule } from './external/external.module';
+import { CentralAuthModule } from './central-auth/central-auth.module';
+import { CentralAuthGuard } from './central-auth/central-auth.guard';
 import externalServicesConfig from './config/external-services.config';
+import centralAuthConfig from './config/central-auth.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: [externalServicesConfig] }),
+    ConfigModule.forRoot({ isGlobal: true, load: [externalServicesConfig, centralAuthConfig] }),
     ScheduleModule.forRoot(),
     ExternalModule,
+    CentralAuthModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -69,6 +74,6 @@ import externalServicesConfig from './config/external-services.config';
     DemandeCpaExterneModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: CentralAuthGuard }],
 })
 export class AppModule {}

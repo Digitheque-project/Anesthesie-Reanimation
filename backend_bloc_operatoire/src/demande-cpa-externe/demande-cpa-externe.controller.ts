@@ -5,12 +5,15 @@ import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { StatutDemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Public } from '../central-auth/public.decorator';
 
 @ApiTags('Demandes CPA externes')
 @Controller('demandes-cpa-externes')
 export class DemandeCpaExterneController {
   constructor(private readonly service: DemandeCpaExterneService) {}
 
+  // Webhook entrant appelé par un service externe (ex: Endoscopie) — pas un utilisateur du SSO central.
+  @Public()
   @Post('receive')
   @HttpCode(200)
   @ApiOperation({ summary: '📋 Recevoir une demande de CPA/VPA d\'un service externe (ex: Endoscopie)' })

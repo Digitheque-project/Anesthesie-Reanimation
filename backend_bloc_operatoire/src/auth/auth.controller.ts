@@ -4,7 +4,11 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Public } from '../central-auth/public.decorator';
 
+// Auth locale historique — supplantée par le SSO central (voir CentralAuthGuard) comme
+// point d'entrée réel de l'application, conservée ici pour compatibilité.
+@Public()
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {

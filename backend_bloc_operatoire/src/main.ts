@@ -17,6 +17,7 @@ async function bootstrap() {
       'https://ton-frontend.onrender.com',
       'https://blocbackfront.onrender.com',
       'https://chu-bloc-backend.onrender.com',
+      'https://anesthesie-reanimation.onrender.com',
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,

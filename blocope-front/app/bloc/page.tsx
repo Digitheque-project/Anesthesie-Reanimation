@@ -6,6 +6,7 @@ import WelcomeBanner from '@/components/bloc/dashboard/WelcomeBanner'
 import EtatGlobalPatients from '@/components/bloc/dashboard/EtatGlobalPatients'
 import AlerteBandeau from '@/components/bloc/dashboard/AlerteBandeau'
 import GroupePlanningTable, { LignePlanning } from '@/components/bloc/dashboard/GroupePlanningTable'
+import { obtenirSessionValide } from '@/lib/auth/central-session'
 
 const nomPatient = (p: any) => `${(p?.nom || '').toUpperCase()}${p?.nom && p?.prenom ? ', ' : ''}${p?.prenom || ''}`.trim() || p?.patientId || p?.id || 'Patient'
 const priorite = (niveau?: string): LignePlanning['priorite'] => niveau === 'STAT' ? 'STAT' : niveau === 'URGENT' ? 'URGENT' : 'NORMAL'
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const [prescriptions, setPrescriptions] = useState<LignePlanning[]>([])
   const [patientsBloc, setPatientsBloc] = useState<LignePlanning[]>([])
   const [patientsReveil, setPatientsReveil] = useState<LignePlanning[]>([])
+  const session = obtenirSessionValide()
 
   useEffect(() => { chargerToutesLesDonnees() }, [])
 
@@ -96,7 +98,10 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <WelcomeBanner nom="Dr Sarah RASOANIRINA" role="CHIRURGIEN" />
+      <WelcomeBanner
+        nom={session ? `${session.payload.firstname} ${session.payload.name}` : ''}
+        role={session?.acces.roleName || null}
+      />
 
       {!loading && <AlerteBandeau count={statCount} message={`${statCount} patient${statCount > 1 ? 's' : ''} STAT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
 

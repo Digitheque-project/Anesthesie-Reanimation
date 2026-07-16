@@ -1,15 +1,5 @@
 'use client'
 
-const ROLE_LABELS: Record<string, string> = {
-  ROLE_ANESTHESISTE: 'Anesthésiste',
-  ROLE_CHIRURGIEN: 'Chirurgien',
-  ROLE_INFIRMIER_BLOC: 'Infirmier(ère) de Bloc',
-  ROLE_SECRETAIRE_MEDICALE: 'Secrétaire Médicale',
-  ROLE_DIRECTEUR_MEDICAL: 'Directeur Médical',
-  ROLE_ADMIN: 'Administrateur',
-  ROLE_AIDE_SOIGNANT: 'Aide-Soignant(e)',
-}
-
 interface WelcomeBannerProps {
   nom: string
   role: string | null
@@ -30,7 +20,7 @@ export default function WelcomeBanner({ nom, role }: WelcomeBannerProps) {
         <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">Bonjour, {nom || 'Utilisateur'}</h1>
         <p className="text-sm font-medium text-on-surface-variant flex items-center gap-2">
           <span className="material-symbols-outlined text-xs">calendar_month</span>
-          {dateDuJour()} — {ROLE_LABELS[role || ''] || role || 'Rôle inconnu'}
+          {dateDuJour()} — {role || 'Rôle inconnu'}
         </p>
       </div>
     </div>
