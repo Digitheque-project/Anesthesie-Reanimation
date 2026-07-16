@@ -9,6 +9,10 @@ import GroupePlanningTable, { LignePlanning } from '@/components/bloc/dashboard/
 
 const nomPatient = (p: any) => `${(p?.nom || '').toUpperCase()}${p?.nom && p?.prenom ? ', ' : ''}${p?.prenom || ''}`.trim() || p?.patientId || p?.id || 'Patient'
 const priorite = (niveau?: string): LignePlanning['priorite'] => niveau === 'STAT' ? 'STAT' : niveau === 'URGENT' ? 'URGENT' : 'NORMAL'
+const estAujourdhui = (date?: string | Date | null) => {
+  if (!date) return false
+  return new Date(date).toDateString() === new Date().toDateString()
+}
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -33,7 +37,7 @@ export default function DashboardPage() {
     if (statsRes.status === 'fulfilled') setStats(statsRes.value)
 
     if (notifsRes.status === 'fulfilled') {
-      const enAttente = (notifsRes.value?.data || []).filter((n: any) => n.statut === 'EN_ATTENTE')
+      const enAttente = (notifsRes.value?.data || []).filter((n: any) => n.statut === 'EN_ATTENTE' && estAujourdhui(n.createdAt))
       setPrescriptions(enAttente.map((n: any): LignePlanning => {
         const patientId = n.patient?.id || n.patientId
         return {
@@ -64,14 +68,18 @@ export default function DashboardPage() {
       }
     }
 
-    const pret = pretRes.status === 'fulfilled' ? (pretRes.value?.data || []) : []
-    const encours = encoursRes.status === 'fulfilled' ? (encoursRes.value?.data || []) : []
+    // Prévu aujourd'hui, ou sans date programmée (à planifier en priorité)
+    const duJour = (p: any) => !p.dateIntervention || estAujourdhui(p.dateIntervention)
+
+    const pret = (pretRes.status === 'fulfilled' ? (pretRes.value?.data || []) : []).filter(duJour)
+    const encours = (encoursRes.status === 'fulfilled' ? (encoursRes.value?.data || []) : []).filter(duJour)
     setPatientsBloc([
       ...pret.map(versLignePatient('PRET_POUR_BLOC', 'Check-list', '/bloc/checklist-oms')),
       ...encours.map(versLignePatient('EN_COURS_OPERATION', 'Suivi', '/bloc/activite-pendant-operation')),
     ])
 
     if (reveilRes.status === 'fulfilled') {
+      // Toujours "aujourd'hui" par nature : un patient reste peu de temps en salle de réveil
       const liste = reveilRes.value?.data || []
       setPatientsReveil(liste.map(versLignePatient('EN_SALLE_REVEIL', 'Suivi réveil', '/bloc/salle-de-reveil/suivi')))
     }
@@ -88,7 +96,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <WelcomeBanner nom="Dr Sarah RASOANIRINA" role="CHIRURGIEN" patientsDuJour={total} />
+      <WelcomeBanner nom="Dr Sarah RASOANIRINA" role="CHIRURGIEN" />
 
       {!loading && <AlerteBandeau count={statCount} message={`${statCount} patient${statCount > 1 ? 's' : ''} STAT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
 
@@ -96,24 +104,24 @@ export default function DashboardPage() {
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-on-surface">Planning par Destination</h2>
+          <h2 className="text-xl font-bold text-on-surface">Planning du jour</h2>
         </div>
         <div className="grid grid-cols-1 gap-6">
           <GroupePlanningTable
             icon="notification_important"
-            titre="Fil de prescription"
+            titre="Fil de prescription — Aujourd'hui"
             accent="tertiary"
             lignes={prescriptions}
             loading={loading}
-            emptyMessage="Aucune prescription en attente de décision"
+            emptyMessage="Aucune prescription reçue aujourd'hui"
           />
           <GroupePlanningTable
             icon="medical_services"
-            titre="Bloc Opératoire"
+            titre="Bloc Opératoire — Aujourd'hui"
             accent="primary"
             lignes={patientsBloc}
             loading={loading}
-            emptyMessage="Aucun patient prêt ou en cours d'intervention"
+            emptyMessage="Aucun patient prêt ou en cours d'intervention aujourd'hui"
           />
           <GroupePlanningTable
             icon="bed"
