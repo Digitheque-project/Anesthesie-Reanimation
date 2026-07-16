@@ -23,15 +23,20 @@ function VerificationPostOpPageContent() {
 
   const handleSubmit = async () => {
     setLoading(true)
-    try { await apiClient.post('/checklists-pendant-op', { patientId, ...form }); alert('✅ Checklist enregistrée !'); router.back() }
+    try {
+      await apiClient.post('/checklists-pendant-op', { patientId, ...form })
+      alert('✅ Checklist "Time Out" enregistrée !')
+      router.push(`/bloc/activite-pendant-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
+    }
     catch (err) { console.error(err); alert('❌ Erreur') }
     finally { setLoading(false) }
   }
 
   return (
-    <main className="ml-64 p-6">
+    <main className="p-6">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline mb-4"><span className="material-symbols-outlined">arrow_back</span> Retour</button>
-      <h1 className="text-2xl font-extrabold mb-2">🔍 Checklist de vérification</h1>
+      <h1 className="text-2xl font-extrabold mb-2">🔍 Time Out — Vérification avant incision</h1>
+      <p className="text-sm text-on-surface-variant mb-4">Dernière pause d'équipe (chirurgien + anesthésiste + IBODE) avant le début de l'intervention.</p>
       <div className="bg-blue-50 rounded-xl p-4 mb-4 flex gap-6 text-sm"><div><span className="text-xs font-bold text-gray-500 uppercase">Patient</span><p className="font-bold">{patientNom}</p></div>{intervention && <div><span className="text-xs font-bold text-gray-500 uppercase">Intervention</span><p className="font-bold">{intervention}</p></div>}</div>
       <div className="bg-white rounded-xl p-6 shadow-sm border space-y-3 max-w-2xl">
         {[{ key: 'identiteUltimeConfirmee', label: 'Identité ultime confirmée' },{ key: 'interventionConfirmee', label: 'Intervention confirmée' },{ key: 'siteOperatoireConfirme', label: 'Site opératoire confirmé' },{ key: 'installationCorrecte', label: 'Installation correcte' },{ key: 'documentsDisponibles', label: 'Documents disponibles' },{ key: 'antibioprophylaxieFaite', label: 'Antibioprophylaxie faite' },{ key: 'constantesStables', label: 'Constantes stables' },{ key: 'ventilationOK', label: 'Ventilation OK' }].map(item => (

@@ -7,6 +7,11 @@ import { NavItem } from "@/types/bloc";
 
 const navItems: NavItem[] = [
   {
+    label: 'Tableau de bord',
+    href: '/bloc',
+    icon: 'dashboard',
+  },
+  {
     label: 'Fil de prescription CPA',
     href: '/bloc/notification-cpa',
     icon: 'notification_important',
@@ -15,11 +20,6 @@ const navItems: NavItem[] = [
     label: 'Rendez-vous',
     href: '/bloc/rendez-vous',
     icon: 'calendar_today',
-  },
-  {
-    label: 'Tableau de bord',
-    href: '/bloc',
-    icon: 'dashboard',
   },
   {
     label: 'Patient du Jour',

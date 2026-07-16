@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { patientService } from '@/lib/api'
+import { patientService, medecinService } from '@/lib/api'
 import { apiClient } from '@/lib/api/client'
 
 const SERVICES_CLINIQUES = [
@@ -28,6 +28,8 @@ function SalleDeReveilPageContent() {
   const intervention = searchParams.get('intervention') || ''
 
   const [patient, setPatient] = useState<any>(null)
+  const [anesthesistes, setAnesthesistes] = useState<any[]>([])
+  const [anesthesisteId, setAnesthesisteId] = useState('')
   const [heureArrivee, setHeureArrivee] = useState('14:25')
   const [scores, setScores] = useState({ motricite: 2, respiration: 2, pressionArterielle: 2, etatConscience: 2, coloration: 2 })
   const [evs, setEvs] = useState(2)
@@ -39,24 +41,29 @@ function SalleDeReveilPageContent() {
   const [orientation, setOrientation] = useState<'origine' | 'autres'>('origine')
   const [serviceChoisi, setServiceChoisi] = useState('')
   const [scoreSCCREId, setScoreSCCREId] = useState<string | null>(null)
+  const [checklistSortie, setChecklistSortie] = useState({ signesVitauxStables: false, douleurControlee: false, prescriptionsFaites: false, familleInformee: false })
   const [showConfirmation, setShowConfirmation] = useState(false)
 
   useEffect(() => {
     if (patientId) patientService.getById(patientId).then(setPatient).catch(console.error)
+    medecinService.getAll({ role: 'ANESTHESISTE', limite: 100 }).then((data: any) => {
+      setAnesthesistes(Array.isArray(data) ? data : data?.data || [])
+    }).catch(console.error)
   }, [patientId])
 
   const scoreTotal = scores.motricite + scores.respiration + scores.pressionArterielle + scores.etatConscience + scores.coloration
+  const checklistComplete = Object.values(checklistSortie).every(Boolean)
 
   const handleEnregistrerScore = async () => {
+    if (!anesthesisteId) { alert('❌ Sélectionnez l\'anesthésiste évaluant le réveil'); return }
     try {
       const { data } = await apiClient.post('/scores-sccre', {
         patientId: patientId || patient?.id,
-        anesthesisteId: patient?.anesthesisteId || '',
+        anesthesisteId,
         heureArrivee, dateEvaluation: new Date().toISOString().split('T')[0],
         ...scores, evs, eqa, eva, etatInitial, reponse, sortieAutorisee: false
       })
       setScoreSCCREId(data.id)
-      setShowConfirmation(true)
     } catch (err) {
       console.error(err)
       alert('❌ Erreur lors de l\'enregistrement du score')
@@ -64,13 +71,16 @@ function SalleDeReveilPageContent() {
   }
 
   const handleValiderSortie = async () => {
+    if (!anesthesisteId) { alert('❌ Sélectionnez l\'anesthésiste autorisant la sortie'); return }
+    if (!scoreSCCREId) { alert('❌ Enregistrez d\'abord le score de réveil'); return }
+    if (!checklistComplete) { alert('❌ Complétez la checklist de sortie avant de valider'); return }
     try {
       await apiClient.post('/sorties-reveil', {
-        patientId, scoreSCCREId, medecinId: '',
+        patientId, scoreSCCREId, medecinId: anesthesisteId,
         dateHeureSortie: new Date().toISOString(),
         versServiceOrigine: orientation === 'origine',
         autresServicesDestination: orientation === 'autres' ? [serviceChoisi] : [],
-        checklistSortie: { signesVitauxStables: true, douleurControlee: true, prescriptionsFaites: true, familleInformee: true }
+        checklistSortie,
       })
       setShowConfirmation(true)
     } catch (err) {
@@ -94,6 +104,15 @@ function SalleDeReveilPageContent() {
           <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="text-sm font-bold text-[#00478d]">{patientNom}</p></div>
           <div className="w-px h-6 bg-[#c7dde9]"></div>
           <div><p className="text-[10px] text-[#424752] font-bold uppercase">Intervention</p><p className="text-sm font-semibold">{intervention}</p></div>
+          <div className="w-px h-6 bg-[#c7dde9]"></div>
+          <div>
+            <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5 block">Anesthésiste</label>
+            <select value={anesthesisteId} onChange={e => setAnesthesisteId(e.target.value)}
+              className="bg-white/70 border-none rounded-lg px-2 py-1 text-xs font-bold text-[#00478d]">
+              <option value="">— Sélectionner —</option>
+              {anesthesistes.map((m: any) => <option key={m.id} value={m.id}>{m.nom} {m.prenom}</option>)}
+            </select>
+          </div>
         </div>
         <div className="flex flex-col items-end">
           <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5">Heure d'arrivée</label>
@@ -181,8 +200,29 @@ function SalleDeReveilPageContent() {
               ))}
             </div>
             <button onClick={handleEnregistrerScore} className="mt-6 w-full py-3 bg-[#00478d] text-white font-bold rounded-xl shadow-lg hover:bg-[#005eb8] transition-all">
-              Valider le score
+              {scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
             </button>
+          </div>
+
+          {/* Checklist de sortie */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <h3 className="font-bold text-lg text-[#00478d] mb-4">Checklist de sortie</h3>
+            <div className="space-y-3">
+              {[
+                { key: 'signesVitauxStables', label: 'Signes vitaux stables' },
+                { key: 'douleurControlee', label: 'Douleur contrôlée' },
+                { key: 'prescriptionsFaites', label: 'Prescriptions post-opératoires faites' },
+                { key: 'familleInformee', label: 'Famille / service informé' },
+              ].map(item => (
+                <label key={item.key} className="flex items-center gap-3 p-3 bg-[#e6f6ff] rounded-lg cursor-pointer">
+                  <input type="checkbox"
+                    checked={checklistSortie[item.key as keyof typeof checklistSortie]}
+                    onChange={e => setChecklistSortie({ ...checklistSortie, [item.key]: e.target.checked })}
+                    className="w-5 h-5 text-[#00478d] rounded" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Décision de sortie + Option de sortie */}
@@ -195,11 +235,11 @@ function SalleDeReveilPageContent() {
             {orientation === 'autres' && serviceChoisi && <p className="mt-2 text-sm font-bold text-[#00478d]">Service : {serviceChoisi}</p>}
             {orientation === 'origine' && <p className="mt-2 text-sm font-bold text-[#006a6a]">Service d'origine</p>}
 
-            <button onClick={handleValiderSortie} disabled={scoreTotal < 9}
+            <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !anesthesisteId}
               className={`mt-4 w-full py-3 font-bold rounded-xl transition-all ${
-                scoreTotal >= 9 ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] text-white shadow-xl hover:shadow-[#00478d]/40' : 'bg-gray-400 text-white cursor-not-allowed'
+                scoreTotal >= 9 && scoreSCCREId && checklistComplete && anesthesisteId ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] text-white shadow-xl hover:shadow-[#00478d]/40' : 'bg-gray-400 text-white cursor-not-allowed'
               }`}>
-              {scoreTotal < 9 ? 'Score insuffisant (< 9)' : 'Autoriser la sortie'}
+              {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !anesthesisteId ? 'Sélectionnez un anesthésiste' : 'Autoriser la sortie'}
             </button>
           </div>
         </div>

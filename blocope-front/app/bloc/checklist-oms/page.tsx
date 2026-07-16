@@ -24,7 +24,9 @@ function ChecklistAvantOpPageContent() {
     dateCreation: new Date().toISOString().split('T')[0],
     identiteConfirmee: false, interventionSiteConfirmes: false, documentationDisponible: false,
     installationConnue: false, materielChirurgicalVerifie: false, materielAnesthesiqueVerifie: false,
-    allergiePatient: false, risqueIntubation: false, risqueSaignement: false, medicamentsRemplis: false,
+    allergiePatient: false, risqueIntubation: false, risqueSaignement: false,
+    identiteConfirmeeUltime: false, interventionConfirmeeUltime: false, antibioprophylaxieFaite: false,
+    notesChirurgicales: '', notesAnesthesiques: '', notesIdeIbode: '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -38,8 +40,8 @@ function ChecklistAvantOpPageContent() {
       await apiClient.post('/checklists-avant-op', { patientId, ...form })
       console.log('✅ Checklist avant opération validée')
       
-      // Rediriger directement vers l'activité pendant l'opération
-      router.push(`/bloc/activite-pendant-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
+      // Rediriger vers le Time Out (dernière pause d'équipe avant incision)
+      router.push(`/bloc/verification-post-op?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
       
     } catch (err) { 
       console.error('❌ Erreur validation checklist:', err)
@@ -170,13 +172,13 @@ function ChecklistAvantOpPageContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Identité patient correct</span>
                   <label className="flex items-center text-xs cursor-pointer">
-                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.identiteConfirmee} onChange={e => setForm({...form, identiteConfirmee: e.target.checked})} /> oui
+                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.identiteConfirmeeUltime} onChange={e => setForm({...form, identiteConfirmeeUltime: e.target.checked})} /> oui
                   </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Intervention prévue confirmée</span>
                   <label className="flex items-center text-xs cursor-pointer">
-                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.interventionSiteConfirmes} onChange={e => setForm({...form, interventionSiteConfirmes: e.target.checked})} /> oui
+                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.interventionConfirmeeUltime} onChange={e => setForm({...form, interventionConfirmeeUltime: e.target.checked})} /> oui
                   </label>
                 </div>
               </div>
@@ -189,15 +191,15 @@ function ChecklistAvantOpPageContent() {
               <div className="space-y-4">
                 <div className="p-3 bg-surface rounded-lg">
                   <p className="text-xs font-bold text-primary">- Sur le plan chirurgical</p>
-                  <textarea className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:ring-primary focus:outline-none h-16 mt-2" placeholder="Notes chirurgie..."></textarea>
+                  <textarea value={form.notesChirurgicales} onChange={e => setForm({...form, notesChirurgicales: e.target.value})} className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:ring-primary focus:outline-none h-16 mt-2" placeholder="Notes chirurgie..."></textarea>
                 </div>
                 <div className="p-3 bg-surface rounded-lg">
                   <p className="text-xs font-bold text-secondary">- Sur le plan anesthésique</p>
-                  <textarea className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:ring-secondary focus:outline-none h-16 mt-2" placeholder="Notes anesthésie..."></textarea>
+                  <textarea value={form.notesAnesthesiques} onChange={e => setForm({...form, notesAnesthesiques: e.target.value})} className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:ring-secondary focus:outline-none h-16 mt-2" placeholder="Notes anesthésie..."></textarea>
                 </div>
                 <div className="p-3 bg-surface rounded-lg">
                   <p className="text-xs font-bold text-on-surface-variant">- IDE / IBODE</p>
-                  <textarea className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:outline-none h-16 mt-2" placeholder="Notes IDE/IBODE..."></textarea>
+                  <textarea value={form.notesIdeIbode} onChange={e => setForm({...form, notesIdeIbode: e.target.value})} className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:outline-none h-16 mt-2" placeholder="Notes IDE/IBODE..."></textarea>
                 </div>
               </div>
             </div>
@@ -207,7 +209,7 @@ function ChecklistAvantOpPageContent() {
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-secondary">8- Antibioprophylaxie effectuée</p>
                 <label className="flex items-center text-xs cursor-pointer">
-                  <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.medicamentsRemplis} onChange={e => setForm({...form, medicamentsRemplis: e.target.checked})} /> oui
+                  <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.antibioprophylaxieFaite} onChange={e => setForm({...form, antibioprophylaxieFaite: e.target.checked})} /> oui
                 </label>
               </div>
             </div>

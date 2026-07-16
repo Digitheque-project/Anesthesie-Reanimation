@@ -1,8 +1,9 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { medecinService } from '@/lib/api'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -34,10 +35,18 @@ function SortieSalleReveilPageContent() {
   })
   const [orientation, setOrientation] = useState<'origine' | 'autres'>('origine')
   const [serviceChoisi, setServiceChoisi] = useState('')
+  const [anesthesistes, setAnesthesistes] = useState<any[]>([])
+  const [medecinId, setMedecinId] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    medecinService.getAll({ role: 'ANESTHESISTE', limite: 100 }).then((data: any) => {
+      setAnesthesistes(Array.isArray(data) ? data : data?.data || [])
+    }).catch(console.error)
+  }, [])
+
   const checklistComplete = Object.values(checklist).every(Boolean)
-  const peutSortir = scoreTotal >= 9 && checklistComplete
+  const peutSortir = scoreTotal >= 9 && checklistComplete && !!medecinId
 
   const handleAutoriserSortie = async () => {
     if (!peutSortir) return
@@ -46,7 +55,7 @@ function SortieSalleReveilPageContent() {
       await apiClient.post('/sorties-reveil', {
         patientId,
         scoreSCCREId,
-        medecinId: '',
+        medecinId,
         dateHeureSortie: new Date().toISOString(),
         versServiceOrigine: orientation === 'origine',
         autresServicesDestination: orientation === 'autres' ? [serviceChoisi] : [],
@@ -63,7 +72,7 @@ function SortieSalleReveilPageContent() {
   }
 
   return (
-    <main className="ml-64 flex-1 min-h-screen">
+    <main className="flex-1 min-h-screen">
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl px-8 py-4 border-b border-[#c7dde9]">
         <h2 className="font-headline font-extrabold text-[#00478d] text-2xl">Sortie de Salle de Réveil</h2>
       </header>
@@ -73,6 +82,13 @@ function SortieSalleReveilPageContent() {
         <div className="bg-[#d5ecf8] p-4 rounded-xl flex items-center space-x-6">
           <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="font-bold text-[#00478d]">{patientNom}</p></div>
           <div><p className="text-[10px] text-[#424752] font-bold uppercase">Score SCCRE</p><p className={`font-bold ${scoreTotal >= 9 ? 'text-[#006a6a]' : 'text-[#940010]'}`}>{scoreTotal}/10</p></div>
+          <div className="flex-1">
+            <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5 block">Anesthésiste autorisant la sortie</label>
+            <select value={medecinId} onChange={e => setMedecinId(e.target.value)} className="w-full bg-white/70 border-none rounded-lg px-2 py-1.5 text-sm font-bold text-[#00478d]">
+              <option value="">— Sélectionner —</option>
+              {anesthesistes.map((m: any) => <option key={m.id} value={m.id}>{m.nom} {m.prenom}</option>)}
+            </select>
+          </div>
         </div>
 
         {/* Checklist de sortie */}
@@ -123,11 +139,11 @@ function SortieSalleReveilPageContent() {
             peutSortir ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] hover:shadow-[#00478d]/40 active:scale-95' : 'bg-gray-400 cursor-not-allowed'
           }`}>
           <span className="material-symbols-outlined">check_circle</span>
-          <span>{loading ? 'Autorisation en cours...' : scoreTotal < 9 ? 'Score insuffisant (< 9)' : !checklistComplete ? 'Checklist incomplète' : 'Autoriser la sortie'}</span>
+          <span>{loading ? 'Autorisation en cours...' : scoreTotal < 9 ? 'Score insuffisant (< 9)' : !checklistComplete ? 'Checklist incomplète' : !medecinId ? 'Sélectionnez un anesthésiste' : 'Autoriser la sortie'}</span>
         </button>
         {!peutSortir && (
           <p className="text-center text-xs text-[#940010] font-bold">
-            {scoreTotal < 9 ? '⚠️ Score SCCRE doit être ≥ 9 pour autoriser la sortie.' : '⚠️ Tous les éléments de la checklist doivent être cochés.'}
+            {scoreTotal < 9 ? '⚠️ Score SCCRE doit être ≥ 9 pour autoriser la sortie.' : !checklistComplete ? '⚠️ Tous les éléments de la checklist doivent être cochés.' : '⚠️ Sélectionnez l\'anesthésiste qui autorise la sortie.'}
           </p>
         )}
       </div>

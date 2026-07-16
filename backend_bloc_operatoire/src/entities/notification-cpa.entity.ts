@@ -30,14 +30,18 @@ export class NotificationCPA {
   @Column()
   intervention: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  chirurgien: Medecin; // médecin qui opère
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  chirurgien: Medecin | null; // médecin qui opère, s'il est enregistré localement
 
-  @Column()
-  chirurgienId: string;
+  @Column({ type: 'varchar', nullable: true })
+  chirurgienId: string | null;
 
-  @Column()
-  professeurCPA: string; // professeur responsable de la CPA
+  // Nom libre du chirurgien tel que transmis par le service prescripteur (quand non résolu vers un Medecin local)
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  chirurgienNom: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  professeurCPA: string | null; // professeur responsable de la CPA
 
   @Column({ default: false })
   estUrgent: boolean;

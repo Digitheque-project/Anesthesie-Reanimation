@@ -77,6 +77,10 @@ export class PatientBloc {
   @Column({ type: 'text', nullable: true })
   motifRefusCpa: string | null;
 
+  // ID de la prescription sur le service central "Prescriptions" (déduplication de l'ingestion)
+  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
+  prescriptionExterneId: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

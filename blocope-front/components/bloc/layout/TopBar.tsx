@@ -5,6 +5,8 @@ import { notificationService } from '@/lib/api/notification.service';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import NotificationModal from '@/components/bloc/notification-cpa/NotificationModal';
+import { connecterNotificationsTempsReel, NotificationTempsReel } from '@/lib/notifications/socket';
+import { jouerSonPrescription, jouerSonPrescriptionUrgente } from '@/lib/notifications/sound';
 
 export default function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -38,6 +40,27 @@ export default function TopBar() {
     fetchData();
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Notifications temps réel (WebSocket) : alerte sonore + rafraîchissement immédiat
+  // dès qu'une nouvelle prescription arrive pour ce service.
+  useEffect(() => {
+    const socket = connecterNotificationsTempsReel();
+    if (!socket) return;
+
+    const onNotification = (notif: NotificationTempsReel) => {
+      if (notif.type !== 'new_prescription') return;
+      const urgence = (notif.data?.urgence as string) || '';
+      if (urgence === 'URGENTE' || urgence === 'STAT') {
+        jouerSonPrescriptionUrgente();
+      } else {
+        jouerSonPrescription();
+      }
+      fetchData();
+    };
+
+    socket.on('notification', onNotification);
+    return () => { socket.off('notification', onNotification); };
   }, []);
 
   if (pathname === '/login') return null;

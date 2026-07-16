@@ -22,7 +22,13 @@ export class ChecklistAvantOp {
   @Column({ default: false }) allergiePatient: boolean;
   @Column({ default: false }) risqueIntubation: boolean;
   @Column({ default: false }) risqueSaignement: boolean;
-  @Column({ default: false }) medicamentsRemplis: boolean;
+  // Phase 2 (Time Out) : vérification croisée "ultime", indépendante de la phase 1 (Sign In)
+  @Column({ default: false }) identiteConfirmeeUltime: boolean;
+  @Column({ default: false }) interventionConfirmeeUltime: boolean;
+  @Column({ default: false }) antibioprophylaxieFaite: boolean;
+  @Column({ type: 'text', nullable: true }) notesChirurgicales: string;
+  @Column({ type: 'text', nullable: true }) notesAnesthesiques: string;
+  @Column({ type: 'text', nullable: true }) notesIdeIbode: string;
   @Column({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }) statut: StatutChecklist;
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;

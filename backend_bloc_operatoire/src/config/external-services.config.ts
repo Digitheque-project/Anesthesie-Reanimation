@@ -15,5 +15,7 @@ export default registerAs('externalServices', () => {
     endoscopieApiUrl: process.env.ENDOSCOPIE_API_URL,
     endoscopieServiceId: process.env.ENDOSCOPIE_SERVICE_ID,
     notificationOrigineUrl: process.env.NOTIFICATION_ORIGINE_URL,
+    prescriptionApiUrl: process.env.PRESCRIPTION_API_URL || 'https://prescriptionback-production.up.railway.app',
+    notificationApiUrl: process.env.NOTIFICATION_API_URL || 'https://notification-back-xrl2.onrender.com',
   };
 });
