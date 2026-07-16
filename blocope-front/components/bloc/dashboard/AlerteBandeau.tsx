@@ -1,11 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 interface AlerteBandeauProps {
-  hasAlertes: boolean;
+  count: number;
+  message: string;
+  href: string;
 }
 
-export default function AlerteBandeau({ hasAlertes }: AlerteBandeauProps) {
-  if (!hasAlertes) return null;
+export default function AlerteBandeau({ count, message, href }: AlerteBandeauProps) {
+  const router = useRouter();
+  if (count <= 0) return null;
 
   return (
     <div
@@ -18,8 +23,8 @@ export default function AlerteBandeau({ hasAlertes }: AlerteBandeauProps) {
       <span className="material-symbols-outlined text-tertiary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
         warning
       </span>
-      <span className="text-sm font-bold text-tertiary flex-1">1 Urgence en attente de salle</span>
-      <button className="text-xs font-bold text-tertiary underline cursor-pointer hover:opacity-80 transition-opacity">
+      <span className="text-sm font-bold text-tertiary flex-1">{message}</span>
+      <button onClick={() => router.push(href)} className="text-xs font-bold text-tertiary underline cursor-pointer hover:opacity-80 transition-opacity">
         Voir
       </button>
     </div>

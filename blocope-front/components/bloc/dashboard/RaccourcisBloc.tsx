@@ -15,14 +15,14 @@ const raccourcis: Raccourci[] = [
     href: '/bloc/patient-du-jour',
   },
   {
-    icon: 'preliminary',
+    icon: 'checklist',
     label: 'Avant Opération',
     href: '/bloc/checklist-oms',
   },
   {
     icon: 'medical_services',
     label: 'Pendant Opération',
-    href: '/bloc/pendant-operation',
+    href: '/bloc/activite-pendant-operation',
   },
   {
     icon: 'assignment_turned_in',

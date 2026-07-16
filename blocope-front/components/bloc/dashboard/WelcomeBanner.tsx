@@ -13,15 +13,33 @@ const ROLE_LABELS: Record<string, string> = {
 interface WelcomeBannerProps {
   nom: string
   role: string | null
+  patientsDuJour: number
 }
 
-export default function WelcomeBanner({ nom, role }: WelcomeBannerProps) {
+const dateDuJour = () => {
+  const d = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return d.charAt(0).toUpperCase() + d.slice(1)
+}
+
+export default function WelcomeBanner({ nom, role, patientsDuJour }: WelcomeBannerProps) {
   return (
-    <div className="bg-white rounded-xl p-8 shadow-sm border border-outline-variant/30">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-on-surface">Bonjour, {nom || 'Utilisateur'}</h1>
-      <p className="text-base text-on-surface-variant mt-2">
-        Rôle : <span className="font-bold text-primary text-lg">{ROLE_LABELS[role || ''] || role || 'Inconnu'}</span>
-      </p>
+    <div className="bg-primary-container/10 border-l-4 border-primary p-6 rounded-r-xl flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+          <span className="material-symbols-outlined text-primary text-2xl">group</span>
+        </div>
+        <div>
+          <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">Bonjour, {nom || 'Utilisateur'}</h1>
+          <p className="text-sm font-medium text-on-surface-variant flex items-center gap-2">
+            <span className="material-symbols-outlined text-xs">calendar_month</span>
+            {dateDuJour()} — {ROLE_LABELS[role || ''] || role || 'Rôle inconnu'}
+          </p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Patients actifs</p>
+        <p className="text-4xl font-black text-primary">{patientsDuJour}</p>
+      </div>
     </div>
   )
 }
