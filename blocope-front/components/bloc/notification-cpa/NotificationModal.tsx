@@ -82,8 +82,8 @@ export default function NotificationModal({
   const allRead = notifications.every(n => readNotifications.has(n.id));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-2xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden border border-primary/10">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-fadeIn p-4">
+      <div className="relative w-full max-w-2xl mx-auto my-8 bg-white rounded-2xl shadow-2xl overflow-hidden border border-primary/10">
         {/* En-tête */}
         <div className="bg-gradient-to-r from-primary to-primary-dark px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -128,7 +128,7 @@ export default function NotificationModal({
         )}
 
         {/* Liste des notifications */}
-        <div className="p-4 max-h-[70vh] overflow-y-auto space-y-4">
+        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-4">
           {notifications.map((notification, index) => {
             const isRead = readNotifications.has(notification.id);
             return (

@@ -47,7 +47,7 @@ export const notificationService = {
   getAll: async (page = 1, limit = 100) => {
     try {
       // Essayer l'API réelle
-      const { data } = await apiClient.get(`/notifications-cpa?page=${page}&limit=${limit}`)
+      const { data } = await apiClient.get(`/notifications-cpa?page=${page}&limite=${limit}`)
       return data
     } catch (error) {
       console.warn('⚠️ API indisponible - utilisation des données simulées')

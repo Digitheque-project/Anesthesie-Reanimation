@@ -84,6 +84,7 @@ export default function TopBar() {
   };
 
   return (
+    <>
     <header className="fixed top-0 right-0 left-64 z-40 bg-white/80 backdrop-blur-md border-b border-outline-variant/30 px-8 py-4 flex justify-between items-center">
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -124,13 +125,14 @@ export default function TopBar() {
           </div>
         </div>
       </div>
-
-      <NotificationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        notifications={notifications}
-        onNotificationRead={handleNotificationRead}
-      />
     </header>
+
+    <NotificationModal
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      notifications={notifications}
+      onNotificationRead={handleNotificationRead}
+    />
+    </>
   );
 }
