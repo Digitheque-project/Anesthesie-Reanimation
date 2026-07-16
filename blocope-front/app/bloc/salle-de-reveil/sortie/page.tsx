@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 
@@ -11,6 +11,14 @@ const SERVICES_CLINIQUES = [
 ]
 
 export default function SortieSalleReveilPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <SortieSalleReveilPageContent />
+    </Suspense>
+  )
+}
+
+function SortieSalleReveilPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''

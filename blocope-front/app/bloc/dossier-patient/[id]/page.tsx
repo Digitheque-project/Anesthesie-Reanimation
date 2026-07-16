@@ -1,11 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { patientService, notificationService, planningService } from '@/lib/api'
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
 
 export default function DossierPatientPage() {
+  return (
+    <Suspense fallback={<main className="p-4">Chargement du dossier...</main>}>
+      <DossierPatientPageContent />
+    </Suspense>
+  )
+}
+
+function DossierPatientPageContent() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()

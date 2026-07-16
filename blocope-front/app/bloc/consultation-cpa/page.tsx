@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { patientService, planningService } from '@/lib/api';
 import { apiClient } from '@/lib/api/client';
@@ -10,6 +10,14 @@ const ANESTHESISTE_ID = '9c672c3d-ca54-4b49-b8e8-c67d50cc7cba'; // Dr. Bernard (
 const CHIRURGIEN_ID = '9c672c3d-ca54-4b49-b8e8-c67d50cc7cba';
 
 export default function ConsultationCpaPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <ConsultationCpaPageContent />
+    </Suspense>
+  );
+}
+
+function ConsultationCpaPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const patientId = searchParams.get('patientId') || '';
