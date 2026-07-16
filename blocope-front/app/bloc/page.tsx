@@ -6,7 +6,6 @@ import WelcomeBanner from '@/components/bloc/dashboard/WelcomeBanner'
 import EtatGlobalPatients from '@/components/bloc/dashboard/EtatGlobalPatients'
 import AlerteBandeau from '@/components/bloc/dashboard/AlerteBandeau'
 import GroupePlanningTable, { LignePlanning } from '@/components/bloc/dashboard/GroupePlanningTable'
-import RaccourcisBloc from '@/components/bloc/dashboard/RaccourcisBloc'
 
 const nomPatient = (p: any) => `${(p?.nom || '').toUpperCase()}${p?.nom && p?.prenom ? ', ' : ''}${p?.prenom || ''}`.trim() || p?.patientId || p?.id || 'Patient'
 const priorite = (niveau?: string): LignePlanning['priorite'] => niveau === 'STAT' ? 'STAT' : niveau === 'URGENT' ? 'URGENT' : 'NORMAL'
@@ -125,11 +124,6 @@ export default function DashboardPage() {
             emptyMessage="Personne en salle de réveil actuellement"
           />
         </div>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-on-surface">Raccourcis</h3>
-        <RaccourcisBloc />
       </div>
     </div>
   )
