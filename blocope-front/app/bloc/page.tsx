@@ -108,7 +108,7 @@ export default function DashboardPage() {
             emptyMessage="Aucune prescription en attente de décision"
           />
           <GroupePlanningTable
-            icon="surgical_sterilization"
+            icon="medical_services"
             titre="Bloc Opératoire"
             accent="primary"
             lignes={patientsBloc}
