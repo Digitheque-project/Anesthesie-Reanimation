@@ -84,7 +84,7 @@ export default function DashboardPage() {
   const statCount = compte('STAT')
   const urgentCount = compte('URGENT')
   const normalCount = compte('NORMAL')
-  const total = stats.totalPatients || (statCount + urgentCount + normalCount)
+  const total = stats.totalPatientsActifs ?? (statCount + urgentCount + normalCount)
 
   return (
     <div className="p-8 space-y-6">

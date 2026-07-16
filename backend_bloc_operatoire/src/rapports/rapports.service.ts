@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, Not } from 'typeorm';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ScoreSCCRE } from '../entities/score-sccre.entity';
@@ -23,22 +23,25 @@ export class RapportsService {
 
   async statistiquesGenerales(dateDebut?: string, dateFin?: string) {
     const whereAct = dateDebut && dateFin ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) } : {};
+    const actifs = { statut: Not('SORTI' as any) };
 
     const [
-      totalPatients, totalOperations, totalUrgences, totalScores,
+      totalPatients, totalPatientsActifs, totalOperations, totalUrgences, totalScores,
       patientsParStatut, urgencesParNiveau, totalMedecins,
     ] = await Promise.all([
       this.patientBlocRepo.count(),
+      this.patientBlocRepo.count({ where: actifs }),
       this.activiteRepo.count({ where: whereAct }),
-      this.patientBlocRepo.count({ where: { niveauUrgence: 'URGENT' as any } }),
+      this.patientBlocRepo.count({ where: { ...actifs, niveauUrgence: 'URGENT' as any } }),
       this.scoreRepo.count(),
       this.patientBlocRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
-      this.patientBlocRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').groupBy('p.niveauUrgence').getRawMany(),
+      this.patientBlocRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').where('p.statut != :sorti', { sorti: 'SORTI' }).groupBy('p.niveauUrgence').getRawMany(),
       this.medecinRepo.count(),
     ]);
 
     return {
       totalPatients,
+      totalPatientsActifs,
       totalOperations,
       totalUrgences,
       totalScores,
