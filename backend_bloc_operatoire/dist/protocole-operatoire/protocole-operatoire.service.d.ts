@@ -11,9 +11,7 @@ export declare class ProtocoleOperatoireService {
     constructor(repo: Repository<ProtocoleOperatoire>, drainageRepo: Repository<Drainage>, accueilClient: AccueilClient);
     create(dto: CreateProtocoleOperatoireDto): Promise<ProtocoleOperatoire>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (ProtocoleOperatoire & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

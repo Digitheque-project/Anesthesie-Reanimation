@@ -1,5 +1,11 @@
 import { apiClient } from './client';
 
+const cleanPatientId = (id: string) => encodeURIComponent(id.trim().replace(/^#/, ''));
+
+const isAxiosError = (error: unknown): error is { response?: { status?: number } } => {
+  return typeof error === 'object' && error !== null && 'response' in error;
+};
+
 export const patientService = {
   async getAll(f?: any) {
     const { data } = await apiClient.get('/patients', { params: f });
@@ -7,7 +13,17 @@ export const patientService = {
   },
 
   async getById(id: string) {
-    const { data } = await apiClient.get(`/patients/${id}`);
-    return data;
+    const normalizedId = cleanPatientId(id);
+    try {
+      const { data } = await apiClient.get(`/patients/${normalizedId}`);
+      return data;
+    } catch (error: unknown) {
+      if (isAxiosError(error) && (error.response?.status === 400 || error.response?.status === 404)) {
+        const searchTerm = id.trim().replace(/^#/, '');
+        const { data } = await apiClient.get('/patients', { params: { recherche: searchTerm, limite: 1 } });
+        if (Array.isArray(data?.data) && data.data.length > 0) return data.data[0];
+      }
+      throw error;
+    }
   },
 };

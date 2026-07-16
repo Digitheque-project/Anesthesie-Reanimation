@@ -60,6 +60,7 @@ let CPA = class CPA {
     alcool;
     scoreASA;
     decision;
+    motifRefus;
     typeAnesthesie;
     techniqueIntubation;
     premedicaments;
@@ -173,6 +174,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: DecisionCPA }),
     __metadata("design:type", String)
 ], CPA.prototype, "decision", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], CPA.prototype, "motifRefus", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)

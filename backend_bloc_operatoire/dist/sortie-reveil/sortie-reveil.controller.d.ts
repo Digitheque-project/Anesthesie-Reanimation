@@ -6,9 +6,7 @@ export declare class SortieReveilController {
     constructor(service: SortieReveilService);
     create(dto: CreateSortieReveilDto): Promise<import("../entities").SortieReveil>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").SortieReveil & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

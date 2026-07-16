@@ -2,8 +2,8 @@ import { apiClient } from './client';
 
 export const salleReveilService = {
   getPatientsEnReveil: async () => {
-    const { data } = await apiClient.get('/sorties-reveil/patients-en-reveil');
-    return data;
+    const { data } = await apiClient.get('/sorties-reveil');
+    return data?.data ?? [];
   },
 
   getPatientSuivi: async (id: string) => {

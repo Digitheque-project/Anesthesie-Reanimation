@@ -3,17 +3,11 @@ import { TypeRDV } from '../entities/creneau-bloc.entity';
 export declare class PlanningController {
     private readonly service;
     constructor(service: PlanningService);
-    getJour(date: string, type?: TypeRDV): Promise<(import("../entities/creneau-bloc.entity").CreneauBloc & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
-    getSemaine(debut: string, fin: string, type?: TypeRDV): Promise<(import("../entities/creneau-bloc.entity").CreneauBloc & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
+    getJour(date: string, type?: TypeRDV): Promise<any>;
+    getSemaine(debut: string, fin: string, type?: TypeRDV): Promise<any>;
     reserver(dto: any): Promise<import("../entities/creneau-bloc.entity").CreneauBloc[]>;
     annuler(id: string): Promise<import("../entities/creneau-bloc.entity").CreneauBloc>;
-    urgences(): Promise<(import("../entities/creneau-bloc.entity").CreneauBloc & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
+    urgences(): Promise<any>;
     transfererCpaVersVpa(dto: {
         patientId: string;
         chirurgienId: string;

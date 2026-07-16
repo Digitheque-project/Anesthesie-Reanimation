@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api/client';
+import { salleReveilService } from '@/lib/api/salle-reveil.service';
 
 interface PatientReveil {
   id: string;
@@ -26,8 +26,8 @@ export default function ListeSalleReveil() {
   const chargerPatients = async () => {
     try {
       setLoading(true);
-      const { data } = await apiClient.get('/sorties-reveil/patients-en-reveil');
-      setPatients(data || []);
+      const patients = await salleReveilService.getPatientsEnReveil();
+      setPatients(patients);
     } catch (err) {
       console.error('Erreur chargement:', err);
       setPatients([
@@ -76,7 +76,7 @@ export default function ListeSalleReveil() {
           <p className="mt-4 text-gray-500">Chargement des patients...</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-500">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>

@@ -6,11 +6,7 @@ export declare class ChecklistPendantOpController {
     private accueilClient;
     constructor(repo: Repository<ChecklistPendantOp>, accueilClient: AccueilClient);
     create(dto: any): Promise<ChecklistPendantOp[]>;
-    findAll(patientId?: string): Promise<(ChecklistPendantOp & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
-    findOne(id: string): Promise<(ChecklistPendantOp & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    }) | null>;
+    findAll(patientId?: string): Promise<any>;
+    findOne(id: string): Promise<any>;
     update(id: string, dto: any): Promise<import("typeorm").UpdateResult>;
 }

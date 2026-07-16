@@ -40,7 +40,7 @@ function VisitePreAnesthesiquePageContent() {
   const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'STAT'
 
   const handleSubmit = async () => {
-    if (!cpaId) {
+    if (!cpaId && !estUrgent) {
       alert('⚠️ Aucune CPA trouvée pour ce patient. Veuillez d\'abord réaliser une CPA.')
       return
     }
@@ -196,13 +196,13 @@ function VisitePreAnesthesiquePageContent() {
             </button>
             <button 
               onClick={handleSubmit} 
-              disabled={loading || !cpaId}
+              disabled={loading || (!cpaId && !estUrgent)}
               className={`px-10 py-4 rounded-lg font-extrabold text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 whitespace-nowrap ${
-                cpaId ? 'bg-primary text-on-primary hover:bg-primary/90' : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                (cpaId || estUrgent) ? 'bg-primary text-on-primary hover:bg-primary/90' : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
             >
               <span className="material-symbols-outlined font-bold">check_circle</span>
-              {!cpaId ? 'CPA REQUISE' : loading ? 'VALIDATION...' : 'VALIDER LA VPA'}
+              {!cpaId && !estUrgent ? 'CPA REQUISE' : loading ? 'VALIDATION...' : 'VALIDER LA VPA'}
             </button>
           </div>
         </section>

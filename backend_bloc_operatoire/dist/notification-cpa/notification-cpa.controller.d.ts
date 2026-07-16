@@ -6,9 +6,7 @@ export declare class NotificationCPAController {
     constructor(service: NotificationCPAService);
     create(d: CreateNotificationCPADto): Promise<import("../entities").NotificationCPA>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").WebhookNotification | (import("../entities").NotificationCPA & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        }))[];
+        data: any[];
         total: number;
         page: number;
         pages: number;

@@ -1,102 +1,102 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
-import { Like, Repository } from 'typeorm';
-import { PatientBloc } from '../entities/patient-bloc.entity';
-import { AccueilClient } from '../external/accueil.client';
-import { AdmitExistingPatientDto } from './dto/admit-existing-patient.dto';
-import { RegisterAndAdmitPatientDto } from './dto/register-and-admit-patient.dto';
-import { UpdatePatientBlocDto } from './dto/update-patient-bloc.dto';
+import { Repository } from 'typeorm';
+import { PatientBloc, NiveauUrgence, PatientStatut } from '../entities/patient-bloc.entity';
+import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 
 @Injectable()
 export class PatientBlocService {
   constructor(
-    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
-    private accueilClient: AccueilClient,
-    private config: ConfigService,
+    @InjectRepository(PatientBloc)
+    private patientRepo: Repository<PatientBloc>,
+    @InjectRepository(DemandeCpaExterne)
+    private demandeRepo: Repository<DemandeCpaExterne>,
   ) {}
 
-  async search(q?: string) {
-    return this.accueilClient.searchPatients(q ?? '');
+  async creerDepuisPrescription(demandeId: string): Promise<PatientBloc> {
+    const demande = await this.demandeRepo.findOne({ where: { id: demandeId } });
+    if (!demande) throw new Error('Demande non trouvée');
+
+    const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
+    const niveauUrgence = estUrgence ? NiveauUrgence.STAT : NiveauUrgence.NORMAL;
+    const statutInitial = estUrgence ? PatientStatut.EN_ATTENTE_VPA : PatientStatut.EN_ATTENTE_CPA;
+
+    const patient = new PatientBloc();
+    patient.patientId = demande.patientId;
+    patient.chuId = demande.chuId;
+    patient.idDossier = `CHU-${Date.now()}`;
+    patient.groupeSanguin = 'A+';
+    patient.niveauUrgence = niveauUrgence;
+    patient.statut = statutInitial;
+    patient.prescripteurId = demande.sourceServiceId;
+    patient.serviceOrigine = demande.sourceServiceName || null;
+    patient.serviceOrigineId = demande.sourceServiceId || null;
+
+    const saved = await this.patientRepo.save(patient);
+    return Array.isArray(saved) ? saved[0] : saved;
   }
 
-  async getExternal(externalId: string) {
-    const patient = await this.accueilClient.getPatient(externalId);
-    if (!patient) throw new NotFoundException(`Patient ${externalId} introuvable dans le service Accueil`);
-    return patient;
+  estStat(patientId: string): boolean {
+    return false;
   }
 
-  async admitExisting(dto: AdmitExistingPatientDto): Promise<PatientBloc> {
-    const external = await this.accueilClient.getPatient(dto.patientId);
-    if (!external) throw new NotFoundException(`Patient ${dto.patientId} introuvable dans le service Accueil`);
+  async findAll(filters: { statut?: string; niveauUrgence?: string; recherche?: string; page?: number; limite?: number }) {
+    const { statut, niveauUrgence, recherche, page = 1, limite = 10 } = filters;
+    const qb = this.patientRepo.createQueryBuilder('p');
 
-    const existing = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
-    if (existing) throw new ConflictException(`Le patient ${dto.patientId} est déjà admis au bloc`);
+    if (statut) qb.andWhere('p.statut = :statut', { statut });
+    if (niveauUrgence) qb.andWhere('p.niveauUrgence = :niveauUrgence', { niveauUrgence });
+    if (recherche) qb.andWhere('p.idDossier ILIKE :recherche', { recherche: `%${recherche}%` });
 
-    const { patientId, ...operationalFields } = dto;
-    const record = this.patientBlocRepo.create({
-      ...operationalFields,
-      patientId,
-      chuId: this.config.get<string>('externalServices.chuId'),
-    });
-    return this.patientBlocRepo.save(record);
+    qb.orderBy('p.createdAt', 'DESC');
+    qb.skip((page - 1) * limite).take(limite);
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, pages: Math.ceil(total / limite) };
   }
 
-  async registerAndAdmit(dto: RegisterAndAdmitPatientDto, createdBy: string): Promise<PatientBloc> {
-    const external = await this.accueilClient.registerPatient(dto.identite, createdBy);
-    const { identite, ...operationalFields } = dto;
-    const record = this.patientBlocRepo.create({
-      ...operationalFields,
-      patientId: external.id,
-      chuId: this.config.get<string>('externalServices.chuId'),
-    });
-    return this.patientBlocRepo.save(record);
+  async findOne(patientId: string): Promise<PatientBloc | null> {
+    return this.patientRepo.findOne({ where: { patientId } });
   }
 
-  async findAll(filters?: {
-    statut?: string;
-    niveauUrgence?: string;
-    recherche?: string;
-    page?: number;
-    limite?: number;
-  }) {
-    const { statut, niveauUrgence, recherche, page = 1, limite = 10 } = filters || {};
-    const skip = (page - 1) * limite;
-
-    let where: any = {};
-    if (statut) where.statut = statut;
-    if (niveauUrgence) where.niveauUrgence = niveauUrgence;
-    if (recherche) where.idDossier = Like(`%${recherche}%`);
-
-    const [data, total] = await this.patientBlocRepo.findAndCount({
-      where,
-      skip,
-      take: limite,
-      order: { createdAt: 'DESC' },
-    });
-
-    const enriched = await this.accueilClient.enrichWithIdentity(data);
-    return { data: enriched, total, page, pages: Math.ceil(total / limite) };
-  }
-
-  async findOne(patientId: string) {
-    const record = await this.patientBlocRepo.findOne({ where: { patientId } });
-    if (!record) throw new NotFoundException(`Fiche de suivi bloc introuvable pour le patient ${patientId}`);
-    const [enriched] = await this.accueilClient.enrichWithIdentity([record]);
-    return enriched;
-  }
-
-  async update(patientId: string, dto: UpdatePatientBlocDto): Promise<PatientBloc> {
-    const record = await this.patientBlocRepo.findOne({ where: { patientId } });
-    if (!record) throw new NotFoundException(`Fiche de suivi bloc introuvable pour le patient ${patientId}`);
-    Object.assign(record, dto);
-    return this.patientBlocRepo.save(record);
+  async update(patientId: string, dto: any): Promise<PatientBloc> {
+    const patient = await this.patientRepo.findOne({ where: { patientId } });
+    if (!patient) throw new Error('Patient non trouvé');
+    Object.assign(patient, dto);
+    const saved = await this.patientRepo.save(patient);
+    return Array.isArray(saved) ? saved[0] : saved;
   }
 
   async remove(patientId: string): Promise<{ message: string }> {
-    const record = await this.patientBlocRepo.findOne({ where: { patientId } });
-    if (!record) throw new NotFoundException(`Fiche de suivi bloc introuvable pour le patient ${patientId}`);
-    await this.patientBlocRepo.remove(record);
-    return { message: 'Fiche de suivi supprimée avec succès' };
+    await this.patientRepo.delete(patientId);
+    return { message: 'Patient supprimé du bloc' };
+  }
+
+  async search(q?: string): Promise<any[]> {
+    return [];
+  }
+
+  async getExternal(externalId: string): Promise<any> {
+    return null;
+  }
+
+  async admitExisting(dto: any): Promise<PatientBloc> {
+    const patient = this.patientRepo.create({
+      ...dto,
+      statut: PatientStatut.EN_ATTENTE_CPA,
+      niveauUrgence: dto.niveauUrgence || NiveauUrgence.NORMAL,
+    });
+    const saved = await this.patientRepo.save(patient);
+    return Array.isArray(saved) ? saved[0] : saved;
+  }
+
+  async registerAndAdmit(dto: any, createdBy: string): Promise<PatientBloc> {
+    const patient = this.patientRepo.create({
+      ...dto,
+      statut: PatientStatut.EN_ATTENTE_CPA,
+      niveauUrgence: dto.niveauUrgence || NiveauUrgence.NORMAL,
+    });
+    const saved = await this.patientRepo.save(patient);
+    return Array.isArray(saved) ? saved[0] : saved;
   }
 }

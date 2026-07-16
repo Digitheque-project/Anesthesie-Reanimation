@@ -10,6 +10,7 @@ exports.VPAModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const vpa_entity_1 = require("../entities/vpa.entity");
+const cpa_entity_1 = require("../entities/cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const demande_cpa_externe_module_1 = require("../demande-cpa-externe/demande-cpa-externe.module");
 const vpa_service_1 = require("./vpa.service");
@@ -19,7 +20,7 @@ let VPAModule = class VPAModule {
 exports.VPAModule = VPAModule;
 exports.VPAModule = VPAModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([vpa_entity_1.VPA, patient_bloc_entity_1.PatientBloc]), demande_cpa_externe_module_1.DemandeCpaExterneModule],
+        imports: [typeorm_1.TypeOrmModule.forFeature([vpa_entity_1.VPA, cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc]), demande_cpa_externe_module_1.DemandeCpaExterneModule],
         controllers: [vpa_controller_1.VPAController],
         providers: [vpa_service_1.VPAService],
         exports: [vpa_service_1.VPAService],

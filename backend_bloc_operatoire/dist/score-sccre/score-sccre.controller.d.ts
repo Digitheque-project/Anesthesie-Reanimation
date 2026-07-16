@@ -6,9 +6,7 @@ export declare class ScoreSCCREController {
     constructor(service: ScoreSCCREService);
     create(dto: CreateScoreSCCREDto): Promise<import("../entities").ScoreSCCRE>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").ScoreSCCRE & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

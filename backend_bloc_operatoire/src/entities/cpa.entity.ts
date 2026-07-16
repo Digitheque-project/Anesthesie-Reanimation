@@ -114,6 +114,9 @@ export class CPA {
   @Column({ type: 'enum', enum: DecisionCPA })
   decision: DecisionCPA;
 
+  @Column({ type: 'text', nullable: true })
+  motifRefus: string;
+
   @Column()
   typeAnesthesie: string;
 

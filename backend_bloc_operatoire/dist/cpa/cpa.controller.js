@@ -24,7 +24,7 @@ let CPAController = class CPAController {
         this.service = service;
     }
     create(d) { return this.service.create(d); }
-    findAll(p, l) { return this.service.findAll(p, l); }
+    findAll(p, l, patientId) { return this.service.findAll(p, l, patientId); }
     findOne(id) { return this.service.findOne(id); }
     update(id, d) { return this.service.update(id, d); }
     remove(id) { return this.service.remove(id); }
@@ -43,8 +43,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Lister les CPA' }),
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('limite')),
+    __param(2, (0, common_1.Query)('patientId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:paramtypes", [Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], CPAController.prototype, "findAll", null);
 __decorate([

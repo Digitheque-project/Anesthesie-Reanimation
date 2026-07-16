@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const vpa_entity_1 = require("../entities/vpa.entity");
+const cpa_entity_1 = require("../entities/cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const endoscopie_client_1 = require("../external/endoscopie.client");
@@ -24,17 +25,34 @@ const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cp
 let VPAService = class VPAService {
     repo;
     patientBlocRepo;
+    cpaRepo;
     accueilClient;
     endoscopieClient;
     demandeCpaExterneService;
-    constructor(repo, patientBlocRepo, accueilClient, endoscopieClient, demandeCpaExterneService) {
+    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, demandeCpaExterneService) {
         this.repo = repo;
         this.patientBlocRepo = patientBlocRepo;
+        this.cpaRepo = cpaRepo;
         this.accueilClient = accueilClient;
         this.endoscopieClient = endoscopieClient;
         this.demandeCpaExterneService = demandeCpaExterneService;
     }
     async create(dto) {
+        if (dto.patientId) {
+            const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+            if (patient) {
+                const estPatientUrgent = patient.niveauUrgence === 'STAT' || patient.niveauUrgence === 'URGENT';
+                if (!estPatientUrgent && !dto.cpaId) {
+                    throw new common_1.BadRequestException('CPA required before VPA for a normal patient.');
+                }
+                if (dto.cpaId) {
+                    const cpa = await this.cpaRepo.findOne({ where: { id: dto.cpaId, patientId: dto.patientId } });
+                    if (!cpa) {
+                        throw new common_1.BadRequestException('The specified CPA does not belong to this patient.');
+                    }
+                }
+            }
+        }
         const savedResult = await this.repo.save(this.repo.create(dto));
         const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
         if (dto.patientId) {
@@ -81,7 +99,9 @@ exports.VPAService = VPAService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(vpa_entity_1.VPA)),
     __param(1, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
+    __param(2, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         endoscopie_client_1.EndoscopieClient,

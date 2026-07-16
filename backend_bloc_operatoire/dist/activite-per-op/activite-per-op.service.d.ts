@@ -11,9 +11,7 @@ export declare class ActivitePerOpService {
     constructor(repo: Repository<ActivitePerOp>, constanteRepo: Repository<ConstantePerOp>, accueilClient: AccueilClient);
     create(dto: CreateActivitePerOpDto): Promise<ActivitePerOp>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (ActivitePerOp & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

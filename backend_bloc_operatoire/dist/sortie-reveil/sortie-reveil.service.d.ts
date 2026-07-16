@@ -9,9 +9,7 @@ export declare class SortieReveilService {
     constructor(repo: Repository<SortieReveil>, accueilClient: AccueilClient);
     create(dto: CreateSortieReveilDto): Promise<SortieReveil>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (SortieReveil & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var NotificationCPAService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationCPAService = void 0;
 const common_1 = require("@nestjs/common");
@@ -18,15 +19,22 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
-let NotificationCPAService = class NotificationCPAService {
+const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
+let NotificationCPAService = NotificationCPAService_1 = class NotificationCPAService {
     notificationRepo;
     webhookRepo;
+    patientBlocRepo;
     accueilClient;
-    constructor(notificationRepo, webhookRepo, accueilClient) {
+    notificationOutgoing;
+    logger = new common_1.Logger(NotificationCPAService_1.name);
+    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, notificationOutgoing) {
         this.notificationRepo = notificationRepo;
         this.webhookRepo = webhookRepo;
+        this.patientBlocRepo = patientBlocRepo;
         this.accueilClient = accueilClient;
+        this.notificationOutgoing = notificationOutgoing;
     }
     async create(dto) {
         const saved = await this.notificationRepo.save(this.notificationRepo.create(dto));
@@ -77,6 +85,26 @@ let NotificationCPAService = class NotificationCPAService {
         if (!n)
             throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         n.statut = notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE;
+        try {
+            const patient = await this.patientBlocRepo.findOne({ where: { patientId: n.patientId } });
+            if (patient?.serviceOrigineId && patient?.serviceOrigine) {
+                await this.notificationOutgoing.notifyOriginService({
+                    patientId: n.patientId,
+                    type: 'RDV_CPA_PLANIFIE',
+                    serviceOrigineId: patient.serviceOrigineId,
+                    serviceOrigineName: patient.serviceOrigine,
+                    payload: {
+                        intervention: n.intervention,
+                        professeurCPA: n.professeurCPA,
+                        estUrgent: n.estUrgent,
+                        datePlanification: new Date().toISOString(),
+                    },
+                });
+            }
+        }
+        catch (err) {
+            this.logger.error(`Erreur notification service origine après planification RDV CPA: ${err.message}`);
+        }
         return this.notificationRepo.save(n);
     }
     async update(id, dto) {
@@ -103,12 +131,15 @@ let NotificationCPAService = class NotificationCPAService {
     }
 };
 exports.NotificationCPAService = NotificationCPAService;
-exports.NotificationCPAService = NotificationCPAService = __decorate([
+exports.NotificationCPAService = NotificationCPAService = NotificationCPAService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __param(1, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
+    __param(2, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient,
+        notification_outgoing_service_1.NotificationOutgoingService])
 ], NotificationCPAService);
 //# sourceMappingURL=notification-cpa.service.js.map

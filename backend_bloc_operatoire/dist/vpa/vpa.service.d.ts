@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm';
 import { VPA } from '../entities/vpa.entity';
+import { CPA } from '../entities/cpa.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { EndoscopieClient } from '../external/endoscopie.client';
@@ -9,15 +10,14 @@ import { UpdateVPADto } from './dto/update-vpa.dto';
 export declare class VPAService {
     private repo;
     private patientBlocRepo;
+    private cpaRepo;
     private accueilClient;
     private endoscopieClient;
     private demandeCpaExterneService;
-    constructor(repo: Repository<VPA>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, demandeCpaExterneService: DemandeCpaExterneService);
+    constructor(repo: Repository<VPA>, patientBlocRepo: Repository<PatientBloc>, cpaRepo: Repository<CPA>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, demandeCpaExterneService: DemandeCpaExterneService);
     create(dto: CreateVPADto): Promise<VPA>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (VPA & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

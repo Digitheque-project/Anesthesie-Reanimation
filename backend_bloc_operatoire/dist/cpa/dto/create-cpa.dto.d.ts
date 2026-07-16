@@ -41,5 +41,6 @@ export declare class CreateCPADto {
     tachesInfirmieres: string;
     dateVPA?: string;
     statut?: StatutCPA;
+    motifRefus?: string;
 }
 export {};

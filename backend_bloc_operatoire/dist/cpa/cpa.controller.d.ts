@@ -5,10 +5,8 @@ export declare class CPAController {
     private readonly service;
     constructor(service: CPAService);
     create(d: CreateCPADto): Promise<import("../entities").CPA>;
-    findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").CPA & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+    findAll(p?: number, l?: number, patientId?: string): Promise<{
+        data: any;
         total: number;
         page: number;
         pages: number;

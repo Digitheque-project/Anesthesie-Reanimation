@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VPA } from '../entities/vpa.entity';
+import { CPA } from '../entities/cpa.entity';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { EndoscopieClient } from '../external/endoscopie.client';
@@ -14,12 +15,32 @@ export class VPAService {
   constructor(
     @InjectRepository(VPA) private repo: Repository<VPA>,
     @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
+    @InjectRepository(CPA) private cpaRepo: Repository<CPA>,
     private accueilClient: AccueilClient,
     private endoscopieClient: EndoscopieClient,
     private demandeCpaExterneService: DemandeCpaExterneService,
   ) {}
 
   async create(dto: CreateVPADto): Promise<VPA> {
+    if (dto.patientId) {
+      const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+
+      if (patient) {
+        const estPatientUrgent = patient.niveauUrgence === 'STAT' || patient.niveauUrgence === 'URGENT';
+
+        if (!estPatientUrgent && !dto.cpaId) {
+          throw new BadRequestException('CPA required before VPA for a normal patient.');
+        }
+
+        if (dto.cpaId) {
+          const cpa = await this.cpaRepo.findOne({ where: { id: dto.cpaId, patientId: dto.patientId } });
+          if (!cpa) {
+            throw new BadRequestException('The specified CPA does not belong to this patient.');
+          }
+        }
+      }
+    }
+
     const savedResult = await this.repo.save(this.repo.create(dto as any));
     const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
 

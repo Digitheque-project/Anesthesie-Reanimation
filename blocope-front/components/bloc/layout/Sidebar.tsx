@@ -7,7 +7,7 @@ import { NavItem } from "@/types/bloc";
 
 const navItems: NavItem[] = [
   {
-    label: 'Notification RDV CPA',
+    label: 'Fil de prescription CPA',
     href: '/bloc/notification-cpa',
     icon: 'notification_important',
   },

@@ -6,9 +6,7 @@ export declare class ProtocoleOperatoireController {
     constructor(service: ProtocoleOperatoireService);
     create(dto: CreateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").ProtocoleOperatoire & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

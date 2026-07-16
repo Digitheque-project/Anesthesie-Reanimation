@@ -7,17 +7,11 @@ export declare class PlanningService {
     private patientBlocRepo;
     private accueilClient;
     constructor(creneauRepo: Repository<CreneauBloc>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient);
-    getPlanningJour(jour: string, type?: TypeRDV): Promise<(CreneauBloc & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
-    getPlanningSemaine(debut: string, fin: string, type?: TypeRDV): Promise<(CreneauBloc & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
+    getPlanningJour(jour: string, type?: TypeRDV): Promise<any>;
+    getPlanningSemaine(debut: string, fin: string, type?: TypeRDV): Promise<any>;
     reserverCreneau(dto: any): Promise<CreneauBloc[]>;
     annulerCreneau(id: string): Promise<CreneauBloc>;
-    getUrgencesEnAttente(): Promise<(CreneauBloc & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
+    getUrgencesEnAttente(): Promise<any>;
     transfererCpaVersVpa(dto: {
         patientId: string;
         chirurgienId: string;

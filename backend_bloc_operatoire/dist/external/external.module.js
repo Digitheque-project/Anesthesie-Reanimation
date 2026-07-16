@@ -12,6 +12,7 @@ const axios_1 = require("@nestjs/axios");
 const accueil_client_1 = require("./accueil.client");
 const service_chu_client_1 = require("./service-chu.client");
 const endoscopie_client_1 = require("./endoscopie.client");
+const notification_outgoing_service_1 = require("./notification-outgoing.service");
 let ExternalModule = class ExternalModule {
 };
 exports.ExternalModule = ExternalModule;
@@ -19,8 +20,8 @@ exports.ExternalModule = ExternalModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         imports: [axios_1.HttpModule.register({ timeout: 45000 })],
-        providers: [accueil_client_1.AccueilClient, service_chu_client_1.ServiceChuClient, endoscopie_client_1.EndoscopieClient],
-        exports: [accueil_client_1.AccueilClient, service_chu_client_1.ServiceChuClient, endoscopie_client_1.EndoscopieClient],
+        providers: [accueil_client_1.AccueilClient, service_chu_client_1.ServiceChuClient, endoscopie_client_1.EndoscopieClient, notification_outgoing_service_1.NotificationOutgoingService],
+        exports: [accueil_client_1.AccueilClient, service_chu_client_1.ServiceChuClient, endoscopie_client_1.EndoscopieClient, notification_outgoing_service_1.NotificationOutgoingService],
     })
 ], ExternalModule);
 //# sourceMappingURL=external.module.js.map

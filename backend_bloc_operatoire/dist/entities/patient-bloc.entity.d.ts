@@ -1,6 +1,7 @@
 export declare enum PatientStatut {
     EN_ATTENTE_CPA = "EN_ATTENTE_CPA",
     CPA_REALISE = "CPA_REALISE",
+    CPA_INAPTE = "CPA_INAPTE",
     EN_ATTENTE_VPA = "EN_ATTENTE_VPA",
     VPA_REALISE = "VPA_REALISE",
     PRET_POUR_BLOC = "PRET_POUR_BLOC",
@@ -29,6 +30,8 @@ export declare class PatientBloc {
     statut: PatientStatut;
     niveauUrgence: NiveauUrgence;
     chambre: string;
+    serviceOrigine: string | null;
+    serviceOrigineId: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

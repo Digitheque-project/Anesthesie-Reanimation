@@ -46,4 +46,5 @@ export class CreateCPADto {
   @IsString() tachesInfirmieres: string;
   @IsOptional() @IsDateString() dateVPA?: string;
   @IsOptional() @IsEnum(StatutCPA) statut?: StatutCPA;
+  @IsOptional() @IsString() motifRefus?: string;
 }

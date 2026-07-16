@@ -10,6 +10,7 @@ exports.PatientBlocModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
 const patient_bloc_service_1 = require("./patient-bloc.service");
 const patient_bloc_controller_1 = require("./patient-bloc.controller");
 const patient_bloc_statut_service_1 = require("./patient-bloc-statut.service");
@@ -18,7 +19,7 @@ let PatientBlocModule = class PatientBlocModule {
 exports.PatientBlocModule = PatientBlocModule;
 exports.PatientBlocModule = PatientBlocModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, demande_cpa_externe_entity_1.DemandeCpaExterne])],
         controllers: [patient_bloc_controller_1.PatientBlocController],
         providers: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],
         exports: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],

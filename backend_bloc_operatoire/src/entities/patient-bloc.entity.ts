@@ -3,6 +3,7 @@ import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } fro
 export enum PatientStatut {
   EN_ATTENTE_CPA = 'EN_ATTENTE_CPA',
   CPA_REALISE = 'CPA_REALISE',
+  CPA_INAPTE = 'CPA_INAPTE',
   EN_ATTENTE_VPA = 'EN_ATTENTE_VPA',
   VPA_REALISE = 'VPA_REALISE',
   PRET_POUR_BLOC = 'PRET_POUR_BLOC',
@@ -66,6 +67,12 @@ export class PatientBloc {
 
   @Column({ length: 20, nullable: true })
   chambre: string;
+
+  @Column({ length: 100, nullable: true })
+  serviceOrigine: string | null;
+
+  @Column({ length: 50, nullable: true })
+  serviceOrigineId: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

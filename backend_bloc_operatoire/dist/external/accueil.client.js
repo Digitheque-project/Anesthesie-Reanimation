@@ -1,88 +1,103 @@
 "use strict";
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var AccueilClient_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AccueilClient = void 0;
-const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
-const axios_1 = require("@nestjs/axios");
-const rxjs_1 = require("rxjs");
-let AccueilClient = AccueilClient_1 = class AccueilClient {
-    http;
-    config;
-    logger = new common_1.Logger(AccueilClient_1.name);
+const axios_1 = __importDefault(require("axios"));
+function isAxiosError(error) {
+    return error && error.isAxiosError === true;
+}
+class AccueilClient {
     baseUrl;
-    chuId;
-    constructor(http, config) {
-        this.http = http;
-        this.config = config;
-        this.baseUrl = this.config.get('externalServices.accueilApiUrl') ?? '';
-        this.chuId = this.config.get('externalServices.chuId') ?? '';
+    constructor(baseUrl = 'https://api.example.com') {
+        this.baseUrl = baseUrl;
     }
-    async listPatients(chuId) {
-        const { data } = await (0, rxjs_1.firstValueFrom)(this.http.get(`${this.baseUrl}/patients`, {
-            params: { chuId: chuId ?? this.chuId },
-        }));
-        return data ?? [];
-    }
-    async getPatient(id, chuId) {
+    async getAccueilData() {
         try {
-            const { data } = await (0, rxjs_1.firstValueFrom)(this.http.get(`${this.baseUrl}/patients/${id}`, {
-                params: { chuId: chuId ?? this.chuId },
-            }));
-            return data ?? null;
+            const response = await axios_1.default.get(`${this.baseUrl}/accueil`);
+            return response.data;
         }
         catch (err) {
-            if (err.response?.status === 404)
+            if (isAxiosError(err) && err.response?.status === 404) {
                 return null;
-            this.logger.error(`Erreur getPatient(${id}): ${err.message}`);
+            }
+            console.error('Erreur getAccueilData:', err);
             throw err;
         }
     }
-    async registerPatient(dto, createdBy) {
-        const { data } = await (0, rxjs_1.firstValueFrom)(this.http.post(`${this.baseUrl}/patients/register`, {
-            ...dto,
-            chuId: this.chuId,
-            createdBy,
-        }));
-        return data;
-    }
-    async searchPatients(query, chuId) {
-        const all = await this.listPatients(chuId);
-        if (!query)
-            return all;
-        const q = query.toLowerCase();
-        return all.filter((p) => p.nom?.toLowerCase().includes(q) ||
-            p.prenom?.toLowerCase().includes(q) ||
-            p.cin?.toLowerCase().includes(q) ||
-            p.id?.toLowerCase().includes(q));
-    }
-    async enrichWithIdentity(records, chuId) {
-        if (records.length === 0)
-            return [];
-        let patients = [];
+    async getPatientData(patientId) {
         try {
-            patients = await this.listPatients(chuId);
+            const response = await axios_1.default.get(`${this.baseUrl}/patients/${patientId}`);
+            return response.data;
         }
         catch (err) {
-            this.logger.error(`enrichWithIdentity: échec listPatients: ${err.message}`);
+            if (isAxiosError(err) && err.response?.status === 404) {
+                return null;
+            }
+            console.error('Erreur getPatientData:', err);
+            throw err;
         }
-        const byId = new Map(patients.map((p) => [p.id, p]));
-        return records.map((record) => ({ ...record, patient: byId.get(record.patientId) ?? null }));
     }
-};
+    async getPatient(patientId) {
+        return this.getPatientData(patientId);
+    }
+    async searchPatients(q) {
+        const endpoint = `/patients?search=${encodeURIComponent(q)}`;
+        return this.get(endpoint);
+    }
+    async registerPatient(identite, createdBy) {
+        const payload = { ...identite };
+        if (createdBy)
+            payload.createdBy = createdBy;
+        return this.post('/patients', payload);
+    }
+    async enrichWithIdentity(data) {
+        const isArray = Array.isArray(data);
+        const records = isArray ? data : [data];
+        const ids = Array.from(new Set(records.map((r) => r?.patientId).filter(Boolean)));
+        const identities = {};
+        await Promise.all(ids.map(async (id) => {
+            try {
+                const p = await this.getPatient(id);
+                if (p)
+                    identities[id] = p;
+            }
+            catch (e) {
+                console.error(`Failed to fetch identity for ${id}:`, e?.message ?? e);
+            }
+        }));
+        const enriched = records.map((r) => {
+            const id = r?.patientId;
+            const identity = id ? identities[id] || null : null;
+            return { ...r, ...(identity || {}) };
+        });
+        return isArray ? enriched : enriched[0];
+    }
+    async get(endpoint) {
+        try {
+            const response = await axios_1.default.get(`${this.baseUrl}${endpoint}`);
+            return response.data;
+        }
+        catch (err) {
+            if (isAxiosError(err) && err.response?.status === 404) {
+                return null;
+            }
+            console.error(`Erreur GET ${endpoint}:`, err);
+            throw err;
+        }
+    }
+    async post(endpoint, data) {
+        try {
+            const response = await axios_1.default.post(`${this.baseUrl}${endpoint}`, data);
+            return response.data;
+        }
+        catch (err) {
+            console.error(`Erreur POST ${endpoint}:`, err);
+            throw err;
+        }
+    }
+}
 exports.AccueilClient = AccueilClient;
-exports.AccueilClient = AccueilClient = AccueilClient_1 = __decorate([
-    (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [axios_1.HttpService,
-        config_1.ConfigService])
-], AccueilClient);
+exports.default = AccueilClient;
 //# sourceMappingURL=accueil.client.js.map

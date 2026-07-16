@@ -15,6 +15,7 @@ exports.default = (0, config_1.registerAs)('externalServices', () => {
         serviceChuApiUrl: process.env.SERVICE_CHU_API_URL,
         endoscopieApiUrl: process.env.ENDOSCOPIE_API_URL,
         endoscopieServiceId: process.env.ENDOSCOPIE_SERVICE_ID,
+        notificationOrigineUrl: process.env.NOTIFICATION_ORIGINE_URL,
     };
 });
 //# sourceMappingURL=external-services.config.js.map

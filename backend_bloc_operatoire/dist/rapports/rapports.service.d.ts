@@ -25,9 +25,7 @@ export declare class RapportsService {
         urgencesParNiveau: any[];
     }>;
     activiteParChirurgien(dateDebut?: string, dateFin?: string): Promise<any[]>;
-    cpaEnAttente(): Promise<(NotificationCPA & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
+    cpaEnAttente(): Promise<any>;
     tauxOccupation(periode?: string): Promise<any[]>;
     exportStatistiques(type: string, dateDebut?: string, dateFin?: string): Promise<{
         type: string;

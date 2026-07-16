@@ -6,9 +6,7 @@ export declare class ActivitePerOpController {
     constructor(service: ActivitePerOpService);
     create(dto: CreateActivitePerOpDto): Promise<import("../entities").ActivitePerOp>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").ActivitePerOp & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

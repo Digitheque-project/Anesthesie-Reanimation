@@ -15,6 +15,7 @@ var PatientStatut;
 (function (PatientStatut) {
     PatientStatut["EN_ATTENTE_CPA"] = "EN_ATTENTE_CPA";
     PatientStatut["CPA_REALISE"] = "CPA_REALISE";
+    PatientStatut["CPA_INAPTE"] = "CPA_INAPTE";
     PatientStatut["EN_ATTENTE_VPA"] = "EN_ATTENTE_VPA";
     PatientStatut["VPA_REALISE"] = "VPA_REALISE";
     PatientStatut["PRET_POUR_BLOC"] = "PRET_POUR_BLOC";
@@ -44,6 +45,8 @@ let PatientBloc = class PatientBloc {
     statut;
     niveauUrgence;
     chambre;
+    serviceOrigine;
+    serviceOrigineId;
     createdAt;
     updatedAt;
 };
@@ -108,6 +111,14 @@ __decorate([
     (0, typeorm_1.Column)({ length: 20, nullable: true }),
     __metadata("design:type", String)
 ], PatientBloc.prototype, "chambre", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "serviceOrigine", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 50, nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "serviceOrigineId", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

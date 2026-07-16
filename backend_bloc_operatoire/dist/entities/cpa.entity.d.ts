@@ -47,6 +47,7 @@ export declare class CPA {
     alcool: string;
     scoreASA: ScoreASA;
     decision: DecisionCPA;
+    motifRefus: string;
     typeAnesthesie: string;
     techniqueIntubation: string;
     premedicaments: Premedicament[];

@@ -84,6 +84,7 @@ class CreateCPADto {
     tachesInfirmieres;
     dateVPA;
     statut;
+    motifRefus;
 }
 exports.CreateCPADto = CreateCPADto;
 __decorate([
@@ -217,4 +218,9 @@ __decorate([
     (0, class_validator_1.IsEnum)(cpa_entity_1.StatutCPA),
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "statut", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "motifRefus", void 0);
 //# sourceMappingURL=create-cpa.dto.js.map

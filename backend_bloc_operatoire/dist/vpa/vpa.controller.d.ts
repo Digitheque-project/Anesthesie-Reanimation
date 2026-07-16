@@ -6,9 +6,7 @@ export declare class VPAController {
     constructor(service: VPAService);
     create(d: CreateVPADto): Promise<import("../entities").VPA>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").VPA & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

@@ -6,11 +6,7 @@ export declare class ChecklistAvantOpController {
     private accueilClient;
     constructor(repo: Repository<ChecklistAvantOp>, accueilClient: AccueilClient);
     create(dto: any): Promise<ChecklistAvantOp[]>;
-    findAll(patientId?: string): Promise<(ChecklistAvantOp & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
-    findOne(id: string): Promise<(ChecklistAvantOp & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    }) | null>;
+    findAll(patientId?: string): Promise<any>;
+    findOne(id: string): Promise<any>;
     update(id: string, dto: any): Promise<import("typeorm").UpdateResult>;
 }

@@ -6,9 +6,7 @@ export declare class BonCommandeController {
     constructor(service: BonCommandeService);
     create(dto: CreateBonCommandeDto): Promise<import("../entities").BonCommandeAnesthesie>;
     findAll(p?: number, l?: number): Promise<{
-        data: (import("../entities").BonCommandeAnesthesie & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

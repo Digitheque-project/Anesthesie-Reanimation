@@ -12,8 +12,9 @@ export class PatientBlocStatutService {
     if (!patient) throw new Error('Patient non trouvé');
 
     const transitionsValides: Record<PatientStatut, PatientStatut[]> = {
-      [PatientStatut.EN_ATTENTE_CPA]: [PatientStatut.CPA_REALISE],
+      [PatientStatut.EN_ATTENTE_CPA]: [PatientStatut.CPA_REALISE, PatientStatut.CPA_INAPTE, PatientStatut.VPA_REALISE],
       [PatientStatut.CPA_REALISE]: [PatientStatut.EN_ATTENTE_VPA],
+      [PatientStatut.CPA_INAPTE]: [],
       [PatientStatut.EN_ATTENTE_VPA]: [PatientStatut.VPA_REALISE],
       [PatientStatut.VPA_REALISE]: [PatientStatut.PRET_POUR_BLOC],
       [PatientStatut.PRET_POUR_BLOC]: [PatientStatut.EN_COURS_OPERATION],

@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -41,31 +40,61 @@ export default function NotificationCPAPage() {
     setShowModal(true)
   }
 
+  // 🟢 FONCTION AJOUTÉE : Valider la planification
   const handleValiderPlanification = async (formData: any) => {
     try {
-      const [h, m] = formData.heureRDV.split(':').map(Number)
+      if (!selectedNotif) return
+      
+      const patientId = selectedNotif.patientId || selectedNotif.patient?.id
+      if (!patientId) {
+        alert('❌ ID patient manquant')
+        return
+      }
+
+      // Calculer l'heure de fin (30 min plus tard)
+      const [h, m] = (formData.heureRDV || '09:00').split(':').map(Number)
       const fin = new Date()
       fin.setHours(h, m + 30)
       const heureFin = fin.toTimeString().split(' ')[0].substring(0, 5)
 
       await planningService.reserverCreneau({
-        patientId: selectedNotif.patient?.id || selectedNotif.patientId,
-        chirurgienId: selectedNotif.chirurgien?.id || selectedNotif.chirurgienId,
-        date: formData.dateRDV,
-        heureDebut: formData.heureRDV,
+        patientId: patientId,
+        date: formData.dateRDV || new Date().toISOString().split('T')[0],
+        heureDebut: formData.heureRDV || '09:00',
         heureFin: heureFin,
         salle: formData.lieuRDV || 'Salle CPA',
         estUrgence: selectedNotif.estUrgent || false,
         type: formData.typeRDV || 'CPA',
+        motif: selectedNotif.intervention || selectedNotif.motif || 'Consultation CPA'
       })
 
-      alert('✅ Rendez-vous planifié avec succès ! Le patient apparaîtra dans la liste des Rendez-vous.')
+      alert('✅ Rendez-vous CPA planifié avec succès !')
       setShowModal(false)
+      setSelectedNotif(null)
       charger()
     } catch (err: any) {
       console.error(err)
-      alert('❌ Erreur : ' + (err.response?.data?.message || err.message))
+      alert('❌ Erreur : ' + (err.response?.data?.message || err.message || 'Erreur inconnue'))
     }
+  }
+
+  // 🟢 FONCTION MODIFIÉE : Vérifier si patient STAT
+  const estPatientStat = (notif: any) => Boolean(notif.estUrgent || notif.urgence === 3)
+
+  // 🟢 FONCTION MODIFIÉE : Action selon type
+  const handleActionPrescription = (notif: any) => {
+    if (!estPatientStat(notif)) {
+      handlePlanifier(notif)
+      return
+    }
+
+    const patientId = notif.patientId || notif.patient?.id
+    const patientNom = notif.patientNom || notif.patient?.nom || 'Patient'
+    const intervention = notif.intervention || notif.motif || ''
+
+    router.push(
+      `/bloc/visite-pre-anesthesique?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}&statut=STAT`
+    )
   }
 
   const notificationsFiltrees = filtreActif === 'tous' ? notifications
@@ -95,7 +124,11 @@ export default function NotificationCPAPage() {
         <TableauNotifications
           notifications={notificationsFiltrees}
           onPlanifier={handlePlanifier}
-          onVoirDossier={(n: any) => { const id = (n.patient as any)?.id || n.patient; if (id) router.push("/bloc/dossier-patient/" + id) }}
+          onActionUrgent={handleActionPrescription}
+          onVoirDossier={(n: any) => { 
+            const id = (n.patient as any)?.id || n.patientId 
+            if (id) router.push("/bloc/dossier-patient/" + id) 
+          }}
         />
       )}
 
@@ -113,5 +146,3 @@ export default function NotificationCPAPage() {
     </div>
   )
 }
-
-

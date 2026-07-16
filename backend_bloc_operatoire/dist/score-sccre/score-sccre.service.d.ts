@@ -9,9 +9,7 @@ export declare class ScoreSCCREService {
     constructor(repo: Repository<ScoreSCCRE>, accueilClient: AccueilClient);
     create(dto: CreateScoreSCCREDto): Promise<ScoreSCCRE>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (ScoreSCCRE & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;

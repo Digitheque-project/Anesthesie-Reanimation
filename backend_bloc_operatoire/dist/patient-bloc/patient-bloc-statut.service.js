@@ -27,8 +27,9 @@ let PatientBlocStatutService = class PatientBlocStatutService {
         if (!patient)
             throw new Error('Patient non trouvé');
         const transitionsValides = {
-            [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [patient_bloc_entity_1.PatientStatut.CPA_REALISE],
+            [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [patient_bloc_entity_1.PatientStatut.CPA_REALISE, patient_bloc_entity_1.PatientStatut.CPA_INAPTE, patient_bloc_entity_1.PatientStatut.VPA_REALISE],
             [patient_bloc_entity_1.PatientStatut.CPA_REALISE]: [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VPA],
+            [patient_bloc_entity_1.PatientStatut.CPA_INAPTE]: [],
             [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VPA]: [patient_bloc_entity_1.PatientStatut.VPA_REALISE],
             [patient_bloc_entity_1.PatientStatut.VPA_REALISE]: [patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC],
             [patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC]: [patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION],

@@ -12,9 +12,7 @@ export declare class RapportsController {
         urgencesParNiveau: any[];
     }>;
     activiteChirurgiens(dd?: string, df?: string): Promise<any[]>;
-    cpaEnAttente(): Promise<(import("../entities").NotificationCPA & {
-        patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-    })[]>;
+    cpaEnAttente(): Promise<any>;
     tauxOccupation(): Promise<any[]>;
     exportStats(): Promise<{
         type: string;

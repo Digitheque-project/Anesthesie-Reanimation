@@ -9,7 +9,7 @@ import { UpdateCPADto } from './dto/update-cpa.dto';
 export class CPAController {
   constructor(private readonly service: CPAService) {}
   @Post() @ApiOperation({ summary: 'Créer une CPA' }) create(@Body() d: CreateCPADto) { return this.service.create(d); }
-  @Get() @ApiOperation({ summary: 'Lister les CPA' }) findAll(@Query('page') p?: number, @Query('limite') l?: number) { return this.service.findAll(p, l); }
+  @Get() @ApiOperation({ summary: 'Lister les CPA' }) findAll(@Query('page') p?: number, @Query('limite') l?: number, @Query('patientId') patientId?: string) { return this.service.findAll(p, l, patientId); }
   @Get(':id') @ApiOperation({ summary: 'Obtenir une CPA' }) findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }
   @Patch(':id') @ApiOperation({ summary: 'Modifier une CPA' }) update(@Param('id', ParseUUIDPipe) id: string, @Body() d: UpdateCPADto) { return this.service.update(id, d); }
   @Delete(':id') @ApiOperation({ summary: 'Supprimer une CPA' }) remove(@Param('id', ParseUUIDPipe) id: string) { return this.service.remove(id); }

@@ -11,9 +11,7 @@ export declare class BonCommandeService {
     constructor(bonRepo: Repository<BonCommandeAnesthesie>, itemRepo: Repository<ItemCommande>, accueilClient: AccueilClient);
     create(dto: CreateBonCommandeDto): Promise<BonCommandeAnesthesie>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (BonCommandeAnesthesie & {
-            patient: import("../external/dto/external-patient.dto").ExternalPatient | null;
-        })[];
+        data: any;
         total: number;
         page: number;
         pages: number;
