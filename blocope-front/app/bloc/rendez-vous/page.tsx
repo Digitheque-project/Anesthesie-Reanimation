@@ -1,5 +1,4 @@
 'use client'
-"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,42 +6,27 @@ import { planningService } from '@/lib/api';
 
 export default function RendezVousPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'tous' | 'cpa' | 'vpa'>('tous');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [creneaux, setCreneaux] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { charger(); }, [selectedDate, activeTab]);
+  useEffect(() => { charger(); }, [selectedDate]);
 
   const charger = async () => {
     setLoading(true);
     try {
-      let data: any[] = [];
-      if (activeTab === 'cpa') {
-        data = await planningService.getJour(selectedDate, 'CPA');
-      } else if (activeTab === 'vpa') {
-        data = await planningService.getJour(selectedDate, 'VPA');
-      } else {
-        const [cpa, vpa] = await Promise.all([
-          planningService.getJour(selectedDate, 'CPA'),
-          planningService.getJour(selectedDate, 'VPA'),
-        ]);
-        data = [...(Array.isArray(cpa) ? cpa : []), ...(Array.isArray(vpa) ? vpa : [])];
-      }
-      setCreneaux(Array.isArray(data) ? data : []);
+      const data = await planningService.getJour(selectedDate, 'CPA');
+      // Patient à statut Normal apte pour le CPA uniquement
+      const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
+        (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut !== 'CPA_INAPTE'
+      );
+      setCreneaux(filtres);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
   const formaterDate = (d: string) => {
     return new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  };
-
-  // Fonction pour rediriger vers la page médicaments
-  const handleMedicaments = (patient: any) => {
-    const patientId = patient?.id || '';
-    const patientNom = encodeURIComponent(`${patient?.nom || ''} ${patient?.prenom || ''}`.trim());
-    router.push(`/bloc/medicaments-anesthesie?patientId=${patientId}&patientNom=${patientNom}`);
   };
 
   return (
@@ -59,21 +43,12 @@ export default function RendezVousPage() {
 
       {/* Tableau */}
       <div className="bg-white border border-outline-variant/30 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-        {/* Tabs */}
+        {/* Tab */}
         <div className="px-6 pt-4 flex border-b border-outline-variant/10 bg-white">
           <div className="flex space-x-8 bg-gray-50 p-2 rounded-2xl">
-            {[
-              { key: 'tous', label: ' 📋 Tous les Rendez-vous' },
-              { key: 'cpa', label: ' 👨‍⚕️ Patients pour CPA' },
-              { key: 'vpa', label: ' 🩺 Patients pour VPA' },
-            ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
-                className={`pb-4 px-1 rounded-2xl bg-blue-100  text-lg font-bold transition-colors ${
-                  activeTab === tab.key ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-primary'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
+            <span className="pb-4 px-1 rounded-2xl bg-blue-100 text-lg font-bold text-primary border-b-2 border-primary">
+              👨‍⚕️ Patient à Rendez-vous CPA
+            </span>
           </div>
         </div>
 
@@ -117,7 +92,7 @@ export default function RendezVousPage() {
                     <div className="text-[10px] text-on-surface-variant font-mono">{c.patient?.idDossier || c.patientId}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${c.type === 'CPA' ? 'bg-primary/5 text-primary' : 'bg-secondary/5 text-secondary'}`}>
+                    <span className="text-xs font-bold px-2 py-1 rounded bg-primary/5 text-primary">
                       {c.type || '—'}
                     </span>
                   </td>
@@ -131,38 +106,17 @@ export default function RendezVousPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${
-                      c.statut === 'PLANIFIE' ? 'bg-blue-100 text-blue-700' : 
+                      c.statut === 'PLANIFIE' ? 'bg-blue-100 text-blue-700' :
                       c.statut === 'TERMINE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
                     }`}>{c.statut || '—'}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <div className="flex flex-col sm:flex-row gap-2 items-center justify-center">
-                      {c.type === 'CPA' ? (
-                        <button 
-                          onClick={() => router.push(`/bloc/consultation-cpa?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
-                          className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 whitespace-nowrap"
-                        >
-                          Réaliser CPA
-                        </button>
-                      ) : (
-                        <>
-                          <button 
-                            onClick={() => router.push(`/bloc/visite-pre-anesthesique?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
-                            className="px-4 py-2 bg-secondary text-white rounded-lg text-xs font-bold hover:bg-secondary/90 whitespace-nowrap"
-                          >
-                            Réaliser VPA
-                          </button>
-                          {/* ✅ NOUVEAU BOUTON MÉDICAMENT */}
-                          <button 
-                            onClick={() => handleMedicaments(c.patient)}
-                            className="px-4 py-2 bg-[#001b3d] text-white rounded-lg text-xs font-bold hover:bg-[#001b3d]/90 whitespace-nowrap flex items-center gap-1"
-                          >
-                            <span className="material-symbols-outlined text-sm">medication</span>
-                            Médicament
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => router.push(`/bloc/consultation-cpa?patientId=${c.patient?.id}&patientNom=${encodeURIComponent((c.patient?.nom || '') + ' ' + (c.patient?.prenom || ''))}`)}
+                      className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 whitespace-nowrap"
+                    >
+                      Réaliser CPA
+                    </button>
                   </td>
                 </tr>
               ))}

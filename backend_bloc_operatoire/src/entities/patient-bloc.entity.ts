@@ -68,11 +68,14 @@ export class PatientBloc {
   @Column({ length: 20, nullable: true })
   chambre: string;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   serviceOrigine: string | null;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   serviceOrigineId: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  motifRefusCpa: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

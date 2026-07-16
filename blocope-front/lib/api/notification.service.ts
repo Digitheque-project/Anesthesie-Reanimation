@@ -89,4 +89,9 @@ export const notificationService = {
       return { success: true, id: 'vpa-simule-' + Date.now() }
     }
   },
+
+  planifierRDV: async (id: string, dto?: any) => {
+    const { data } = await apiClient.patch(`/notifications-cpa/${id}/planifier`, dto || {})
+    return data
+  },
 }

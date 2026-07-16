@@ -37,7 +37,11 @@ export default function TableauNotifications({
             {notifications.map((n, idx) => {
               const isStat = estPatientStat(n)
               return (
-                <tr key={n.id || idx} className="hover:bg-primary/5 transition">
+                <tr
+                  key={n.id || idx}
+                  onClick={() => onVoirDossier(n)}
+                  className="hover:bg-primary/5 transition cursor-pointer"
+                >
                   <td className="px-4 py-3 font-mono text-sm">{n.heure || 'N/A'}</td>
                   <td className="px-4 py-3">
                     <div className="font-semibold text-on-surface">
@@ -65,7 +69,8 @@ export default function TableauNotifications({
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         if (isStat) {
                           // Patient STAT → VPA direct
                           onActionUrgent(n)

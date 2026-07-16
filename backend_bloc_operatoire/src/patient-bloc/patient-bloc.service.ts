@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PatientBloc, NiveauUrgence, PatientStatut } from '../entities/patient-bloc.entity';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
+import { AccueilClient } from '../external/accueil.client';
 
 @Injectable()
 export class PatientBlocService {
@@ -11,6 +12,7 @@ export class PatientBlocService {
     private patientRepo: Repository<PatientBloc>,
     @InjectRepository(DemandeCpaExterne)
     private demandeRepo: Repository<DemandeCpaExterne>,
+    private accueilClient: AccueilClient,
   ) {}
 
   async creerDepuisPrescription(demandeId: string): Promise<PatientBloc> {
@@ -56,7 +58,13 @@ export class PatientBlocService {
   }
 
   async findOne(patientId: string): Promise<PatientBloc | null> {
-    return this.patientRepo.findOne({ where: { patientId } });
+    const patient = await this.patientRepo.findOne({ where: { patientId } });
+    if (!patient) return null;
+    try {
+      return await this.accueilClient.enrichWithIdentity(patient);
+    } catch {
+      return patient;
+    }
   }
 
   async update(patientId: string, dto: any): Promise<PatientBloc> {

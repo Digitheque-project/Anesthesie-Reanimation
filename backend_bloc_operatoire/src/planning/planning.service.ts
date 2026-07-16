@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreneauBloc, StatutCreneau, TypeRDV } from '../entities/creneau-bloc.entity';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
@@ -13,6 +13,32 @@ export class PlanningService {
     private accueilClient: AccueilClient,
   ) {}
 
+  // Attache une clé `.patient` (identité Accueil + statut/niveauUrgence locaux) à chaque créneau.
+  private async enrichCreneaux(data: CreneauBloc[]): Promise<any[]> {
+    if (data.length === 0) return [];
+    const identities = await this.accueilClient.enrichWithIdentity(data);
+    const patientIds = Array.from(new Set(data.map((c) => c.patientId).filter(Boolean)));
+    const patients = patientIds.length
+      ? await this.patientBlocRepo.find({ where: { patientId: In(patientIds) } })
+      : [];
+    const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+    return data.map((c, idx) => {
+      const identity = identities[idx] || {};
+      const pb = patientMap.get(c.patientId);
+      return {
+        ...c,
+        patient: {
+          id: c.patientId,
+          nom: identity.nom,
+          prenom: identity.prenom,
+          idDossier: identity.idDossier ?? pb?.idDossier,
+          statut: pb?.statut,
+          niveauUrgence: pb?.niveauUrgence,
+        },
+      };
+    });
+  }
+
   async getPlanningJour(jour: string, type?: TypeRDV) {
     const qb = this.creneauRepo.createQueryBuilder('c')
       .leftJoinAndSelect('c.chirurgien', 'm')
@@ -20,7 +46,7 @@ export class PlanningService {
       .orderBy('c.heureDebut', 'ASC');
     if (type) qb.andWhere('c.type = :type', { type });
     const data = await qb.getMany();
-    return this.accueilClient.enrichWithIdentity(data);
+    return this.enrichCreneaux(data);
   }
 
   async getPlanningSemaine(debut: string, fin: string, type?: TypeRDV) {
@@ -31,7 +57,7 @@ export class PlanningService {
       .orderBy('c.date', 'ASC').addOrderBy('c.heureDebut', 'ASC');
     if (type) qb.andWhere('c.type = :type', { type });
     const data = await qb.getMany();
-    return this.accueilClient.enrichWithIdentity(data);
+    return this.enrichCreneaux(data);
   }
 
   async reserverCreneau(dto: any) {
@@ -48,7 +74,7 @@ export class PlanningService {
 
   async getUrgencesEnAttente() {
     const data = await this.creneauRepo.find({ where: { estUrgence: true }, relations: ['chirurgien'] });
-    return this.accueilClient.enrichWithIdentity(data);
+    return this.enrichCreneaux(data);
   }
 
   // Transférer CPA vers VPA

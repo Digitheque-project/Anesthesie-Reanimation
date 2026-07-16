@@ -65,8 +65,13 @@ export default function NotificationCPAPage() {
         salle: formData.lieuRDV || 'Salle CPA',
         estUrgence: selectedNotif.estUrgent || false,
         type: formData.typeRDV || 'CPA',
-        motif: selectedNotif.intervention || selectedNotif.motif || 'Consultation CPA'
+        responsable: formData.professeur || selectedNotif.professeurCPA || undefined,
       })
+
+      // Bascule la notification en RDV_PLANIFIE et notifie automatiquement le service d'origine
+      if (selectedNotif.id) {
+        await notificationService.planifierRDV(selectedNotif.id)
+      }
 
       alert('✅ Rendez-vous CPA planifié avec succès !')
       setShowModal(false)
@@ -125,9 +130,9 @@ export default function NotificationCPAPage() {
           notifications={notificationsFiltrees}
           onPlanifier={handlePlanifier}
           onActionUrgent={handleActionPrescription}
-          onVoirDossier={(n: any) => { 
-            const id = (n.patient as any)?.id || n.patientId 
-            if (id) router.push("/bloc/dossier-patient/" + id) 
+          onVoirDossier={(n: any) => {
+            const id = (n.patient as any)?.id || n.patientId
+            if (id) router.push(`/bloc/dossier-patient/${id}?notifId=${n.id || ''}`)
           }}
         />
       )}

@@ -26,4 +26,14 @@ export const patientService = {
       throw error;
     }
   },
+
+  async marquerApteCpa(id: string) {
+    const { data } = await apiClient.patch(`/patients/${cleanPatientId(id)}/apte-cpa`);
+    return data;
+  },
+
+  async marquerInapteCpa(id: string, motifRefus: string) {
+    const { data } = await apiClient.patch(`/patients/${cleanPatientId(id)}/inapte-cpa`, { motifRefus });
+    return data;
+  },
 };

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, UseG
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PatientBlocService } from './patient-bloc.service';
+import { PatientBlocStatutService } from './patient-bloc-statut.service';
 import { AdmitExistingPatientDto } from './dto/admit-existing-patient.dto';
 import { RegisterAndAdmitPatientDto } from './dto/register-and-admit-patient.dto';
 import { UpdatePatientBlocDto } from './dto/update-patient-bloc.dto';
@@ -10,7 +11,10 @@ import { UpdatePatientBlocDto } from './dto/update-patient-bloc.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('patients')
 export class PatientBlocController {
-  constructor(private readonly patientBlocService: PatientBlocService) {}
+  constructor(
+    private readonly patientBlocService: PatientBlocService,
+    private readonly patientBlocStatutService: PatientBlocStatutService,
+  ) {}
 
   @Get('search')
   @ApiOperation({ summary: 'Rechercher un patient dans le service Accueil' })
@@ -67,6 +71,18 @@ export class PatientBlocController {
   @ApiOperation({ summary: 'Modifier une fiche de suivi bloc' })
   update(@Param('patientId') patientId: string, @Body() dto: UpdatePatientBlocDto) {
     return this.patientBlocService.update(patientId, dto);
+  }
+
+  @Patch(':patientId/apte-cpa')
+  @ApiOperation({ summary: 'Fil de prescription : marquer le patient apte au circuit CPA' })
+  marquerApteCpa(@Param('patientId') patientId: string) {
+    return this.patientBlocStatutService.marquerApteCpa(patientId);
+  }
+
+  @Patch(':patientId/inapte-cpa')
+  @ApiOperation({ summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire)' })
+  marquerInapteCpa(@Param('patientId') patientId: string, @Body('motifRefus') motifRefus: string) {
+    return this.patientBlocStatutService.marquerInapteCpa(patientId, motifRefus);
   }
 
   @Delete(':patientId')

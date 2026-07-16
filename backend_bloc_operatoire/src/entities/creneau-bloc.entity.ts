@@ -34,11 +34,15 @@ export class CreneauBloc {
   @Column()
   patientId: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  chirurgien: Medecin;
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  chirurgien: Medecin | null;
 
-  @Column()
-  chirurgienId: string;
+  @Column({ nullable: true })
+  chirurgienId: string | null;
+
+  // Nom libre du responsable saisi au moment de la planification (ex: professeur CPA), quand aucun Medecin n'est sélectionné.
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  responsable: string | null;
 
   @Column({ type: 'enum', enum: StatutCreneau, default: StatutCreneau.PLANIFIE })
   statut: StatutCreneau;
