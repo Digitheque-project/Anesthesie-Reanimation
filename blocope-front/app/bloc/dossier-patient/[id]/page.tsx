@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { patientService, notificationService, planningService } from '@/lib/api'
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
+import DossierMedicalPanel from '@/components/bloc/dossier-patient/DossierMedicalPanel'
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 
@@ -181,6 +182,8 @@ function DossierPatientPageContent() {
           </div>
         </div>
       </div>
+
+      <DossierMedicalPanel patientId={patientId} />
 
       {/* Alertes & Risques */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">

@@ -8,6 +8,8 @@ import { AccueilClient } from '../external/accueil.client';
 import { EndoscopieClient } from '../external/endoscopie.client';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
 import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-externe.service';
+import { MedecinService } from '../medecin/medecin.service';
+import { CentralUser } from '../central-auth/central-user.interface';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
 
@@ -23,15 +25,33 @@ export class CPAService {
     private endoscopieClient: EndoscopieClient,
     private notificationOutgoing: NotificationOutgoingService,
     private demandeCpaExterneService: DemandeCpaExterneService,
+    private medecinService: MedecinService,
   ) {}
 
-  async create(dto: CreateCPADto): Promise<CPA> {
-    if (dto.decision === DecisionCPA.INAPTE && (!dto.motifRefus || dto.motifRefus.trim() === '')) {
-      throw new BadRequestException('Le motif du refus est obligatoire lorsque la décision est INAPTE.');
+  async create(dto: CreateCPADto, centralUser: CentralUser): Promise<CPA> {
+    if (
+      (dto.decision === DecisionCPA.INAPTE || dto.decision === DecisionCPA.REPORT) &&
+      (!dto.motifRefus || dto.motifRefus.trim() === '')
+    ) {
+      throw new BadRequestException(
+        dto.decision === DecisionCPA.INAPTE
+          ? 'Le motif du refus est obligatoire lorsque la décision est INAPTE.'
+          : "Le motif du report est obligatoire lorsque la décision est REPORT.",
+      );
     }
 
-    const { premedicaments, ...cpaData } = dto as any;
-    const cpa = this.cpaRepository.create(cpaData);
+    // L'anesthésiste réalisant la CPA est toujours celui qui est connecté, jamais une saisie
+    // manuelle du client. Sa fiche Médecin doit exister (créée par un administrateur) avec le
+    // même email que son compte SSO.
+    const anesthesiste = await this.medecinService.findByEmail(centralUser.email);
+    if (!anesthesiste) {
+      throw new BadRequestException(
+        `Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`,
+      );
+    }
+
+    const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto as any;
+    const cpa = this.cpaRepository.create({ ...cpaData, anesthesisteId: anesthesiste.id });
     const savedCPA = await this.cpaRepository.save(cpa);
     const saved = Array.isArray(savedCPA) ? savedCPA[0] : savedCPA;
 

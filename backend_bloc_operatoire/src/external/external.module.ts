@@ -7,6 +7,7 @@ import { EndoscopieClient } from './endoscopie.client';
 import { NotificationOutgoingService } from './notification-outgoing.service';
 import { PrescriptionExterneClient } from './prescription-externe.client';
 import { NotificationBackClient } from './notification-back.client';
+import { DossierPatientClient } from './dossier-patient.client';
 
 @Global()
 @Module({
@@ -22,6 +23,7 @@ import { NotificationBackClient } from './notification-back.client';
     NotificationOutgoingService,
     PrescriptionExterneClient,
     NotificationBackClient,
+    DossierPatientClient,
   ],
   exports: [
     AccueilClient,
@@ -30,6 +32,7 @@ import { NotificationBackClient } from './notification-back.client';
     NotificationOutgoingService,
     PrescriptionExterneClient,
     NotificationBackClient,
+    DossierPatientClient,
   ],
 })
 export class ExternalModule {}

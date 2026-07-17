@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PatientBloc, NiveauUrgence, PatientStatut } from '../entities/patient-bloc.entity';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { DossierPatientClient } from '../external/dossier-patient.client';
 
 @Injectable()
 export class PatientBlocService {
@@ -13,6 +14,7 @@ export class PatientBlocService {
     @InjectRepository(DemandeCpaExterne)
     private demandeRepo: Repository<DemandeCpaExterne>,
     private accueilClient: AccueilClient,
+    private dossierPatientClient: DossierPatientClient,
   ) {}
 
   async creerDepuisPrescription(demandeId: string): Promise<PatientBloc> {
@@ -65,6 +67,18 @@ export class PatientBlocService {
     } catch {
       return patient;
     }
+  }
+
+  // Contenu du dossier médical partagé (service externe Dossier Patient) pertinent pour le bloc :
+  // antécédents actifs (allergies...), alertes médicales urgentes, dernier examen physique.
+  // Tolérant aux pannes : une catégorie indisponible n'empêche pas les autres de s'afficher.
+  async getDossierMedical(patientId: string, token: string) {
+    const [antecedents, alertesUrgentes, dernierExamen] = await Promise.all([
+      this.dossierPatientClient.getAntecedentsActifs(patientId, token),
+      this.dossierPatientClient.getHistoriquesUrgents(patientId, token),
+      this.dossierPatientClient.getDernierExamenPhysique(patientId, token),
+    ]);
+    return { antecedents, alertesUrgentes, dernierExamen };
   }
 
   async update(patientId: string, dto: any): Promise<PatientBloc> {

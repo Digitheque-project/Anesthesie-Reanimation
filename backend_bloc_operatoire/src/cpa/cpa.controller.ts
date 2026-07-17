@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CPAService } from './cpa.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
@@ -13,8 +13,8 @@ export class CPAController {
 
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Créer une CPA — décision Apte/Inapte/Report (Anesthésiste)' })
-  create(@Body() d: CreateCPADto) { return this.service.create(d); }
+  @ApiOperation({ summary: 'Créer une CPA — décision Apte/Inapte/Report (Anesthésiste, auto-attribué depuis la session connectée)' })
+  create(@Body() d: CreateCPADto, @Request() req: any) { return this.service.create(d, req.centralUser); }
 
   @Get() @ApiOperation({ summary: 'Lister les CPA' }) findAll(@Query('page') p?: number, @Query('limite') l?: number, @Query('patientId') patientId?: string) { return this.service.findAll(p, l, patientId); }
   @Get(':id') @ApiOperation({ summary: 'Obtenir une CPA' }) findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }

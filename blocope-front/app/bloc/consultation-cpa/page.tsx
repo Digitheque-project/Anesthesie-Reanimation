@@ -2,9 +2,10 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { patientService, planningService, medecinService } from '@/lib/api';
+import { patientService, planningService } from '@/lib/api';
 import { apiClient } from '@/lib/api/client';
 import { useRole } from '@/lib/hooks/useRole';
+import { obtenirSessionValide } from '@/lib/auth/central-session';
 
 export default function ConsultationCpaPage() {
   return (
@@ -50,8 +51,6 @@ function ConsultationCpaPageContent() {
   const intervention = searchParams.get('intervention') || '';
 
   const [patient, setPatient] = useState<any>(null);
-  const [anesthesistes, setAnesthesistes] = useState<any[]>([]);
-  const [anesthesisteId, setAnesthesisteId] = useState('');
   const [form, setForm] = useState(DEFAULT_FORM);
   const [scoreMallampati, setScoreMallampati] = useState<number>(1);
   const [scoreASA, setScoreASA] = useState<number | string>(1);
@@ -63,15 +62,21 @@ function ConsultationCpaPageContent() {
   const [showMedicamentModal, setShowMedicamentModal] = useState(false);
   const [medicaments, setMedicaments] = useState<any[]>([]);
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
+  const [showMedicamentAnesthesieModal, setShowMedicamentAnesthesieModal] = useState(false);
+  const [medicamentsAnesthesie, setMedicamentsAnesthesie] = useState<any[]>([]);
+  const [nouveauMedicamentAnesthesie, setNouveauMedicamentAnesthesie] = useState({ nom: '', dose: '', voieAdministration: '' });
   const { peutDeciderAptitudeCpa, roleName } = useRole();
+  const [nomAnesthesiste, setNomAnesthesiste] = useState('');
+
+  useEffect(() => {
+    const session = obtenirSessionValide();
+    if (session) setNomAnesthesiste(`${session.payload.firstname} ${session.payload.name}`.trim());
+  }, []);
 
   useEffect(() => {
     if (patientId) {
       patientService.getById(patientId).then(setPatient).catch(console.error);
     }
-    medecinService.getAll({ role: 'ANESTHESISTE', limite: 100 }).then((data: any) => {
-      setAnesthesistes(Array.isArray(data) ? data : data?.data || []);
-    }).catch(console.error);
   }, [patientId]);
 
   const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'STAT';
@@ -90,13 +95,25 @@ function ConsultationCpaPageContent() {
     setMedicaments(medicaments.filter((_, i) => i !== index));
   };
 
+  const ajouterMedicamentAnesthesie = () => {
+    if (nouveauMedicamentAnesthesie.nom && nouveauMedicamentAnesthesie.dose) {
+      setMedicamentsAnesthesie([...medicamentsAnesthesie, { ...nouveauMedicamentAnesthesie }]);
+      setNouveauMedicamentAnesthesie({ nom: '', dose: '', voieAdministration: '' });
+      setShowMedicamentAnesthesieModal(false);
+    }
+  };
+
+  const supprimerMedicamentAnesthesie = (index: number) => {
+    setMedicamentsAnesthesie(medicamentsAnesthesie.filter((_, i) => i !== index));
+  };
+
   const handleValider = async () => {
     if (!peutDeciderAptitudeCpa) { alert('❌ Seul un anesthésiste peut valider la décision de CPA'); return; }
     const patientIdFinal = patientId || patient?.id;
     if (!patientIdFinal) { alert('❌ Patient introuvable'); return; }
-    if (!anesthesisteId) { alert('❌ Sélectionnez l\'anesthésiste ayant réalisé la consultation'); return; }
     if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); return; }
     if (decision === 'INAPTE' && !motifRefus.trim()) { alert('❌ Le motif du refus est obligatoire'); return; }
+    if (decision === 'REPORT' && !motifRefus.trim()) { alert('❌ Le motif du report est obligatoire'); return; }
     const nombresRequis: [string, string][] = [
       [form.frequenceCardiaque, 'Fréquence cardiaque'],
       [form.taSystolique, 'TA systolique'],
@@ -114,7 +131,6 @@ function ConsultationCpaPageContent() {
     try {
       const payload = {
         patientId: patientIdFinal,
-        anesthesisteId,
         dateConsultation: new Date().toISOString().split('T')[0],
         antecedentsAnesthesie: form.antecedentsAnesthesie,
         notesIncidents: form.notesIncidents || undefined,
@@ -136,7 +152,7 @@ function ConsultationCpaPageContent() {
         alcool: form.alcool,
         scoreASA: typeof scoreASA === 'string' ? scoreASA : Number(scoreASA),
         decision,
-        motifRefus: decision === 'INAPTE' ? motifRefus.trim() : undefined,
+        motifRefus: (decision === 'INAPTE' || decision === 'REPORT') ? motifRefus.trim() : undefined,
         typeAnesthesie: form.typeAnesthesie,
         techniqueIntubation: form.techniqueIntubation,
         premedicaments: medicaments.map(m => ({
@@ -146,6 +162,7 @@ function ConsultationCpaPageContent() {
           debut: m.debut || 'H-1',
           frequence: m.frequence || '1x/jour'
         })),
+        medicamentsAnesthesieReanimation: medicamentsAnesthesie.length ? medicamentsAnesthesie : undefined,
         jeune: form.jeune || 'À partir de minuit',
         preparationPhysique: form.preparationPhysique || 'RAS',
         tachesInfirmieres: form.tachesInfirmieres || 'RAS',
@@ -210,16 +227,13 @@ function ConsultationCpaPageContent() {
         </div>
       </div>
 
-      {/* Anesthésiste réalisant la consultation */}
-      <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
-        <label className="text-sm font-semibold block mb-2">Anesthésiste réalisant la consultation *</label>
-        <select value={anesthesisteId} onChange={e => setAnesthesisteId(e.target.value)}
-          className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm">
-          <option value="">— Sélectionner —</option>
-          {anesthesistes.map((m: any) => (
-            <option key={m.id} value={m.id}>{m.nom} {m.prenom}</option>
-          ))}
-        </select>
+      {/* Anesthésiste réalisant la consultation — c'est toujours l'utilisateur connecté */}
+      <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex items-center gap-2">
+        <span className="material-symbols-outlined text-primary">badge</span>
+        <div>
+          <p className="text-xs font-semibold text-on-surface-variant">Anesthésiste réalisant la consultation</p>
+          <p className="text-sm font-bold text-on-surface">{nomAnesthesiste || '—'}</p>
+        </div>
       </div>
 
       {/* CONTENU PRINCIPAL */}
@@ -351,37 +365,6 @@ function ConsultationCpaPageContent() {
             <p className="text-[10px] text-white/70 uppercase font-bold text-center">Patient avec pathologie systémique sévère</p>
           </section>
 
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
-            <h2 className="text-sm font-bold text-on-surface-variant mb-2 uppercase tracking-widest">Décision Finale *</h2>
-            {!peutDeciderAptitudeCpa && (
-              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Décision réservée à l'anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}.
-              </div>
-            )}
-            <div className="space-y-2">
-              {[
-                { key: 'APTE', label: "Apte à l'anesthésie", activeClass: 'bg-secondary/10 border-secondary text-secondary' },
-                { key: 'INAPTE', label: 'Inapte à ce jour', activeClass: 'bg-error/10 border-error text-error' },
-                { key: 'REPORT', label: "Report d'intervention", activeClass: 'bg-tertiary/10 border-tertiary text-tertiary' },
-              ].map(opt => (
-                <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutDeciderAptitudeCpa}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    decision === opt.key ? opt.activeClass : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
-                  }`}>
-                  <span className="font-bold">{opt.label}</span>
-                  {decision === opt.key && <span className="material-symbols-outlined">check_circle</span>}
-                </button>
-              ))}
-            </div>
-            {decision === 'INAPTE' && (
-              <div className="mt-3">
-                <label className="text-xs font-bold block mb-1">Motif du refus *</label>
-                <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
-                  className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Expliquez le motif de l'inaptitude..." />
-              </div>
-            )}
-          </section>
-
           <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-2">
             <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Protocole retenu</h2>
             <div><label className="text-[10px] font-bold block mb-2">Type d'anesthésie</label>
@@ -450,13 +433,91 @@ function ConsultationCpaPageContent() {
                 <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Tâches soignantes</label><textarea value={form.tachesInfirmieres} onChange={setField('tachesInfirmieres')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Surveillance, constantes..."></textarea></div>
               </div>
             </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-primary">medication</span> Médicaments d'anesthésie et de réanimation</h3>
+              <p className="text-xs text-on-surface-variant mb-2">À prévoir pour l'anesthésie et une éventuelle réanimation peropératoire — distinct de la prémédication.</p>
+              <div className="overflow-hidden border border-surface-container rounded-xl">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-surface-container text-[10px] uppercase font-bold text-on-surface-variant">
+                    <tr><th className="px-4 py-3">Médicament</th><th className="px-4 py-3">Dose</th><th className="px-4 py-3">Voie d'Admin</th><th className="px-4 py-3">Actions</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container">
+                    {medicamentsAnesthesie.map((med, i) => (
+                      <tr key={i} className="hover:bg-surface-container-low transition-colors">
+                        <td className="px-4 py-3 font-semibold">{med.nom}</td><td className="px-4 py-3">{med.dose}</td><td className="px-4 py-3">{med.voieAdministration || '-'}</td>
+                        <td className="px-4 py-3"><button onClick={() => supprimerMedicamentAnesthesie(i)} className="text-error"><span className="material-symbols-outlined text-sm">delete</span></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={() => setShowMedicamentAnesthesieModal(true)} className="w-full py-3 text-xs font-bold text-primary hover:bg-primary-fixed/20 transition-colors">+ AJOUTER UN MÉDICAMENT</button>
+              </div>
+
+              {showMedicamentAnesthesieModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+                  <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+                    <h3 className="text-lg font-extrabold mb-2">Ajouter un médicament d'anesthésie/réanimation</h3>
+                    <div className="space-y-3">
+                      <div><label className="text-xs font-bold block mb-1">Médicament</label><input type="text" value={nouveauMedicamentAnesthesie.nom} onChange={(e) => setNouveauMedicamentAnesthesie({ ...nouveauMedicamentAnesthesie, nom: e.target.value })} className="w-full border rounded-lg p-2 text-sm" /></div>
+                      <div><label className="text-xs font-bold block mb-1">Dose</label><input type="text" value={nouveauMedicamentAnesthesie.dose} onChange={(e) => setNouveauMedicamentAnesthesie({ ...nouveauMedicamentAnesthesie, dose: e.target.value })} className="w-full border rounded-lg p-2 text-sm" /></div>
+                      <div><label className="text-xs font-bold block mb-1">Voie d'administration</label><input type="text" value={nouveauMedicamentAnesthesie.voieAdministration} onChange={(e) => setNouveauMedicamentAnesthesie({ ...nouveauMedicamentAnesthesie, voieAdministration: e.target.value })} className="w-full border rounded-lg p-2 text-sm" /></div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button onClick={() => setShowMedicamentAnesthesieModal(false)} className="px-6 py-2 border rounded-lg text-sm font-bold">Annuler</button>
+                      <button onClick={ajouterMedicamentAnesthesie} className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold">Ajouter</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Date VPA */}
-          {decision !== 'INAPTE' && (
+          {/* Décision Finale — en bas de l'interface, une fois l'ensemble de la consultation renseigné */}
+          <div className="mt-4 pt-4 border-t border-surface-container">
+            <h2 className="text-sm font-bold text-on-surface-variant mb-2 uppercase tracking-widest">Décision Finale *</h2>
+            {!peutDeciderAptitudeCpa && (
+              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Décision réservée à l'anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { key: 'APTE', label: "Apte à l'anesthésie", activeClass: 'bg-secondary/10 border-secondary text-secondary' },
+                { key: 'INAPTE', label: 'Inapte à ce jour', activeClass: 'bg-error/10 border-error text-error' },
+                { key: 'REPORT', label: "Report d'intervention", activeClass: 'bg-tertiary/10 border-tertiary text-tertiary' },
+              ].map(opt => (
+                <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutDeciderAptitudeCpa}
+                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    decision === opt.key ? opt.activeClass : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
+                  }`}>
+                  <span className="font-bold">{opt.label}</span>
+                  {decision === opt.key && <span className="material-symbols-outlined">check_circle</span>}
+                </button>
+              ))}
+            </div>
+            {decision === 'INAPTE' && (
+              <div className="mt-3">
+                <label className="text-xs font-bold block mb-1">Motif du refus *</label>
+                <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
+                  className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Expliquez le motif de l'inaptitude..." />
+              </div>
+            )}
+            {decision === 'REPORT' && (
+              <div className="mt-3">
+                <label className="text-xs font-bold block mb-1">Motif du report *</label>
+                <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
+                  className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Expliquez le motif du report d'intervention..." />
+              </div>
+            )}
+          </div>
+
+          {/* Vérification à la veille (VPA) — planifiée une fois la décision connue */}
+          {decision !== 'INAPTE' && decision !== '' && (
             <div className="mt-4 p-4 bg-surface-container-low rounded-xl border space-y-2">
+              <label className="text-sm font-bold block">Planification de la vérification à la veille (VPA)</label>
+              <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
               <div className="flex flex-col md:flex-row md:items-center gap-2">
-                <label className="text-sm font-bold whitespace-nowrap">Date du VPA de ce Patient</label>
                 <input className="flex-1 bg-white border-none rounded-lg p-2 text-sm" type="date" value={dateVPA} onChange={e => setDateVPA(e.target.value)} />
                 <input className="flex-none w-32 bg-white border-none rounded-lg p-2 text-sm" type="time" value={heureVPA} onChange={e => setHeureVPA(e.target.value)} />
               </div>

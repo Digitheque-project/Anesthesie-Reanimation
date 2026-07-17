@@ -49,6 +49,14 @@ export class MedecinService {
     return { data, total, page, pages: Math.ceil(total / limite) };
   }
 
+  // Utilisé pour relier automatiquement l'utilisateur SSO connecté à sa fiche Médecin locale
+  // (ex: anesthésiste réalisant une CPA) — pas de création automatique, la fiche doit exister
+  // avec les vraies informations d'ordre professionnel.
+  async findByEmail(email: string): Promise<Medecin | null> {
+    if (!email) return null;
+    return this.medecinRepository.findOne({ where: { email } });
+  }
+
   async findOne(id: string): Promise<Medecin> {
     const medecin = await this.medecinRepository.findOne({ where: { id } });
     if (!medecin) {

@@ -127,6 +127,11 @@ export class CPA {
   @OneToMany(() => Premedicament, (premed) => premed.cpa, { cascade: true })
   premedicaments: Premedicament[];
 
+  // Médicaments à prévoir pendant l'anesthésie et la réanimation (distinct de la
+  // prémédication, donnée avant le passage au bloc) — consultable dès la CPA.
+  @Column({ type: 'simple-json', nullable: true })
+  medicamentsAnesthesieReanimation: { nom: string; dose: string; voieAdministration?: string }[];
+
   @Column()
   jeune: string;
 

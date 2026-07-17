@@ -13,10 +13,17 @@ class PremedicamentDto {
   @IsString() debut: string;
   @IsString() frequence: string;
 }
+class MedicamentAnesthesieReanimationDto {
+  @IsString() nom: string;
+  @IsString() dose: string;
+  @IsOptional() @IsString() voieAdministration?: string;
+}
 
 export class CreateCPADto {
   @IsString() patientId: string;
-  @IsString() anesthesisteId: string;
+  // Dérivé automatiquement de l'utilisateur SSO connecté (voir CPAService.create) — ignoré s'il
+  // est envoyé par le client.
+  @IsOptional() @IsString() anesthesisteId?: string;
   @IsDateString() dateConsultation: string;
   @IsBoolean() antecedentsAnesthesie: boolean;
   @IsOptional() @IsString() notesIncidents?: string;
@@ -41,6 +48,7 @@ export class CreateCPADto {
   @IsString() typeAnesthesie: string;
   @IsString() techniqueIntubation: string;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => PremedicamentDto) premedicaments?: PremedicamentDto[];
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => MedicamentAnesthesieReanimationDto) medicamentsAnesthesieReanimation?: MedicamentAnesthesieReanimationDto[];
   @IsString() jeune: string;
   @IsString() preparationPhysique: string;
   @IsString() tachesInfirmieres: string;

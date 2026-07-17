@@ -36,4 +36,9 @@ export const patientService = {
     const { data } = await apiClient.patch(`/patients/${cleanPatientId(id)}/inapte-cpa`, { motifRefus });
     return data;
   },
+
+  async getDossierMedical(id: string) {
+    const { data } = await apiClient.get(`/patients/${cleanPatientId(id)}/dossier-medical`);
+    return data;
+  },
 };
