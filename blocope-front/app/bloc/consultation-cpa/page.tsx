@@ -198,7 +198,7 @@ function ConsultationCpaPageContent() {
       }
 
       alert(estUrgent ? '✅ VPA validée avec succès !' : '✅ CPA validée avec succès !');
-      router.push(estUrgent ? '/bloc/rendez-vous' : '/bloc/rendez-vous/verification-veille');
+      router.push('/bloc/rendez-vous');
     } catch (err: any) {
       console.error('❌ Erreur validation:', err);
       const message = err.response?.data?.message || err.message || 'Erreur inconnue';
