@@ -16,29 +16,33 @@ export default function PatientDuJourPage() {
   const charger = async () => {
     try {
       setLoading(true)
-      // Récupérer les patients
-      const data = await patientService.getAll({
-        statut: filtres.statut || undefined,
-        recherche: filtres.recherche || undefined,
-        limite: 100
-      })
-
-      // Récupérer les notifications CPA pour avoir les interventions
-      const notifs = await notificationService.getAll(1, 100)
-      const notifsData = notifs.data || []
+      // "À opérer aujourd'hui" = seulement les patients encore en phase opératoire (prêts ou en
+      // cours). Une fois passés en salle de réveil ou sortis, ils ne doivent plus apparaître ici.
+      const [pretRes, encoursRes, notifsRes] = await Promise.all([
+        patientService.getAll({ statut: 'PRET_POUR_BLOC', recherche: filtres.recherche || undefined, limite: 100 }),
+        patientService.getAll({ statut: 'EN_COURS_OPERATION', recherche: filtres.recherche || undefined, limite: 100 }),
+        notificationService.getAll(1, 100),
+      ])
+      const notifsData = notifsRes.data || []
+      const data = [...(pretRes.data || []), ...(encoursRes.data || [])]
 
       // Fusionner : associer chaque patient à sa notification (si existe)
-      const liste = (data.data || []).map((p: any) => {
+      let liste = data.map((p: any) => {
         const notif = notifsData.find((n: any) => n.patientId === p.id || n.patient?.id === p.id)
         return {
           id: p.idDossier || p.id, realId: p.id,
           nom: p.nom,
           prenom: p.prenom,
-          operation: notif?.intervention || 'Non spécifiée',
+          operation: notif?.intervention || p.libelle || 'Non spécifiée',
           etat: p.niveauUrgence === 'STAT' ? 'STAT' : p.niveauUrgence === 'URGENT' ? 'Urgent' : 'Stable',
-          chirurgien: notif?.chirurgien?.nom || '',
+          chirurgien: notif?.chirurgien?.nom || p.chirurgien_nom || '',
         }
       })
+
+      if (filtres.statut) {
+        liste = liste.filter(p => p.etat === filtres.statut)
+      }
+
       setPatients(liste)
     } catch (err) {
       console.error('Erreur:', err)

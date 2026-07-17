@@ -8,23 +8,21 @@ interface ModalPlanifierRDVProps {
   onValider: (data: any) => void
   patientNom: string
   intervention: string
-  professeurCPA: string
   estUrgent: boolean
 }
 
 export default function ModalPlanifierRDV({
-  isOpen, onClose, onValider, patientNom, intervention, professeurCPA, estUrgent
+  isOpen, onClose, onValider, patientNom, intervention, estUrgent
 }: ModalPlanifierRDVProps) {
   const [typeRDV, setTypeRDV] = useState<'CPA' | 'VPA'>('CPA')
   const [dateRDV, setDateRDV] = useState(estUrgent ? new Date().toISOString().split('T')[0] : '')
   const [heureRDV, setHeureRDV] = useState(estUrgent ? new Date().toTimeString().split(' ')[0].substring(0,5) : '')
   const [lieuRDV, setLieuRDV] = useState(estUrgent ? 'Bloc Opératoire - Urgence' : '')
-  const [professeur, setProfesseur] = useState(professeurCPA || '')
 
   if (!isOpen) return null
 
   const handleSubmit = () => {
-    onValider({ typeRDV, dateRDV, heureRDV, lieuRDV, professeur })
+    onValider({ typeRDV, dateRDV, heureRDV, lieuRDV })
   }
 
   return (
@@ -70,12 +68,6 @@ export default function ModalPlanifierRDV({
               className="w-full border rounded-lg p-2 text-sm" placeholder="Salle de consultation..." required />
           </div>
 
-          {/* Professeur */}
-          <div>
-            <label className="text-xs font-bold text-gray-600 block mb-1"> Responsable *</label>
-            <input type="text" value={professeur} onChange={e => setProfesseur(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm" required />
-          </div>
         </div>
 
         {estUrgent && (

@@ -8,10 +8,10 @@ interface PatientReveil {
   id: string;
   nom: string;
   prenom: string;
+  idDossier: string;
   intervention: string;
-  statut: 'stable' | 'instable' | 'critique';
-  dureeOperation: string;
-  heureArrivee: string;
+  niveauUrgence: 'STAT' | 'URGENT' | 'NORMAL' | string;
+  depuis: string;
 }
 
 export default function ListeSalleReveil() {
@@ -26,35 +26,37 @@ export default function ListeSalleReveil() {
   const chargerPatients = async () => {
     try {
       setLoading(true);
-      const patients = await salleReveilService.getPatientsEnReveil();
-      setPatients(patients);
+      const data = await salleReveilService.getPatientsEnReveil();
+      setPatients((data || []).map((p: any) => ({
+        id: p.patientId || p.id,
+        nom: p.nom || '',
+        prenom: p.prenom || '',
+        idDossier: p.idDossier || p.patientId || p.id,
+        intervention: p.libelle || p.typeChirurgie || 'Non spécifiée',
+        niveauUrgence: p.niveauUrgence || 'NORMAL',
+        depuis: p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—',
+      })));
     } catch (err) {
       console.error('Erreur chargement:', err);
-      setPatients([
-        { id: '1', nom: 'Dupont', prenom: 'Jean', intervention: 'Appendicectomie', statut: 'stable', dureeOperation: '45min', heureArrivee: '14:25' },
-        { id: '2', nom: 'Martin', prenom: 'Sophie', intervention: 'Cholécystectomie', statut: 'instable', dureeOperation: '1h20', heureArrivee: '15:10' },
-        { id: '3', nom: 'Bernard', prenom: 'Pierre', intervention: 'Hernie', statut: 'stable', dureeOperation: '30min', heureArrivee: '16:00' },
-      ]);
+      setPatients([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatutBadge = (statut: string) => {
-    switch (statut) {
-      case 'stable': return '🟢 Stable';
-      case 'instable': return '🟠 Instable';
-      case 'critique': return '🔴 Critique';
-      default: return '⚪ Inconnu';
+  const getUrgenceBadge = (niveau: string) => {
+    switch (niveau) {
+      case 'STAT': return '🔴 STAT';
+      case 'URGENT': return '🟠 Urgent';
+      default: return '🟢 Normal';
     }
   };
 
-  const getStatutColor = (statut: string) => {
-    switch (statut) {
-      case 'stable': return 'bg-green-100 text-green-800';
-      case 'instable': return 'bg-orange-100 text-orange-800';
-      case 'critique': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getUrgenceColor = (niveau: string) => {
+    switch (niveau) {
+      case 'STAT': return 'bg-red-100 text-red-800';
+      case 'URGENT': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-green-100 text-green-800';
     }
   };
 
@@ -82,16 +84,15 @@ export default function ListeSalleReveil() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Intervention</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heure arrivée</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durée</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Depuis</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Urgence</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {patients.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     Aucun patient en salle de réveil
                   </td>
                 </tr>
@@ -100,19 +101,18 @@ export default function ListeSalleReveil() {
                   <tr key={patient.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4">
                       <p className="font-medium text-gray-900">{patient.prenom} {patient.nom}</p>
-                      <p className="text-xs text-gray-500">ID: {patient.id}</p>
+                      <p className="text-xs text-gray-500">ID: {patient.idDossier}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{patient.intervention}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{patient.heureArrivee}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{patient.dureeOperation}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{patient.depuis}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatutColor(patient.statut)}`}>
-                        {getStatutBadge(patient.statut)}
+                      <span className={`px-3 py-1 text-xs font-bold rounded-full ${getUrgenceColor(patient.niveauUrgence)}`}>
+                        {getUrgenceBadge(patient.niveauUrgence)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => router.push(`/bloc/salle-de-reveil/suivi?patientId=${patient.id}&patientNom=${patient.prenom}%20${patient.nom}&intervention=${patient.intervention}`)}
+                        onClick={() => router.push(`/bloc/salle-de-reveil/suivi?patientId=${patient.id}&patientNom=${encodeURIComponent(`${patient.prenom} ${patient.nom}`.trim())}&intervention=${encodeURIComponent(patient.intervention)}`)}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-md hover:shadow-lg"
                       >
                         📋 Surveiller

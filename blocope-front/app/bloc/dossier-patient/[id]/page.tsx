@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { patientService, notificationService, planningService } from '@/lib/api'
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
 import { useRole } from '@/lib/hooks/useRole'
+import { obtenirSessionValide } from '@/lib/auth/central-session'
 
 export default function DossierPatientPage() {
   return (
@@ -50,6 +51,9 @@ function DossierPatientPageContent() {
       fin.setHours(h, m + 30)
       const heureFin = fin.toTimeString().split(' ')[0].substring(0, 5)
 
+      const session = obtenirSessionValide()
+      const responsable = session ? `${session.payload.firstname} ${session.payload.name}`.trim() : undefined
+
       await planningService.reserverCreneau({
         patientId,
         date: formData.dateRDV || new Date().toISOString().split('T')[0],
@@ -57,7 +61,7 @@ function DossierPatientPageContent() {
         heureFin,
         salle: formData.lieuRDV || 'Salle CPA',
         type: formData.typeRDV || 'CPA',
-        responsable: formData.professeur || undefined,
+        responsable,
       })
 
       if (notifId) {
@@ -150,7 +154,6 @@ function DossierPatientPageContent() {
         onValider={handleValiderPlanification}
         patientNom={`${p.nom || ''} ${p.prenom || ''}`.trim() || 'Patient'}
         intervention={p.libelle || ''}
-        professeurCPA={p.chirurgien_nom || ''}
         estUrgent={false}
       />
 

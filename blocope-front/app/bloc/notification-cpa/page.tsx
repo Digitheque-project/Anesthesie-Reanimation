@@ -7,13 +7,17 @@ import TableauNotifications from '@/components/bloc/notification-cpa/TableauNoti
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
 import { useRouter } from 'next/navigation'
 import { notificationService, planningService } from '@/lib/api'
+import { obtenirSessionValide } from '@/lib/auth/central-session'
 
 export default function NotificationCPAPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [showFiltres, setShowFiltres] = useState(false)
-  const [filtreActif, setFiltreActif] = useState('tous')
+  // Le fil de prescription ne doit montrer que les prescriptions pas encore traitées : une fois
+  // le RDV CPA planifié, le patient bascule vers la liste "Rendez-vous CPA" et ne doit plus
+  // réapparaître ici par défaut (les autres filtres restent disponibles pour l'historique).
+  const [filtreActif, setFiltreActif] = useState('EN_ATTENTE')
   const [showModal, setShowModal] = useState(false)
   const [selectedNotif, setSelectedNotif] = useState<any>(null)
   const [stats, setStats] = useState({ enAttente: 0, prioriteHaute: 0, rdvFixes24h: 0 })
@@ -57,6 +61,9 @@ export default function NotificationCPAPage() {
       fin.setHours(h, m + 30)
       const heureFin = fin.toTimeString().split(' ')[0].substring(0, 5)
 
+      const session = obtenirSessionValide()
+      const responsable = session ? `${session.payload.firstname} ${session.payload.name}`.trim() : undefined
+
       await planningService.reserverCreneau({
         patientId: patientId,
         date: formData.dateRDV || new Date().toISOString().split('T')[0],
@@ -65,7 +72,7 @@ export default function NotificationCPAPage() {
         salle: formData.lieuRDV || 'Salle CPA',
         estUrgence: selectedNotif.estUrgent || false,
         type: formData.typeRDV || 'CPA',
-        responsable: formData.professeur || selectedNotif.professeurCPA || undefined,
+        responsable,
       })
 
       // Bascule la notification en RDV_PLANIFIE et notifie automatiquement le service d'origine
@@ -144,7 +151,6 @@ export default function NotificationCPAPage() {
           onValider={handleValiderPlanification}
           patientNom={selectedNotif.patient?.nom || 'Patient'}
           intervention={selectedNotif.intervention}
-          professeurCPA={selectedNotif.professeurCPA}
           estUrgent={selectedNotif.estUrgent}
         />
       )}
