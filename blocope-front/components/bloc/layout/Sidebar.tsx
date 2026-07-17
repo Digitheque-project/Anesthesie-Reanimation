@@ -13,12 +13,12 @@ const navItems: NavItem[] = [
     icon: 'dashboard',
   },
   {
-    label: 'Fil de prescription CPA',
+    label: 'Prescription',
     href: '/bloc/notification-cpa',
     icon: 'notification_important',
   },
   {
-    label: 'Rendez-vous',
+    label: 'Fil de travail',
     href: '/bloc/rendez-vous',
     icon: 'calendar_today',
   },
@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
     icon: 'sync_alt',
   },
   {
-    label: 'Patient du Jour',
+    label: 'Programme opératoire',
     href: '/bloc/patient-du-jour',
     icon: 'person',
   },
