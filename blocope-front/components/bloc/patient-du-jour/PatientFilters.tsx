@@ -5,13 +5,13 @@ import { useState } from "react";
 
 interface PatientFiltersProps {
   onFilterChange: (filtres: FiltresPatient) => void;
+  date: string;
+  onDateChange: (date: string) => void;
 }
 
-export default function PatientFilters({ onFilterChange }: PatientFiltersProps) {
+export default function PatientFilters({ onFilterChange, date, onDateChange }: PatientFiltersProps) {
   const [statut, setStatut] = useState("Tous les statuts");
   const [specialite, setSpecialite] = useState("Toutes les spécialités");
-  const dateDuJour = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const dateDuJourCapitalisee = dateDuJour.charAt(0).toUpperCase() + dateDuJour.slice(1);
 
   const handleStatutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVal = e.target.value;
@@ -27,18 +27,30 @@ export default function PatientFilters({ onFilterChange }: PatientFiltersProps) 
 
   return (
     <div className="flex flex-wrap gap-6 items-end bg-surface-container-low p-5 rounded-xl mb-6 border border-outline-variant/10">
-      {/* Date Indicator */}
+      {/* Sélecteur de date — navigation dans le programme opératoire, pas figé sur "aujourd'hui" */}
       <div className="flex flex-col gap-1.5">
         <label className="text-[10px] font-bold text-primary uppercase tracking-widest px-1">
-          Date du jour
+          Date du programme
         </label>
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-outline-variant/20 shadow-sm min-w-[200px]">
           <span className="material-symbols-outlined text-primary text-xl">
             calendar_month
           </span>
-          <span className="text-sm font-bold text-on-surface">
-            {dateDuJourCapitalisee}
-          </span>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="text-sm font-bold text-on-surface bg-transparent border-none outline-none cursor-pointer"
+          />
+          {date !== new Date().toISOString().split('T')[0] && (
+            <button
+              type="button"
+              onClick={() => onDateChange(new Date().toISOString().split('T')[0])}
+              className="text-[10px] font-bold text-primary uppercase hover:underline whitespace-nowrap"
+            >
+              Aujourd'hui
+            </button>
+          )}
         </div>
       </div>
 

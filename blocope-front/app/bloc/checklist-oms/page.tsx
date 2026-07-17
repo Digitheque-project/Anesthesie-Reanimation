@@ -42,9 +42,10 @@ function ChecklistAvantOpPageContent() {
       // Rediriger vers le Time Out (dernière pause d'équipe avant incision)
       router.push(`/bloc/verification-post-op?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
       
-    } catch (err) { 
+    } catch (err: any) {
       console.error('❌ Erreur validation checklist:', err)
-      alert('❌ Erreur lors de la validation de la checklist')
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur : ' + (Array.isArray(message) ? message.join(', ') : message))
     }
     finally { setLoading(false) }
   }

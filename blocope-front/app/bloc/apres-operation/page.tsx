@@ -39,7 +39,11 @@ function ApresOperationPageContent() {
       await apiClient.post('/checklists-apres-op', { patientId, ...form })
       alert('✅ Checklist après opération enregistrée !')
       router.push(`/bloc/salle-de-reveil?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)
-    } catch (err) { console.error(err); alert('❌ Erreur') }
+    } catch (err: any) {
+      console.error(err)
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur : ' + (Array.isArray(message) ? message.join(', ') : message))
+    }
     finally { setLoading(false) }
   }
 

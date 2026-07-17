@@ -82,9 +82,10 @@ function ActivitePendantOperationPageContent() {
 
       alert('✅ Activité enregistrée !')
       router.push('/bloc/protocole-operatoire?patientId=' + patientId + '&patientNom=' + encodeURIComponent(patientNom))
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert('❌ Erreur lors de l\'enregistrement')
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur : ' + (Array.isArray(message) ? message.join(', ') : message))
     } finally {
       setLoading(false)
     }

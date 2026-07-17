@@ -49,7 +49,11 @@ function ProtocoleOperatoirePageContent() {
       })
       alert('✅ Protocole enregistré ! Redirection vers la salle de réveil.')
       router.push(`/bloc/salle-de-reveil?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)
-    } catch (err) { console.error(err); alert('❌ Erreur') }
+    } catch (err: any) {
+      console.error(err)
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur : ' + (Array.isArray(message) ? message.join(', ') : message))
+    }
     finally { setLoading(false) }
   }
 
