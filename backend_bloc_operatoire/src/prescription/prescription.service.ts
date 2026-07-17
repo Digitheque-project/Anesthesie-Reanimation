@@ -22,9 +22,17 @@ export class PrescriptionService {
     private config: ConfigService,
   ) {}
 
+  // Webhook temps réel : le service Prescriptions nous signale qu'une nouvelle prescription est
+  // disponible. On ne construit pas la fiche patient depuis ce payload (sa forme générique
+  // couvre tous les types de prescriptions de l'hôpital, pas seulement le bloc opératoire) —
+  // on déclenche immédiatement une synchronisation (au lieu d'attendre jusqu'à 15s le prochain
+  // cycle de polling), qui va chercher et ingère les prescriptions de bloc via le contrat
+  // dédié (getPrescriptionsBloc), déjà fiable et dédoublonné.
   async processPrescription(dto: ReceivePrescriptionDto): Promise<boolean> {
-    this.logger.log(`📦 Traitement prescription: ${JSON.stringify(dto)}`);
-    this.logger.log(`✅ Prescription de type ${dto.type} traitée avec succès`);
+    this.logger.log(`📦 Notification de prescription reçue (type ${dto.type}, patient ${dto.patientId}) — synchronisation immédiate`);
+    this.pollPrescriptionsBloc().catch((err) =>
+      this.logger.error(`Erreur lors de la synchronisation déclenchée par webhook: ${(err as Error).message}`),
+    );
     return true;
   }
 
@@ -60,6 +68,16 @@ export class PrescriptionService {
   private async ingerer(p: PrescriptionBlocExterne, serviceId: string): Promise<void> {
     const dejaIngeree = await this.patientBlocRepo.findOne({ where: { prescriptionExterneId: p.id } });
     if (dejaIngeree) return;
+
+    // Filet de sécurité complémentaire : le service Prescriptions externe peut renvoyer un `id`
+    // différent à chaque interrogation pour ce qui est conceptuellement la même prescription
+    // (ex: source de test sans persistance), ce qui rend le dédoublonnage ci-dessus par `p.id`
+    // inefficace et créait une nouvelle notification à chaque cycle de 15s. On refuse aussi de
+    // ré-ingérer si ce patient a déjà une notification de prescription encore en attente.
+    const notificationDejaEnAttente = await this.notificationRepo.findOne({
+      where: { patientId: p.patientId, statut: StatutNotificationCPA.EN_ATTENTE },
+    });
+    if (notificationDejaEnAttente) return;
 
     const acte = p.actes?.[0];
     const niveauUrgence = this.mapUrgence(p.urgence);
