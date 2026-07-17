@@ -63,9 +63,9 @@ export default function ModalPlanifierRDV({
 
           {/* Lieu */}
           <div>
-            <label className="text-xs font-bold text-gray-600 block mb-1">Lieu *</label>
+            <label className="text-xs font-bold text-gray-600 block mb-1">Lieu</label>
             <input type="text" value={lieuRDV} onChange={e => setLieuRDV(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm" placeholder="Salle de consultation..." required />
+              className="w-full border rounded-lg p-2 text-sm" placeholder="Salle de consultation (optionnel)..." />
           </div>
 
         </div>

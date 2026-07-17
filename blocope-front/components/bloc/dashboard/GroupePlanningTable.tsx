@@ -16,7 +16,7 @@ export interface LignePlanning {
 interface GroupePlanningTableProps {
   icon: string
   titre: string
-  accent: 'primary' | 'secondary' | 'tertiary'
+  accent: 'primary' | 'secondary' | 'tertiary' | 'quaternary'
   lignes: LignePlanning[]
   loading?: boolean
   emptyMessage: string
@@ -26,6 +26,7 @@ const ACCENTS: Record<string, { headerBg: string; text: string; badge: string; a
   primary: { headerBg: 'bg-primary/5', text: 'text-primary', badge: 'bg-primary text-on-primary', actionBg: 'bg-primary/5 hover:bg-primary/10' },
   secondary: { headerBg: 'bg-secondary/5', text: 'text-secondary', badge: 'bg-secondary text-on-secondary', actionBg: 'bg-secondary/5 hover:bg-secondary/10' },
   tertiary: { headerBg: 'bg-tertiary/5', text: 'text-tertiary', badge: 'bg-tertiary text-on-tertiary', actionBg: 'bg-tertiary/5 hover:bg-tertiary/10' },
+  quaternary: { headerBg: 'bg-amber-50', text: 'text-amber-700', badge: 'bg-amber-600 text-white', actionBg: 'bg-amber-50 hover:bg-amber-100' },
 }
 
 const PRIORITE_STYLE: Record<string, string> = {

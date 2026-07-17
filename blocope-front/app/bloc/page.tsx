@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<any>({ totalPatients: 0, urgencesParNiveau: [] })
   const [prescriptions, setPrescriptions] = useState<LignePlanning[]>([])
+  const [patientsCpa, setPatientsCpa] = useState<LignePlanning[]>([])
   const [patientsBloc, setPatientsBloc] = useState<LignePlanning[]>([])
   const [patientsReveil, setPatientsReveil] = useState<LignePlanning[]>([])
   const session = obtenirSessionValide()
@@ -28,9 +29,10 @@ export default function DashboardPage() {
   const chargerToutesLesDonnees = async () => {
     setLoading(true)
 
-    const [statsRes, notifsRes, pretRes, encoursRes, reveilRes] = await Promise.allSettled([
+    const [statsRes, notifsRes, cpaRes, pretRes, encoursRes, reveilRes] = await Promise.allSettled([
       rapportsService.getStatistiques(),
       notificationService.getAll(1, 100),
+      patientService.getAll({ statut: 'EN_ATTENTE_CPA', limite: 50 }),
       patientService.getAll({ statut: 'PRET_POUR_BLOC', limite: 50 }),
       patientService.getAll({ statut: 'EN_COURS_OPERATION', limite: 50 }),
       patientService.getAll({ statut: 'EN_SALLE_REVEIL', limite: 50 }),
@@ -68,6 +70,14 @@ export default function DashboardPage() {
         actionLabel,
         href: `${cible}?patientId=${p.patientId}&patientNom=${nom}&intervention=${intervention}`,
       }
+    }
+
+    // Patients apte au circuit CPA et en attente de la consultation elle-même — pas de filtre
+    // "aujourd'hui" ici, la date d'intervention (souvent à quelques jours) n'a pas de lien avec
+    // la date à laquelle la CPA doit être réalisée.
+    if (cpaRes.status === 'fulfilled') {
+      const liste = cpaRes.value?.data || []
+      setPatientsCpa(liste.map(versLignePatient('EN_ATTENTE_CPA', 'Traiter', '/bloc/consultation-cpa')))
     }
 
     // Prévu aujourd'hui, ou sans date programmée (à planifier en priorité)
@@ -119,6 +129,14 @@ export default function DashboardPage() {
             lignes={prescriptions}
             loading={loading}
             emptyMessage="Aucune prescription reçue aujourd'hui"
+          />
+          <GroupePlanningTable
+            icon="fact_check"
+            titre="Patients prêts pour la CPA"
+            accent="quaternary"
+            lignes={patientsCpa}
+            loading={loading}
+            emptyMessage="Aucun patient en attente de consultation pré-anesthésique"
           />
           <GroupePlanningTable
             icon="medical_services"
