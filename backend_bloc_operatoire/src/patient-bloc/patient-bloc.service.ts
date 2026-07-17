@@ -23,7 +23,9 @@ export class PatientBlocService {
 
     const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
     const niveauUrgence = estUrgence ? NiveauUrgence.STAT : NiveauUrgence.NORMAL;
-    const statutInitial = estUrgence ? PatientStatut.EN_ATTENTE_VPA : PatientStatut.EN_ATTENTE_CPA;
+    // Un patient urgent n'a pas de "vérification à la veille" (chirurgie immédiate) : il passe
+    // par la même consultation que la CPA, juste étiquetée VPA côté interface. Le statut initial
+    // est donc toujours EN_ATTENTE_CPA, urgent ou non.
 
     const patient = new PatientBloc();
     patient.patientId = demande.patientId;
@@ -31,7 +33,7 @@ export class PatientBlocService {
     patient.idDossier = `CHU-${Date.now()}`;
     patient.groupeSanguin = 'A+';
     patient.niveauUrgence = niveauUrgence;
-    patient.statut = statutInitial;
+    patient.statut = PatientStatut.EN_ATTENTE_CPA;
     patient.prescripteurId = demande.sourceServiceId;
     patient.serviceOrigine = demande.sourceServiceName || null;
     patient.serviceOrigineId = demande.sourceServiceId || null;

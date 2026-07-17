@@ -104,8 +104,10 @@ export default function NotificationCPAPage() {
     const patientNom = notif.patientNom || notif.patient?.nom || 'Patient'
     const intervention = notif.intervention || notif.motif || ''
 
+    // Patient urgent : pas de CPA planifiée à l'avance, la consultation a lieu immédiatement —
+    // même interface que la CPA, étiquetée VPA le temps de la consultation.
     router.push(
-      `/bloc/visite-pre-anesthesique?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}&statut=STAT`
+      `/bloc/consultation-cpa?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}&statut=STAT`
     )
   }
 

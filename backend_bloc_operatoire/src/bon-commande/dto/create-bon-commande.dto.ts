@@ -12,7 +12,7 @@ class ItemDto {
 
 export class CreateBonCommandeDto {
   @IsString() patientId: string;
-  @IsOptional() @IsString() vpaId?: string;
+  @IsOptional() @IsString() verificationVeilleId?: string;
   @IsOptional() @IsString() chirurgienId?: string;
   @IsOptional() @IsString() anesthesisteId?: string;
   @IsDateString() dateCreation: string;

@@ -1,9 +1,9 @@
 import { IsString, IsEnum, IsDateString, IsBoolean, IsOptional } from 'class-validator';
-import { StatutVPA } from '../../entities/vpa.entity';
+import { StatutVerificationVeille } from '../../entities/verification-veille.entity';
 
-export class CreateVPADto {
-  @IsOptional() @IsString() patientId?: string;
-  @IsOptional() @IsString() cpaId?: string;
+export class CreateVerificationVeilleDto {
+  @IsString() patientId: string;
+  @IsString() cpaId: string;
   @IsOptional() @IsString() anesthesisteId?: string;
   @IsDateString() dateVisite: string;
   @IsBoolean() identiteConfirmee: boolean;
@@ -14,5 +14,5 @@ export class CreateVPADto {
   @IsString() examensComplementaires: string;
   @IsOptional() commandeSang?: any;
   @IsString() heureDepart: string;
-  @IsOptional() @IsEnum(StatutVPA) statut?: StatutVPA;
+  @IsOptional() @IsEnum(StatutVerificationVeille) statut?: StatutVerificationVeille;
 }

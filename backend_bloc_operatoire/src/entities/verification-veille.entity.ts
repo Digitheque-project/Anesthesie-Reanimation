@@ -2,13 +2,17 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Up
 import { CPA } from './cpa.entity';
 import { Medecin } from './medecin.entity';
 
-export enum StatutVPA {
+// Contrôle final réalisé la veille de l'intervention, pour un patient ayant déjà eu une CPA
+// (programmée à l'avance). À ne pas confondre avec le sigle "VPA" utilisé ailleurs dans
+// l'application pour désigner la consultation urgente d'un patient sans CPA préalable, qui
+// réutilise l'interface de la CPA elle-même.
+export enum StatutVerificationVeille {
   EN_ATTENTE = 'EN_ATTENTE',
   VALIDE = 'VALIDE',
 }
 
-@Entity('vpa')
-export class VPA {
+@Entity('verifications_veille')
+export class VerificationVeille {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -55,8 +59,8 @@ export class VPA {
   @Column({ length: 20 })
   heureDepart: string;
 
-  @Column({ type: 'enum', enum: StatutVPA, default: StatutVPA.EN_ATTENTE })
-  statut: StatutVPA;
+  @Column({ type: 'enum', enum: StatutVerificationVeille, default: StatutVerificationVeille.EN_ATTENTE })
+  statut: StatutVerificationVeille;
 
   @CreateDateColumn()
   createdAt: Date;

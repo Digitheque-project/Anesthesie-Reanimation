@@ -22,12 +22,12 @@ export class BonCommandeService {
     return this.findOne(saved.id);
   }
   async findAll(page = 1, limite = 10) {
-    const [data, total] = await this.bonRepo.findAndCount({ relations: ['vpa', 'chirurgien', 'anesthesiste', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+    const [data, total] = await this.bonRepo.findAndCount({ relations: ['verificationVeille', 'chirurgien', 'anesthesiste', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
     const enriched = await this.accueilClient.enrichWithIdentity(data);
     return { data: enriched, total, page, pages: Math.ceil(total / limite) };
   }
   async findOne(id: string): Promise<any> {
-    const bon = await this.bonRepo.findOne({ where: { id }, relations: ['vpa', 'chirurgien', 'anesthesiste', 'items'] });
+    const bon = await this.bonRepo.findOne({ where: { id }, relations: ['verificationVeille', 'chirurgien', 'anesthesiste', 'items'] });
     if (!bon) throw new NotFoundException(`Bon ${id} non trouvé`);
     const [enriched] = await this.accueilClient.enrichWithIdentity([bon]);
     return enriched;

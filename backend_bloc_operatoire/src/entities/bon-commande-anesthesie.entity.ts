@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
-import { VPA } from './vpa.entity';
+import { VerificationVeille } from './verification-veille.entity';
 import { Medecin } from './medecin.entity';
 import { ItemCommande } from './item-commande.entity';
 
@@ -17,11 +17,11 @@ export class BonCommandeAnesthesie {
   @Column()
   patientId: string;
 
-  @ManyToOne(() => VPA, { eager: true })
-  vpa: VPA;
+  @ManyToOne(() => VerificationVeille, { eager: true })
+  verificationVeille: VerificationVeille;
 
   @Column()
-  vpaId: string;
+  verificationVeilleId: string;
 
   @ManyToOne(() => Medecin, { eager: true })
   chirurgien: Medecin;

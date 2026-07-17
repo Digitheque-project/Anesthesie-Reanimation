@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { planningService } from '@/lib/api';
 
-export default function RendezVousVpaPage() {
+export default function RendezVousVerificationVeillePage() {
   const router = useRouter();
   const [creneaux, setCreneaux] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ export default function RendezVousVpaPage() {
   useEffect(() => { charger(); }, [selectedDate]);
   const charger = async () => {
     setLoading(true);
-    try { const data = await planningService.getJour(selectedDate, 'VPA'); setCreneaux(Array.isArray(data) ? data : []); }
+    try { const data = await planningService.getJour(selectedDate, 'VERIFICATION_VEILLE'); setCreneaux(Array.isArray(data) ? data : []); }
     catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -21,7 +21,7 @@ export default function RendezVousVpaPage() {
   return (
     <div className="p-6 flex flex-col gap-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-extrabold text-on-surface">Liste des Patients - Visite Pré-Anesthésique (VPA)</h2>
+        <h2 className="text-2xl font-extrabold text-on-surface">Liste des Patients - Vérification la veille de l'opération</h2>
         <button onClick={() => router.push('/bloc/rendez-vous')} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline">
           <span className="material-symbols-outlined">arrow_back</span> Retour aux Rendez-vous
         </button>
@@ -56,7 +56,7 @@ export default function RendezVousVpaPage() {
               {loading ? (
                 <tr><td colSpan={5} className="py-12 text-center text-gray-500">Chargement...</td></tr>
               ) : creneaux.length === 0 ? (
-                <tr><td colSpan={5} className="py-12 text-center text-gray-500">Aucun patient VPA</td></tr>
+                <tr><td colSpan={5} className="py-12 text-center text-gray-500">Aucun patient</td></tr>
               ) : creneaux.filter((c: any) => {
                 if (filtreStatut === 'Tous les statuts') return true;
                 if (filtreStatut === 'Urgent') return c.estUrgence;
@@ -75,8 +75,8 @@ export default function RendezVousVpaPage() {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <button onClick={() => router.push(`/bloc/visite-pre-anesthesique?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
-                      className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold">Réaliser VPA</button>
+                    <button onClick={() => router.push(`/bloc/verification-veille?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(c.patient?.nom + ' ' + c.patient?.prenom)}`)}
+                      className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold">Réaliser la vérification</button>
                   </td>
                 </tr>
               ))}

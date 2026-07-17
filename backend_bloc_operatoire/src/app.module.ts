@@ -8,7 +8,7 @@ import { AppService } from './app.service';
 import { PatientBlocModule } from './patient-bloc/patient-bloc.module';
 import { MedecinModule } from './medecin/medecin.module';
 import { CPAModule } from './cpa/cpa.module';
-import { VPAModule } from './vpa/vpa.module';
+import { VerificationVeilleModule } from './verification-veille/verification-veille.module';
 import { BonCommandeModule } from './bon-commande/bon-commande.module';
 import { ActivitePerOpModule } from './activite-per-op/activite-per-op.module';
 import { ProtocoleOperatoireModule } from './protocole-operatoire/protocole-operatoire.module';
@@ -53,7 +53,7 @@ import centralAuthConfig from './config/central-auth.config';
     PatientBlocModule,
     MedecinModule,
     CPAModule,
-    VPAModule,
+    VerificationVeilleModule,
     BonCommandeModule,
     ActivitePerOpModule,
     ProtocoleOperatoireModule,

@@ -6,21 +6,21 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { patientService } from '@/lib/api'
 
-export default function VisitePreAnesthesiquePage() {
+export default function VerificationVeillePage() {
   return (
     <Suspense fallback={<div>Chargement...</div>}>
-      <VisitePreAnesthesiquePageContent />
+      <VerificationVeillePageContent />
     </Suspense>
   );
 }
 
-function VisitePreAnesthesiquePageContent() {
+function VerificationVeillePageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''
-  const patientNom = searchParams.get('patientNom') || 'SAFIDY Marie-Claire'
+  const patientNom = searchParams.get('patientNom') || 'Patient'
   const [patient, setPatient] = useState<any>(null)
-  const [cpaId, setCpaId] = useState('')
+  const [cpa, setCpa] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
     dateVisite: new Date().toISOString().split('T')[0],
@@ -32,30 +32,30 @@ function VisitePreAnesthesiquePageContent() {
     if (patientId) {
       patientService.getById(patientId).then(setPatient).catch(console.error)
       apiClient.get(`/cpa?patientId=${patientId}`).then(res => {
-        if (res.data?.data?.length > 0) setCpaId(res.data.data[0].id)
+        if (res.data?.data?.length > 0) setCpa(res.data.data[0])
       }).catch(() => {})
     }
   }, [patientId])
 
-  const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'STAT'
+  const cpaId = cpa?.id || ''
 
   const handleSubmit = async () => {
-    if (!cpaId && !estUrgent) {
+    if (!cpaId) {
       alert('⚠️ Aucune CPA trouvée pour ce patient. Veuillez d\'abord réaliser une CPA.')
       return
     }
     setLoading(true)
     try {
-      await apiClient.post('/vpa', { 
-        patientId: patientId || patient?.id, 
-        cpaId, 
-        ...form 
+      await apiClient.post('/verification-veille', {
+        patientId: patientId || patient?.id,
+        cpaId,
+        ...form
       })
-      alert('✅ VPA validée avec succès !')
-      router.push('/bloc/rendez-vous/vpa')
-    } catch (err) { 
-      console.error(err); 
-      alert('❌ Erreur lors de la validation VPA') 
+      alert('✅ Vérification veille validée avec succès !')
+      router.push('/bloc/rendez-vous/verification-veille')
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erreur lors de la validation')
     }
     finally { setLoading(false) }
   }
@@ -66,7 +66,7 @@ function VisitePreAnesthesiquePageContent() {
       <div className="p-6 bg-white rounded-xl flex flex-wrap items-center justify-between gap-6 shadow-sm border border-outline-variant/30">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm">
-            <img alt="Patient Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5XefaqDtjR4FRKYIgCLijkKKQVp-CIW_NksRddAH5eXIHo9PCPlKYiKassETFGHQVdCayT3LKNe-Mjl6AnZ3bsXqZ_tYjDchj-pIm07M5n41av6ynti0OGpAGtduT0gDNdYSPQm02kedMxHeIoqgu6gfj7GE_LhD57nZGXb1bKw8wxLBO8dM_uRtlCOlKpflnR1sFUPdVwP3dYA_4rsDsGij67nrie9EPIUjkxl-dmcmzjRl2gdbXcsCK8Rte2KIlWylZmce5YJo" />
+            <span className="material-symbols-outlined text-4xl text-primary flex items-center justify-center w-full h-full bg-primary-fixed">account_circle</span>
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-primary tracking-tight">{patientNom}</h2>
@@ -83,14 +83,13 @@ function VisitePreAnesthesiquePageContent() {
           ) : (
             <span className="px-3 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wider">⚠️ CPA non réalisée</span>
           )}
-          <span className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${estUrgent ? 'bg-tertiary text-on-tertiary' : 'bg-secondary text-on-secondary'}`}>
-            {estUrgent ? 'CHIRURGIE NON PROGRAMMÉE' : 'CHIRURGIE PROGRAMMÉE'}
-          </span>
         </div>
       </div>
 
+      <p className="mt-2 text-sm text-on-surface-variant">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
+
       {/* Bento Grid Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
         {/* Vérification de sécurité */}
         <section className="lg:col-span-8 bg-white rounded-xl p-8 shadow-sm border border-outline-variant/30">
           <div className="flex items-center gap-3 mb-8">
@@ -124,22 +123,30 @@ function VisitePreAnesthesiquePageContent() {
           </div>
         </section>
 
-        {/* Décision CPA */}
+        {/* Décision CPA (rappel) */}
         <section className="lg:col-span-4 bg-surface-container-high rounded-xl p-8 flex flex-col shadow-sm border border-outline-variant/30">
           <div className="flex items-center gap-3 mb-6">
             <span className="material-symbols-outlined text-primary">history_edu</span>
-            <h3 className="text-lg font-bold text-on-surface">Décision CPA</h3>
+            <h3 className="text-lg font-bold text-on-surface">CPA de référence</h3>
           </div>
-          <div className="flex-1 space-y-4">
-            <div className="bg-white p-4 rounded-lg border-l-4 border-secondary shadow-sm">
-              <p className="text-[9px] uppercase font-bold text-secondary tracking-widest mb-1">Score ASA</p>
-              <p className="text-2xl font-black text-on-surface">ASA II</p>
+          {cpa ? (
+            <div className="flex-1 space-y-4">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-secondary shadow-sm">
+                <p className="text-[9px] uppercase font-bold text-secondary tracking-widest mb-1">Score ASA</p>
+                <p className="text-2xl font-black text-on-surface">{cpa.scoreASA ?? '—'}</p>
+              </div>
+              <div className="bg-white p-5 rounded-lg shadow-sm">
+                <p className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Protocole retenu</p>
+                <p className="text-sm font-semibold text-on-surface leading-relaxed">{cpa.typeAnesthesie || '—'}{cpa.techniqueIntubation ? ` — ${cpa.techniqueIntubation}` : ''}</p>
+              </div>
+              <div className="bg-white p-5 rounded-lg shadow-sm">
+                <p className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Décision</p>
+                <p className="text-sm font-semibold text-on-surface">{cpa.decision || '—'}</p>
+              </div>
             </div>
-            <div className="bg-white p-5 rounded-lg shadow-sm">
-              <p className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Protocole retenu</p>
-              <p className="text-sm font-semibold text-on-surface leading-relaxed">Anesthésie Générale avec IOT.</p>
-            </div>
-          </div>
+          ) : (
+            <p className="text-sm text-on-surface-variant italic">Aucune CPA trouvée pour ce patient.</p>
+          )}
         </section>
 
         {/* Prémédication & Préparation */}
@@ -172,37 +179,37 @@ function VisitePreAnesthesiquePageContent() {
           </div>
         </section>
 
-        {/* Footer Actions - CORRIGÉ */}
+        {/* Footer Actions */}
         <section className="lg:col-span-12 flex flex-col md:flex-row items-center justify-between gap-6 p-8 bg-surface-container text-on-surface rounded-xl shadow-sm border border-outline-variant/30">
           <div className="flex flex-col items-center md:items-start">
             <label className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">HEURE DE DÉPART AU BLOC</label>
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-3xl text-primary">schedule</span>
-              <input 
-                type="time" 
-                value={form.heureDepart} 
-                onChange={e => setForm({...form, heureDepart: e.target.value})} 
+              <input
+                type="time"
+                value={form.heureDepart}
+                onChange={e => setForm({...form, heureDepart: e.target.value})}
                 className="bg-transparent border border-primary/30 rounded-lg px-4 py-2 text-2xl font-black text-primary focus:ring-2 focus:ring-primary/50 focus:outline-none"
                 style={{ width: '140px' }}
               />
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            <button 
-              onClick={() => router.push('/bloc/checklist-oms')} 
+            <button
+              onClick={() => router.push('/bloc/checklist-oms')}
               className="px-6 py-4 border-2 border-primary/30 text-primary rounded-lg font-bold text-sm hover:bg-primary/5 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <span className="material-symbols-outlined text-[20px]">fact_check</span> ACCÉDER À LA CHECKLIST-OMS
             </button>
-            <button 
-              onClick={handleSubmit} 
-              disabled={loading || (!cpaId && !estUrgent)}
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !cpaId}
               className={`px-10 py-4 rounded-lg font-extrabold text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 whitespace-nowrap ${
-                (cpaId || estUrgent) ? 'bg-primary text-on-primary hover:bg-primary/90' : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                cpaId ? 'bg-primary text-on-primary hover:bg-primary/90' : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
             >
               <span className="material-symbols-outlined font-bold">check_circle</span>
-              {!cpaId && !estUrgent ? 'CPA REQUISE' : loading ? 'VALIDATION...' : 'VALIDER LA VPA'}
+              {!cpaId ? 'CPA REQUISE' : loading ? 'VALIDATION...' : 'VALIDER LA VÉRIFICATION'}
             </button>
           </div>
         </section>

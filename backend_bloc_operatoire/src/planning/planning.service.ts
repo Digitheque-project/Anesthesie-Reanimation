@@ -77,28 +77,28 @@ export class PlanningService {
     return this.enrichCreneaux(data);
   }
 
-  // Transférer CPA vers VPA
-  async transfererCpaVersVpa(dto: { patientId: string; chirurgienId: string; dateVPA: string; heureDebut: string; salle: string }) {
+  // Transférer CPA vers Vérification veille
+  async transfererCpaVersVerificationVeille(dto: { patientId: string; chirurgienId: string; dateVerificationVeille: string; heureDebut: string; salle: string }) {
     const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
     if (!patient) throw new NotFoundException('Patient non trouvé');
 
-    patient.statut = PatientStatut.EN_ATTENTE_VPA;
+    patient.statut = PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE;
     await this.patientBlocRepo.save(patient);
 
     const creneau = this.creneauRepo.create({
       patientId: dto.patientId,
       chirurgienId: dto.chirurgienId,
-      date: dto.dateVPA,
+      date: dto.dateVerificationVeille,
       heureDebut: dto.heureDebut,
       heureFin: dto.heureDebut,
       salle: dto.salle,
-      type: TypeRDV.VPA,
+      type: TypeRDV.VERIFICATION_VEILLE,
     });
     return this.creneauRepo.save(creneau);
   }
 
-  // Transférer VPA vers Patient du jour
-  async transfererVpaVersPatientJour(dto: { patientId: string; chirurgienId: string; date: string; heureDebut: string; salle: string }) {
+  // Transférer Vérification veille vers Patient du jour
+  async transfererVerificationVeilleVersPatientJour(dto: { patientId: string; chirurgienId: string; date: string; heureDebut: string; salle: string }) {
     const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
     if (!patient) throw new NotFoundException('Patient non trouvé');
 
@@ -112,7 +112,7 @@ export class PlanningService {
       heureDebut: dto.heureDebut,
       heureFin: dto.heureDebut,
       salle: dto.salle,
-      type: TypeRDV.VPA,
+      type: TypeRDV.VERIFICATION_VEILLE,
       statut: StatutCreneau.TERMINE,
     });
     return this.creneauRepo.save(creneau);

@@ -142,7 +142,7 @@ export class CPA {
   tachesInfirmieres: string;
 
   @Column({ type: 'date', nullable: true })
-  dateVPA: Date;
+  dateVerificationVeille: Date;
 
   @Column({ type: 'enum', enum: StatutCPA, default: StatutCPA.EN_ATTENTE })
   statut: StatutCPA;

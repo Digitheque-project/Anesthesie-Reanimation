@@ -10,7 +10,10 @@ export enum StatutCreneau {
 
 export enum TypeRDV {
   CPA = 'CPA',
-  VPA = 'VPA',
+  // Contrôle réalisé la veille de l'intervention, pour un patient déjà passé en CPA — à ne pas
+  // confondre avec le sigle "VPA" affiché côté interface pour la consultation urgente (qui, elle,
+  // réutilise en réalité le type CPA).
+  VERIFICATION_VEILLE = 'VERIFICATION_VEILLE',
 }
 
 @Entity('creneaux_bloc')

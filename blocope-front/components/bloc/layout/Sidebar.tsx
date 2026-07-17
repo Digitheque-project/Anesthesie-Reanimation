@@ -72,7 +72,7 @@ export default function Sidebar() {
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href === '/bloc/rendez-vous' && (pathname.startsWith('/bloc/rendez-vous/') || pathname.startsWith('/bloc/consultation-cpa') || pathname === '/bloc/visite-pre-anesthesique'));
+            (item.href === '/bloc/rendez-vous' && (pathname.startsWith('/bloc/rendez-vous/') || pathname.startsWith('/bloc/consultation-cpa') || pathname === '/bloc/verification-veille'));
           return (
             <Link
               key={item.href}

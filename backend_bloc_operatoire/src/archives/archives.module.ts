@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
-import { VPA } from '../entities/vpa.entity';
+import { VerificationVeille } from '../entities/verification-veille.entity';
 import { BonCommandeAnesthesie } from '../entities/bon-commande-anesthesie.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
@@ -17,7 +17,7 @@ import { ArchivesController } from './archives.controller';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      PatientBloc, CPA, VPA, BonCommandeAnesthesie,
+      PatientBloc, CPA, VerificationVeille, BonCommandeAnesthesie,
       ActivitePerOp, ProtocoleOperatoire,
       ScoreSCCRE, SortieReveil,
       ChecklistAvantOp, ChecklistPendantOp, ChecklistApresOp,

@@ -52,7 +52,7 @@ export class CreateCPADto {
   @IsString() jeune: string;
   @IsString() preparationPhysique: string;
   @IsString() tachesInfirmieres: string;
-  @IsOptional() @IsDateString() dateVPA?: string;
+  @IsOptional() @IsDateString() dateVerificationVeille?: string;
   @IsOptional() @IsEnum(StatutCPA) statut?: StatutCPA;
   @IsOptional() @IsString() motifRefus?: string;
 }

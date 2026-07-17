@@ -14,7 +14,7 @@ interface ModalPlanifierRDVProps {
 export default function ModalPlanifierRDV({
   isOpen, onClose, onValider, patientNom, intervention, estUrgent
 }: ModalPlanifierRDVProps) {
-  const [typeRDV, setTypeRDV] = useState<'CPA' | 'VPA'>('CPA')
+  const [typeRDV, setTypeRDV] = useState<'CPA' | 'VERIFICATION_VEILLE'>('CPA')
   const [dateRDV, setDateRDV] = useState(estUrgent ? new Date().toISOString().split('T')[0] : '')
   const [heureRDV, setHeureRDV] = useState(estUrgent ? new Date().toTimeString().split(' ')[0].substring(0,5) : '')
   const [lieuRDV, setLieuRDV] = useState(estUrgent ? 'Bloc Opératoire - Urgence' : '')

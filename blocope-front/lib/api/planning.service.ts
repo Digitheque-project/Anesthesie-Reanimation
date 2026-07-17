@@ -9,19 +9,19 @@ export const planningService = {
     heureFin: string;
     salle?: string;
     estUrgence?: boolean;
-    type?: 'CPA' | 'VPA';
+    type?: 'CPA' | 'VERIFICATION_VEILLE';
     responsable?: string;
   }) => {
     const { data } = await apiClient.post('/planning/reserver', dto)
     return data
   },
 
-  getJour: async (date: string, type?: 'CPA' | 'VPA') => {
+  getJour: async (date: string, type?: 'CPA' | 'VERIFICATION_VEILLE') => {
     const { data } = await apiClient.get('/planning/jour', { params: { date, type } })
     return data
   },
 
-  getPlanningJour: async (date: string, type?: 'CPA' | 'VPA') => {
+  getPlanningJour: async (date: string, type?: 'CPA' | 'VERIFICATION_VEILLE') => {
     const { data } = await apiClient.get('/planning/jour', { params: { date, type } })
     return data
   },

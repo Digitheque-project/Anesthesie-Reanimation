@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
-import { VPA } from '../entities/vpa.entity';
+import { VerificationVeille } from '../entities/verification-veille.entity';
 import { BonCommandeAnesthesie } from '../entities/bon-commande-anesthesie.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
@@ -19,7 +19,7 @@ export class ArchivesService {
   constructor(
     @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(CPA) private cpaRepository: Repository<CPA>,
-    @InjectRepository(VPA) private vpaRepository: Repository<VPA>,
+    @InjectRepository(VerificationVeille) private verificationVeilleRepository: Repository<VerificationVeille>,
     @InjectRepository(BonCommandeAnesthesie) private bonRepo: Repository<BonCommandeAnesthesie>,
     @InjectRepository(ActivitePerOp) private activiteRepo: Repository<ActivitePerOp>,
     @InjectRepository(ProtocoleOperatoire) private protocoleRepo: Repository<ProtocoleOperatoire>,
@@ -41,9 +41,9 @@ export class ArchivesService {
   async getDossierComplet(patientId: string): Promise<any> {
     const patient = await this.getPatientEnrichi(patientId);
 
-    const [cpa, vpa, bons, checklistsAvant, checklistsPendant, checklistsApres, activites, protocoles, scores, sorties] = await Promise.all([
+    const [cpa, verificationVeille, bons, checklistsAvant, checklistsPendant, checklistsApres, activites, protocoles, scores, sorties] = await Promise.all([
       this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments', 'anesthesiste'] }),
-      this.vpaRepository.find({ where: { patientId }, relations: ['anesthesiste'] }),
+      this.verificationVeilleRepository.find({ where: { patientId }, relations: ['anesthesiste'] }),
       this.bonRepo.find({ where: { patientId }, relations: ['items', 'chirurgien', 'anesthesiste'] }),
       this.checklistAvantRepo.find({ where: { patientId } }),
       this.checklistPendantRepo.find({ where: { patientId } }),
@@ -57,7 +57,7 @@ export class ArchivesService {
     return {
       patient,
       cpa: cpa[0] || null,
-      vpa: vpa[0] || null,
+      verificationVeille: verificationVeille[0] || null,
       bonsCommande: bons,
       checklistsAvantOp: checklistsAvant,
       checklistsPendantOp: checklistsPendant,

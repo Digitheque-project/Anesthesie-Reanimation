@@ -166,12 +166,12 @@ function ConsultationCpaPageContent() {
         jeune: form.jeune || 'À partir de minuit',
         preparationPhysique: form.preparationPhysique || 'RAS',
         tachesInfirmieres: form.tachesInfirmieres || 'RAS',
-        dateVPA: decision !== 'INAPTE' && dateVPA ? dateVPA : undefined,
+        dateVerificationVeille: !estUrgent && decision !== 'INAPTE' && dateVPA ? dateVPA : undefined,
       };
 
       await apiClient.post('/cpa', payload);
 
-      if (decision !== 'INAPTE' && dateVPA) {
+      if (!estUrgent && decision !== 'INAPTE' && dateVPA) {
         const [h, m] = heureVPA.split(':').map(Number);
         const fin = new Date(); fin.setHours(h, m + 30);
         await planningService.reserverCreneau({
@@ -179,14 +179,14 @@ function ConsultationCpaPageContent() {
           date: dateVPA,
           heureDebut: heureVPA,
           heureFin: fin.toTimeString().split(' ')[0].substring(0, 5),
-          salle: 'VPA-1',
-          estUrgence: estUrgent || false,
-          type: 'VPA',
+          salle: 'Vérification veille-1',
+          estUrgence: false,
+          type: 'VERIFICATION_VEILLE',
         });
       }
 
-      alert('✅ CPA validée avec succès !');
-      router.push('/bloc/rendez-vous/vpa');
+      alert(estUrgent ? '✅ VPA validée avec succès !' : '✅ CPA validée avec succès !');
+      router.push(estUrgent ? '/bloc/rendez-vous' : '/bloc/rendez-vous/verification-veille');
     } catch (err: any) {
       console.error('❌ Erreur validation:', err);
       const message = err.response?.data?.message || err.message || 'Erreur inconnue';
@@ -198,6 +198,11 @@ function ConsultationCpaPageContent() {
 
   return (
     <main className="p-4 space-y-2">
+      <div className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-2 ${estUrgent ? 'bg-tertiary/10 text-tertiary' : 'bg-primary/10 text-primary'}`}>
+        <span className="material-symbols-outlined text-lg">{estUrgent ? 'bolt' : 'event_available'}</span>
+        {estUrgent ? 'Visite Pré-Anesthésique (VPA) — patient urgent, consultation immédiate' : 'Consultation Pré-Anesthésique (CPA)'}
+      </div>
+
       {/* Patient Context Header */}
       <div className="bg-surface-bright rounded-xl p-4 flex flex-wrap items-center justify-between shadow-sm border border-white/50">
         <div className="flex items-center gap-2">
@@ -512,10 +517,11 @@ function ConsultationCpaPageContent() {
             )}
           </div>
 
-          {/* Vérification à la veille (VPA) — planifiée une fois la décision connue */}
-          {decision !== 'INAPTE' && decision !== '' && (
+          {/* Planification de la vérification à la veille — sans objet pour un patient urgent
+              (chirurgie immédiate, pas de "veille"), planifiée une fois la décision connue */}
+          {!estUrgent && decision !== 'INAPTE' && decision !== '' && (
             <div className="mt-4 p-4 bg-surface-container-low rounded-xl border space-y-2">
-              <label className="text-sm font-bold block">Planification de la vérification à la veille (VPA)</label>
+              <label className="text-sm font-bold block">Planification de la vérification à la veille de l'opération</label>
               <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
               <div className="flex flex-col md:flex-row md:items-center gap-2">
                 <input className="flex-1 bg-white border-none rounded-lg p-2 text-sm" type="date" value={dateVPA} onChange={e => setDateVPA(e.target.value)} />
