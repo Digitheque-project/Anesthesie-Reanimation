@@ -24,8 +24,9 @@ export function useRole() {
     estChirurgien: role === RoleClinique.CHIRURGIEN,
     estIbode: role === RoleClinique.IBODE,
     estMajor: role === RoleClinique.MAJOR,
-    peutDeciderCpa: role === RoleClinique.RESPONSABLE_CPA,
+    peutPlanifierCpa: role === RoleClinique.RESPONSABLE_CPA,
     peutGererCreneaux: role === RoleClinique.MAJOR,
     peutValiderSortieReveil: role === RoleClinique.ANESTHESISTE,
+    peutDeciderAptitudeCpa: role === RoleClinique.ANESTHESISTE,
   }
 }

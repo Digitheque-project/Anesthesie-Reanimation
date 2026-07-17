@@ -24,10 +24,8 @@ function DossierPatientPageContent() {
   const [patient, setPatient] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [showPlanifier, setShowPlanifier] = useState(false)
-  const [showInapteForm, setShowInapteForm] = useState(false)
-  const [motifRefus, setMotifRefus] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const { peutDeciderCpa, roleName } = useRole()
+  const { peutPlanifierCpa, roleName } = useRole()
 
   const charger = () => {
     setLoading(true)
@@ -43,19 +41,6 @@ function DossierPatientPageContent() {
   useEffect(() => {
     if (patientId) charger()
   }, [patientId])
-
-  const handleApte = async () => {
-    try {
-      setSubmitting(true)
-      await patientService.marquerApteCpa(patientId)
-      await charger()
-      setShowPlanifier(true)
-    } catch (err: any) {
-      alert('❌ Erreur : ' + (err.response?.data?.message || err.message || 'Erreur inconnue'))
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   const handleValiderPlanification = async (formData: any) => {
     try {
@@ -81,23 +66,6 @@ function DossierPatientPageContent() {
 
       alert('✅ Rendez-vous CPA planifié avec succès ! Le service d\'origine a été notifié.')
       setShowPlanifier(false)
-      router.push('/bloc/notification-cpa')
-    } catch (err: any) {
-      alert('❌ Erreur : ' + (err.response?.data?.message || err.message || 'Erreur inconnue'))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const submitInapte = async () => {
-    if (!motifRefus.trim()) {
-      alert('Le motif du refus est obligatoire.')
-      return
-    }
-    try {
-      setSubmitting(true)
-      await patientService.marquerInapteCpa(patientId, motifRefus.trim())
-      alert('✅ Patient marqué inapte pour le CPA. Le service d\'origine a été notifié.')
       router.push('/bloc/notification-cpa')
     } catch (err: any) {
       alert('❌ Erreur : ' + (err.response?.data?.message || err.message || 'Erreur inconnue'))
@@ -141,54 +109,38 @@ function DossierPatientPageContent() {
         </div>
       </div>
 
-      {/* Décision CPA */}
+      {/* Suivi CPA */}
       <div className="bg-white rounded-xl p-4 shadow-sm border mb-3">
         <h3 className="text-lg font-bold text-primary mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined">fact_check</span> Décision CPA
+          <span className="material-symbols-outlined">fact_check</span> Suivi CPA
         </h3>
-
-        {!peutDeciderCpa && (
-          <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-            Décision réservée au Responsable CPA{roleName ? ` (votre rôle : ${roleName})` : ''}.
-          </div>
-        )}
 
         {p.statut === 'CPA_INAPTE' ? (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm font-bold text-red-700">❌ Patient inapte pour le CPA</p>
             {p.motifRefusCpa && <p className="text-sm text-red-800 mt-1">Motif : {p.motifRefusCpa}</p>}
-            {peutDeciderCpa && (
-              <button onClick={handleApte} disabled={submitting}
-                className="mt-3 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 disabled:opacity-50">
-                Revenir sur la décision (marquer apte)
-              </button>
-            )}
           </div>
-        ) : showInapteForm ? (
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-gray-600 block">Motif du refus *</label>
-            <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)} rows={3}
-              className="w-full border rounded-lg p-2 text-sm" placeholder="Expliquez pourquoi le patient est inapte pour le CPA..." />
-            <div className="flex gap-2">
-              <button onClick={() => { setShowInapteForm(false); setMotifRefus('') }}
-                className="px-4 py-2 border rounded-lg text-xs font-bold hover:bg-gray-100">Annuler</button>
-              <button onClick={submitInapte} disabled={submitting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 disabled:opacity-50">
-                Confirmer l'inaptitude
-              </button>
-            </div>
+        ) : p.statut && p.statut !== 'EN_ATTENTE_CPA' ? (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-bold text-green-700">✅ CPA réalisée</p>
+            <p className="text-xs text-green-800 mt-1">La décision d'aptitude est prise pendant la consultation CPA proprement dite.</p>
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button onClick={handleApte} disabled={submitting || !peutDeciderCpa}
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 disabled:opacity-50">
-              ✅ Apte pour le CPA
+          <>
+            <p className="text-sm text-on-surface-variant mb-3">
+              La décision d'aptitude (Apte / En attente / Refusé) se fait pendant la consultation CPA. Depuis cette fiche, vous pouvez planifier son rendez-vous.
+            </p>
+            {!peutPlanifierCpa && (
+              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Planification réservée au Responsable CPA{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </div>
+            )}
+            <button onClick={() => setShowPlanifier(true)} disabled={submitting || !peutPlanifierCpa}
+              className="w-full sm:w-auto px-4 py-3 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined text-lg">event_available</span>
+              Planifier le rendez-vous CPA
             </button>
-            <button onClick={() => setShowInapteForm(true)} disabled={submitting || !peutDeciderCpa}
-              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50">
-              ❌ Inapte pour le CPA
-            </button>
-          </div>
+          </>
         )}
       </div>
 

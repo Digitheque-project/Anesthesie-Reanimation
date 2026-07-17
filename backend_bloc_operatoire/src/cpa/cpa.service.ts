@@ -41,23 +41,29 @@ export class CPAService {
     }
 
     if (dto.patientId) {
+      // REPORT = consultation faite mais décision remise à plus tard : le patient retourne
+      // en attente de CPA, ce n'est ni une aptitude ni une inaptitude définitive.
       const nouveauStatut = dto.decision === DecisionCPA.INAPTE
         ? PatientStatut.CPA_INAPTE
-        : PatientStatut.CPA_REALISE;
+        : dto.decision === DecisionCPA.REPORT
+          ? PatientStatut.EN_ATTENTE_CPA
+          : PatientStatut.CPA_REALISE;
 
       await this.patientBlocRepo.update(dto.patientId, { statut: nouveauStatut });
 
-      const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
-      if (demande) {
-        const apte = saved.decision === DecisionCPA.APTE;
-        await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
-        try {
-          await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
-            dateCpa: saved.dateConsultation,
-            observations: saved.notesIncidents,
-          });
-        } catch (err) {
-          this.logger.error(`Erreur notification Endoscopie: ${(err as Error).message}`);
+      if (dto.decision !== DecisionCPA.REPORT) {
+        const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
+        if (demande) {
+          const apte = saved.decision === DecisionCPA.APTE;
+          await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
+          try {
+            await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
+              dateCpa: saved.dateConsultation,
+              observations: saved.notesIncidents,
+            });
+          } catch (err) {
+            this.logger.error(`Erreur notification Endoscopie: ${(err as Error).message}`);
+          }
         }
       }
 
@@ -66,7 +72,7 @@ export class CPAService {
         if (patient?.serviceOrigineId && patient?.serviceOrigine) {
           await this.notificationOutgoing.notifyOriginService({
             patientId: dto.patientId,
-            type: dto.decision === DecisionCPA.INAPTE ? 'CPA_INAPTE' : 'CPA_APTE',
+            type: dto.decision === DecisionCPA.INAPTE ? 'CPA_INAPTE' : dto.decision === DecisionCPA.REPORT ? 'CPA_REPORT' : 'CPA_APTE',
             serviceOrigineId: patient.serviceOrigineId,
             serviceOrigineName: patient.serviceOrigine,
             payload: {

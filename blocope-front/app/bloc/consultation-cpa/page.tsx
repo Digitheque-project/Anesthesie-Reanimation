@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { patientService, planningService, medecinService } from '@/lib/api';
 import { apiClient } from '@/lib/api/client';
+import { useRole } from '@/lib/hooks/useRole';
 
 export default function ConsultationCpaPage() {
   return (
@@ -62,6 +63,7 @@ function ConsultationCpaPageContent() {
   const [showMedicamentModal, setShowMedicamentModal] = useState(false);
   const [medicaments, setMedicaments] = useState<any[]>([]);
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
+  const { peutDeciderAptitudeCpa, roleName } = useRole();
 
   useEffect(() => {
     if (patientId) {
@@ -89,6 +91,7 @@ function ConsultationCpaPageContent() {
   };
 
   const handleValider = async () => {
+    if (!peutDeciderAptitudeCpa) { alert('❌ Seul un anesthésiste peut valider la décision de CPA'); return; }
     const patientIdFinal = patientId || patient?.id;
     if (!patientIdFinal) { alert('❌ Patient introuvable'); return; }
     if (!anesthesisteId) { alert('❌ Sélectionnez l\'anesthésiste ayant réalisé la consultation'); return; }
@@ -350,14 +353,19 @@ function ConsultationCpaPageContent() {
 
           <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
             <h2 className="text-sm font-bold text-on-surface-variant mb-2 uppercase tracking-widest">Décision Finale *</h2>
+            {!peutDeciderAptitudeCpa && (
+              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Décision réservée à l'anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </div>
+            )}
             <div className="space-y-2">
               {[
                 { key: 'APTE', label: "Apte à l'anesthésie", activeClass: 'bg-secondary/10 border-secondary text-secondary' },
                 { key: 'INAPTE', label: 'Inapte à ce jour', activeClass: 'bg-error/10 border-error text-error' },
                 { key: 'REPORT', label: "Report d'intervention", activeClass: 'bg-tertiary/10 border-tertiary text-tertiary' },
               ].map(opt => (
-                <button key={opt.key} onClick={() => setDecision(opt.key as any)}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutDeciderAptitudeCpa}
+                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     decision === opt.key ? opt.activeClass : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
                   }`}>
                   <span className="font-bold">{opt.label}</span>
@@ -457,9 +465,9 @@ function ConsultationCpaPageContent() {
 
           {/* Bouton Valider */}
           <div className="mt-4 pt-4 border-t border-surface-container flex justify-end">
-            <button onClick={handleValider} disabled={loading}
+            <button onClick={handleValider} disabled={loading || !peutDeciderAptitudeCpa}
               className="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 shadow-sm transition-all disabled:opacity-50">
-              {loading ? 'Validation...' : 'Valider'}
+              {loading ? 'Validation...' : !peutDeciderAptitudeCpa ? 'Réservé à l\'anesthésiste' : 'Valider'}
             </button>
           </div>
         </div>
