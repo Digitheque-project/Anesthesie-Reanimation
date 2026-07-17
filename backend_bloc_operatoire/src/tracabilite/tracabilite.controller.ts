@@ -1,9 +1,7 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { TracabiliteService } from './tracabilite.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('tracabilite')
-@UseGuards(JwtAuthGuard)
 export class TracabiliteController {
   constructor(private readonly service: TracabiliteService) {}
 

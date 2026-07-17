@@ -36,6 +36,23 @@ export class PatientBlocStatutService {
     return this.patientBlocRepo.save(patient);
   }
 
+  // Fait avancer le patient jusqu'à EN_COURS_OPERATION en franchissant les étapes
+  // intermédiaires nécessaires (aucune route ne faisait explicitement passer par
+  // PRET_POUR_BLOC/EN_COURS_OPERATION avant la checklist pendant-op — Time Out — qui marque
+  // dans les faits le vrai début de l'opération). Idempotent : ne fait rien si le patient est
+  // déjà à EN_COURS_OPERATION ou au-delà.
+  async avancerVersEnCoursOperation(patientId: string): Promise<void> {
+    const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+    if (!patient) return;
+
+    if (patient.statut === PatientStatut.VERIFICATION_VEILLE_REALISEE) {
+      await this.changerStatut(patientId, PatientStatut.PRET_POUR_BLOC);
+      await this.changerStatut(patientId, PatientStatut.EN_COURS_OPERATION);
+    } else if (patient.statut === PatientStatut.PRET_POUR_BLOC) {
+      await this.changerStatut(patientId, PatientStatut.EN_COURS_OPERATION);
+    }
+  }
+
   // Décision de triage sur le fil de prescription : le patient est apte à suivre le circuit CPA.
   // Bascule (ou remet) le patient en attente de planification CPA.
   async marquerApteCpa(patientId: string): Promise<PatientBloc> {

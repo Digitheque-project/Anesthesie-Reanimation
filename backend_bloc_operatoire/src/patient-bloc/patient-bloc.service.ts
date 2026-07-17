@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { PatientBloc, NiveauUrgence, PatientStatut } from '../entities/patient-bloc.entity';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
@@ -15,6 +16,7 @@ export class PatientBlocService {
     private demandeRepo: Repository<DemandeCpaExterne>,
     private accueilClient: AccueilClient,
     private dossierPatientClient: DossierPatientClient,
+    private config: ConfigService,
   ) {}
 
   async creerDepuisPrescription(demandeId: string): Promise<PatientBloc> {
@@ -107,6 +109,7 @@ export class PatientBlocService {
   async admitExisting(dto: any): Promise<PatientBloc> {
     const patient = this.patientRepo.create({
       ...dto,
+      chuId: dto.chuId || this.config.get<string>('externalServices.chuId'),
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence: dto.niveauUrgence || NiveauUrgence.NORMAL,
     });
@@ -117,6 +120,7 @@ export class PatientBlocService {
   async registerAndAdmit(dto: any, createdBy: string): Promise<PatientBloc> {
     const patient = this.patientRepo.create({
       ...dto,
+      chuId: dto.chuId || this.config.get<string>('externalServices.chuId'),
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence: dto.niveauUrgence || NiveauUrgence.NORMAL,
     });

@@ -1,6 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
 import { PatientBlocService } from './patient-bloc.service';
@@ -32,17 +31,15 @@ export class PatientBlocController {
   }
 
   @Post('admit')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Admettre au bloc un patient déjà enregistré dans Accueil' })
   admitExisting(@Body() dto: AdmitExistingPatientDto) {
     return this.patientBlocService.admitExisting(dto);
   }
 
   @Post('register-and-admit')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc" })
   registerAndAdmit(@Body() dto: RegisterAndAdmitPatientDto, @Request() req: any) {
-    const createdBy = req.user?.id ?? req.user?.email ?? 'unknown';
+    const createdBy = req.centralUser?.userId ?? req.centralUser?.email ?? 'unknown';
     return this.patientBlocService.registerAndAdmit(dto, createdBy);
   }
 

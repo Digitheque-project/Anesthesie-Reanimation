@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
+import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
 import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
 import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.dto';
 
@@ -13,10 +14,14 @@ export class ChecklistPendantOpService {
     @InjectRepository(ChecklistPendantOp) private repo: Repository<ChecklistPendantOp>,
     private accueilClient: AccueilClient,
     private gateway: OperationGateway,
+    private patientBlocStatutService: PatientBlocStatutService,
   ) {}
 
-  create(dto: CreateChecklistPendantOpDto): Promise<ChecklistPendantOp> {
-    return this.repo.save(this.repo.create(dto));
+  async create(dto: CreateChecklistPendantOpDto): Promise<ChecklistPendantOp> {
+    const saved = await this.repo.save(this.repo.create(dto));
+    // Le Time Out marque dans les faits le vrai début de l'opération.
+    await this.patientBlocStatutService.avancerVersEnCoursOperation(saved.patientId);
+    return saved;
   }
 
   async findAll(patientId?: string) {

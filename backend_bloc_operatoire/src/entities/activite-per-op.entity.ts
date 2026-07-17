@@ -20,17 +20,20 @@ export class ActivitePerOp {
   @Column()
   patientId: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  chirurgien: Medecin;
+  // Nullable : l'activité per-op est créée dès le début de l'opération (pour permettre le
+  // rattachement des constantes en temps réel) — le chirurgien/anesthésiste peuvent être
+  // renseignés plus tard via PATCH, pas nécessairement connus à la création.
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  chirurgien: Medecin | null;
 
-  @Column()
-  chirurgienId: string;
+  @Column({ nullable: true })
+  chirurgienId: string | null;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  anesthesiste: Medecin;
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  anesthesiste: Medecin | null;
 
-  @Column()
-  anesthesisteId: string;
+  @Column({ nullable: true })
+  anesthesisteId: string | null;
 
   @Column({ type: 'date' })
   dateOperation: Date;

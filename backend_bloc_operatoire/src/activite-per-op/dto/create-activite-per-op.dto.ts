@@ -1,4 +1,7 @@
 import { IsString, IsDateString, IsBoolean, IsArray, IsOptional, ValidateNested, IsUUID, IsNumber } from 'class-validator';
+// Note : patientId provient du service externe Accueil et n'est pas garanti au format UUID
+// (ex: "CHU-2026-00099") — contrairement à chirurgienId/anesthesisteId qui référencent notre
+// propre table Medecin (clé UUID). D'où l'usage de @IsString() plutôt que @IsUUID() ci-dessous.
 import { Type } from 'class-transformer';
 
 class ConstanteDto {
@@ -31,7 +34,7 @@ class ConstanteDto {
 }
 
 export class CreateActivitePerOpDto {
-  @IsUUID()
+  @IsString()
   patientId: string;
 
   @IsOptional()
