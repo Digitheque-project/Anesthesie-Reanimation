@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 import { PatientBlocService } from './patient-bloc.service';
 import { PatientBlocStatutService } from './patient-bloc-statut.service';
 import { AdmitExistingPatientDto } from './dto/admit-existing-patient.dto';
@@ -74,13 +76,15 @@ export class PatientBlocController {
   }
 
   @Patch(':patientId/apte-cpa')
-  @ApiOperation({ summary: 'Fil de prescription : marquer le patient apte au circuit CPA' })
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)' })
   marquerApteCpa(@Param('patientId') patientId: string) {
     return this.patientBlocStatutService.marquerApteCpa(patientId);
   }
 
   @Patch(':patientId/inapte-cpa')
-  @ApiOperation({ summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire)' })
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire, Responsable CPA)' })
   marquerInapteCpa(@Param('patientId') patientId: string, @Body('motifRefus') motifRefus: string) {
     return this.patientBlocStatutService.marquerInapteCpa(patientId, motifRefus);
   }

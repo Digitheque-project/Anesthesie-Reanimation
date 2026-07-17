@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { SortieReveilService } from './sortie-reveil.service';
 import { CreateSortieReveilDto } from './dto/create-sortie-reveil.dto';
 import { UpdateSortieReveilDto } from './dto/update-sortie-reveil.dto';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Sorties Réveil')
 @ApiBearerAuth('JWT-auth')
@@ -11,7 +13,8 @@ export class SortieReveilController {
   constructor(private readonly service: SortieReveilService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Créer une sortie de réveil' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Créer une sortie de réveil (Anesthésiste)' })
   create(@Body() dto: CreateSortieReveilDto) { return this.service.create(dto); }
 
   @Get()
@@ -25,10 +28,12 @@ export class SortieReveilController {
   findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Modifier une sortie' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier une sortie (Anesthésiste)' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateSortieReveilDto) { return this.service.update(id, dto); }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer une sortie' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Supprimer une sortie (Anesthésiste)' })
   remove(@Param('id', ParseUUIDPipe) id: string) { return this.service.remove(id); }
 }

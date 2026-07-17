@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { CentralUser } from './central-user.interface';
+import { REQUIRE_ROLE_CLINIQUE_KEY } from './require-role.decorator';
+import { matchRoleClinique } from './role-clinique';
 
 // Vérifie le token émis par le SSO central (auth-service) au login. Aucun accès à l'API
 // n'est autorisé sans ce token, sauf sur les routes explicitement marquées @Public()
@@ -56,6 +58,20 @@ export class CentralAuthGuard implements CanActivate {
       chu: serviceEntry.chu,
     };
     request.centralUser = centralUser;
+
+    const rolesRequis = this.reflector.getAllAndOverride<string[]>(REQUIRE_ROLE_CLINIQUE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (rolesRequis && rolesRequis.length > 0) {
+      const roleUtilisateur = matchRoleClinique(centralUser.role);
+      if (!roleUtilisateur || !rolesRequis.includes(roleUtilisateur)) {
+        throw new ForbiddenException(
+          `Action réservée au rôle ${rolesRequis.join(' ou ')} (votre rôle : ${centralUser.role})`,
+        );
+      }
+    }
+
     return true;
   }
 

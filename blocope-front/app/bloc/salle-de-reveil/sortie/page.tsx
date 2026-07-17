@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { medecinService } from '@/lib/api'
+import { useRole } from '@/lib/hooks/useRole'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -38,6 +39,7 @@ function SortieSalleReveilPageContent() {
   const [anesthesistes, setAnesthesistes] = useState<any[]>([])
   const [medecinId, setMedecinId] = useState('')
   const [loading, setLoading] = useState(false)
+  const { peutValiderSortieReveil, roleName } = useRole()
 
   useEffect(() => {
     medecinService.getAll({ role: 'ANESTHESISTE', limite: 100 }).then((data: any) => {
@@ -46,7 +48,7 @@ function SortieSalleReveilPageContent() {
   }, [])
 
   const checklistComplete = Object.values(checklist).every(Boolean)
-  const peutSortir = scoreTotal >= 9 && checklistComplete && !!medecinId
+  const peutSortir = scoreTotal >= 9 && checklistComplete && !!medecinId && peutValiderSortieReveil
 
   const handleAutoriserSortie = async () => {
     if (!peutSortir) return
@@ -139,11 +141,11 @@ function SortieSalleReveilPageContent() {
             peutSortir ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] hover:shadow-[#00478d]/40 active:scale-95' : 'bg-gray-400 cursor-not-allowed'
           }`}>
           <span className="material-symbols-outlined">check_circle</span>
-          <span>{loading ? 'Autorisation en cours...' : scoreTotal < 9 ? 'Score insuffisant (< 9)' : !checklistComplete ? 'Checklist incomplète' : !medecinId ? 'Sélectionnez un anesthésiste' : 'Autoriser la sortie'}</span>
+          <span>{loading ? 'Autorisation en cours...' : !peutValiderSortieReveil ? 'Réservé à l\'anesthésiste' : scoreTotal < 9 ? 'Score insuffisant (< 9)' : !checklistComplete ? 'Checklist incomplète' : !medecinId ? 'Sélectionnez un anesthésiste' : 'Autoriser la sortie'}</span>
         </button>
         {!peutSortir && (
           <p className="text-center text-xs text-[#940010] font-bold">
-            {scoreTotal < 9 ? '⚠️ Score SCCRE doit être ≥ 9 pour autoriser la sortie.' : !checklistComplete ? '⚠️ Tous les éléments de la checklist doivent être cochés.' : '⚠️ Sélectionnez l\'anesthésiste qui autorise la sortie.'}
+            {!peutValiderSortieReveil ? `⚠️ Seul un anesthésiste peut autoriser la sortie${roleName ? ` (votre rôle : ${roleName})` : ''}.` : scoreTotal < 9 ? '⚠️ Score SCCRE doit être ≥ 9 pour autoriser la sortie.' : !checklistComplete ? '⚠️ Tous les éléments de la checklist doivent être cochés.' : '⚠️ Sélectionnez l\'anesthésiste qui autorise la sortie.'}
           </p>
         )}
       </div>

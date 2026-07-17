@@ -2,6 +2,8 @@ import { Controller, Get, Post, Body, Param, Delete, Query, ParseUUIDPipe } from
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PlanningService } from './planning.service';
 import { TypeRDV } from '../entities/creneau-bloc.entity';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Planning')
 @Controller('planning')
@@ -21,9 +23,13 @@ export class PlanningController {
   }
 
   @Post('reserver')
+  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Réserver un créneau (Major, ou Responsable CPA pour la planification CPA)' })
   reserver(@Body() dto: any) { return this.service.reserverCreneau(dto); }
 
   @Delete(':id')
+  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Annuler un créneau (Major, ou Responsable CPA pour la planification CPA)' })
   annuler(@Param('id', ParseUUIDPipe) id: string) { return this.service.annulerCreneau(id); }
 
   @Get('urgences')
@@ -31,14 +37,16 @@ export class PlanningController {
 
   // NOUVEAU : Transférer CPA → VPA
   @Post('transferer-cpa-vers-vpa')
-  @ApiOperation({ summary: 'Transférer un patient de CPA vers VPA' })
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Transférer un patient de CPA vers VPA (Responsable CPA)' })
   transfererCpaVersVpa(@Body() dto: { patientId: string; chirurgienId: string; dateVPA: string; heureDebut: string; salle: string }) {
     return this.service.transfererCpaVersVpa(dto);
   }
 
   // NOUVEAU : Transférer VPA → Patient du jour
   @Post('transferer-vpa-vers-patient-jour')
-  @ApiOperation({ summary: 'Transférer un patient de VPA vers Patient du jour' })
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Transférer un patient de VPA vers Patient du jour (Responsable CPA)' })
   transfererVpaVersPatientJour(@Body() dto: { patientId: string; chirurgienId: string; date: string; heureDebut: string; salle: string }) {
     return this.service.transfererVpaVersPatientJour(dto);
   }

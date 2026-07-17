@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { patientService, notificationService, planningService } from '@/lib/api'
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function DossierPatientPage() {
   return (
@@ -26,6 +27,7 @@ function DossierPatientPageContent() {
   const [showInapteForm, setShowInapteForm] = useState(false)
   const [motifRefus, setMotifRefus] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const { peutDeciderCpa, roleName } = useRole()
 
   const charger = () => {
     setLoading(true)
@@ -145,14 +147,22 @@ function DossierPatientPageContent() {
           <span className="material-symbols-outlined">fact_check</span> Décision CPA
         </h3>
 
+        {!peutDeciderCpa && (
+          <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            Décision réservée au Responsable CPA{roleName ? ` (votre rôle : ${roleName})` : ''}.
+          </div>
+        )}
+
         {p.statut === 'CPA_INAPTE' ? (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm font-bold text-red-700">❌ Patient inapte pour le CPA</p>
             {p.motifRefusCpa && <p className="text-sm text-red-800 mt-1">Motif : {p.motifRefusCpa}</p>}
-            <button onClick={handleApte} disabled={submitting}
-              className="mt-3 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 disabled:opacity-50">
-              Revenir sur la décision (marquer apte)
-            </button>
+            {peutDeciderCpa && (
+              <button onClick={handleApte} disabled={submitting}
+                className="mt-3 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 disabled:opacity-50">
+                Revenir sur la décision (marquer apte)
+              </button>
+            )}
           </div>
         ) : showInapteForm ? (
           <div className="space-y-3">
@@ -170,11 +180,11 @@ function DossierPatientPageContent() {
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-3">
-            <button onClick={handleApte} disabled={submitting}
+            <button onClick={handleApte} disabled={submitting || !peutDeciderCpa}
               className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 disabled:opacity-50">
               ✅ Apte pour le CPA
             </button>
-            <button onClick={() => setShowInapteForm(true)} disabled={submitting}
+            <button onClick={() => setShowInapteForm(true)} disabled={submitting || !peutDeciderCpa}
               className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50">
               ❌ Inapte pour le CPA
             </button>
