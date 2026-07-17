@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 
 interface TableauNotificationsProps {
   notifications: any[]
+  peutPlanifier: boolean
   onPlanifier: (notif: any) => void
   onActionUrgent: (notif: any) => void
   onVoirDossier: (notif: any) => void
@@ -11,6 +12,7 @@ interface TableauNotificationsProps {
 
 export default function TableauNotifications({
   notifications,
+  peutPlanifier,
   onPlanifier,
   onActionUrgent,
   onVoirDossier
@@ -79,7 +81,9 @@ export default function TableauNotifications({
                           onPlanifier(n)
                         }
                       }}
-                      className={`px-4 py-1.5 text-xs font-bold rounded-lg transition ${
+                      disabled={!isStat && !peutPlanifier}
+                      title={!isStat && !peutPlanifier ? 'Planification réservée au Responsable CPA ou au Major' : undefined}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed ${
                         isStat
                           ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
                           : 'bg-primary text-white hover:bg-primary-dark'

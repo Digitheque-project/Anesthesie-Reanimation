@@ -1,0 +1,41 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
+import { AccueilClient } from '../external/accueil.client';
+import { OperationGateway } from '../operation-gateway/operation.gateway';
+import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
+import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.dto';
+
+@Injectable()
+export class ChecklistPendantOpService {
+  constructor(
+    @InjectRepository(ChecklistPendantOp) private repo: Repository<ChecklistPendantOp>,
+    private accueilClient: AccueilClient,
+    private gateway: OperationGateway,
+  ) {}
+
+  create(dto: CreateChecklistPendantOpDto): Promise<ChecklistPendantOp> {
+    return this.repo.save(this.repo.create(dto));
+  }
+
+  async findAll(patientId?: string) {
+    const data = await this.repo.find({ where: patientId ? { patientId } : {} });
+    return this.accueilClient.enrichWithIdentity(data);
+  }
+
+  async findOne(id: string) {
+    const checklist = await this.repo.findOne({ where: { id } });
+    if (!checklist) throw new NotFoundException(`Checklist pendant opération ${id} non trouvée`);
+    const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
+    return enriched;
+  }
+
+  async update(id: string, dto: UpdateChecklistPendantOpDto): Promise<ChecklistPendantOp> {
+    const checklist = await this.repo.findOne({ where: { id } });
+    if (!checklist) throw new NotFoundException(`Checklist pendant opération ${id} non trouvée`);
+    const updated = await this.repo.save(Object.assign(checklist, dto));
+    this.gateway.emitToOperation(updated.patientId, 'checklist-pendant-op:maj', { patientId: updated.patientId, checklist: updated });
+    return updated;
+  }
+}

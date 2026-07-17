@@ -3,22 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as helmet from 'helmet';
+import { CORS_ORIGINS } from './config/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet.default());
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'https://ton-frontend.onrender.com',
-      'https://blocbackfront.onrender.com',
-      'https://chu-bloc-backend.onrender.com',
-      'https://anesthesie-reanimation.onrender.com',
-    ],
+    origin: CORS_ORIGINS,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

@@ -2,10 +2,12 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { patientService, planningService } from '@/lib/api';
+import { patientService, planningService, medecinService } from '@/lib/api';
 import { apiClient } from '@/lib/api/client';
 import { useRole } from '@/lib/hooks/useRole';
 import { obtenirSessionValide } from '@/lib/auth/central-session';
+import MedicamentsAnesthesieModal, { construireLignesInitiales } from '@/components/bloc/medicaments-anesthesie/MedicamentsAnesthesieModal';
+import type { MedicamentRow } from '@/components/bloc/medicaments-anesthesie/MedicamentTable';
 
 export default function ConsultationCpaPage() {
   return (
@@ -62,16 +64,25 @@ function ConsultationCpaPageContent() {
   const [showMedicamentModal, setShowMedicamentModal] = useState(false);
   const [medicaments, setMedicaments] = useState<any[]>([]);
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
-  const [showMedicamentAnesthesieModal, setShowMedicamentAnesthesieModal] = useState(false);
-  const [medicamentsAnesthesie, setMedicamentsAnesthesie] = useState<any[]>([]);
-  const [nouveauMedicamentAnesthesie, setNouveauMedicamentAnesthesie] = useState({ nom: '', dose: '', voieAdministration: '' });
-  const { peutDeciderAptitudeCpa, roleName } = useRole();
+  const [showCatalogueModal, setShowCatalogueModal] = useState(false);
+  const [medicamentsAnesthesieRows, setMedicamentsAnesthesieRows] = useState<MedicamentRow[]>(() => construireLignesInitiales());
+  const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, roleName } = useRole();
   const [nomAnesthesiste, setNomAnesthesiste] = useState('');
+  const [anesthesistes, setAnesthesistes] = useState<any[]>([]);
+  const [anesthesisteId, setAnesthesisteId] = useState('');
 
   useEffect(() => {
     const session = obtenirSessionValide();
     if (session) setNomAnesthesiste(`${session.payload.firstname} ${session.payload.name}`.trim());
   }, []);
+
+  // Responsable CPA / Major n'ont pas de fiche Médecin propre : l'anesthésiste ayant réalisé
+  // la consultation doit être désigné explicitement dans un sélecteur.
+  useEffect(() => {
+    if (!estAnesthesisteConnecte) {
+      medecinService.getAll({ role: 'ANESTHESISTE' }).then(res => setAnesthesistes(res?.data || [])).catch(console.error);
+    }
+  }, [estAnesthesisteConnecte]);
 
   useEffect(() => {
     if (patientId) {
@@ -95,22 +106,13 @@ function ConsultationCpaPageContent() {
     setMedicaments(medicaments.filter((_, i) => i !== index));
   };
 
-  const ajouterMedicamentAnesthesie = () => {
-    if (nouveauMedicamentAnesthesie.nom && nouveauMedicamentAnesthesie.dose) {
-      setMedicamentsAnesthesie([...medicamentsAnesthesie, { ...nouveauMedicamentAnesthesie }]);
-      setNouveauMedicamentAnesthesie({ nom: '', dose: '', voieAdministration: '' });
-      setShowMedicamentAnesthesieModal(false);
-    }
-  };
-
-  const supprimerMedicamentAnesthesie = (index: number) => {
-    setMedicamentsAnesthesie(medicamentsAnesthesie.filter((_, i) => i !== index));
-  };
+  const medicamentsSelectionnes = medicamentsAnesthesieRows.filter(r => r.selected);
 
   const handleValider = async () => {
-    if (!peutDeciderAptitudeCpa) { alert('❌ Seul un anesthésiste peut valider la décision de CPA'); return; }
+    if (!peutDeciderAptitudeCpa) { alert('❌ Seul un anesthésiste, un responsable CPA ou un major peut valider la décision de CPA'); return; }
     const patientIdFinal = patientId || patient?.id;
     if (!patientIdFinal) { alert('❌ Patient introuvable'); return; }
+    if (!estAnesthesisteConnecte && !anesthesisteId) { alert("❌ Sélectionnez l'anesthésiste ayant réalisé la consultation"); return; }
     if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); return; }
     if (decision === 'INAPTE' && !motifRefus.trim()) { alert('❌ Le motif du refus est obligatoire'); return; }
     if (decision === 'REPORT' && !motifRefus.trim()) { alert('❌ Le motif du report est obligatoire'); return; }
@@ -131,6 +133,7 @@ function ConsultationCpaPageContent() {
     try {
       const payload = {
         patientId: patientIdFinal,
+        anesthesisteId: estAnesthesisteConnecte ? undefined : anesthesisteId,
         dateConsultation: new Date().toISOString().split('T')[0],
         antecedentsAnesthesie: form.antecedentsAnesthesie,
         notesIncidents: form.notesIncidents || undefined,
@@ -162,7 +165,14 @@ function ConsultationCpaPageContent() {
           debut: m.debut || 'H-1',
           frequence: m.frequence || '1x/jour'
         })),
-        medicamentsAnesthesieReanimation: medicamentsAnesthesie.length ? medicamentsAnesthesie : undefined,
+        medicamentsAnesthesieReanimation: medicamentsSelectionnes.length
+          ? medicamentsSelectionnes.map(r => ({
+              categorie: r.categorie,
+              nom: r.label,
+              dosage: r.dosage || undefined,
+              observation: r.observation || undefined,
+            }))
+          : undefined,
         jeune: form.jeune || 'À partir de minuit',
         preparationPhysique: form.preparationPhysique || 'RAS',
         tachesInfirmieres: form.tachesInfirmieres || 'RAS',
@@ -232,13 +242,27 @@ function ConsultationCpaPageContent() {
         </div>
       </div>
 
-      {/* Anesthésiste réalisant la consultation — c'est toujours l'utilisateur connecté */}
+      {/* Anesthésiste réalisant la consultation — auto-dérivé si l'utilisateur connecté est
+          lui-même l'anesthésiste, sinon à désigner explicitement (Responsable CPA / Major) */}
       <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex items-center gap-2">
         <span className="material-symbols-outlined text-primary">badge</span>
-        <div>
-          <p className="text-xs font-semibold text-on-surface-variant">Anesthésiste réalisant la consultation</p>
-          <p className="text-sm font-bold text-on-surface">{nomAnesthesiste || '—'}</p>
-        </div>
+        {estAnesthesisteConnecte ? (
+          <div>
+            <p className="text-xs font-semibold text-on-surface-variant">Anesthésiste réalisant la consultation</p>
+            <p className="text-sm font-bold text-on-surface">{nomAnesthesiste || '—'}</p>
+          </div>
+        ) : (
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-on-surface-variant block mb-1">Anesthésiste ayant réalisé la consultation *</label>
+            <select value={anesthesisteId} onChange={e => setAnesthesisteId(e.target.value)}
+              className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm font-bold">
+              <option value="">— Sélectionner —</option>
+              {anesthesistes.map((m: any) => (
+                <option key={m.id} value={m.id}>{m.prenom} {m.nom}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* CONTENU PRINCIPAL */}
@@ -442,39 +466,21 @@ function ConsultationCpaPageContent() {
             <div>
               <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-primary">medication</span> Médicaments d'anesthésie et de réanimation</h3>
               <p className="text-xs text-on-surface-variant mb-2">À prévoir pour l'anesthésie et une éventuelle réanimation peropératoire — distinct de la prémédication.</p>
-              <div className="overflow-hidden border border-surface-container rounded-xl">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-surface-container text-[10px] uppercase font-bold text-on-surface-variant">
-                    <tr><th className="px-4 py-3">Médicament</th><th className="px-4 py-3">Dose</th><th className="px-4 py-3">Voie d'Admin</th><th className="px-4 py-3">Actions</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-container">
-                    {medicamentsAnesthesie.map((med, i) => (
-                      <tr key={i} className="hover:bg-surface-container-low transition-colors">
-                        <td className="px-4 py-3 font-semibold">{med.nom}</td><td className="px-4 py-3">{med.dose}</td><td className="px-4 py-3">{med.voieAdministration || '-'}</td>
-                        <td className="px-4 py-3"><button onClick={() => supprimerMedicamentAnesthesie(i)} className="text-error"><span className="material-symbols-outlined text-sm">delete</span></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button onClick={() => setShowMedicamentAnesthesieModal(true)} className="w-full py-3 text-xs font-bold text-primary hover:bg-primary-fixed/20 transition-colors">+ AJOUTER UN MÉDICAMENT</button>
-              </div>
+              <button type="button" onClick={() => setShowCatalogueModal(true)}
+                className="w-full flex items-center justify-between p-4 border border-surface-container rounded-xl hover:bg-primary-fixed/10 transition-colors">
+                <span className="flex items-center gap-2 text-sm font-bold text-primary">
+                  <span className="material-symbols-outlined">checklist</span>
+                  Liste des médicaments ({medicamentsSelectionnes.length}/77 sélectionnés)
+                </span>
+                <span className="text-xs font-bold text-primary underline">Ouvrir la liste complète</span>
+              </button>
 
-              {showMedicamentAnesthesieModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-                  <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-                    <h3 className="text-lg font-extrabold mb-2">Ajouter un médicament d'anesthésie/réanimation</h3>
-                    <div className="space-y-3">
-                      <div><label className="text-xs font-bold block mb-1">Médicament</label><input type="text" value={nouveauMedicamentAnesthesie.nom} onChange={(e) => setNouveauMedicamentAnesthesie({ ...nouveauMedicamentAnesthesie, nom: e.target.value })} className="w-full border rounded-lg p-2 text-sm" /></div>
-                      <div><label className="text-xs font-bold block mb-1">Dose</label><input type="text" value={nouveauMedicamentAnesthesie.dose} onChange={(e) => setNouveauMedicamentAnesthesie({ ...nouveauMedicamentAnesthesie, dose: e.target.value })} className="w-full border rounded-lg p-2 text-sm" /></div>
-                      <div><label className="text-xs font-bold block mb-1">Voie d'administration</label><input type="text" value={nouveauMedicamentAnesthesie.voieAdministration} onChange={(e) => setNouveauMedicamentAnesthesie({ ...nouveauMedicamentAnesthesie, voieAdministration: e.target.value })} className="w-full border rounded-lg p-2 text-sm" /></div>
-                    </div>
-                    <div className="flex justify-end gap-3 mt-6">
-                      <button onClick={() => setShowMedicamentAnesthesieModal(false)} className="px-6 py-2 border rounded-lg text-sm font-bold">Annuler</button>
-                      <button onClick={ajouterMedicamentAnesthesie} className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold">Ajouter</button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <MedicamentsAnesthesieModal
+                open={showCatalogueModal}
+                onClose={() => setShowCatalogueModal(false)}
+                rows={medicamentsAnesthesieRows}
+                onRowsChange={setMedicamentsAnesthesieRows}
+              />
             </div>
           </div>
 
@@ -483,7 +489,7 @@ function ConsultationCpaPageContent() {
             <h2 className="text-sm font-bold text-on-surface-variant mb-2 uppercase tracking-widest">Décision Finale *</h2>
             {!peutDeciderAptitudeCpa && (
               <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Décision réservée à l'anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}.
+                Décision réservée à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -534,7 +540,7 @@ function ConsultationCpaPageContent() {
           <div className="mt-4 pt-4 border-t border-surface-container flex justify-end">
             <button onClick={handleValider} disabled={loading || !peutDeciderAptitudeCpa}
               className="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 shadow-sm transition-all disabled:opacity-50">
-              {loading ? 'Validation...' : !peutDeciderAptitudeCpa ? 'Réservé à l\'anesthésiste' : 'Valider'}
+              {loading ? 'Validation...' : !peutDeciderAptitudeCpa ? 'Accès non autorisé' : 'Valider'}
             </button>
           </div>
         </div>

@@ -127,10 +127,13 @@ export class CPA {
   @OneToMany(() => Premedicament, (premed) => premed.cpa, { cascade: true })
   premedicaments: Premedicament[];
 
-  // Médicaments à prévoir pendant l'anesthésie et la réanimation (distinct de la
-  // prémédication, donnée avant le passage au bloc) — consultable dès la CPA.
+  // Médicaments/matériel à prévoir pendant l'anesthésie et la réanimation (distinct de la
+  // prémédication, donnée avant le passage au bloc) — consultable dès la CPA. Sélection dans le
+  // catalogue des 7 catégories (Sérums, Produits anesthésiques, Antalgiques, Kit asepsie,
+  // Antibiotiques & autres, Dispositifs médicaux, Consommables) ; seuls les articles cochés sont
+  // persistés, pas le catalogue entier.
   @Column({ type: 'simple-json', nullable: true })
-  medicamentsAnesthesieReanimation: { nom: string; dose: string; voieAdministration?: string }[];
+  medicamentsAnesthesieReanimation: { categorie: string; nom: string; dosage?: string; observation?: string }[];
 
   @Column()
   jeune: string;

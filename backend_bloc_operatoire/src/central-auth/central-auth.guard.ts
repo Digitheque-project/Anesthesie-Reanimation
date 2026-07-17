@@ -6,6 +6,7 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { CentralUser } from './central-user.interface';
 import { REQUIRE_ROLE_CLINIQUE_KEY } from './require-role.decorator';
 import { matchRoleClinique } from './role-clinique';
+import { verifyCentralToken, NoServiceAccessError } from './verify-central-token';
 
 // Vérifie le token émis par le SSO central (auth-service) au login. Aucun accès à l'API
 // n'est autorisé sans ce token, sauf sur les routes explicitement marquées @Public()
@@ -31,32 +32,17 @@ export class CentralAuthGuard implements CanActivate {
     const token = this.extractToken(request);
     if (!token) throw new UnauthorizedException('Connexion requise (SSO central)');
 
-    const secret = this.config.get<string>('centralAuth.jwtSecret');
-    let payload: any;
+    let centralUser: CentralUser;
     try {
-      payload = await this.jwtService.verifyAsync(token, { secret });
+      centralUser = await verifyCentralToken(token, this.jwtService, this.config);
     } catch (err) {
+      if (err instanceof NoServiceAccessError) {
+        throw new ForbiddenException(err.message);
+      }
       this.logger.warn(`Token SSO invalide: ${(err as Error).message}`);
       throw new UnauthorizedException('Session expirée ou invalide, veuillez vous reconnecter');
     }
 
-    const serviceId = this.config.get<string>('externalServices.serviceId');
-    const serviceEntry = (payload.services || []).find((s: any) => s.serviceId === serviceId);
-    if (!serviceEntry) {
-      throw new ForbiddenException("Vous n'avez pas accès au service Bloc Opératoire");
-    }
-
-    const centralUser: CentralUser = {
-      userId: payload.userId,
-      nom: payload.name,
-      prenom: payload.firstname,
-      email: payload.email,
-      serviceId: serviceEntry.serviceId,
-      roleId: serviceEntry.roleId,
-      role: serviceEntry.roleName,
-      permissions: serviceEntry.permissions || [],
-      chu: serviceEntry.chu,
-    };
     request.centralUser = centralUser;
 
     const rolesRequis = this.reflector.getAllAndOverride<string[]>(REQUIRE_ROLE_CLINIQUE_KEY, [

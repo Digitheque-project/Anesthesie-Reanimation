@@ -6,8 +6,14 @@ export class ConstantePerOp {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // Texte libre historique, conservé pour l'affichage des anciennes lignes.
   @Column()
   heure: string;
+
+  // Horodatage réel (capturé côté client), utilisé par les nouvelles saisies en temps réel —
+  // remplace progressivement `heure`.
+  @Column({ type: 'timestamptz', nullable: true })
+  horodatage: Date | null;
 
   @Column('int')
   fc: number;                     // Fréquence cardiaque

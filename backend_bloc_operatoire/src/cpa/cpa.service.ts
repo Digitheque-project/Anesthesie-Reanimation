@@ -10,6 +10,8 @@ import { NotificationOutgoingService } from '../external/notification-outgoing.s
 import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-externe.service';
 import { MedecinService } from '../medecin/medecin.service';
 import { CentralUser } from '../central-auth/central-user.interface';
+import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
+import { Medecin, RoleMedecin } from '../entities/medecin.entity';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
 
@@ -40,14 +42,31 @@ export class CPAService {
       );
     }
 
-    // L'anesthésiste réalisant la CPA est toujours celui qui est connecté, jamais une saisie
-    // manuelle du client. Sa fiche Médecin doit exister (créée par un administrateur) avec le
-    // même email que son compte SSO.
-    const anesthesiste = await this.medecinService.findByEmail(centralUser.email);
-    if (!anesthesiste) {
-      throw new BadRequestException(
-        `Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`,
-      );
+    // Si c'est l'anesthésiste lui-même qui est connecté, il est toujours celui qui a réalisé la
+    // CPA — jamais une saisie manuelle du client. Sa fiche Médecin doit exister (créée par un
+    // administrateur) avec le même email que son compte SSO. Si c'est un Responsable CPA ou un
+    // Major qui saisit la CPA (traitement administratif au nom de l'anesthésiste), ces rôles
+    // n'ont pas de fiche Médecin propre : l'anesthésiste ayant réalisé l'examen doit être
+    // désigné explicitement dans le formulaire.
+    const roleUtilisateur = matchRoleClinique(centralUser.role);
+    let anesthesiste: Medecin;
+
+    if (roleUtilisateur === RoleClinique.ANESTHESISTE) {
+      const trouve = await this.medecinService.findByEmail(centralUser.email);
+      if (!trouve) {
+        throw new BadRequestException(
+          `Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`,
+        );
+      }
+      anesthesiste = trouve;
+    } else {
+      if (!dto.anesthesisteId) {
+        throw new BadRequestException("L'anesthésiste ayant réalisé la consultation doit être sélectionné.");
+      }
+      anesthesiste = await this.medecinService.findOne(dto.anesthesisteId);
+      if (anesthesiste.role !== RoleMedecin.ANESTHESISTE) {
+        throw new BadRequestException(`${anesthesiste.prenom} ${anesthesiste.nom} n'est pas enregistré(e) comme anesthésiste.`);
+      }
     }
 
     const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto as any;
@@ -77,12 +96,22 @@ export class CPAService {
           const apte = saved.decision === DecisionCPA.APTE;
           await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
           try {
-            await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
-              dateCpa: saved.dateConsultation,
-              observations: saved.notesIncidents,
-            });
+            if (demande.sourceCallbackUrl) {
+              // Service externe générique (a fourni son URL de rappel à la réception).
+              await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_RESULTAT', {
+                decision: saved.decision,
+                dateCpa: saved.dateConsultation,
+                observations: saved.notesIncidents,
+              });
+            } else {
+              // Intégration historique Endoscopie (n'a jamais fourni d'URL de rappel explicite).
+              await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
+                dateCpa: saved.dateConsultation,
+                observations: saved.notesIncidents,
+              });
+            }
           } catch (err) {
-            this.logger.error(`Erreur notification Endoscopie: ${(err as Error).message}`);
+            this.logger.error(`Erreur notification résultat CPA au service demandeur: ${(err as Error).message}`);
           }
         }
       }

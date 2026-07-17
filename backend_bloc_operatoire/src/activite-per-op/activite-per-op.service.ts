@@ -4,8 +4,10 @@ import { Repository } from 'typeorm';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ConstantePerOp } from '../entities/constante-per-op.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { CreateActivitePerOpDto } from './dto/create-activite-per-op.dto';
 import { UpdateActivitePerOpDto } from './dto/update-activite-per-op.dto';
+import { AjouterConstanteDto } from './dto/ajouter-constante.dto';
 
 @Injectable()
 export class ActivitePerOpService {
@@ -13,6 +15,7 @@ export class ActivitePerOpService {
     @InjectRepository(ActivitePerOp) private repo: Repository<ActivitePerOp>,
     @InjectRepository(ConstantePerOp) private constanteRepo: Repository<ConstantePerOp>,
     private accueilClient: AccueilClient,
+    private gateway: OperationGateway,
   ) {}
 
   async create(dto: CreateActivitePerOpDto): Promise<ActivitePerOp> {
@@ -38,8 +41,9 @@ export class ActivitePerOpService {
     return this.findOne(saved.id);
   }
 
-  async findAll(page = 1, limite = 10) {
+  async findAll(page = 1, limite = 10, patientId?: string) {
     const [data, total] = await this.repo.findAndCount({
+      where: patientId ? { patientId } : {},
       relations: ['chirurgien', 'anesthesiste', 'constantes'],
       skip: (page - 1) * limite,
       take: limite,
@@ -70,5 +74,29 @@ export class ActivitePerOpService {
     if (!a) throw new NotFoundException(`Activité ${id} non trouvée`);
     await this.repo.delete(id);
     return { message: 'Activité supprimée' };
+  }
+
+  // Ajout ponctuel d'une mesure de constantes en temps réel pendant l'opération (distinct de la
+  // saisie groupée de create()) — diffusée immédiatement à tous les postes connectés sur ce
+  // patient.
+  async ajouterConstante(activiteId: string, dto: AjouterConstanteDto): Promise<ConstantePerOp> {
+    const activite = await this.repo.findOne({ where: { id: activiteId } });
+    if (!activite) throw new NotFoundException(`Activité ${activiteId} non trouvée`);
+
+    const horodatage = new Date(dto.horodatage);
+    const constante = this.constanteRepo.create({
+      fc: dto.fc,
+      ta: dto.ta,
+      spo2: dto.spo2,
+      temperature: dto.temperature,
+      capnie: dto.capnie,
+      score: dto.score,
+      horodatage,
+      heure: horodatage.toTimeString().split(' ')[0].substring(0, 5),
+      activitePerOp: activite,
+    });
+    const saved = await this.constanteRepo.save(constante);
+    this.gateway.emitToOperation(activite.patientId, 'constante:ajoutee', { patientId: activite.patientId, constante: saved });
+    return saved;
   }
 }

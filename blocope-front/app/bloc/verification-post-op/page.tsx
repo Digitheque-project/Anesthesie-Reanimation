@@ -1,8 +1,10 @@
 'use client'
 import { Suspense } from "react";
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
+import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 
 export default function VerificationPostOpPage() {
   return (
@@ -20,6 +22,10 @@ function VerificationPostOpPageContent() {
   const intervention = searchParams.get('intervention') || ''
   const [form, setForm] = useState({ dateCreation: new Date().toISOString().split('T')[0], identiteUltimeConfirmee: false, interventionConfirmee: false, siteOperatoireConfirme: false, installationCorrecte: false, documentsDisponibles: false, antibioprophylaxieFaite: false, constantesStables: false, ventilationOK: false })
   const [loading, setLoading] = useState(false)
+  const [majDistante, setMajDistante] = useState(false)
+  const { on } = useOperationRealtime(patientId)
+
+  useEffect(() => on('checklist-pendant-op:maj', () => setMajDistante(true)), [on])
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -38,6 +44,7 @@ function VerificationPostOpPageContent() {
       <h1 className="text-2xl font-extrabold mb-2">🔍 Time Out — Vérification avant incision</h1>
       <p className="text-sm text-on-surface-variant mb-4">Dernière pause d'équipe (chirurgien + anesthésiste + IBODE) avant le début de l'intervention.</p>
       <div className="bg-blue-50 rounded-xl p-4 mb-4 flex gap-6 text-sm"><div><span className="text-xs font-bold text-gray-500 uppercase">Patient</span><p className="font-bold">{patientNom}</p></div>{intervention && <div><span className="text-xs font-bold text-gray-500 uppercase">Intervention</span><p className="font-bold">{intervention}</p></div>}</div>
+      <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
       <div className="bg-white rounded-xl p-6 shadow-sm border space-y-3 max-w-2xl">
         {[{ key: 'identiteUltimeConfirmee', label: 'Identité ultime confirmée' },{ key: 'interventionConfirmee', label: 'Intervention confirmée' },{ key: 'siteOperatoireConfirme', label: 'Site opératoire confirmé' },{ key: 'installationCorrecte', label: 'Installation correcte' },{ key: 'documentsDisponibles', label: 'Documents disponibles' },{ key: 'antibioprophylaxieFaite', label: 'Antibioprophylaxie faite' },{ key: 'constantesStables', label: 'Constantes stables' },{ key: 'ventilationOK', label: 'Ventilation OK' }].map(item => (
           <label key={item.key} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer"><input type="checkbox" checked={form[item.key as keyof typeof form] as boolean} onChange={e => setForm({...form, [item.key]: e.target.checked})} className="w-5 h-5 text-primary rounded" /><span className="font-medium text-sm">{item.label}</span></label>

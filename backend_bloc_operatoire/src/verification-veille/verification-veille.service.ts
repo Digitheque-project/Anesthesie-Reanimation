@@ -35,11 +35,16 @@ export class VerificationVeilleService {
 
     await this.patientBlocRepo.update(dto.patientId, { statut: PatientStatut.VERIFICATION_VEILLE_REALISEE });
 
-    // Si une demande de CPA/VPA externe (ex: Endoscopie) est ouverte pour ce patient, la confirmer.
+    // Si une demande de CPA/VPA externe est ouverte pour ce patient, la confirmer et renvoyer
+    // le résultat au service demandeur (URL de rappel générique, ou repli Endoscopie historique).
     const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
     if (demande) {
       await this.demandeCpaExterneService.marquerVpaRealisee(demande, saved.id);
-      await this.endoscopieClient.notifyVpaRealisee(demande, { dateVpa: saved.dateVisite });
+      if (demande.sourceCallbackUrl) {
+        await this.demandeCpaExterneService.notifierResultat(demande, 'VPA_REALISEE', { dateVpa: saved.dateVisite });
+      } else {
+        await this.endoscopieClient.notifyVpaRealisee(demande, { dateVpa: saved.dateVisite });
+      }
     }
 
     return saved;

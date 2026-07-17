@@ -1,19 +1,28 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { Repository, In } from 'typeorm';
 import { DemandeCpaExterne, StatutDemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
+import { CreneauBloc, TypeRDV } from '../entities/creneau-bloc.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
+import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
 
 @Injectable()
 export class DemandeCpaExterneService {
   private readonly logger = new Logger(DemandeCpaExterneService.name);
+  private readonly blocServiceId: string;
 
   constructor(
     @InjectRepository(DemandeCpaExterne) private repo: Repository<DemandeCpaExterne>,
+    @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
     private config: ConfigService,
-  ) {}
+    private http: HttpService,
+  ) {
+    this.blocServiceId = this.config.get<string>('externalServices.serviceId') ?? '';
+  }
 
   async receive(dto: ReceiveDemandeCpaDto): Promise<DemandeCpaExterne> {
     const demande = this.repo.create({
@@ -48,6 +57,36 @@ export class DemandeCpaExterneService {
     return this.repo.save(demande);
   }
 
+  // Planifie le rendez-vous CPA (ou vérification veille) pour cette demande externe : crée le
+  // créneau réel (visible dans /bloc/rendez-vous comme n'importe quel autre RDV) et fait
+  // avancer le statut de la demande en conséquence.
+  async planifier(id: string, dto: PlanifierDemandeCpaDto): Promise<DemandeCpaExterne> {
+    const demande = await this.findOne(id);
+    const type = dto.type ?? TypeRDV.CPA;
+
+    const creneau = this.creneauRepo.create({
+      date: dto.date as any,
+      heureDebut: dto.heureDebut,
+      heureFin: dto.heureFin,
+      salle: dto.salle,
+      patientId: demande.patientId,
+      chirurgienId: dto.chirurgienId ?? null,
+      responsable: dto.responsable ?? null,
+      type,
+      estUrgence: (demande.urgence ?? 0) >= 4,
+    });
+    await this.creneauRepo.save(creneau);
+
+    if (type === TypeRDV.VERIFICATION_VEILLE) {
+      demande.statut = StatutDemandeCpaExterne.VPA_PLANIFIEE;
+      demande.dateVpaPlanifiee = new Date(dto.date);
+    } else {
+      demande.statut = StatutDemandeCpaExterne.CPA_PLANIFIEE;
+      demande.dateCpaPlanifiee = new Date(dto.date);
+    }
+    return this.repo.save(demande);
+  }
+
   // Utilisée par les hooks CPA/VPA : trouve une demande externe encore ouverte pour ce patient.
   async trouverDemandeOuverte(patientId: string): Promise<DemandeCpaExterne | null> {
     return this.repo.findOne({
@@ -69,5 +108,34 @@ export class DemandeCpaExterneService {
     demande.vpaId = vpaId;
     demande.statut = StatutDemandeCpaExterne.CONFIRMEE;
     return this.repo.save(demande);
+  }
+
+  // Renvoie le résultat de la CPA/VPA au service demandeur, à l'URL qu'il a fournie à la
+  // réception de la demande (sourceCallbackUrl) — fonctionne pour n'importe quel service
+  // externe, pas seulement Endoscopie. Si aucune URL de rappel n'a été fournie, ne fait rien :
+  // l'appelant (CPAService/VerificationVeilleService) se rabat alors sur l'intégration
+  // historique EndoscopieClient pour préserver le comportement existant.
+  async notifierResultat(demande: DemandeCpaExterne, type: string, payload: any): Promise<void> {
+    if (!demande.sourceCallbackUrl) return;
+    try {
+      await firstValueFrom(
+        this.http.post(demande.sourceCallbackUrl, {
+          type,
+          motif: `Résultat demande CPA/VPA pour patient ${demande.patientId}`,
+          patientId: demande.patientId,
+          entiteRefType: demande.sourceReferenceType,
+          entiteRefId: demande.sourceReferenceId,
+          emitter: this.blocServiceId,
+          emitterName: 'Bloc Opératoire',
+          recipient: demande.sourceServiceId,
+          recipientName: demande.sourceServiceName,
+          payload,
+          createdAt: new Date().toISOString(),
+        }),
+      );
+      this.logger.log(`✅ Résultat "${type}" renvoyé à ${demande.sourceServiceName || demande.sourceServiceId} pour patient ${demande.patientId}`);
+    } catch (err) {
+      this.logger.error(`❌ Échec envoi résultat "${type}" à ${demande.sourceServiceName || demande.sourceServiceId}: ${(err as Error).message}`);
+    }
   }
 }

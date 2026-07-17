@@ -56,3 +56,22 @@ export function jouerSonPrescriptionUrgente() {
     // lecture audio indisponible — on ignore silencieusement
   }
 }
+
+// Bip unique pour l'alarme de surveillance pendant l'opération.
+export function jouerBipAlarme() {
+  const ctx = getContext();
+  if (!ctx) return;
+  try {
+    tone(ctx, 960, ctx.currentTime, 0.22, { type: 'square', peakGain: 0.3 });
+  } catch {
+    // lecture audio indisponible — on ignore silencieusement
+  }
+}
+
+// Déclenche un bip immédiat puis répète toutes les `intervalleMs` — utilisé pendant l'alerte
+// de surveillance, tant qu'elle n'est pas acquittée. Retourne une fonction pour arrêter.
+export function demarrerAlarmeRepetee(intervalleMs = 2000): () => void {
+  jouerBipAlarme();
+  const id = setInterval(jouerBipAlarme, intervalleMs);
+  return () => clearInterval(id);
+}

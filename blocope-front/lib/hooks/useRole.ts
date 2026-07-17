@@ -24,9 +24,17 @@ export function useRole() {
     estChirurgien: role === RoleClinique.CHIRURGIEN,
     estIbode: role === RoleClinique.IBODE,
     estMajor: role === RoleClinique.MAJOR,
-    peutPlanifierCpa: role === RoleClinique.RESPONSABLE_CPA,
+    // Planifier un RDV CPA : Responsable CPA ou Major (miroir de @RequireRoleClinique sur
+    // POST /planning/reserver côté backend).
+    peutPlanifierCpa: role === RoleClinique.RESPONSABLE_CPA || role === RoleClinique.MAJOR,
     peutGererCreneaux: role === RoleClinique.MAJOR,
     peutValiderSortieReveil: role === RoleClinique.ANESTHESISTE,
-    peutDeciderAptitudeCpa: role === RoleClinique.ANESTHESISTE,
+    // Saisir l'examen clinique CPA et décider APTE/INAPTE/REPORT : Anesthésiste, Responsable
+    // CPA ou Major (miroir de @RequireRoleClinique sur POST/PATCH /cpa côté backend).
+    peutDeciderAptitudeCpa:
+      role === RoleClinique.ANESTHESISTE || role === RoleClinique.RESPONSABLE_CPA || role === RoleClinique.MAJOR,
+    // Distingue l'anesthésiste connecté (auto-attribué depuis sa session) d'un Responsable
+    // CPA/Major qui doit désigner explicitement l'anesthésiste ayant réalisé la consultation.
+    estAnesthesisteConnecte: role === RoleClinique.ANESTHESISTE,
   }
 }

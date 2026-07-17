@@ -32,6 +32,12 @@ export class DemandeCpaExterne {
   @Column({ length: 100, nullable: true })
   sourceServiceName: string;
 
+  // URL à laquelle POSTer le résultat de la CPA/VPA (voir DemandeCpaExterneService.notifierResultat).
+  // Optionnelle pour compatibilité ascendante avec l'intégration Endoscopie historique, qui ne
+  // fournit pas ce champ et reste notifiée via EndoscopieClient (ENDOSCOPIE_API_URL).
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  sourceCallbackUrl: string | null;
+
   @Column({ length: 50 })
   sourceReferenceType: string;
 

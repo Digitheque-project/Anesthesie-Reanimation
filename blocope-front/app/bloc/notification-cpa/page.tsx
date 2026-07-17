@@ -8,10 +8,12 @@ import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifier
 import { useRouter } from 'next/navigation'
 import { notificationService, planningService } from '@/lib/api'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function NotificationCPAPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const router = useRouter()
+  const { peutPlanifierCpa, roleName } = useRole()
   const [loading, setLoading] = useState(true)
   const [showFiltres, setShowFiltres] = useState(false)
   // Le fil de prescription ne doit montrer que les prescriptions pas encore traitées : une fois
@@ -40,6 +42,7 @@ export default function NotificationCPAPage() {
   }
 
   const handlePlanifier = (notif: any) => {
+    if (!peutPlanifierCpa) { alert('❌ Planification réservée au Responsable CPA ou au Major'); return }
     setSelectedNotif(notif)
     setShowModal(true)
   }
@@ -132,11 +135,18 @@ export default function NotificationCPAPage() {
 
       <StatsNotification stats={stats} />
 
+      {!peutPlanifierCpa && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+          La planification d'un RDV CPA est réservée au Responsable CPA ou au Major{roleName ? ` (votre rôle : ${roleName})` : ''}. Vous pouvez consulter la liste et ouvrir les dossiers.
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">Chargement des notifications...</div>
       ) : (
         <TableauNotifications
           notifications={notificationsFiltrees}
+          peutPlanifier={peutPlanifierCpa}
           onPlanifier={handlePlanifier}
           onActionUrgent={handleActionPrescription}
           onVoirDossier={(n: any) => {

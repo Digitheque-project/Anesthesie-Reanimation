@@ -1,9 +1,11 @@
 'use client'
 import { Suspense } from "react";
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
+import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 
 export default function ApresOperationPage() {
   return (
@@ -26,6 +28,10 @@ function ApresOperationPageContent() {
     signalementsEffectues: false, transfertSalleReveil: false, observationsParticulieres: '',
   })
   const [loading, setLoading] = useState(false)
+  const [majDistante, setMajDistante] = useState(false)
+  const { on } = useOperationRealtime(patientId)
+
+  useEffect(() => on('checklist-apres-op:maj', () => setMajDistante(true)), [on])
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -58,6 +64,8 @@ function ApresOperationPageContent() {
           </div>
         </div>
       </div>
+
+      <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
 
       {/* Check-list Form */}
       <div className="grid grid-cols-1 gap-6">

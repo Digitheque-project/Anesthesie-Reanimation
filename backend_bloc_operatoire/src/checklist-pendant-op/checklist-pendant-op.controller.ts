@@ -1,37 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
-import { AccueilClient } from '../external/accueil.client';
+import { ChecklistPendantOpService } from './checklist-pendant-op.service';
+import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
+import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.dto';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Checklist Pendant Op')
 @Controller('checklists-pendant-op')
 export class ChecklistPendantOpController {
-  constructor(
-    @InjectRepository(ChecklistPendantOp) private repo: Repository<ChecklistPendantOp>,
-    private accueilClient: AccueilClient,
-  ) {}
+  constructor(private readonly service: ChecklistPendantOpService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Créer une checklist pendant opération' })
-  create(@Body() dto: any) { return this.repo.save(this.repo.create(dto)); }
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Créer une checklist pendant opération (Anesthésiste)' })
+  create(@Body() dto: CreateChecklistPendantOpDto) { return this.service.create(dto); }
 
   @Get()
   @ApiOperation({ summary: 'Lister les checklists pendant opération' })
-  async findAll(@Query('patientId') patientId?: string) {
-    const data = await this.repo.find({ where: patientId ? { patientId } : {} });
-    return this.accueilClient.enrichWithIdentity(data);
-  }
+  findAll(@Query('patientId') patientId?: string) { return this.service.findAll(patientId); }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const checklist = await this.repo.findOne({ where: { id } });
-    if (!checklist) return null;
-    const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
-    return enriched;
-  }
+  @ApiOperation({ summary: 'Obtenir une checklist pendant opération' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: any) { return this.repo.update(id, dto); }
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier une checklist pendant opération (Anesthésiste)' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateChecklistPendantOpDto) { return this.service.update(id, dto); }
 }

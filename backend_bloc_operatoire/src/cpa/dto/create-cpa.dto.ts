@@ -14,15 +14,17 @@ class PremedicamentDto {
   @IsString() frequence: string;
 }
 class MedicamentAnesthesieReanimationDto {
+  @IsString() categorie: string;
   @IsString() nom: string;
-  @IsString() dose: string;
-  @IsOptional() @IsString() voieAdministration?: string;
+  @IsOptional() @IsString() dosage?: string;
+  @IsOptional() @IsString() observation?: string;
 }
 
 export class CreateCPADto {
   @IsString() patientId: string;
-  // Dérivé automatiquement de l'utilisateur SSO connecté (voir CPAService.create) — ignoré s'il
-  // est envoyé par le client.
+  // Si l'utilisateur connecté est l'ANESTHESISTE, dérivé automatiquement de sa session (ignoré
+  // s'il est envoyé) — voir CPAService.create. Si l'utilisateur connecté est RESPONSABLE_CPA ou
+  // MAJOR (n'ayant pas de fiche Médecin propre), ce champ devient obligatoire.
   @IsOptional() @IsString() anesthesisteId?: string;
   @IsDateString() dateConsultation: string;
   @IsBoolean() antecedentsAnesthesie: boolean;

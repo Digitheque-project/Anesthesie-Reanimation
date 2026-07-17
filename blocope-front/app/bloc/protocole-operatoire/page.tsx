@@ -1,9 +1,11 @@
 'use client'
 import { Suspense } from "react";
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
+import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 
 export default function ProtocoleOperatoirePage() {
   return (
@@ -28,6 +30,10 @@ function ProtocoleOperatoirePageContent() {
     prescriptionsConjointes: false,
   })
   const [loading, setLoading] = useState(false)
+  const [majDistante, setMajDistante] = useState(false)
+  const { on } = useOperationRealtime(patientId)
+
+  useEffect(() => on('protocole-operatoire:maj', () => setMajDistante(true)), [on])
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -48,7 +54,9 @@ function ProtocoleOperatoirePageContent() {
   }
 
   return (
-    <main className="p-6 flex gap-6 h-full overflow-y-auto">
+    <main className="p-6 h-full overflow-y-auto">
+      <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
+      <div className="flex gap-6">
       {/* Colonne gauche : Protocole */}
       <section className="flex-1 flex flex-col space-y-4">
         <div className="flex items-center justify-between mb-2">
@@ -136,6 +144,7 @@ function ProtocoleOperatoirePageContent() {
           </button>
         </div>
       </section>
+      </div>
     </main>
   )
   }

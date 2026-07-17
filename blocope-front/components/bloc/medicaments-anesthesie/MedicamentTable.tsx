@@ -9,6 +9,9 @@ export type MedicamentRow = {
   /** Par défaut : champ texte. `number` pour les quantités entières (ex. blouse). */
   dosageInputType?: "text" | "number";
   dosagePlaceholder?: string;
+  /** Catégorie d'origine (ex. "SERUMS") — non utilisée par ce composant, sert au parent à
+   * regrouper/filtrer les lignes d'un tableau à plat (ex. catalogue CPA). */
+  categorie?: string;
 };
 
 export type MedicamentTableAccent =

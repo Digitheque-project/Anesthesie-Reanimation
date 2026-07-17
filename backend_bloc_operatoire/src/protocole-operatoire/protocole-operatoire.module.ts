@@ -4,9 +4,10 @@ import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { Drainage } from '../entities/drainage.entity';
 import { ProtocoleOperatoireService } from './protocole-operatoire.service';
 import { ProtocoleOperatoireController } from './protocole-operatoire.controller';
+import { OperationGatewayModule } from '../operation-gateway/operation-gateway.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProtocoleOperatoire, Drainage])],
+  imports: [TypeOrmModule.forFeature([ProtocoleOperatoire, Drainage]), OperationGatewayModule],
   controllers: [ProtocoleOperatoireController],
   providers: [ProtocoleOperatoireService],
   exports: [ProtocoleOperatoireService],

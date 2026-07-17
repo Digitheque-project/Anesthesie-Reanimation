@@ -30,6 +30,8 @@ import { DemandeCpaExterneModule } from './demande-cpa-externe/demande-cpa-exter
 import { ExternalModule } from './external/external.module';
 import { CentralAuthModule } from './central-auth/central-auth.module';
 import { CentralAuthGuard } from './central-auth/central-auth.guard';
+import { OperationGatewayModule } from './operation-gateway/operation-gateway.module';
+import { MomentsOperatoireModule } from './moments-operatoire/moments-operatoire.module';
 import externalServicesConfig from './config/external-services.config';
 import centralAuthConfig from './config/central-auth.config';
 
@@ -39,6 +41,7 @@ import centralAuthConfig from './config/central-auth.config';
     ScheduleModule.forRoot(),
     ExternalModule,
     CentralAuthModule,
+    OperationGatewayModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -69,6 +72,7 @@ import centralAuthConfig from './config/central-auth.config';
     ChecklistAvantOpModule,
     ChecklistPendantOpModule,
     ChecklistApresOpModule,
+    MomentsOperatoireModule,
     WebhookNotificationModule,
     PrescriptionModule,
     DemandeCpaExterneModule,

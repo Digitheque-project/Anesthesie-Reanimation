@@ -12,16 +12,16 @@ export class CPAController {
   constructor(private readonly service: CPAService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Créer une CPA — décision Apte/Inapte/Report (Anesthésiste, auto-attribué depuis la session connectée)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
+  @ApiOperation({ summary: "Créer une CPA — décision Apte/Inapte/Report (Anesthésiste, Responsable CPA ou Major ; l'anesthésiste ayant réalisé la consultation est auto-attribué depuis la session si elle est ANESTHESISTE, sinon doit être sélectionné explicitement)" })
   create(@Body() d: CreateCPADto, @Request() req: any) { return this.service.create(d, req.centralUser); }
 
   @Get() @ApiOperation({ summary: 'Lister les CPA' }) findAll(@Query('page') p?: number, @Query('limite') l?: number, @Query('patientId') patientId?: string) { return this.service.findAll(p, l, patientId); }
   @Get(':id') @ApiOperation({ summary: 'Obtenir une CPA' }) findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Modifier une CPA (Anesthésiste)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Modifier une CPA (Anesthésiste, Responsable CPA ou Major)' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() d: UpdateCPADto) { return this.service.update(id, d); }
 
   @Delete(':id')
