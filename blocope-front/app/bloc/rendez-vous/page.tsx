@@ -4,21 +4,29 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { planningService } from '@/lib/api';
 
+type Onglet = 'CPA' | 'VERIFICATION_VEILLE';
+
+const ONGLETS: { type: Onglet; label: string; actionLabel: string; cible: string }[] = [
+  { type: 'CPA', label: '👨‍⚕️ Rendez-vous CPA', actionLabel: 'Réaliser CPA', cible: '/bloc/consultation-cpa' },
+  { type: 'VERIFICATION_VEILLE', label: '🌙 Vérification veille', actionLabel: 'Réaliser la vérification', cible: '/bloc/verification-veille' },
+];
+
 export default function RendezVousPage() {
   const router = useRouter();
+  const [onglet, setOnglet] = useState<Onglet>('CPA');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [creneaux, setCreneaux] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { charger(); }, [selectedDate]);
+  useEffect(() => { charger(); }, [selectedDate, onglet]);
 
   const charger = async () => {
     setLoading(true);
     try {
-      const data = await planningService.getJour(selectedDate, 'CPA');
-      // Patient à statut Normal apte pour le CPA uniquement
+      const data = await planningService.getJour(selectedDate, onglet);
+      // Patient à statut Normal apte pour le CPA uniquement (sans objet pour la vérification veille)
       const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
-        (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut !== 'CPA_INAPTE'
+        onglet === 'VERIFICATION_VEILLE' || ((c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut !== 'CPA_INAPTE')
       );
       setCreneaux(filtres);
     } catch (err) { console.error(err); }
@@ -28,6 +36,8 @@ export default function RendezVousPage() {
   const formaterDate = (d: string) => {
     return new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
+
+  const ongletActif = ONGLETS.find(o => o.type === onglet)!;
 
   return (
     <div className="p-6 flex flex-col gap-6">
@@ -43,12 +53,20 @@ export default function RendezVousPage() {
 
       {/* Tableau */}
       <div className="bg-white border border-outline-variant/30 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-        {/* Tab */}
+        {/* Tabs */}
         <div className="px-6 pt-4 flex border-b border-outline-variant/10 bg-white">
-          <div className="flex space-x-8 bg-gray-50 p-2 rounded-2xl">
-            <span className="pb-4 px-1 rounded-2xl bg-blue-100 text-lg font-bold text-primary border-b-2 border-primary">
-              👨‍⚕️ Patient à Rendez-vous CPA
-            </span>
+          <div className="flex space-x-2 bg-gray-50 p-2 rounded-2xl">
+            {ONGLETS.map(o => (
+              <button
+                key={o.type}
+                onClick={() => setOnglet(o.type)}
+                className={`pb-4 pt-2 px-4 rounded-2xl text-lg font-bold transition-colors ${
+                  onglet === o.type ? 'bg-blue-100 text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:bg-gray-100'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -112,10 +130,10 @@ export default function RendezVousPage() {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button
-                      onClick={() => router.push(`/bloc/consultation-cpa?patientId=${c.patient?.id}&patientNom=${encodeURIComponent((c.patient?.nom || '') + ' ' + (c.patient?.prenom || ''))}`)}
+                      onClick={() => router.push(`${ongletActif.cible}?patientId=${c.patient?.id}&patientNom=${encodeURIComponent((c.patient?.nom || '') + ' ' + (c.patient?.prenom || ''))}`)}
                       className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 whitespace-nowrap"
                     >
-                      Réaliser CPA
+                      {ongletActif.actionLabel}
                     </button>
                   </td>
                 </tr>
