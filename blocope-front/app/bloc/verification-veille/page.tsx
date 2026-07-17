@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { patientService } from '@/lib/api'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function VerificationVeillePage() {
   return (
@@ -22,6 +23,7 @@ function VerificationVeillePageContent() {
   const [patient, setPatient] = useState<any>(null)
   const [cpa, setCpa] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const { estAnesthesiste, roleName } = useRole()
   const [form, setForm] = useState({
     dateVisite: new Date().toISOString().split('T')[0],
     identiteConfirmee: true, jeuneRespected: true, instructionsRespectees: true, premedicationFaite: true,
@@ -40,6 +42,10 @@ function VerificationVeillePageContent() {
   const cpaId = cpa?.id || ''
 
   const handleSubmit = async () => {
+    if (!estAnesthesiste) {
+      alert('❌ La vérification veille est réservée à l\'anesthésiste' + (roleName ? ` (votre rôle : ${roleName})` : ''))
+      return
+    }
     if (!cpaId) {
       alert('⚠️ Aucune CPA trouvée pour ce patient. Veuillez d\'abord réaliser une CPA.')
       return
@@ -52,10 +58,11 @@ function VerificationVeillePageContent() {
         ...form
       })
       alert('✅ Vérification veille validée avec succès !')
-      router.push('/bloc/rendez-vous/verification-veille')
-    } catch (err) {
+      router.push('/bloc/rendez-vous')
+    } catch (err: any) {
       console.error(err);
-      alert('❌ Erreur lors de la validation')
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur : ' + (Array.isArray(message) ? message.join(', ') : message))
     }
     finally { setLoading(false) }
   }
@@ -87,6 +94,11 @@ function VerificationVeillePageContent() {
       </div>
 
       <p className="mt-2 text-sm text-on-surface-variant">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
+      {!estAnesthesiste && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          La validation de la vérification veille est réservée à l'anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}. Vous pouvez consulter les informations, mais pas valider.
+        </div>
+      )}
 
       {/* Bento Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">

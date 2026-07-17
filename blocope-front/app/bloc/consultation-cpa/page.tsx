@@ -39,6 +39,8 @@ const DEFAULT_FORM = {
   typeAnesthesie: 'Anesthésie Générale (AG)',
   techniqueIntubation: 'Sonde Endotrachéale',
   jeune: '',
+  jeuneSolides: 'À partir de minuit',
+  jeuneLiquides: "Jusqu'à H-2",
   preparationPhysique: '',
   tachesInfirmieres: '',
 }
@@ -173,7 +175,7 @@ function ConsultationCpaPageContent() {
               observation: r.observation || undefined,
             }))
           : undefined,
-        jeune: form.jeune || 'À partir de minuit',
+        jeune: form.jeune || `Solides : ${form.jeuneSolides} — Liquides clairs : ${form.jeuneLiquides}`,
         preparationPhysique: form.preparationPhysique || 'RAS',
         tachesInfirmieres: form.tachesInfirmieres || 'RAS',
         dateVerificationVeille: !estUrgent && decision !== 'INAPTE' && dateVPA ? dateVPA : undefined,
@@ -457,7 +459,19 @@ function ConsultationCpaPageContent() {
 
               <div className="mt-4 space-y-2">
                 <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Jeûne</label><textarea value={form.jeune} onChange={setField('jeune')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Instructions spécifiques..."></textarea></div>
-                <div className="bg-surface-container-low rounded-xl p-4 border-l-4 border-secondary"><h3 className="text-sm font-bold text-secondary flex items-center gap-2 mb-2"><span className="material-symbols-outlined">no_food</span>Règles de jeûne</h3><div className="grid grid-cols-2 gap-2"><div className="bg-white p-3 rounded-lg"><p className="text-[10px] font-bold uppercase">Solides</p><p className="text-sm font-bold">À partir de minuit</p></div><div className="bg-white p-3 rounded-lg"><p className="text-[10px] font-bold uppercase">Liquides Clairs</p><p className="text-sm font-bold">Jusqu'à H-2</p></div></div></div>
+                <div className="bg-surface-container-low rounded-xl p-4 border-l-4 border-secondary">
+                  <h3 className="text-sm font-bold text-secondary flex items-center gap-2 mb-2"><span className="material-symbols-outlined">no_food</span>Règles de jeûne</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white p-3 rounded-lg">
+                      <label className="text-[10px] font-bold uppercase block mb-1">Solides</label>
+                      <input value={form.jeuneSolides} onChange={setField('jeuneSolides')} className="w-full bg-transparent border-none text-sm font-bold p-0 focus:ring-0" />
+                    </div>
+                    <div className="bg-white p-3 rounded-lg">
+                      <label className="text-[10px] font-bold uppercase block mb-1">Liquides Clairs</label>
+                      <input value={form.jeuneLiquides} onChange={setField('jeuneLiquides')} className="w-full bg-transparent border-none text-sm font-bold p-0 focus:ring-0" />
+                    </div>
+                  </div>
+                </div>
                 <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Préparation physique</label><textarea value={form.preparationPhysique} onChange={setField('preparationPhysique')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Douche, dépilation..."></textarea></div>
                 <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Tâches soignantes</label><textarea value={form.tachesInfirmieres} onChange={setField('tachesInfirmieres')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Surveillance, constantes..."></textarea></div>
               </div>

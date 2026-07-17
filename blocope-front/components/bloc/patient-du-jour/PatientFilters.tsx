@@ -10,6 +10,8 @@ interface PatientFiltersProps {
 export default function PatientFilters({ onFilterChange }: PatientFiltersProps) {
   const [statut, setStatut] = useState("Tous les statuts");
   const [specialite, setSpecialite] = useState("Toutes les spécialités");
+  const dateDuJour = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateDuJourCapitalisee = dateDuJour.charAt(0).toUpperCase() + dateDuJour.slice(1);
 
   const handleStatutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVal = e.target.value;
@@ -35,7 +37,7 @@ export default function PatientFilters({ onFilterChange }: PatientFiltersProps) 
             calendar_month
           </span>
           <span className="text-sm font-bold text-on-surface">
-            Mardi 24 Octobre 2023
+            {dateDuJourCapitalisee}
           </span>
         </div>
       </div>

@@ -25,7 +25,6 @@ function ChecklistAvantOpPageContent() {
     identiteConfirmee: false, interventionSiteConfirmes: false, documentationDisponible: false,
     installationConnue: false, materielChirurgicalVerifie: false, materielAnesthesiqueVerifie: false,
     allergiePatient: false, risqueIntubation: false, risqueSaignement: false,
-    identiteConfirmeeUltime: false, interventionConfirmeeUltime: false, antibioprophylaxieFaite: false,
     notesChirurgicales: '', notesAnesthesiques: '', notesIdeIbode: '',
   })
   const [loading, setLoading] = useState(false)
@@ -155,39 +154,19 @@ function ChecklistAvantOpPageContent() {
           </div>
         </section>
 
-        {/* PHASE 2: AVANT INTERVENTION CHIRURGICALE */}
+        {/* TRANSMISSION D'ÉQUIPE — la vérification "ultime" (identité, intervention, site,
+            antibioprophylaxie...) juste avant l'incision se fait sur l'écran Time Out séparé
+            (checklist pendant-op), pour éviter de la saisir deux fois. */}
         <section className="bg-surface-container-low rounded-xl p-6 shadow-sm border-t-4 border-secondary">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-secondary">pause_circle</span>
+              <span className="material-symbols-outlined text-secondary">forum</span>
             </div>
-            <h2 className="text-xl font-headline font-bold text-secondary uppercase tracking-wide">Avant Intervention Chirurgicale</h2>
+            <h2 className="text-xl font-headline font-bold text-secondary uppercase tracking-wide">Transmission d'équipe</h2>
           </div>
-          <p className="text-xs italic text-on-surface-variant mb-6">Temps de pause avant incision</p>
+          <p className="text-xs italic text-on-surface-variant mb-6">Informations essentielles à partager sur les éléments à risque</p>
           <div className="space-y-4">
-            {/* 6. Ultimate Cross-Verification */}
             <div className="bg-white p-4 rounded-lg border border-outline-variant/10">
-              <p className="text-sm font-bold text-secondary mb-3">6- Vérification « ultime » croisée au sein de l'équipe :</p>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">- Identité patient correct</span>
-                  <label className="flex items-center text-xs cursor-pointer">
-                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.identiteConfirmeeUltime} onChange={e => setForm({...form, identiteConfirmeeUltime: e.target.checked})} /> oui
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">- Intervention prévue confirmée</span>
-                  <label className="flex items-center text-xs cursor-pointer">
-                    <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.interventionConfirmeeUltime} onChange={e => setForm({...form, interventionConfirmeeUltime: e.target.checked})} /> oui
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* 7. Information Sharing */}
-            <div className="bg-white p-4 rounded-lg border border-outline-variant/10">
-              <p className="text-sm font-bold text-secondary mb-1">7- Partage des informations</p>
-              <p className="text-[10px] text-on-surface-variant italic mb-3">Essentielles dans l'équipe sur des éléments à risque</p>
               <div className="space-y-4">
                 <div className="p-3 bg-surface rounded-lg">
                   <p className="text-xs font-bold text-primary">- Sur le plan chirurgical</p>
@@ -201,16 +180,6 @@ function ChecklistAvantOpPageContent() {
                   <p className="text-xs font-bold text-on-surface-variant">- IDE / IBODE</p>
                   <textarea value={form.notesIdeIbode} onChange={e => setForm({...form, notesIdeIbode: e.target.value})} className="w-full text-xs border border-outline-variant/20 bg-white rounded-md p-2 focus:ring-1 focus:outline-none h-16 mt-2" placeholder="Notes IDE/IBODE..."></textarea>
                 </div>
-              </div>
-            </div>
-
-            {/* 8. Antibioprophylaxis */}
-            <div className="bg-white p-4 rounded-lg border border-outline-variant/10">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-secondary">8- Antibioprophylaxie effectuée</p>
-                <label className="flex items-center text-xs cursor-pointer">
-                  <input className="mr-1 w-4 h-4 rounded text-secondary" type="checkbox" checked={form.antibioprophylaxieFaite} onChange={e => setForm({...form, antibioprophylaxieFaite: e.target.checked})} /> oui
-                </label>
               </div>
             </div>
           </div>
