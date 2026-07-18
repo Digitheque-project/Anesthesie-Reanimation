@@ -24,6 +24,7 @@ const normaliserDemandeExterne = (d: any) => ({
   prescripteur: d.sourceServiceName || d.sourceServiceId,
   sourceServiceName: d.sourceServiceName || d.sourceServiceId,
   heure: d.createdAt ? new Date(d.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+  dateIntervention: d.dateExamenSouhaitee,
   urgence: d.urgence,
   estUrgent: (d.urgence ?? 0) >= 4,
   statut: 'EN_ATTENTE',

@@ -112,6 +112,7 @@ export class PrescriptionService {
     const notif = await this.notificationRepo.save(
       this.notificationRepo.create({
         heurePrescription: new Date().toTimeString().substring(0, 5),
+        dateIntervention: p.dateIntervention ? new Date(p.dateIntervention) : undefined,
         patientId: p.patientId,
         intervention: acte?.libelle || 'Intervention',
         chirurgienId: undefined,

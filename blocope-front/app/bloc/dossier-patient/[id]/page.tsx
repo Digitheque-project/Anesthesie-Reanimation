@@ -158,12 +158,14 @@ function DossierPatientPageContent() {
         estUrgent={false}
       />
 
-      {/* Prescription */}
+      {/* Prescription — alertes et risque hémorragique regroupés dans la même plage que la
+          prescription chirurgicale, pour que le prescripteur ait toute l'information critique
+          d'un coup d'œil sans devoir chercher plus bas dans la page */}
       <div className="bg-white rounded-xl p-4 shadow-sm border mb-3">
         <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined">clinical_notes</span> Prescription chirurgicale
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-2">
           <div className="p-3 bg-blue-50 rounded-lg">
             <span className="text-xs font-bold text-gray-500 uppercase">Intervention prévue</span>
             <p className="font-bold text-lg">{p.libelle || 'Non spécifiée'}</p>
@@ -173,33 +175,35 @@ function DossierPatientPageContent() {
             <p className="font-bold">{p.typeChirurgie || '—'}</p>
           </div>
           <div className="p-3 bg-blue-50 rounded-lg">
-            <span className="text-xs font-bold text-gray-500 uppercase">Date d'intervention</span>
-            <p className="font-bold">{p.dateIntervention ? new Date(p.dateIntervention).toLocaleDateString('fr-FR') : '—'}</p>
+            <span className="text-xs font-bold text-gray-500 uppercase">Date et heure prévues de l'opération</span>
+            <p className="font-bold">
+              {p.dateIntervention
+                ? new Date(p.dateIntervention).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : 'Non communiquée'}
+            </p>
           </div>
           <div className="p-3 bg-blue-50 rounded-lg">
             <span className="text-xs font-bold text-gray-500 uppercase">Chirurgien</span>
             <p className="font-bold">{p.chirurgien_nom || '—'}</p>
           </div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+            <span className="text-xs font-bold text-red-700 uppercase flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">warning</span> Alertes
+            </span>
+            <p className="font-bold text-red-800 mt-1">{p.alertes || 'Aucune alerte'}</p>
+          </div>
+          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <span className="text-xs font-bold text-orange-700 uppercase flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">bloodtype</span> Risque hémorragique
+            </span>
+            <p className="font-bold text-orange-800 mt-1">{p.risqueHemorragique || 'Non évalué'}</p>
+          </div>
+        </div>
       </div>
 
       <DossierMedicalPanel patientId={patientId} />
-
-      {/* Alertes & Risques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
-        <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-          <h3 className="text-lg font-bold text-red-700 mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined">warning</span> Alertes
-          </h3>
-          <p className="text-sm font-bold text-red-800">{p.alertes || 'Aucune alerte'}</p>
-        </div>
-        <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-          <h3 className="text-lg font-bold text-orange-700 mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined">bloodtype</span> Risque hémorragique
-          </h3>
-          <p className="text-sm font-bold text-orange-800">{p.risqueHemorragique || 'Non évalué'}</p>
-        </div>
-      </div>
 
       {/* Consignes */}
       <div className="bg-white rounded-xl p-4 shadow-sm border">

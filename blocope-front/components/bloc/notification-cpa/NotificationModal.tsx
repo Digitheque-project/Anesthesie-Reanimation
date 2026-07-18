@@ -272,6 +272,24 @@ export default function NotificationModal({
                     </div>
                   </div>
 
+                  <div className="mb-3 bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-blue-600">event</span>
+                    <div>
+                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Date et heure prévues de l'opération</p>
+                      <p className="text-sm font-bold text-gray-800">
+                        {notification.dateIntervention
+                          ? new Date(notification.dateIntervention).toLocaleString('fr-FR', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : 'Non communiquée'}
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="mb-3">
                     <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Service source</p>
                     <p className="text-sm font-medium text-gray-800">

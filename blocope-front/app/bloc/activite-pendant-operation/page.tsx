@@ -107,6 +107,10 @@ function ActivitePendantOperationPageContent() {
       {/* TopAppBar */}
       <header className="bg-white/80 backdrop-blur-xl z-50 sticky top-0 border-b border-surface-container-highest shadow-sm flex justify-between items-center w-full px-6 py-2">
         <div className="flex items-center gap-6">
+          <button onClick={() => router.back()} className="text-sm text-primary font-bold hover:underline flex items-center gap-1 shrink-0">
+            <span className="material-symbols-outlined text-sm">arrow_back</span> Retour
+          </button>
+          <div className="h-10 w-px bg-surface-container-highest"></div>
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mb-0.5">Patient en cours</span>
             <h2 className="font-headline font-bold text-lg text-on-surface leading-tight">{patientNom}</h2>
@@ -118,9 +122,6 @@ function ActivitePendantOperationPageContent() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="text-sm text-primary font-bold hover:underline flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">arrow_back</span> Retour
-          </button>
           <div className="px-3 py-1.5 rounded-full flex items-center gap-2 border bg-tertiary/10 text-tertiary border-tertiary/20">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>

@@ -53,17 +53,14 @@ function ChecklistAvantOpPageContent() {
   return (
     <main className="p-6">
       {/* Header */}
-      <header className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <header className="mb-10 flex flex-col md:flex-row md:items-center gap-4">
+        <button onClick={() => router.back()} className="flex items-center space-x-2 px-6 py-2.5 border border-outline-variant/30 rounded-lg hover:bg-surface-container transition-all font-semibold shrink-0 order-first">
+          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+          <span className="text-sm">Retour</span>
+        </button>
         <div>
           <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
           <p className="text-on-surface-variant mt-2 text-lg">{patientNom} — {intervention}</p>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={() => router.back()} className="flex items-center space-x-2 px-6 py-2.5 border border-outline-variant/30 rounded-lg hover:bg-surface-container transition-all font-semibold">
-            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-            <span className="text-sm">Retour</span>
-          </button>
-          {/* ✅ BOUTON MÉDICAMENTS SUPPRIMÉ */}
         </div>
       </header>
 

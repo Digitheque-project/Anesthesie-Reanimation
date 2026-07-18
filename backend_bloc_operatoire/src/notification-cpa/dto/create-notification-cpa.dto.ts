@@ -1,8 +1,9 @@
-import { IsString, IsEnum, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsBoolean, IsOptional, IsDateString } from 'class-validator';
 import { StatutNotificationCPA } from '../../entities/notification-cpa.entity';
 
 export class CreateNotificationCPADto {
   @IsString() heurePrescription: string;
+  @IsOptional() @IsDateString() dateIntervention?: string;
   @IsString() patientId: string;
   @IsString() intervention: string;
   @IsString() chirurgienId: string;

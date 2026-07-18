@@ -21,6 +21,11 @@ export default function TableauNotifications({
 
   const estPatientStat = (notif: any) => Boolean(notif.estUrgent || notif.urgence === 3)
 
+  const formatDateIntervention = (notif: any) => {
+    if (!notif.dateIntervention) return null
+    return new Date(notif.dateIntervention).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-md border border-outline-variant/30 overflow-hidden">
       <div className="overflow-x-auto">
@@ -30,6 +35,7 @@ export default function TableauNotifications({
               <th className="px-4 py-3 text-left">Heure</th>
               <th className="px-4 py-3 text-left">Patient</th>
               <th className="px-4 py-3 text-left">Intervention</th>
+              <th className="px-4 py-3 text-left">Opération prévue</th>
               <th className="px-4 py-3 text-left">Prescripteur</th>
               <th className="px-4 py-3 text-left">Urgent</th>
               <th className="px-4 py-3 text-left">Action</th>
@@ -62,6 +68,16 @@ export default function TableauNotifications({
                     <div className="text-xs text-on-surface-variant">{n.patientId || n.patient?.id || ''}</div>
                   </td>
                   <td className="px-4 py-3">{n.intervention || n.motif || '-'}</td>
+                  <td className="px-4 py-3">
+                    {formatDateIntervention(n) ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                        <span className="material-symbols-outlined text-sm">event</span>
+                        {formatDateIntervention(n)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-on-surface-variant italic">Non communiquée</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-on-surface-variant">{n.prescripteur || n.professeurCPA || '-'}</td>
                   <td className="px-4 py-3">
                     {isStat ? (

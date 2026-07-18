@@ -23,6 +23,11 @@ export class NotificationCPA {
   @Column()
   heurePrescription: string;
 
+  // Date et heure prévues de l'opération telles que transmises par le service prescripteur —
+  // distincte de heurePrescription (heure de réception de la prescription au bloc).
+  @Column({ type: 'timestamp', nullable: true })
+  dateIntervention: Date | null;
+
   @Index()
   @Column()
   patientId: string;
