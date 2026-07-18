@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function VerificationPostOpPage() {
   return (
@@ -35,10 +36,15 @@ function VerificationPostOpPageContent() {
   const [loading, setLoading] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
   const { on } = useOperationRealtime(patientId)
+  const { estAnesthesiste, roleName } = useRole()
 
   useEffect(() => on('checklist-pendant-op:maj', () => setMajDistante(true)), [on])
 
   const handleSubmit = async () => {
+    if (!estAnesthesiste) {
+      alert('❌ La check-list avant incision est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
     setLoading(true)
     try {
       await apiClient.post('/checklists-pendant-op', { patientId, ...form })
@@ -69,6 +75,12 @@ function VerificationPostOpPageContent() {
 
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
 
+      {!estAnesthesiste && (
+        <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 max-w-3xl">
+          La check-list avant incision est réservée à l'anesthésiste{roleName ? ` (votre rôle actuel est : ${roleName})` : ''}. Vous pouvez consulter cet écran mais pas la valider.
+        </div>
+      )}
+
       {/* Bento Grid — même style que le checklist avant induction */}
       <section className="bg-surface-container-low rounded-xl p-6 shadow-sm border-t-4 border-secondary max-w-3xl">
         <div className="flex items-center space-x-3 mb-6">
@@ -77,7 +89,7 @@ function VerificationPostOpPageContent() {
           </div>
           <h2 className="text-xl font-headline font-bold text-secondary uppercase tracking-wide">Dernière pause d'équipe</h2>
         </div>
-        <p className="text-xs italic text-on-surface-variant mb-6">Chirurgien + anesthésiste + IBODE, juste avant l'incision</p>
+        <p className="text-xs italic text-on-surface-variant mb-6">Chirurgien + anesthésiste + IBODE, juste avant l'incision — validée par l'anesthésiste</p>
 
         <div className="space-y-4">
           {ITEMS.map(item => (
@@ -99,10 +111,11 @@ function VerificationPostOpPageContent() {
 
       {/* Footer Actions */}
       <div className="mt-12 flex justify-end items-center max-w-3xl">
-        <button onClick={handleSubmit} disabled={loading}
-          className="flex items-center space-x-2 px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/20">
+        <button onClick={handleSubmit} disabled={loading || !estAnesthesiste}
+          title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
+          className="flex items-center space-x-2 px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
           <span className="material-symbols-outlined text-[24px]">check_circle</span>
-          <span>{loading ? 'Validation...' : 'Valider la check-list'}</span>
+          <span>{loading ? 'Validation...' : !estAnesthesiste ? 'Accès non autorisé' : 'Valider la check-list'}</span>
         </button>
       </div>
     </main>

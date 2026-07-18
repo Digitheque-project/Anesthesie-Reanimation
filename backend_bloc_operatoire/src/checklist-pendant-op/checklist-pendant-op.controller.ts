@@ -11,11 +11,12 @@ import { RoleClinique } from '../central-auth/role-clinique';
 export class ChecklistPendantOpController {
   constructor(private readonly service: ChecklistPendantOpService) {}
 
-  // Le "Time Out" est une vérification conjointe de toute l'équipe (chirurgien + anesthésiste +
-  // IBODE) juste avant l'incision — pas un acte réservé à un seul rôle.
+  // Le "Time Out" est une vérification orale conjointe de toute l'équipe (chirurgien +
+  // anesthésiste + IBODE) juste avant l'incision, mais sa saisie/validation dans le système
+  // reste un acte réservé à l'anesthésiste (chirurgien et IBODE ne valident pas de check-list).
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN, RoleClinique.IBODE)
-  @ApiOperation({ summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste, Chirurgien, IBODE)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste)' })
   create(@Body() dto: CreateChecklistPendantOpDto) { return this.service.create(dto); }
 
   @Get()

@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { CentralUser } from '../central-auth/central-user.interface';
+import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 import { CreateMomentOperatoireDto } from './dto/create-moment-operatoire.dto';
 
 @Injectable()
@@ -14,6 +15,22 @@ export class MomentsOperatoireService {
   ) {}
 
   async create(dto: CreateMomentOperatoireDto, centralUser: CentralUser): Promise<MomentOperatoire> {
+    // Chaque rôle horodate sa propre catégorie de moments : l'anesthésiste peut tout
+    // horodater, chirurgien et IBODE sont limités à la catégorie CHIRURGIE (l'IBODE assiste le
+    // chirurgien et peut horodater à sa place quand ses mains sont occupées).
+    const role = matchRoleClinique(centralUser.role);
+    const categoriesAutorisees: Record<string, string[]> = {
+      [RoleClinique.ANESTHESISTE]: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
+      [RoleClinique.CHIRURGIEN]: ['CHIRURGIE'],
+      [RoleClinique.IBODE]: ['CHIRURGIE'],
+    };
+    const autorisees = role ? categoriesAutorisees[role] : undefined;
+    if (!autorisees || !autorisees.includes(dto.categorie)) {
+      throw new ForbiddenException(
+        `Votre rôle (${centralUser.role}) ne peut pas horodater la catégorie ${dto.categorie}.`,
+      );
+    }
+
     const moment = this.repo.create({
       ...dto,
       horodatage: new Date(dto.horodatage),

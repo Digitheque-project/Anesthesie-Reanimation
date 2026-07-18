@@ -1,9 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
+import { useRole } from '@/lib/hooks/useRole'
 import { CATALOGUE_MOMENTS, CategorieMoment } from '@/lib/data/catalogue-moments-operatoires'
+
+// Chaque rôle horodate sa propre catégorie de moments — miroir de MomentsOperatoireService.create
+// côté backend. L'anesthésiste peut tout horodater ; le chirurgien et l'IBODE sont limités à la
+// catégorie CHIRURGIE (l'IBODE assiste le chirurgien et peut horodater à sa place). Les autres
+// rôles (Responsable CPA, Major) consultent l'historique mais ne déclenchent aucun moment.
+const CATEGORIES_AUTORISEES: Record<string, CategorieMoment[]> = {
+  ANESTHESISTE: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
+  CHIRURGIEN: ['CHIRURGIE'],
+  IBODE: ['CHIRURGIE'],
+}
 
 type MomentOperatoire = {
   id: string
@@ -64,9 +75,17 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
   const [moments, setMoments] = useState<MomentOperatoire[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
   const [labelPerso, setLabelPerso] = useState('')
-  const [categoriePerso, setCategoriePerso] = useState<CategorieMoment>('DIVERS')
   const toastSeq = useRef(0)
   const { on } = useOperationRealtime(patientId)
+  const { role } = useRole()
+
+  const categoriesAutorisees = useMemo(() => (role ? CATEGORIES_AUTORISEES[role] || [] : []), [role])
+  const [categoriePerso, setCategoriePerso] = useState<CategorieMoment>('DIVERS')
+  useEffect(() => {
+    if (categoriesAutorisees.length && !categoriesAutorisees.includes(categoriePerso)) {
+      setCategoriePerso(categoriesAutorisees[0])
+    }
+  }, [categoriesAutorisees])
 
   const upsertMoment = (moment: MomentOperatoire) => {
     setMoments(prev => {
@@ -127,6 +146,7 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
   }
 
   const categories = Object.keys(CATALOGUE_MOMENTS) as CategorieMoment[]
+  const categoriesVisibles = categories.filter((c) => categoriesAutorisees.includes(c))
 
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5">
@@ -134,8 +154,14 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
         <span className="material-symbols-outlined">timeline</span> Chronologie de l'opération
       </h2>
 
+      {categoriesVisibles.length === 0 && (
+        <p className="text-xs text-on-surface-variant italic">
+          Votre rôle ne permet pas d'horodater de moment ici — consultez l'historique ci-dessous.
+        </p>
+      )}
+
       <div className="space-y-4">
-        {categories.map((categorie) => {
+        {categoriesVisibles.map((categorie) => {
           const style = CATEGORIE_STYLE[categorie]
           return (
             <div key={categorie}>
@@ -164,27 +190,29 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
         })}
       </div>
 
-      <div className="flex gap-2 items-center pt-4 border-t border-outline-variant/20">
-        <select
-          value={categoriePerso}
-          onChange={(e) => setCategoriePerso(e.target.value as CategorieMoment)}
-          className="bg-surface-container-low border-none rounded-lg p-2 text-xs font-bold"
-        >
-          {categories.map((c) => (
-            <option key={c} value={c}>{CATALOGUE_MOMENTS[c].titre}</option>
-          ))}
-        </select>
-        <input
-          value={labelPerso}
-          onChange={(e) => setLabelPerso(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && ajouterMomentPersonnalise()}
-          placeholder="+ Ajouter un moment personnalisé…"
-          className="flex-1 bg-white border border-outline-variant/40 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
-        />
-        <button type="button" onClick={ajouterMomentPersonnalise} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary/90 hover:shadow-md transition-all">
-          <span className="material-symbols-outlined text-base">add</span> Ajouter
-        </button>
-      </div>
+      {categoriesVisibles.length > 0 && (
+        <div className="flex gap-2 items-center pt-4 border-t border-outline-variant/20">
+          <select
+            value={categoriePerso}
+            onChange={(e) => setCategoriePerso(e.target.value as CategorieMoment)}
+            className="bg-surface-container-low border-none rounded-lg p-2 text-xs font-bold"
+          >
+            {categoriesVisibles.map((c) => (
+              <option key={c} value={c}>{CATALOGUE_MOMENTS[c].titre}</option>
+            ))}
+          </select>
+          <input
+            value={labelPerso}
+            onChange={(e) => setLabelPerso(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && ajouterMomentPersonnalise()}
+            placeholder="+ Ajouter un moment personnalisé…"
+            className="flex-1 bg-white border border-outline-variant/40 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
+          />
+          <button type="button" onClick={ajouterMomentPersonnalise} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary/90 hover:shadow-md transition-all">
+            <span className="material-symbols-outlined text-base">add</span> Ajouter
+          </button>
+        </div>
+      )}
 
       <div>
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Historique</h3>

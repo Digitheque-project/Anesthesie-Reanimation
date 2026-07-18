@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Checklist Avant Op')
 @Controller('checklists-avant-op')
@@ -14,7 +16,8 @@ export class ChecklistAvantOpController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Créer une checklist avant opération' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Créer une checklist avant opération (Anesthésiste)' })
   create(@Body() dto: any) { return this.repo.save(this.repo.create(dto)); }
 
   @Get()
@@ -33,5 +36,7 @@ export class ChecklistAvantOpController {
   }
 
   @Patch(':id')
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier une checklist avant opération (Anesthésiste)' })
   update(@Param('id') id: string, @Body() dto: any) { return this.repo.update(id, dto); }
 }

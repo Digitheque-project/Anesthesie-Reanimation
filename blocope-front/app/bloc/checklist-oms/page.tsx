@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function ChecklistAvantOpPage() {
   return (
@@ -28,11 +29,16 @@ function ChecklistAvantOpPageContent() {
     notesChirurgicales: '', notesAnesthesiques: '', notesIdeIbode: '',
   })
   const [loading, setLoading] = useState(false)
+  const { estAnesthesiste, roleName } = useRole()
 
   const handleSubmit = async () => {
+    if (!estAnesthesiste) {
+      alert('❌ La check-list avant opération est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
     // ✅ SUPPRIMÉ : Vérification des médicaments
     // La validation est maintenant directe vers l'activité per-op
-    
+
     setLoading(true)
     try {
       // Envoyer la checklist au backend
@@ -63,6 +69,12 @@ function ChecklistAvantOpPageContent() {
           <p className="text-on-surface-variant mt-2 text-lg">{patientNom} — {intervention}</p>
         </div>
       </header>
+
+      {!estAnesthesiste && (
+        <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          La check-list avant opération est réservée à l'anesthésiste{roleName ? ` (votre rôle actuel est : ${roleName})` : ''}. Vous pouvez consulter cet écran mais pas la valider.
+        </div>
+      )}
 
       {/* Bento Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -186,10 +198,11 @@ function ChecklistAvantOpPageContent() {
 
       {/* Footer Actions */}
       <div className="mt-12 flex justify-end items-center">
-        <button onClick={handleSubmit} disabled={loading}
-          className="flex items-center space-x-2 px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/20">
+        <button onClick={handleSubmit} disabled={loading || !estAnesthesiste}
+          title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
+          className="flex items-center space-x-2 px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
           <span className="material-symbols-outlined text-[24px]">check_circle</span>
-          <span>{loading ? 'Validation...' : 'Valider la check-list'}</span>
+          <span>{loading ? 'Validation...' : !estAnesthesiste ? 'Accès non autorisé' : 'Valider la check-list'}</span>
         </button>
       </div>
     </main>
