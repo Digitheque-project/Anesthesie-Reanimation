@@ -55,25 +55,25 @@ export default function Sidebar() {
   return (
     <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 border-r border-surface-variant/30 bg-[#dbf1fe]">
       {/* Logo and Brand */}
-      <div className="px-6 py-8 flex flex-col items-center">
-        <div className="relative w-36 h-36 mb-4">
-          <Image 
-          src="/images/CHU-logos.png" 
-          alt="CHU" 
-          width={150} 
-          height={150} 
+      <div className="px-6 py-4 flex flex-col items-center shrink-0">
+        <div className="relative w-14 h-14 mb-2">
+          <Image
+          src="/images/CHU-logos.png"
+          alt="CHU"
+          width={56}
+          height={56}
           className="rounded-full object-cover border-2 border-blue-500 shadow-md" />
         </div>
-        <h1 className="font-headline font-extrabold text-primary text-center text-xl tracking-tight leading-tight">
+        <h1 className="font-headline font-extrabold text-primary text-center text-base tracking-tight leading-tight">
           Bloc Opératoire
         </h1>
-        <p className="text-[10px] font-bold tracking-[0.2em] text-[#424752] opacity-70 uppercase mt-1">
+        <p className="text-[9px] font-bold tracking-[0.15em] text-[#424752] opacity-70 uppercase mt-0.5">
           PLATEFORME MÉDICALE
         </p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 flex flex-col justify-center gap-1 min-h-0">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -82,13 +82,13 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group ${
                 isActive
                   ? "bg-white text-primary font-bold shadow-sm"
                   : "text-[#424752] hover:bg-white/40 font-medium"
               }`}
             >
-              <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">
                 {item.icon}
               </span>
               <span className="text-sm">{item.label}</span>
@@ -98,7 +98,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="mt-auto p-4 border-t border-surface-variant/20 space-y-1">
+      <div className="mt-auto p-3 border-t border-surface-variant/20 space-y-1 shrink-0">
         <button
           className="w-full flex items-center gap-3 px-4 py-2 text-[#424752] hover:text-error transition-all group"
           onClick={() => { effacerSession(); redirigerVersLogin(); }}
