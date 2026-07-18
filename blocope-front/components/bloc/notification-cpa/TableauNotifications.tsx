@@ -48,6 +48,11 @@ export default function TableauNotifications({
                   <td className="px-4 py-3">
                     <div className="font-semibold text-on-surface">
                       {n.patientNom || n.patient?.nom || 'Patient'}
+                      {n.origineExterne && (
+                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">
+                          🔗 {n.sourceServiceName || 'Externe'}
+                        </span>
+                      )}
                       {isStat && (
                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">
                           ⚡ STAT

@@ -23,11 +23,6 @@ const navItems: NavItem[] = [
     icon: 'calendar_today',
   },
   {
-    label: 'Demandes CPA externes',
-    href: '/bloc/demandes-cpa-externes',
-    icon: 'sync_alt',
-  },
-  {
     label: 'Programme opératoire',
     href: '/bloc/patient-du-jour',
     icon: 'person',

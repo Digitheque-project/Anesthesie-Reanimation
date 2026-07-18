@@ -7,8 +7,27 @@ import TableauNotifications from '@/components/bloc/notification-cpa/TableauNoti
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
 import { useRouter } from 'next/navigation'
 import { notificationService, planningService } from '@/lib/api'
+import { apiClient } from '@/lib/api/client'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { useRole } from '@/lib/hooks/useRole'
+
+// Les demandes de CPA/VPA émises par des services externes (ex: Endoscopie) sont un modèle
+// distinct des prescriptions internes — normalisées ici au même format que les notifications
+// pour pouvoir être affichées dans le même fil (fusion demandée : plus de menu dédié).
+const normaliserDemandeExterne = (d: any) => ({
+  id: d.id,
+  origineExterne: true,
+  patientId: d.patientId,
+  patientNom: d.patientId,
+  intervention: d.motif || d.typeAnesthesie,
+  motif: d.motif,
+  prescripteur: d.sourceServiceName || d.sourceServiceId,
+  sourceServiceName: d.sourceServiceName || d.sourceServiceId,
+  heure: d.createdAt ? new Date(d.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+  urgence: d.urgence,
+  estUrgent: (d.urgence ?? 0) >= 4,
+  statut: 'EN_ATTENTE',
+})
 
 export default function NotificationCPAPage() {
   const [notifications, setNotifications] = useState<any[]>([])
@@ -29,12 +48,17 @@ export default function NotificationCPAPage() {
   const charger = async () => {
     try {
       setLoading(true)
-      const data = await notificationService.getAll(1, 100)
+      const [data, demandesExternesRes] = await Promise.all([
+        notificationService.getAll(1, 100),
+        apiClient.get('/demandes-cpa-externes', { params: { statut: 'EN_ATTENTE' } }).catch(() => ({ data: [] })),
+      ])
       const notifs = data.data || []
-      setNotifications(notifs)
+      const demandesExternes = (Array.isArray(demandesExternesRes.data) ? demandesExternesRes.data : []).map(normaliserDemandeExterne)
+      const toutes = [...notifs, ...demandesExternes]
+      setNotifications(toutes)
       setStats({
-        enAttente: notifs.filter((n: any) => n.statut === 'EN_ATTENTE').length,
-        prioriteHaute: notifs.filter((n: any) => n.estUrgent).length,
+        enAttente: toutes.filter((n: any) => n.statut === 'EN_ATTENTE').length,
+        prioriteHaute: toutes.filter((n: any) => n.estUrgent).length,
         rdvFixes24h: notifs.filter((n: any) => n.statut === 'RDV_PLANIFIE').length,
       })
     } catch (err) { console.error(err) }
@@ -51,7 +75,7 @@ export default function NotificationCPAPage() {
   const handleValiderPlanification = async (formData: any) => {
     try {
       if (!selectedNotif) return
-      
+
       const patientId = selectedNotif.patientId || selectedNotif.patient?.id
       if (!patientId) {
         alert('❌ ID patient manquant')
@@ -64,23 +88,35 @@ export default function NotificationCPAPage() {
       fin.setHours(h, m + 30)
       const heureFin = fin.toTimeString().split(' ')[0].substring(0, 5)
 
-      const session = obtenirSessionValide()
-      const responsable = session ? `${session.payload.firstname} ${session.payload.name}`.trim() : undefined
+      if (selectedNotif.origineExterne) {
+        // Demande émise par un service externe : planification via l'endpoint dédié, qui crée
+        // le créneau et fait avancer le statut de la demande (voir DemandeCpaExterneService.planifier).
+        await apiClient.patch(`/demandes-cpa-externes/${selectedNotif.id}/planifier`, {
+          type: formData.typeRDV || 'CPA',
+          date: formData.dateRDV,
+          heureDebut: formData.heureRDV,
+          heureFin,
+          salle: formData.lieuRDV,
+        })
+      } else {
+        const session = obtenirSessionValide()
+        const responsable = session ? `${session.payload.firstname} ${session.payload.name}`.trim() : undefined
 
-      await planningService.reserverCreneau({
-        patientId: patientId,
-        date: formData.dateRDV || new Date().toISOString().split('T')[0],
-        heureDebut: formData.heureRDV || '09:00',
-        heureFin: heureFin,
-        salle: formData.lieuRDV || 'Salle CPA',
-        estUrgence: selectedNotif.estUrgent || false,
-        type: formData.typeRDV || 'CPA',
-        responsable,
-      })
+        await planningService.reserverCreneau({
+          patientId: patientId,
+          date: formData.dateRDV || new Date().toISOString().split('T')[0],
+          heureDebut: formData.heureRDV || '09:00',
+          heureFin: heureFin,
+          salle: formData.lieuRDV || 'Salle CPA',
+          estUrgence: selectedNotif.estUrgent || false,
+          type: formData.typeRDV || 'CPA',
+          responsable,
+        })
 
-      // Bascule la notification en RDV_PLANIFIE et notifie automatiquement le service d'origine
-      if (selectedNotif.id) {
-        await notificationService.planifierRDV(selectedNotif.id)
+        // Bascule la notification en RDV_PLANIFIE et notifie automatiquement le service d'origine
+        if (selectedNotif.id) {
+          await notificationService.planifierRDV(selectedNotif.id)
+        }
       }
 
       alert('✅ Rendez-vous CPA planifié avec succès !')
@@ -161,7 +197,7 @@ export default function NotificationCPAPage() {
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           onValider={handleValiderPlanification}
-          patientNom={selectedNotif.patient?.nom || 'Patient'}
+          patientNom={selectedNotif.patientNom || selectedNotif.patient?.nom || 'Patient'}
           intervention={selectedNotif.intervention}
           estUrgent={selectedNotif.estUrgent}
         />

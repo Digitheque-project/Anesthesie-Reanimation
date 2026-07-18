@@ -13,7 +13,7 @@ export default function HeaderNotification({ onActualiser, onToggleFiltres }: He
           Notifications des Prescriptions CPA
         </h1>
         <p className="text-on-surface-variant text-sm font-medium mt-1">
-          Liste des patients en attente de rendez-vous CPA (Service Chirurgie)
+          Liste des patients en attente de rendez-vous CPA — prescriptions internes et demandes des services externes
         </p>
       </div>
 
