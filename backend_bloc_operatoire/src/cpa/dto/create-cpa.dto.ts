@@ -29,19 +29,20 @@ export class CreateCPADto {
   @IsDateString() dateConsultation: string;
   @IsBoolean() antecedentsAnesthesie: boolean;
   @IsOptional() @IsString() notesIncidents?: string;
-  @IsNumber() frequenceCardiaque: number;
-  @ValidateNested() @Type(() => TensionArterielleDto) tensionArterielle: { systolique: number; diastolique: number };
-  @IsNumber() taille: number;
-  @IsNumber() poids: number;
+  // Mesures cliniques non bloquantes : seule la décision finale est obligatoire à la validation.
+  @IsOptional() @IsNumber() frequenceCardiaque?: number;
+  @IsOptional() @ValidateNested() @Type(() => TensionArterielleDto) tensionArterielle?: { systolique: number; diastolique: number };
+  @IsOptional() @IsNumber() taille?: number;
+  @IsOptional() @IsNumber() poids?: number;
   @IsString() examenCardiovasculaire: string;
   @IsString() examenPulmonaire: string;
   @IsString() examenNeurologique: string;
   @IsString() colorationConjonctivale: string;
   @IsString() abordVeineux: string;
   @IsString() rachis: string;
-  @IsNumber() mallampati: number;
-  @IsNumber() ouvertureBuccale: number;
-  @IsNumber() distanceMentoThyroidienne: number;
+  @IsOptional() @IsNumber() mallampati?: number;
+  @IsOptional() @IsNumber() ouvertureBuccale?: number;
+  @IsOptional() @IsNumber() distanceMentoThyroidienne?: number;
   @IsString() dents: string;
   @IsString() tabac: string;
   @IsString() alcool: string;

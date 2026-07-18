@@ -145,18 +145,10 @@ function ConsultationCpaPageContent() {
     if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); return; }
     if (decision === 'INAPTE' && !motifRefus.trim()) { alert('❌ Le motif du refus est obligatoire'); return; }
     if (decision === 'REPORT' && !motifRefus.trim()) { alert('❌ Le motif du report est obligatoire'); return; }
-    const nombresRequis: [string, string][] = [
-      [form.frequenceCardiaque, 'Fréquence cardiaque'],
-      [form.taSystolique, 'TA systolique'],
-      [form.taDiastolique, 'TA diastolique'],
-      [form.taille, 'Taille'],
-      [form.poids, 'Poids'],
-      [form.ouvertureBuccale, 'Ouverture buccale'],
-      [form.distanceMentoThyroidienne, 'Distance mento-thyroïdienne'],
-    ];
-    for (const [valeur, label] of nombresRequis) {
-      if (valeur === '' || isNaN(Number(valeur))) { alert(`❌ Champ requis manquant ou invalide : ${label}`); return; }
-    }
+
+    // Seule la décision finale est obligatoire — toutes les mesures cliniques restent libres et
+    // sont omises du payload si non renseignées plutôt que forcées à 0 (valeur cliniquement fausse).
+    const versNombre = (valeur: string) => (valeur === '' || isNaN(Number(valeur)) ? undefined : Number(valeur));
 
     setLoading(true);
     try {
@@ -166,10 +158,12 @@ function ConsultationCpaPageContent() {
         dateConsultation: new Date().toISOString().split('T')[0],
         antecedentsAnesthesie: form.antecedentsAnesthesie,
         notesIncidents: form.notesIncidents || undefined,
-        frequenceCardiaque: Number(form.frequenceCardiaque),
-        tensionArterielle: { systolique: Number(form.taSystolique), diastolique: Number(form.taDiastolique) },
-        taille: Number(form.taille),
-        poids: Number(form.poids),
+        frequenceCardiaque: versNombre(form.frequenceCardiaque),
+        tensionArterielle: (form.taSystolique !== '' && form.taDiastolique !== '')
+          ? { systolique: versNombre(form.taSystolique), diastolique: versNombre(form.taDiastolique) }
+          : undefined,
+        taille: versNombre(form.taille),
+        poids: versNombre(form.poids),
         examenCardiovasculaire: form.examenCardiovasculaire || 'RAS',
         examenPulmonaire: form.examenPulmonaire || 'RAS',
         examenNeurologique: form.examenNeurologique || 'RAS',
@@ -177,8 +171,8 @@ function ConsultationCpaPageContent() {
         abordVeineux: form.abordVeineux || 'RAS',
         rachis: form.rachis || 'RAS',
         mallampati: scoreMallampati,
-        ouvertureBuccale: Number(form.ouvertureBuccale),
-        distanceMentoThyroidienne: Number(form.distanceMentoThyroidienne),
+        ouvertureBuccale: versNombre(form.ouvertureBuccale),
+        distanceMentoThyroidienne: versNombre(form.distanceMentoThyroidienne),
         dents: form.dents,
         tabac: form.tabac,
         alcool: form.alcool,
@@ -360,14 +354,14 @@ function ConsultationCpaPageContent() {
               <div className="md:col-span-3 bg-surface-container-low rounded-xl p-4 space-y-2">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">CONSTANTES</h3>
                 <div className="space-y-3">
-                  <div><label className="text-[10px] font-bold block mb-1">Fréquence Cardiaque (BPM) *</label><input value={form.frequenceCardiaque} onChange={setField('frequenceCardiaque')} className="w-full bg-white border-none rounded-lg p-2 text-lg font-bold text-primary" type="number" /></div>
+                  <div><label className="text-[10px] font-bold block mb-1">Fréquence Cardiaque (BPM)</label><input value={form.frequenceCardiaque} onChange={setField('frequenceCardiaque')} className="w-full bg-white border-none rounded-lg p-2 text-lg font-bold text-primary" type="number" /></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] font-bold block mb-1">TA Syst. *</label><input value={form.taSystolique} onChange={setField('taSystolique')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" type="number" /></div>
-                    <div><label className="text-[10px] font-bold block mb-1">TA Diast. *</label><input value={form.taDiastolique} onChange={setField('taDiastolique')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" type="number" /></div>
+                    <div><label className="text-[10px] font-bold block mb-1">TA Syst.</label><input value={form.taSystolique} onChange={setField('taSystolique')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" type="number" /></div>
+                    <div><label className="text-[10px] font-bold block mb-1">TA Diast.</label><input value={form.taDiastolique} onChange={setField('taDiastolique')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" type="number" /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] font-bold block mb-1">Taille (cm) *</label><input value={form.taille} onChange={setField('taille')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" placeholder="170" type="number" /></div>
-                    <div><label className="text-[10px] font-bold block mb-1">Poids (kg) *</label><input value={form.poids} onChange={setField('poids')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" placeholder="70" type="number" /></div>
+                    <div><label className="text-[10px] font-bold block mb-1">Taille (cm)</label><input value={form.taille} onChange={setField('taille')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" placeholder="170" type="number" /></div>
+                    <div><label className="text-[10px] font-bold block mb-1">Poids (kg)</label><input value={form.poids} onChange={setField('poids')} className="w-full bg-white border-none rounded-lg p-2 text-sm font-bold" placeholder="70" type="number" /></div>
                   </div>
                 </div>
               </div>
@@ -406,8 +400,8 @@ function ConsultationCpaPageContent() {
                   ))}
                 </div>
               </div>
-              <div className="space-y-2"><label className="text-sm font-semibold block">Ouverture buccale *</label><div className="relative"><input value={form.ouvertureBuccale} onChange={setField('ouvertureBuccale')} className="w-full bg-surface-container-low border-none rounded-xl p-3 pr-10 text-sm" placeholder="cm" type="number" /><span className="absolute right-3 top-3 text-xs font-bold">CM</span></div></div>
-              <div className="space-y-2"><label className="text-sm font-semibold block">DMTC *</label><div className="relative"><input value={form.distanceMentoThyroidienne} onChange={setField('distanceMentoThyroidienne')} className="w-full bg-surface-container-low border-none rounded-xl p-3 pr-10 text-sm" placeholder="cm" type="number" /><span className="absolute right-3 top-3 text-xs font-bold">CM</span></div></div>
+              <div className="space-y-2"><label className="text-sm font-semibold block">Ouverture buccale</label><div className="relative"><input value={form.ouvertureBuccale} onChange={setField('ouvertureBuccale')} className="w-full bg-surface-container-low border-none rounded-xl p-3 pr-10 text-sm" placeholder="cm" type="number" /><span className="absolute right-3 top-3 text-xs font-bold">CM</span></div></div>
+              <div className="space-y-2"><label className="text-sm font-semibold block">DMTC</label><div className="relative"><input value={form.distanceMentoThyroidienne} onChange={setField('distanceMentoThyroidienne')} className="w-full bg-surface-container-low border-none rounded-xl p-3 pr-10 text-sm" placeholder="cm" type="number" /><span className="absolute right-3 top-3 text-xs font-bold">CM</span></div></div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4 border-t border-outline-variant/20 pt-4">
               <div className="space-y-2"><label className="text-sm font-semibold uppercase tracking-widest text-[10px]">DENTS</label>
@@ -450,17 +444,28 @@ function ConsultationCpaPageContent() {
             <p className="text-[10px] text-white/70 uppercase font-bold text-center">Patient avec pathologie systémique sévère</p>
           </section>
 
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-2">
-            <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">Protocole retenu</h2>
-            <div><label className="text-[10px] font-bold block mb-2">Type d'anesthésie</label>
-              <select value={form.typeAnesthesie} onChange={setField('typeAnesthesie')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm">
-                <option>Anesthésie Générale (AG)</option><option>Rachianesthésie</option><option>ALR</option><option>Sédation</option>
-              </select>
+          <section className="bg-white rounded-2xl shadow-md border-2 border-secondary/20 overflow-hidden">
+            <div className="bg-gradient-to-r from-secondary to-secondary/80 px-4 py-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-white">vaccines</span>
+              <h2 className="text-sm font-extrabold text-white uppercase tracking-widest">Protocole retenu</h2>
             </div>
-            <div><label className="text-[10px] font-bold block mb-2">Technique d'intubation</label>
-              <select value={form.techniqueIntubation} onChange={setField('techniqueIntubation')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm">
-                <option>Sonde Endotrachéale</option><option>Masque Laryngé</option><option>IOT Séquence Rapide</option>
-              </select>
+            <div className="p-4 space-y-3">
+              <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">medication_liquid</span> Type d'anesthésie
+                </label>
+                <select value={form.typeAnesthesie} onChange={setField('typeAnesthesie')} className="w-full bg-white border border-secondary/20 rounded-xl p-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-secondary/30 outline-none">
+                  <option>Anesthésie Générale (AG)</option><option>Rachianesthésie</option><option>ALR</option><option>Sédation</option>
+                </select>
+              </div>
+              <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">air</span> Technique d'intubation
+                </label>
+                <select value={form.techniqueIntubation} onChange={setField('techniqueIntubation')} className="w-full bg-white border border-secondary/20 rounded-xl p-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-secondary/30 outline-none">
+                  <option>Sonde Endotrachéale</option><option>Masque Laryngé</option><option>IOT Séquence Rapide</option>
+                </select>
+              </div>
             </div>
           </section>
         </div>
@@ -552,43 +557,52 @@ function ConsultationCpaPageContent() {
             </div>
           </div>
 
-          {/* Décision Finale — en bas de l'interface, une fois l'ensemble de la consultation renseigné */}
+          {/* Décision Finale — seul champ réellement obligatoire de la consultation : mise en
+              évidence forte (cadre doré) pour la distinguer de tous les autres champs libres */}
           <div className="mt-4 pt-4 border-t border-surface-container">
-            <h2 className="text-sm font-bold text-on-surface-variant mb-2 uppercase tracking-widest">Décision Finale *</h2>
-            {!peutDeciderAptitudeCpa && (
-              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Décision réservée à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+            <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-amber-50/80 to-white shadow-md overflow-hidden">
+              <div className="px-4 py-3 bg-amber-100/70 border-b border-amber-200 flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-600">gavel</span>
+                <h2 className="text-sm font-extrabold text-amber-900 uppercase tracking-widest">Décision Finale</h2>
+                <span className="ml-auto px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold uppercase rounded-full">Obligatoire</span>
               </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {[
-                { key: 'APTE', label: "Apte à l'anesthésie", activeClass: 'bg-secondary/10 border-secondary text-secondary' },
-                { key: 'INAPTE', label: 'Inapte à ce jour', activeClass: 'bg-error/10 border-error text-error' },
-                { key: 'REPORT', label: "Report d'intervention", activeClass: 'bg-tertiary/10 border-tertiary text-tertiary' },
-              ].map(opt => (
-                <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutDeciderAptitudeCpa}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    decision === opt.key ? opt.activeClass : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
-                  }`}>
-                  <span className="font-bold">{opt.label}</span>
-                  {decision === opt.key && <span className="material-symbols-outlined">check_circle</span>}
-                </button>
-              ))}
+              <div className="p-4">
+                {!peutDeciderAptitudeCpa && (
+                  <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded-lg text-xs text-amber-900">
+                    Décision réservée à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    { key: 'APTE', label: "Apte à l'anesthésie", icon: 'check_circle', activeClass: 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30' },
+                    { key: 'INAPTE', label: 'Inapte à ce jour', icon: 'cancel', activeClass: 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/30' },
+                    { key: 'REPORT', label: "Report d'intervention", icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' },
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutDeciderAptitudeCpa}
+                      className={`w-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                        decision === opt.key ? opt.activeClass + ' scale-[1.02]' : 'border-outline-variant bg-white text-on-surface-variant hover:border-amber-300 hover:bg-amber-50'
+                      }`}>
+                      <span className="material-symbols-outlined text-2xl" style={decision === opt.key ? { fontVariationSettings: "'FILL' 1" } : undefined}>{opt.icon}</span>
+                      <span className="font-bold text-sm text-center">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {decision === 'INAPTE' && (
+                  <div className="mt-3">
+                    <label className="text-xs font-bold text-red-700 block mb-1">Motif du refus *</label>
+                    <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
+                      className="w-full h-20 bg-red-50 border border-red-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-red-300 outline-none" placeholder="Expliquez le motif de l'inaptitude..." />
+                  </div>
+                )}
+                {decision === 'REPORT' && (
+                  <div className="mt-3">
+                    <label className="text-xs font-bold text-orange-700 block mb-1">Motif du report *</label>
+                    <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
+                      className="w-full h-20 bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-300 outline-none" placeholder="Expliquez le motif du report d'intervention..." />
+                  </div>
+                )}
+              </div>
             </div>
-            {decision === 'INAPTE' && (
-              <div className="mt-3">
-                <label className="text-xs font-bold block mb-1">Motif du refus *</label>
-                <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
-                  className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Expliquez le motif de l'inaptitude..." />
-              </div>
-            )}
-            {decision === 'REPORT' && (
-              <div className="mt-3">
-                <label className="text-xs font-bold block mb-1">Motif du report *</label>
-                <textarea value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
-                  className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm" placeholder="Expliquez le motif du report d'intervention..." />
-              </div>
-            )}
           </div>
 
           {/* Planification de la vérification à la veille — sans objet pour un patient urgent

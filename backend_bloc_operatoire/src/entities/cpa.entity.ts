@@ -57,18 +57,19 @@ export class CPA {
   @Column({ type: 'text', nullable: true })
   notesIncidents: string;
 
-  // Examen clinique
-  @Column('int')
-  frequenceCardiaque: number;
+  // Examen clinique — mesures non bloquantes : seule la décision finale est obligatoire à la
+  // validation de la CPA, l'anesthésiste peut valider sans avoir renseigné chaque constante.
+  @Column('int', { nullable: true })
+  frequenceCardiaque: number | null;
 
-  @Column('simple-json')
-  tensionArterielle: { systolique: number; diastolique: number };
+  @Column('simple-json', { nullable: true })
+  tensionArterielle: { systolique: number; diastolique: number } | null;
 
-  @Column('float')
-  taille: number;
+  @Column('float', { nullable: true })
+  taille: number | null;
 
-  @Column('float')
-  poids: number;
+  @Column('float', { nullable: true })
+  poids: number | null;
 
   @Column('text')
   examenCardiovasculaire: string;
@@ -89,14 +90,14 @@ export class CPA {
   rachis: string;
 
   // Voies aériennes
-  @Column('int')
-  mallampati: number; // 1-4
+  @Column('int', { nullable: true })
+  mallampati: number | null; // 1-4
 
-  @Column('float')
-  ouvertureBuccale: number; // cm
+  @Column('float', { nullable: true })
+  ouvertureBuccale: number | null; // cm
 
-  @Column('float')
-  distanceMentoThyroidienne: number;
+  @Column('float', { nullable: true })
+  distanceMentoThyroidienne: number | null;
 
   @Column('text')
   dents: string;

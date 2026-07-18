@@ -8,6 +8,7 @@ import NotificationModal from '@/components/bloc/notification-cpa/NotificationMo
 import { connecterNotificationsTempsReel, NotificationTempsReel } from '@/lib/notifications/socket';
 import { jouerSonPrescription, jouerSonPrescriptionUrgente } from '@/lib/notifications/sound';
 import { obtenirSessionValide } from '@/lib/auth/central-session';
+import { dedupeParPatient } from '@/lib/notifications/dedupe';
 
 export default function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -20,9 +21,9 @@ export default function TopBar() {
 
   const fetchData = async () => {
     try {
-      // Récupérer la liste des notifications
+      // Récupérer la liste des notifications — un même patient ne doit apparaître qu'une fois
       const notifsRes = await notificationService.getAll(1, 50);
-      const notifs = notifsRes.data || [];
+      const notifs = dedupeParPatient(notifsRes.data || []);
       setNotifications(notifs);
 
       // ← MODIFIÉ: Compter les notifications non lues

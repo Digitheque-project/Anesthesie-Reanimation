@@ -45,6 +45,37 @@ const checkboxClass: Record<MedicamentTableAccent, string> = {
     "border-outline-variant accent-primary focus:ring-2 focus:ring-primary/30",
 };
 
+// Badge d'icône coloré dans l'en-tête de chaque catégorie.
+const badgeClass: Record<MedicamentTableAccent, string> = {
+  primary: "bg-primary/10 text-primary",
+  secondary: "bg-secondary/10 text-secondary",
+  tertiary: "bg-tertiary/10 text-tertiary",
+  "primary-container": "bg-primary-container/15 text-primary-container",
+  error: "bg-error/10 text-error",
+  "inverse-primary": "bg-inverse-primary/20 text-on-primary-fixed-variant",
+};
+
+// Fond légèrement teinté de la carte de catégorie, pour la repérer d'un coup d'œil.
+const cardTintClass: Record<MedicamentTableAccent, string> = {
+  primary: "bg-primary/[0.03] border-primary/15",
+  secondary: "bg-secondary/[0.03] border-secondary/15",
+  tertiary: "bg-tertiary/[0.03] border-tertiary/15",
+  "primary-container": "bg-primary-container/[0.05] border-primary-container/15",
+  error: "bg-error/[0.03] border-error/15",
+  "inverse-primary": "bg-inverse-primary/[0.08] border-inverse-primary/20",
+};
+
+// Ligne mise en avant une fois l'article coché — la sélection doit rester visible même quand
+// on scrolle loin de la case à cocher.
+const rowSelectedClass: Record<MedicamentTableAccent, string> = {
+  primary: "bg-primary/[0.06]",
+  secondary: "bg-secondary/[0.06]",
+  tertiary: "bg-tertiary/[0.06]",
+  "primary-container": "bg-primary-container/[0.08]",
+  error: "bg-error/[0.06]",
+  "inverse-primary": "bg-inverse-primary/[0.12]",
+};
+
 const dosageInputClassName =
   "h-9 w-full rounded border border-outline-variant/20 bg-surface-container-low px-3 outline-none focus:ring-2 focus:ring-primary/20";
 
@@ -54,6 +85,7 @@ const observationInputClassName =
 type MedicamentTableProps = {
   title: string;
   accent: MedicamentTableAccent;
+  icon?: string;
   rows: MedicamentRow[];
   onRowsChange: (rows: MedicamentRow[]) => void;
 };
@@ -61,6 +93,7 @@ type MedicamentTableProps = {
 export default function MedicamentTable({
   title,
   accent,
+  icon,
   rows,
   onRowsChange,
 }: MedicamentTableProps) {
@@ -76,13 +109,25 @@ export default function MedicamentTable({
     );
   };
 
+  const selectionnes = rows.filter((r) => r.selected).length;
+
   return (
-    <section className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-sm">
+    <section className={`rounded-xl border p-6 shadow-sm ${cardTintClass[accent]}`}>
       <div className="mb-6 flex items-center gap-3">
         <div className={`h-6 w-1.5 rounded-full ${barClass[accent]}`} />
+        {icon && (
+          <span className={`flex h-9 w-9 items-center justify-center rounded-full ${badgeClass[accent]}`}>
+            <span className="material-symbols-outlined text-lg">{icon}</span>
+          </span>
+        )}
         <h3 className="font-headline text-lg font-bold uppercase text-on-surface">
           {title}
         </h3>
+        {selectionnes > 0 && (
+          <span className={`ml-auto rounded-full px-3 py-1 text-[10px] font-extrabold uppercase ${badgeClass[accent]}`}>
+            {selectionnes} sélectionné{selectionnes > 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -113,7 +158,7 @@ export default function MedicamentTable({
               return (
                 <tr
                   key={row.id}
-                  className="transition-colors hover:bg-surface-container-low/50"
+                  className={`transition-colors ${row.selected ? rowSelectedClass[accent] : "hover:bg-surface-container-low/50"}`}
                 >
                   <td className="px-4 py-3">
                     <input
@@ -125,7 +170,12 @@ export default function MedicamentTable({
                       className={`h-4 w-4 cursor-pointer rounded ${checkboxClass[accent]}`}
                     />
                   </td>
-                  <td className="px-4 py-3 font-semibold text-on-surface">
+                  <td className={`px-4 py-3 font-semibold ${row.selected ? "text-on-surface" : "text-on-surface-variant"}`}>
+                    {row.selected && (
+                      <span className="material-symbols-outlined mr-1.5 align-text-bottom text-sm text-emerald-600" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        check_circle
+                      </span>
+                    )}
                     {row.label}
                   </td>
                   <td className="px-4 py-3">

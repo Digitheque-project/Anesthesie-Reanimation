@@ -10,6 +10,7 @@ import { notificationService, planningService } from '@/lib/api'
 import { apiClient } from '@/lib/api/client'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { useRole } from '@/lib/hooks/useRole'
+import { dedupeParPatient } from '@/lib/notifications/dedupe'
 
 // Les demandes de CPA/VPA émises par des services externes (ex: Endoscopie) sont un modèle
 // distinct des prescriptions internes — normalisées ici au même format que les notifications
@@ -55,7 +56,9 @@ export default function NotificationCPAPage() {
       ])
       const notifs = data.data || []
       const demandesExternes = (Array.isArray(demandesExternesRes.data) ? demandesExternesRes.data : []).map(normaliserDemandeExterne)
-      const toutes = [...notifs, ...demandesExternes]
+      // Un même patient peut apparaître plusieurs fois (plusieurs cycles d'ingestion, demande
+      // interne + externe pour le même évènement...) — on ne garde qu'une entrée par patient.
+      const toutes = dedupeParPatient([...notifs, ...demandesExternes])
       setNotifications(toutes)
       setStats({
         enAttente: toutes.filter((n: any) => n.statut === 'EN_ATTENTE').length,

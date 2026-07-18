@@ -19,6 +19,7 @@ export type CategorieMedicament =
 export type CategorieMedicamentDef = {
   titre: string
   accent: MedicamentTableAccent
+  icon: string
   items: string[]
 }
 
@@ -26,6 +27,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   SERUMS: {
     titre: 'Sérums',
     accent: 'primary',
+    icon: 'water_drop',
     items: [
       'SGH 5% (disponible en 5% et 10%)',
       'SSI 9%',
@@ -39,6 +41,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   PRODUITS_ANESTHESIQUES: {
     titre: 'Produits anesthésiques',
     accent: 'secondary',
+    icon: 'vaccines',
     items: [
       'Nesdonal 1g',
       'Pancuronium 4mg / Vécuronium 4mg',
@@ -59,6 +62,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   ANTALGIQUES: {
     titre: 'Antalgiques',
     accent: 'tertiary',
+    icon: 'medication',
     items: [
       'Perfalgan',
       'Doliprane suppo',
@@ -72,6 +76,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   KIT_ASEPSIE: {
     titre: 'Kit pour asepsie',
     accent: 'primary-container',
+    icon: 'sanitizer',
     items: [
       'Blouse stérile',
       'Calot',
@@ -87,6 +92,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   ANTIBIOTIQUES_AUTRES: {
     titre: 'Antibiotiques & autres',
     accent: 'error',
+    icon: 'biotech',
     items: [
       'Flagyl',
       'Céfuroxime',
@@ -101,6 +107,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   DISPOSITIFS_MEDICAUX: {
     titre: 'Dispositifs médicaux',
     accent: 'inverse-primary',
+    icon: 'medical_services',
     items: [
       'Perfuseur',
       'Perfuseur pédiatrique',
@@ -124,6 +131,7 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
   CONSOMMABLES: {
     titre: 'Consommables',
     accent: 'secondary',
+    icon: 'inventory_2',
     items: [
       'Coton',
       'Alcool',
