@@ -7,6 +7,7 @@ import { PatientBlocStatutService } from './patient-bloc-statut.service';
 import { AdmitExistingPatientDto } from './dto/admit-existing-patient.dto';
 import { RegisterAndAdmitPatientDto } from './dto/register-and-admit-patient.dto';
 import { UpdatePatientBlocDto } from './dto/update-patient-bloc.dto';
+import { UpdateDateInterventionDto } from './dto/update-date-intervention.dto';
 
 @ApiTags('Patients')
 @ApiBearerAuth('JWT-auth')
@@ -91,6 +92,13 @@ export class PatientBlocController {
   @ApiOperation({ summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire, Responsable CPA)' })
   marquerInapteCpa(@Param('patientId') patientId: string, @Body('motifRefus') motifRefus: string) {
     return this.patientBlocStatutService.marquerInapteCpa(patientId, motifRefus);
+  }
+
+  @Patch(':patientId/date-intervention')
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA)" })
+  modifierDateIntervention(@Param('patientId') patientId: string, @Body() dto: UpdateDateInterventionDto) {
+    return this.patientBlocStatutService.modifierDateIntervention(patientId, dto.dateIntervention);
   }
 
   @Delete(':patientId')

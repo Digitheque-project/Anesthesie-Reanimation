@@ -94,4 +94,14 @@ export class PatientBlocStatutService {
 
     return patient;
   }
+
+  // Pendant la réalisation de la CPA, le Responsable CPA peut ajuster la date et l'heure
+  // prévues de l'opération (ex. créneau chirurgical décalé après l'évaluation pré-anesthésique).
+  async modifierDateIntervention(patientId: string, dateIntervention: string): Promise<PatientBloc> {
+    const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+    if (!patient) throw new NotFoundException(`Patient ${patientId} non trouvé`);
+
+    patient.dateIntervention = new Date(dateIntervention);
+    return this.patientBlocRepo.save(patient);
+  }
 }

@@ -37,6 +37,11 @@ export const patientService = {
     return data;
   },
 
+  async modifierDateIntervention(id: string, dateIntervention: string) {
+    const { data } = await apiClient.patch(`/patients/${cleanPatientId(id)}/date-intervention`, { dateIntervention });
+    return data;
+  },
+
   async getDossierMedical(id: string) {
     const { data } = await apiClient.get(`/patients/${cleanPatientId(id)}/dossier-medical`);
     return data;

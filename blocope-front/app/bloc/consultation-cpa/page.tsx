@@ -68,10 +68,12 @@ function ConsultationCpaPageContent() {
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
   const [showCatalogueModal, setShowCatalogueModal] = useState(false);
   const [medicamentsAnesthesieRows, setMedicamentsAnesthesieRows] = useState<MedicamentRow[]>(() => construireLignesInitiales());
-  const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, roleName } = useRole();
+  const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, estResponsableCpa, roleName } = useRole();
   const [nomAnesthesiste, setNomAnesthesiste] = useState('');
   const [anesthesistes, setAnesthesistes] = useState<any[]>([]);
   const [anesthesisteId, setAnesthesisteId] = useState('');
+  const [dateInterventionInput, setDateInterventionInput] = useState('');
+  const [savingDateIntervention, setSavingDateIntervention] = useState(false);
 
   useEffect(() => {
     const session = obtenirSessionValide();
@@ -92,7 +94,32 @@ function ConsultationCpaPageContent() {
     }
   }, [patientId]);
 
+  // Pré-remplit le champ éditable avec la date/heure d'intervention actuellement enregistrée
+  useEffect(() => {
+    if (patient?.dateIntervention) {
+      const d = new Date(patient.dateIntervention);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setDateInterventionInput(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    }
+  }, [patient?.dateIntervention]);
+
   const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'STAT';
+
+  const handleEnregistrerDateIntervention = async () => {
+    const patientIdFinal = patientId || patient?.id;
+    if (!patientIdFinal || !dateInterventionInput) return;
+    setSavingDateIntervention(true);
+    try {
+      const updated = await patientService.modifierDateIntervention(patientIdFinal, new Date(dateInterventionInput).toISOString());
+      setPatient((p: any) => ({ ...p, dateIntervention: updated?.dateIntervention ?? p?.dateIntervention }));
+      alert('✅ Date et heure de l\'opération mises à jour');
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue';
+      alert('❌ Erreur: ' + JSON.stringify(message));
+    } finally {
+      setSavingDateIntervention(false);
+    }
+  };
 
   const setField = (key: keyof typeof DEFAULT_FORM) => (e: any) => setForm(f => ({ ...f, [key]: e.target.value }))
 
@@ -242,6 +269,33 @@ function ConsultationCpaPageContent() {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Date et heure prévues de l'opération — modifiable par le Responsable CPA pendant la
+          réalisation de la consultation (ex. créneau chirurgical décalé après l'évaluation) */}
+      <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-wrap items-center gap-3">
+        <span className="material-symbols-outlined text-primary">event</span>
+        {estResponsableCpa ? (
+          <>
+            <div className="flex-1 min-w-[220px]">
+              <label className="text-xs font-semibold text-on-surface-variant block mb-1">Date et heure prévues de l'opération</label>
+              <input type="datetime-local" value={dateInterventionInput} onChange={e => setDateInterventionInput(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm font-bold" />
+            </div>
+            <button onClick={handleEnregistrerDateIntervention} disabled={savingDateIntervention || !dateInterventionInput}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50 self-end">
+              <span className="material-symbols-outlined text-lg">save</span>
+              {savingDateIntervention ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </>
+        ) : (
+          <div>
+            <p className="text-xs font-semibold text-on-surface-variant">Date et heure prévues de l'opération</p>
+            <p className="text-sm font-bold text-on-surface">
+              {patient?.dateIntervention ? new Date(patient.dateIntervention).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Anesthésiste réalisant la consultation — auto-dérivé si l'utilisateur connecté est
