@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { SortieReveilService } from './sortie-reveil.service';
 import { CreateSortieReveilDto } from './dto/create-sortie-reveil.dto';
@@ -14,8 +14,8 @@ export class SortieReveilController {
 
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Créer une sortie de réveil (Anesthésiste)' })
-  create(@Body() dto: CreateSortieReveilDto) { return this.service.create(dto); }
+  @ApiOperation({ summary: 'Créer une sortie de réveil (Anesthésiste — auto-attribué depuis la session)' })
+  create(@Body() dto: CreateSortieReveilDto, @Request() req: any) { return this.service.create(dto, req.centralUser); }
 
   @Get()
   @ApiOperation({ summary: 'Lister toutes les sorties' })

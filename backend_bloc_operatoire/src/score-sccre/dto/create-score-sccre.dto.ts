@@ -3,7 +3,7 @@ import { StatutScoreSCCRE } from '../../entities/score-sccre.entity';
 
 export class CreateScoreSCCREDto {
   @IsString() patientId: string;
-  @IsString() anesthesisteId: string;
+  @IsOptional() @IsString() anesthesisteId?: string;
   @IsString() heureArrivee: string;
   @IsDateString() dateEvaluation: string;
   @IsNumber() @Min(0) @Max(2) motricite: number;

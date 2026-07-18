@@ -3,8 +3,10 @@ import { Suspense } from "react";
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { patientService, medecinService } from '@/lib/api'
+import { patientService } from '@/lib/api'
 import { apiClient } from '@/lib/api/client'
+import { useRole } from '@/lib/hooks/useRole'
+import { obtenirSessionValide } from '@/lib/auth/central-session'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -27,9 +29,9 @@ function SalleDeReveilPageContent() {
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const intervention = searchParams.get('intervention') || ''
 
+  const { estAnesthesiste, roleName } = useRole()
+  const [nomAnesthesiste, setNomAnesthesiste] = useState('')
   const [patient, setPatient] = useState<any>(null)
-  const [anesthesistes, setAnesthesistes] = useState<any[]>([])
-  const [anesthesisteId, setAnesthesisteId] = useState('')
   const [heureArrivee, setHeureArrivee] = useState('14:25')
   const [scores, setScores] = useState({ motricite: 2, respiration: 2, pressionArterielle: 2, etatConscience: 2, coloration: 2 })
   const [evs, setEvs] = useState(2)
@@ -46,46 +48,49 @@ function SalleDeReveilPageContent() {
 
   useEffect(() => {
     if (patientId) patientService.getById(patientId).then(setPatient).catch(console.error)
-    medecinService.getAll({ role: 'ANESTHESISTE', limite: 100 }).then((data: any) => {
-      setAnesthesistes(Array.isArray(data) ? data : data?.data || [])
-    }).catch(console.error)
   }, [patientId])
+
+  useEffect(() => {
+    const session = obtenirSessionValide()
+    if (session) setNomAnesthesiste(`${session.payload.firstname} ${session.payload.name}`.trim())
+  }, [])
 
   const scoreTotal = scores.motricite + scores.respiration + scores.pressionArterielle + scores.etatConscience + scores.coloration
   const checklistComplete = Object.values(checklistSortie).every(Boolean)
 
   const handleEnregistrerScore = async () => {
-    if (!anesthesisteId) { alert('❌ Sélectionnez l\'anesthésiste évaluant le réveil'); return }
+    if (!estAnesthesiste) { alert('❌ La surveillance de réveil est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : '')); return }
     try {
       const { data } = await apiClient.post('/scores-sccre', {
         patientId: patientId || patient?.id,
-        anesthesisteId,
         heureArrivee, dateEvaluation: new Date().toISOString().split('T')[0],
         ...scores, evs, eqa, eva, etatInitial, reponse, sortieAutorisee: false
       })
       setScoreSCCREId(data.id)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert('❌ Erreur lors de l\'enregistrement du score')
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur lors de l\'enregistrement du score : ' + (Array.isArray(message) ? message.join(', ') : message))
     }
   }
 
   const handleValiderSortie = async () => {
-    if (!anesthesisteId) { alert('❌ Sélectionnez l\'anesthésiste autorisant la sortie'); return }
+    if (!estAnesthesiste) { alert('❌ L\'autorisation de sortie est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : '')); return }
     if (!scoreSCCREId) { alert('❌ Enregistrez d\'abord le score de réveil'); return }
     if (!checklistComplete) { alert('❌ Complétez la checklist de sortie avant de valider'); return }
     try {
       await apiClient.post('/sorties-reveil', {
-        patientId, scoreSCCREId, medecinId: anesthesisteId,
+        patientId, scoreSCCREId,
         dateHeureSortie: new Date().toISOString(),
         versServiceOrigine: orientation === 'origine',
         autresServicesDestination: orientation === 'autres' ? [serviceChoisi] : [],
         checklistSortie,
       })
       setShowConfirmation(true)
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert('❌ Erreur')
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue'
+      alert('❌ Erreur : ' + (Array.isArray(message) ? message.join(', ') : message))
     }
   }
 
@@ -107,11 +112,7 @@ function SalleDeReveilPageContent() {
           <div className="w-px h-6 bg-[#c7dde9]"></div>
           <div>
             <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5 block">Anesthésiste</label>
-            <select value={anesthesisteId} onChange={e => setAnesthesisteId(e.target.value)}
-              className="bg-white/70 border-none rounded-lg px-2 py-1 text-xs font-bold text-[#00478d]">
-              <option value="">— Sélectionner —</option>
-              {anesthesistes.map((m: any) => <option key={m.id} value={m.id}>{m.nom} {m.prenom}</option>)}
-            </select>
+            <p className="text-xs font-bold text-[#00478d]">{estAnesthesiste ? (nomAnesthesiste || '—') : `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}`}</p>
           </div>
         </div>
         <div className="flex flex-col items-end">
@@ -129,7 +130,8 @@ function SalleDeReveilPageContent() {
             {/* État respiratoire */}
             <div className="bg-white p-6 rounded-xl shadow-sm border">
               <h3 className="font-bold text-lg text-[#00478d] mb-4">État respiratoire / Neuromusculaire</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#727783] mb-2">À l'arrivée en salle</p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
                   <input type="checkbox" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
                   <span className="ml-3 text-sm">Intubation (initial)</span>
@@ -137,6 +139,17 @@ function SalleDeReveilPageContent() {
                 <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
                   <input type="checkbox" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
                   <span className="ml-3 text-sm">Curarisation (initial)</span>
+                </label>
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#727783] mb-2">Réponse observée</p>
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
+                  <input type="checkbox" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
+                  <span className="ml-3 text-sm">Extubation obtenue</span>
+                </label>
+                <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
+                  <input type="checkbox" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
+                  <span className="ml-3 text-sm">Décurarisation obtenue</span>
                 </label>
               </div>
             </div>
@@ -199,8 +212,10 @@ function SalleDeReveilPageContent() {
                 </div>
               ))}
             </div>
-            <button onClick={handleEnregistrerScore} className="mt-6 w-full py-3 bg-[#00478d] text-white font-bold rounded-xl shadow-lg hover:bg-[#005eb8] transition-all">
-              {scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
+            <button onClick={handleEnregistrerScore} disabled={!estAnesthesiste}
+              title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
+              className="mt-6 w-full py-3 bg-[#00478d] text-white font-bold rounded-xl shadow-lg hover:bg-[#005eb8] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              {!estAnesthesiste ? 'Réservé à l\'anesthésiste' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
             </button>
           </div>
 
@@ -235,11 +250,11 @@ function SalleDeReveilPageContent() {
             {orientation === 'autres' && serviceChoisi && <p className="mt-2 text-sm font-bold text-[#00478d]">Service : {serviceChoisi}</p>}
             {orientation === 'origine' && <p className="mt-2 text-sm font-bold text-[#006a6a]">Service d'origine</p>}
 
-            <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !anesthesisteId}
+            <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !estAnesthesiste}
               className={`mt-4 w-full py-3 font-bold rounded-xl transition-all ${
-                scoreTotal >= 9 && scoreSCCREId && checklistComplete && anesthesisteId ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] text-white shadow-xl hover:shadow-[#00478d]/40' : 'bg-gray-400 text-white cursor-not-allowed'
+                scoreTotal >= 9 && scoreSCCREId && checklistComplete && estAnesthesiste ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] text-white shadow-xl hover:shadow-[#00478d]/40' : 'bg-gray-400 text-white cursor-not-allowed'
               }`}>
-              {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !anesthesisteId ? 'Sélectionnez un anesthésiste' : 'Autoriser la sortie'}
+              {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !estAnesthesiste ? `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}` : 'Autoriser la sortie'}
             </button>
           </div>
         </div>

@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ScoreSCCRE } from '../entities/score-sccre.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinService } from '../medecin/medecin.service';
+import { CentralUser } from '../central-auth/central-user.interface';
 import { CreateScoreSCCREDto } from './dto/create-score-sccre.dto';
 import { UpdateScoreSCCREDto } from './dto/update-score-sccre.dto';
 
@@ -11,8 +13,24 @@ export class ScoreSCCREService {
   constructor(
     @InjectRepository(ScoreSCCRE) private repo: Repository<ScoreSCCRE>,
     private accueilClient: AccueilClient,
+    private medecinService: MedecinService,
   ) {}
-  async create(dto: CreateScoreSCCREDto): Promise<ScoreSCCRE> { const saved = await this.repo.save(this.repo.create(dto as any)); return Array.isArray(saved) ? saved[0] : saved; }
+
+  // L'anesthésiste évaluant le réveil est toujours celui connecté (route réservée au rôle
+  // ANESTHESISTE) — jamais une saisie manuelle du client, comme pour la CPA
+  // (CPAService.create). Évite de dépendre d'un sélecteur qui reste vide si la fiche Médecin
+  // de l'utilisateur n'existe pas ou ne correspond pas au bon email.
+  async create(dto: CreateScoreSCCREDto, centralUser: CentralUser): Promise<ScoreSCCRE> {
+    const anesthesiste = await this.medecinService.findByEmail(centralUser.email);
+    if (!anesthesiste) {
+      throw new BadRequestException(
+        `Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`,
+      );
+    }
+
+    const saved = await this.repo.save(this.repo.create({ ...(dto as any), anesthesisteId: anesthesiste.id }));
+    return Array.isArray(saved) ? saved[0] : saved;
+  }
   async findAll(page = 1, limite = 10) {
     const [data, total] = await this.repo.findAndCount({ relations: ['anesthesiste'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
     const enriched = await this.accueilClient.enrichWithIdentity(data);

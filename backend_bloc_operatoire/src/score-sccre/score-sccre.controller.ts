@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ScoreSCCREService } from './score-sccre.service';
 import { CreateScoreSCCREDto } from './dto/create-score-sccre.dto';
 import { UpdateScoreSCCREDto } from './dto/update-score-sccre.dto';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Scores SCCRE')
 @ApiBearerAuth('JWT-auth')
@@ -11,8 +13,9 @@ export class ScoreSCCREController {
   constructor(private readonly service: ScoreSCCREService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Créer un score SCCRE' })
-  create(@Body() dto: CreateScoreSCCREDto) { return this.service.create(dto); }
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Créer un score SCCRE (Anesthésiste — auto-attribué depuis la session)' })
+  create(@Body() dto: CreateScoreSCCREDto, @Request() req: any) { return this.service.create(dto, req.centralUser); }
 
   @Get()
   @ApiOperation({ summary: 'Lister tous les scores' })
