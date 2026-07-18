@@ -11,6 +11,8 @@ export interface LignePlanning {
   heure?: string
   actionLabel: string
   href: string
+  actionLabel2?: string
+  href2?: string
 }
 
 interface GroupePlanningTableProps {
@@ -84,11 +86,17 @@ export default function GroupePlanningTable({ icon, titre, accent, lignes, loadi
                   <td className={`px-6 py-4 font-bold ${l.priorite === 'STAT' ? 'text-tertiary' : l.priorite === 'URGENT' ? 'text-orange-600' : 'text-on-surface'}`}>
                     {l.heure || '—'}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right space-x-2">
                     <button onClick={() => router.push(l.href)}
                       className={`${c.text} ${c.actionBg} px-3 py-1 rounded-lg text-[10px] font-bold transition-colors`}>
                       {l.actionLabel}
                     </button>
+                    {l.href2 && (
+                      <button onClick={() => router.push(l.href2!)}
+                        className="text-on-surface-variant bg-slate-50 hover:bg-slate-100 px-3 py-1 rounded-lg text-[10px] font-bold transition-colors border border-outline-variant/20">
+                        {l.actionLabel2}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

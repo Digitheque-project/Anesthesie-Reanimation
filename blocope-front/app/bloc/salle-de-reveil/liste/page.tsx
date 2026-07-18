@@ -111,12 +111,23 @@ export default function ListeSalleReveil() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => router.push(`/bloc/salle-de-reveil/suivi?patientId=${patient.id}&patientNom=${encodeURIComponent(`${patient.prenom} ${patient.nom}`.trim())}&intervention=${encodeURIComponent(patient.intervention)}`)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-md hover:shadow-lg"
-                      >
-                        📋 Surveiller
-                      </button>
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => router.push(`/bloc/salle-de-reveil/suivi?patientId=${patient.id}&patientNom=${encodeURIComponent(`${patient.prenom} ${patient.nom}`.trim())}&intervention=${encodeURIComponent(patient.intervention)}`)}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-md hover:shadow-lg"
+                        >
+                          📋 Surveiller
+                        </button>
+                        {/* Point d'entrée indépendant pour le chirurgien : il ne suit pas les mêmes
+                            écrans que l'anesthésiste, il doit pouvoir retrouver le patient ici pour
+                            remplir le protocole opératoire, quel que soit qui a fait le reste. */}
+                        <button
+                          onClick={() => router.push(`/bloc/protocole-operatoire?patientId=${patient.id}&patientNom=${encodeURIComponent(`${patient.prenom} ${patient.nom}`.trim())}&intervention=${encodeURIComponent(patient.intervention)}`)}
+                          className="px-4 py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 text-sm font-bold rounded-lg transition"
+                        >
+                          🖋️ Protocole opératoire
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function ProtocoleOperatoirePage() {
   return (
@@ -32,10 +33,15 @@ function ProtocoleOperatoirePageContent() {
   const [loading, setLoading] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
   const { on } = useOperationRealtime(patientId)
+  const { estChirurgien, roleName } = useRole()
 
   useEffect(() => on('protocole-operatoire:maj', () => setMajDistante(true)), [on])
 
   const handleSubmit = async () => {
+    if (!estChirurgien) {
+      alert('❌ Le protocole opératoire est réservé au chirurgien.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
     setLoading(true)
     try {
       await apiClient.post('/protocoles-operatoires', {
@@ -60,6 +66,11 @@ function ProtocoleOperatoirePageContent() {
   return (
     <main className="p-6 h-full overflow-y-auto">
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
+      {!estChirurgien && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          Le protocole opératoire est réservé au chirurgien{roleName ? ` (votre rôle actuel est : ${roleName})` : ''}. Vous pouvez consulter cet écran mais pas l'enregistrer.
+        </div>
+      )}
       <div className="flex gap-6">
       {/* Colonne gauche : Protocole */}
       <section className="flex-1 flex flex-col space-y-4">
@@ -141,8 +152,9 @@ function ProtocoleOperatoirePageContent() {
 
         {/* Valider */}
         <div className="flex justify-end pt-4 pb-8">
-          <button onClick={handleSubmit} disabled={loading}
-            className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-lg shadow-primary/20 hover:shadow-xl transition-all active:scale-95">
+          <button onClick={handleSubmit} disabled={loading || !estChirurgien}
+            title={!estChirurgien ? 'Réservé au chirurgien' : undefined}
+            className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-xl font-bold flex items-center space-x-3 shadow-lg shadow-primary/20 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined">save</span>
             <span>{loading ? 'Enregistrement...' : 'Valider et enregistrer'}</span>
           </button>

@@ -93,7 +93,14 @@ export default function DashboardPage() {
     if (reveilRes.status === 'fulfilled') {
       // Toujours "aujourd'hui" par nature : un patient reste peu de temps en salle de réveil
       const liste = reveilRes.value?.data || []
-      setPatientsReveil(liste.map(versLignePatient('EN_SALLE_REVEIL', 'Suivi réveil', '/bloc/salle-de-reveil/suivi')))
+      setPatientsReveil(liste.map(versLignePatient('EN_SALLE_REVEIL', 'Suivi réveil', '/bloc/salle-de-reveil/suivi')).map((l: LignePlanning) => ({
+        ...l,
+        // Point d'entrée indépendant pour le chirurgien : il ne suit pas le même
+        // enchaînement d'écrans que l'anesthésiste, il doit pouvoir retrouver le
+        // patient ici pour remplir le protocole opératoire.
+        actionLabel2: 'Protocole opératoire',
+        href2: l.href.replace('/bloc/salle-de-reveil/suivi', '/bloc/protocole-operatoire'),
+      })))
     }
 
     setLoading(false)
