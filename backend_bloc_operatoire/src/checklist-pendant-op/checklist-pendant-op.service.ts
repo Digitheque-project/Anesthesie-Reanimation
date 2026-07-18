@@ -5,6 +5,7 @@ import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
+import { CentralUser } from '../central-auth/central-user.interface';
 import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
 import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.dto';
 
@@ -17,8 +18,13 @@ export class ChecklistPendantOpService {
     private patientBlocStatutService: PatientBlocStatutService,
   ) {}
 
-  async create(dto: CreateChecklistPendantOpDto): Promise<ChecklistPendantOp> {
-    const saved = await this.repo.save(this.repo.create(dto));
+  async create(dto: CreateChecklistPendantOpDto, centralUser: CentralUser): Promise<ChecklistPendantOp> {
+    const saved = await this.repo.save(this.repo.create({
+      ...dto,
+      validateurId: centralUser.userId,
+      validateurNom: `${centralUser.prenom} ${centralUser.nom}`.trim(),
+      validateurRole: centralUser.role,
+    }));
     // Le Time Out marque dans les faits le vrai début de l'opération.
     await this.patientBlocStatutService.avancerVersEnCoursOperation(saved.patientId);
     return saved;

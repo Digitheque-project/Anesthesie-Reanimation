@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { patientService } from '@/lib/api'
+import { apiClient } from '@/lib/api/client'
+import ExportToolbar from '@/components/bloc/layout/ExportToolbar'
+import { exporterCSV, exporterExcel, exporterPDF, imprimerSection, Colonne } from '@/lib/export/export'
+import { fmtDate, fmtDateHeure, collecterEquipe, construireChronologie } from '@/lib/export/dossier-patient'
+
+const STATUT_STYLE: Record<string, string> = {
+  SORTI: 'bg-emerald-100 text-emerald-700',
+  EN_SALLE_REVEIL: 'bg-cyan-100 text-cyan-700',
+  EN_COURS_OPERATION: 'bg-rose-100 text-rose-700',
+  PRET_POUR_BLOC: 'bg-blue-100 text-blue-700',
+}
 
 export default function ArchivesPage() {
   const router = useRouter()
@@ -16,8 +27,17 @@ export default function ArchivesPage() {
   const [filtreSexe, setFiltreSexe] = useState('Tous')
   const [dateDebut, setDateDebut] = useState('')
   const [dateFin, setDateFin] = useState('')
+  const [exportPdfEnCours, setExportPdfEnCours] = useState<string | null>(null)
 
   useEffect(() => { charger() }, [page, recherche, filtreSexe, dateDebut, dateFin])
+
+  const filtresActifs = (liste: any[]) => {
+    let filtered = liste
+    if (filtreSexe !== 'Tous') filtered = filtered.filter((p: any) => p.sexe === filtreSexe)
+    if (dateDebut) filtered = filtered.filter((p: any) => new Date(p.dateIntervention || p.updatedAt) >= new Date(dateDebut))
+    if (dateFin) filtered = filtered.filter((p: any) => new Date(p.dateIntervention || p.updatedAt) <= new Date(dateFin))
+    return filtered
+  }
 
   const charger = async () => {
     setLoading(true)
@@ -28,17 +48,7 @@ export default function ArchivesPage() {
         limite: 12,
         recherche: recherche || undefined,
       })
-      let filtered = data.data || []
-      if (filtreSexe !== 'Tous') {
-        filtered = filtered.filter((p: any) => p.sexe === filtreSexe)
-      }
-      if (dateDebut) {
-        filtered = filtered.filter((p: any) => new Date(p.updatedAt) >= new Date(dateDebut))
-      }
-      if (dateFin) {
-        filtered = filtered.filter((p: any) => new Date(p.updatedAt) <= new Date(dateFin))
-      }
-      setPatients(filtered)
+      setPatients(filtresActifs(data.data || []))
       setTotal(data.total || 0)
       setPages(data.pages || 0)
     } catch (err) {
@@ -48,30 +58,74 @@ export default function ArchivesPage() {
     }
   }
 
-  const handleExportExcel = () => {
-    window.open('http://localhost:3000/api/exports/patients/excel', '_blank')
+  // Récupère l'ensemble des patients archivés correspondant aux filtres (pas seulement la page
+  // affichée), pour les exports Excel/CSV/PDF/impression du tableau complet.
+  const chargerTousLesPatients = async () => {
+    const data = await patientService.getAll({ statut: 'SORTI', page: 1, limite: 1000, recherche: recherche || undefined })
+    return filtresActifs(data.data || [])
   }
 
-  const handleExportPDF = (patientId: string) => {
-    window.open(`http://localhost:3000/api/exports/patient/${patientId}/pdf`, '_blank')
+  const colonnesListe: Colonne[] = [
+    { cle: 'idDossier', titre: 'ID Dossier' },
+    { cle: 'nomComplet', titre: 'Nom & Prénom' },
+    { cle: 'sexe', titre: 'Sexe' },
+    { cle: 'dateOperation', titre: "Date d'opération" },
+    { cle: 'intervention', titre: 'Intervention' },
+    { cle: 'chirurgien', titre: 'Chirurgien' },
+    { cle: 'statut', titre: 'Statut' },
+  ]
+  const versLignesExport = (liste: any[]) => liste.map(p => ({
+    idDossier: p.idDossier || p.id,
+    nomComplet: `${p.nom || ''} ${p.prenom || ''}`.trim(),
+    sexe: p.sexe || 'H',
+    dateOperation: fmtDate(p.dateIntervention || p.updatedAt),
+    intervention: p.libelle || '—',
+    chirurgien: p.chirurgien_nom || '—',
+    statut: p.statut || '—',
+  }))
+
+  const handleExportCSV = async () => exporterCSV(colonnesListe, versLignesExport(await chargerTousLesPatients()), 'archives-bloc-operatoire')
+  const handleExportExcel = async () => exporterExcel([{ nom: 'Archives', colonnes: colonnesListe, lignes: versLignesExport(await chargerTousLesPatients()) }], 'archives-bloc-operatoire')
+  const handleExportPDF = async () => exporterPDF('Archives opératoires', `${total} patient(s) archivé(s)`, [{ titre: 'Patients archivés', colonnes: colonnesListe, lignes: versLignesExport(await chargerTousLesPatients()) }], 'archives-bloc-operatoire')
+
+  // Export PDF complet d'un dossier patient (même contenu que la page détail), directement
+  // depuis la liste — pratique pour imprimer/partager un dossier sans l'ouvrir.
+  const handleExportDossierPDF = async (patientId: string, nomAffiche: string) => {
+    setExportPdfEnCours(patientId)
+    try {
+      const { data: dossier } = await apiClient.get(`/archives/dossier/${patientId}`)
+      const chronologie = construireChronologie(dossier)
+      const equipe = collecterEquipe(dossier).map(m => ({ nom: m.nom, role: m.role, etapesTxt: Array.from(m.etapes).join(', ') }))
+      await exporterPDF(
+        `Dossier patient — ${nomAffiche}`,
+        `${dossier.patient?.idDossier || patientId} — Généré le ${fmtDateHeure(new Date())}`,
+        [
+          { titre: 'Chronologie du parcours', colonnes: [{ cle: 'etape', titre: 'Étape' }, { cle: 'date', titre: 'Date / Heure' }, { cle: 'detail', titre: 'Détail' }, { cle: 'personnel', titre: 'Personnel' }], lignes: chronologie },
+          { titre: 'Personnel intervenu', colonnes: [{ cle: 'nom', titre: 'Nom' }, { cle: 'role', titre: 'Rôle' }, { cle: 'etapesTxt', titre: 'Étapes' }], lignes: equipe },
+        ],
+        `dossier-${dossier.patient?.idDossier || patientId}`
+      )
+    } catch (err) {
+      console.error(err)
+      alert("❌ Erreur lors de l'export du dossier")
+    } finally {
+      setExportPdfEnCours(null)
+    }
   }
 
   return (
     <main className="p-4">
       <div className="">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex justify-between items-center flex-wrap gap-3">
           <div>
-            <h2 className="font-display text-3xl font-extrabold text-on-surface tracking-tight">Archives opératoires.</h2>
-            <p className="text-on-surface-variant mt-1">Patients sortis du bloc opératoire</p>
+            <h2 className="font-display text-3xl font-extrabold text-on-surface tracking-tight">Archives opératoires</h2>
+            <p className="text-on-surface-variant mt-1">Dossiers complets des patients sortis du bloc opératoire</p>
           </div>
-          <button onClick={handleExportExcel}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg">table</span> Exporter Excel
-          </button>
+          <ExportToolbar onImprimer={imprimerSection} onCSV={handleExportCSV} onExcel={handleExportExcel} onPDF={handleExportPDF} />
         </div>
 
         {/* Filtres avancés */}
-        <section className="bg-surface-container-low rounded-3xl p-6 mb-8 border border-white/40 shadow-sm">
+        <section className="bg-surface-container-low rounded-3xl p-6 mb-8 border border-white/40 shadow-sm print:hidden">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">filter_alt</span>
@@ -140,7 +194,7 @@ export default function ArchivesPage() {
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Intervention</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Chirurgien</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Statut</th>
-                  <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-right print:hidden">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container-low">
@@ -149,7 +203,7 @@ export default function ArchivesPage() {
                 ) : patients.length === 0 ? (
                   <tr><td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">Aucun patient archivé</td></tr>
                 ) : patients.map(p => (
-                  <tr key={p.id} className="hover:bg-surface-container-low transition-colors group">
+                  <tr key={p.id} className="hover:bg-surface-container-low transition-colors group cursor-pointer" onClick={() => router.push(`/bloc/archives/${p.id}`)}>
                     <td className="px-6 py-4 text-sm font-mono text-primary font-bold">{p.idDossier || p.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -165,21 +219,21 @@ export default function ArchivesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">
-                      {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('fr-FR') : '-'}
+                      {fmtDate(p.dateIntervention || p.updatedAt)}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium">{p.statut || '—'}</td>
-                    <td className="px-6 py-4 text-sm">—</td>
+                    <td className="px-6 py-4 text-sm font-medium">{p.libelle || '—'}</td>
+                    <td className="px-6 py-4 text-sm">{p.chirurgien_nom || '—'}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant text-[11px] font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-outline"></span>Archivé
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold ${STATUT_STYLE[p.statut] || 'bg-surface-variant text-on-surface-variant'}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>{p.statut || '—'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right print:hidden" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleExportPDF(p.id)}
-                          className="px-2 py-1.5 rounded-lg border text-[11px] font-bold hover:bg-surface-container transition-colors text-red-600"
-                          title="Exporter PDF">
-                          <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                        <button onClick={() => handleExportDossierPDF(p.id, `${p.nom} ${p.prenom}`)} disabled={exportPdfEnCours === p.id}
+                          className="px-2 py-1.5 rounded-lg border text-[11px] font-bold hover:bg-surface-container transition-colors text-red-600 disabled:opacity-50"
+                          title="Exporter le dossier complet en PDF">
+                          <span className="material-symbols-outlined text-sm">{exportPdfEnCours === p.id ? 'progress_activity' : 'picture_as_pdf'}</span>
                         </button>
                         <button onClick={() => router.push(`/bloc/archives/${p.id}`)}
                           className="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-[11px] font-bold hover:bg-primary-container transition-colors">
@@ -193,7 +247,7 @@ export default function ArchivesPage() {
             </table>
           </div>
           {/* Pagination */}
-          <div className="p-6 bg-surface-container-low flex items-center justify-between">
+          <div className="p-6 bg-surface-container-low flex items-center justify-between print:hidden">
             <p className="text-xs font-medium text-on-surface-variant">
               Affichage de <span className="font-bold">{patients.length}</span> sur <span className="font-bold">{total}</span> patients archivés
             </p>

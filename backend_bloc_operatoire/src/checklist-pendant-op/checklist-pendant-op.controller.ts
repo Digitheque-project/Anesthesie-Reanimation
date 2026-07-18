@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Request, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ChecklistPendantOpService } from './checklist-pendant-op.service';
 import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
@@ -17,7 +17,7 @@ export class ChecklistPendantOpController {
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
   @ApiOperation({ summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste)' })
-  create(@Body() dto: CreateChecklistPendantOpDto) { return this.service.create(dto); }
+  create(@Body() dto: CreateChecklistPendantOpDto, @Request() req: any) { return this.service.create(dto, req.centralUser); }
 
   @Get()
   @ApiOperation({ summary: 'Lister les checklists pendant opération' })

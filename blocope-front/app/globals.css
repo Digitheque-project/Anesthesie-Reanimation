@@ -83,3 +83,18 @@
   animation: overlayFadeIn 0.2s ease-out forwards;
 }
 
+/* Impression : n'imprime que le contenu de la page (masque menu latéral, barre du haut et
+   tout élément marqué print:hidden côté composants), sans marge de mise en page écran. */
+@media print {
+  aside, header.sticky, header.fixed {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+  }
+  body {
+    background: white !important;
+  }
+}
+

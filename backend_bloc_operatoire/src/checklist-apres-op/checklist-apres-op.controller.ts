@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Request, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ChecklistApresOpService } from './checklist-apres-op.service';
 import { CreateChecklistApresOpDto } from './dto/create-checklist-apres-op.dto';
@@ -14,7 +14,7 @@ export class ChecklistApresOpController {
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
   @ApiOperation({ summary: 'Créer une checklist après opération (Anesthésiste)' })
-  create(@Body() dto: CreateChecklistApresOpDto) { return this.service.create(dto); }
+  create(@Body() dto: CreateChecklistApresOpDto, @Request() req: any) { return this.service.create(dto, req.centralUser); }
 
   @Get()
   @ApiOperation({ summary: 'Lister les checklists après opération' })

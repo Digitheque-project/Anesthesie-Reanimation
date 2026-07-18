@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,7 +18,15 @@ export class ChecklistAvantOpController {
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
   @ApiOperation({ summary: 'Créer une checklist avant opération (Anesthésiste)' })
-  create(@Body() dto: any) { return this.repo.save(this.repo.create(dto)); }
+  create(@Body() dto: any, @Request() req: any) {
+    const centralUser = req.centralUser;
+    return this.repo.save(this.repo.create({
+      ...dto,
+      validateurId: centralUser?.userId,
+      validateurNom: centralUser ? `${centralUser.prenom} ${centralUser.nom}`.trim() : undefined,
+      validateurRole: centralUser?.role,
+    }));
+  }
 
   @Get()
   @ApiOperation({ summary: 'Lister les checklists avant opération' })

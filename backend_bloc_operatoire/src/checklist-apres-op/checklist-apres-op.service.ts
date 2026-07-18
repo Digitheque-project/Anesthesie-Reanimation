@@ -6,6 +6,7 @@ import { PatientStatut } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
+import { CentralUser } from '../central-auth/central-user.interface';
 import { CreateChecklistApresOpDto } from './dto/create-checklist-apres-op.dto';
 import { UpdateChecklistApresOpDto } from './dto/update-checklist-apres-op.dto';
 
@@ -21,8 +22,13 @@ export class ChecklistApresOpService {
   // La check-list après intervention est enregistrée en un seul POST (formulaire unique côté
   // client, pas de brouillon puis validation séparée) — le transfert en salle de réveil peut
   // donc déjà être coché dès la création, pas seulement lors d'une modification ultérieure.
-  async create(dto: CreateChecklistApresOpDto): Promise<ChecklistApresOp> {
-    const saved = await this.repo.save(this.repo.create(dto));
+  async create(dto: CreateChecklistApresOpDto, centralUser: CentralUser): Promise<ChecklistApresOp> {
+    const saved = await this.repo.save(this.repo.create({
+      ...dto,
+      validateurId: centralUser.userId,
+      validateurNom: `${centralUser.prenom} ${centralUser.nom}`.trim(),
+      validateurRole: centralUser.role,
+    }));
     if (dto.transfertSalleReveil) {
       await this.patientBlocStatutService.changerStatut(saved.patientId, PatientStatut.EN_SALLE_REVEIL);
     }

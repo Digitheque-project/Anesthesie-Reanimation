@@ -11,6 +11,9 @@ import { SortieReveil } from '../entities/sortie-reveil.entity';
 import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
+import { NotificationCPA } from '../entities/notification-cpa.entity';
+import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
+import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { ArchivesService } from './archives.service';
 import { ArchivesController } from './archives.controller';
 
@@ -21,6 +24,7 @@ import { ArchivesController } from './archives.controller';
       ActivitePerOp, ProtocoleOperatoire,
       ScoreSCCRE, SortieReveil,
       ChecklistAvantOp, ChecklistPendantOp, ChecklistApresOp,
+      NotificationCPA, DemandeCpaExterne, MomentOperatoire,
     ]),
   ],
   controllers: [ArchivesController],

@@ -30,6 +30,11 @@ export class ChecklistAvantOp {
   @Column({ type: 'text', nullable: true }) notesAnesthesiques: string;
   @Column({ type: 'text', nullable: true }) notesIdeIbode: string;
   @Column({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }) statut: StatutChecklist;
+  // Anesthésiste ayant validé la check-list — pour la traçabilité du personnel responsable
+  // (visible notamment dans le dossier archivé du patient).
+  @Column({ type: 'varchar', nullable: true }) validateurId: string | null;
+  @Column({ type: 'varchar', nullable: true }) validateurNom: string | null;
+  @Column({ type: 'varchar', nullable: true }) validateurRole: string | null;
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;
 }
