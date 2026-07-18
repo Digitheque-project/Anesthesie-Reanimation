@@ -46,7 +46,6 @@ function ProtocoleOperatoirePageContent() {
     try {
       await apiClient.post('/protocoles-operatoires', {
         patientId, dateOperation: form.dateOperation,
-        chirurgienId: '', anesthesisteId: '', infirmiereId: '', aideOperatoireId: '',
         compteRenduIntervention: form.compteRenduIntervention,
         surveillance: { ta: form.surveillanceTA, pouls: form.surveillancePouls, fr: form.surveillanceFR, temperature: form.surveillanceTemp, diurese: form.surveillanceDiurese, autres: form.surveillanceAutres },
         prescriptions: { perfusionBrasGauche: form.perfusionBrasGauche, perfusionBrasDroit: form.perfusionBrasDroit, voieCentrale: form.voieCentrale, antibiotiques: form.antibiotiques, antalgiques: form.antalgiques, autres: form.autres },

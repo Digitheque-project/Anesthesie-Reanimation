@@ -23,29 +23,32 @@ export class ProtocoleOperatoire {
   @Column({ type: 'date' })
   dateOperation: Date;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  chirurgien: Medecin;
+  // Les intervenants (chirurgien, anesthésiste, infirmière, aide opératoire) ne sont pas
+  // toujours enregistrés comme Medecin local — le formulaire ne propose d'ailleurs aucun
+  // sélecteur pour ces champs — donc nullable, comme NotificationCPA.chirurgienId.
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  chirurgien: Medecin | null;
 
-  @Column()
-  chirurgienId: string;
+  @Column({ type: 'varchar', nullable: true })
+  chirurgienId: string | null;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  anesthesiste: Medecin;
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  anesthesiste: Medecin | null;
 
-  @Column()
-  anesthesisteId: string;
+  @Column({ type: 'varchar', nullable: true })
+  anesthesisteId: string | null;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  infirmiere: Medecin;
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  infirmiere: Medecin | null;
 
-  @Column()
-  infirmiereId: string;
+  @Column({ type: 'varchar', nullable: true })
+  infirmiereId: string | null;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  aideOperatoire: Medecin;
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  aideOperatoire: Medecin | null;
 
-  @Column()
-  aideOperatoireId: string;
+  @Column({ type: 'varchar', nullable: true })
+  aideOperatoireId: string | null;
 
   @Column('text')
   compteRenduIntervention: string;
