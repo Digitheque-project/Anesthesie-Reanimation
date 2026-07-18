@@ -91,7 +91,16 @@ function ActivitePendantOperationPageContent() {
     }
   }
 
-  const ETATS = ['CALME', 'DETENDU', 'ANXIEUX', 'AGITE']
+  const ETATS = ['CALME', 'DETENDU', 'ANXIEUX', 'AGITE'] as const
+
+  // Code couleur IHM de l'état émotionnel à l'arrivée : vert/bleu = serein, orange/rouge = état
+  // à surveiller — cohérent avec le code couleur par urgence utilisé ailleurs dans l'app.
+  const ETAT_CONFIG: Record<typeof ETATS[number], { icone: string; bg: string; border: string; icon: string; texte: string }> = {
+    CALME: { icone: 'sentiment_very_satisfied', bg: 'bg-emerald-50', border: 'border-emerald-400', icon: 'text-emerald-600', texte: 'text-emerald-800' },
+    DETENDU: { icone: 'sentiment_satisfied', bg: 'bg-blue-50', border: 'border-blue-400', icon: 'text-blue-600', texte: 'text-blue-800' },
+    ANXIEUX: { icone: 'sentiment_dissatisfied', bg: 'bg-amber-50', border: 'border-amber-400', icon: 'text-amber-600', texte: 'text-amber-800' },
+    AGITE: { icone: 'sentiment_very_dissatisfied', bg: 'bg-red-50', border: 'border-red-400', icon: 'text-red-600', texte: 'text-red-800' },
+  }
 
   return (
     <main className="p-6">
@@ -124,28 +133,63 @@ function ActivitePendantOperationPageContent() {
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-24">
+        {/* Section 0: PATIENT À L'ARRIVÉE — en tête d'interface : premier constat clinique posé
+            en entrant en salle, avant tout le reste du suivi peropératoire */}
+        <section className="bg-white rounded-2xl shadow-md border border-surface-container-highest overflow-hidden">
+          <div className="bg-gradient-to-r from-secondary to-secondary/80 px-6 py-4 flex items-center gap-3">
+            <span className="material-symbols-outlined text-white text-2xl">mood</span>
+            <div>
+              <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">État du patient à l'arrivée</h3>
+              <p className="text-white/80 text-[11px] font-medium">Premier constat clinique en entrant en salle d'opération</p>
+            </div>
+          </div>
+          <div className="p-6"><div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {ETATS.map(etat => {
+              const cfg = ETAT_CONFIG[etat]
+              const actif = form.etatArrivee === etat
+              return (
+                <label key={etat} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-all group ${
+                  actif ? `${cfg.bg} ${cfg.border} shadow-md scale-[1.03]` : 'bg-background border-surface-container-highest hover:border-outline-variant hover:shadow-sm'
+                }`}>
+                  <input
+                    className="sr-only"
+                    type="radio"
+                    name="etatArrivee"
+                    checked={actif}
+                    onChange={() => setForm({...form, etatArrivee: etat})}
+                  />
+                  <span className={`material-symbols-outlined text-3xl ${actif ? cfg.icon : 'text-on-surface-variant/50'}`} style={actif ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+                    {cfg.icone}
+                  </span>
+                  <span className={`text-sm font-extrabold uppercase tracking-widest ${actif ? cfg.texte : 'text-on-surface-variant'}`}>{etat}</span>
+                </label>
+              )
+            })}
+          </div></div>
+        </section>
+
         {/* Chronologie des moments opératoires */}
         <MomentsTimeline patientId={patientId} />
 
         {/* Section 1: APPORTS */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
-          <div className="bg-surface-container-low px-6 py-3 border-b border-surface-container-highest flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl">input</span>
-            <h3 className="font-headline font-bold text-on-surface uppercase tracking-wide text-sm">APPORTS (ENTRÉES)</h3>
+          <div className="bg-emerald-50 px-6 py-3 border-b border-emerald-100 flex items-center gap-2">
+            <span className="material-symbols-outlined text-emerald-600 text-xl">input</span>
+            <h3 className="font-headline font-bold text-emerald-900 uppercase tracking-wide text-sm">Apports (entrées)</h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2"><label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">PERFUSIONS</label><textarea className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none" rows={3} placeholder="Saisir les détails..." value={form.perfusions} onChange={e => setForm({...form, perfusions: e.target.value})}></textarea></div>
-            <div className="space-y-2"><label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">TRANSFUSIONS</label><textarea className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none" rows={3} placeholder="Saisir les détails..." value={form.transfusions} onChange={e => setForm({...form, transfusions: e.target.value})}></textarea></div>
+            <div className="space-y-2"><label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">PERFUSIONS</label><textarea className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" rows={3} placeholder="Saisir les détails..." value={form.perfusions} onChange={e => setForm({...form, perfusions: e.target.value})}></textarea></div>
+            <div className="space-y-2"><label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">TRANSFUSIONS</label><textarea className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" rows={3} placeholder="Saisir les détails..." value={form.transfusions} onChange={e => setForm({...form, transfusions: e.target.value})}></textarea></div>
           </div>
         </section>
 
         {/* Section 2: SORTIES */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
-          <div className="bg-surface-container-low px-6 py-3 border-b border-surface-container-highest flex items-center gap-2">
-            <span className="material-symbols-outlined text-tertiary text-xl">output</span>
-            <h3 className="font-headline font-bold text-on-surface uppercase tracking-wide text-sm">SORTIES</h3>
+          <div className="bg-amber-50 px-6 py-3 border-b border-amber-100 flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-600 text-xl">output</span>
+            <h3 className="font-headline font-bold text-amber-900 uppercase tracking-wide text-sm">Sorties</h3>
           </div>
-          <div className="p-6"><div className="space-y-2"><label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">JOURNAL DES SORTIES</label><textarea className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-4 text-sm focus:ring-2 focus:ring-primary outline-none" rows={4} placeholder="Quantifier et décrire..." value={form.journalSorties} onChange={e => setForm({...form, journalSorties: e.target.value})}></textarea></div></div>
+          <div className="p-6"><div className="space-y-2"><label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">JOURNAL DES SORTIES</label><textarea className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-4 text-sm focus:ring-2 focus:ring-amber-500 outline-none" rows={4} placeholder="Quantifier et décrire..." value={form.journalSorties} onChange={e => setForm({...form, journalSorties: e.target.value})}></textarea></div></div>
         </section>
 
         {/* Section 3: SURVEILLANCE DES CONSTANTES */}
@@ -153,34 +197,42 @@ function ActivitePendantOperationPageContent() {
 
         {/* Section 4: VENTILATION */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
-          <div className="bg-surface-container-low px-6 py-3 border-b border-surface-container-highest flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl">ventilator</span>
-            <h3 className="font-headline font-bold text-on-surface uppercase tracking-wide text-sm">VENTILATION</h3>
+          <div className="bg-blue-50 px-6 py-3 border-b border-blue-100 flex items-center gap-2">
+            <span className="material-symbols-outlined text-blue-600 text-xl">ventilator</span>
+            <h3 className="font-headline font-bold text-blue-900 uppercase tracking-wide text-sm">Ventilation</h3>
           </div>
-          <div className="p-6"><div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6"><div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { key: 'intubationOT', label: 'INTUB - OT' },
-              { key: 'sArme', label: 'S.ARMEE' },
-              { key: 'masqueLarynge', label: 'M.LARYNCE' }
-            ].map(item => (
-              <div key={item.key} className="flex items-center gap-4 bg-background p-4 rounded-lg border border-surface-container-highest">
-                <input
-                  className="w-5 h-5 text-primary border-outline-variant rounded focus:ring-primary cursor-pointer"
-                  type="checkbox"
-                  checked={form[item.key as keyof typeof form] as boolean}
-                  onChange={e => setForm({...form, [item.key]: e.target.checked})}
-                />
-                <span className="text-xs font-bold text-on-surface uppercase">{item.label}</span>
-              </div>
-            ))}
+              { key: 'intubationOT', label: 'INTUB - OT', icone: 'air' },
+              { key: 'sArme', label: 'S.ARMEE', icone: 'health_and_safety' },
+              { key: 'masqueLarynge', label: 'M.LARYNGÉ', icone: 'masks' }
+            ].map(item => {
+              const actif = form[item.key as keyof typeof form] as boolean
+              return (
+                <label key={item.key} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  actif ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-background border-surface-container-highest hover:border-outline-variant'
+                }`}>
+                  <input
+                    className="sr-only"
+                    type="checkbox"
+                    checked={actif}
+                    onChange={e => setForm({...form, [item.key]: e.target.checked})}
+                  />
+                  <span className={`material-symbols-outlined text-2xl ${actif ? 'text-blue-600' : 'text-on-surface-variant/50'}`} style={actif ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+                    {actif ? 'check_circle' : item.icone}
+                  </span>
+                  <span className={`text-xs font-bold uppercase ${actif ? 'text-blue-900' : 'text-on-surface'}`}>{item.label}</span>
+                </label>
+              )
+            })}
           </div></div>
         </section>
 
         {/* Section 5: OPTIONS DE VENTILATION */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
-          <div className="bg-surface-container-low px-6 py-3 border-b border-surface-container-highest flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl">settings_input_component</span>
-            <h3 className="font-headline font-bold text-on-surface uppercase tracking-wide text-sm">OPTIONS DE VENTILATION</h3>
+          <div className="bg-blue-50 px-6 py-3 border-b border-blue-100 flex items-center gap-2">
+            <span className="material-symbols-outlined text-blue-600 text-xl">settings_input_component</span>
+            <h3 className="font-headline font-bold text-blue-900 uppercase tracking-wide text-sm">Options de ventilation</h3>
           </div>
           <div className="p-6"><div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             {[
@@ -193,7 +245,7 @@ function ActivitePendantOperationPageContent() {
               <div key={item.key} className="flex flex-col gap-2">
                 <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{item.label}</label>
                 <input
-                  className="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                  className="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="Détails..."
                   type="text"
                   value={form[item.key as keyof typeof form] as string}
@@ -204,34 +256,12 @@ function ActivitePendantOperationPageContent() {
           </div></div>
         </section>
 
-        {/* Section 6: PATIENT À L'ARRIVÉE */}
-        <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
-          <div className="bg-surface-container-low px-6 py-3 border-b border-surface-container-highest flex items-center gap-2">
-            <span className="material-symbols-outlined text-secondary text-xl">psychology</span>
-            <h3 className="font-headline font-bold text-on-surface uppercase tracking-wide text-sm">PATIENT À L'ARRIVÉE</h3>
-          </div>
-          <div className="p-6"><div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {ETATS.map(etat => (
-              <label key={etat} className={`flex items-center justify-center gap-4 p-5 bg-background rounded-xl border-2 cursor-pointer hover:bg-surface-container-low transition-all group ${form.etatArrivee === etat ? 'border-primary bg-primary/5' : 'border-surface-container-highest'}`}>
-                <input
-                  className="w-6 h-6 text-primary border-outline-variant rounded focus:ring-primary cursor-pointer"
-                  type="radio"
-                  name="etatArrivee"
-                  checked={form.etatArrivee === etat}
-                  onChange={() => setForm({...form, etatArrivee: etat})}
-                />
-                <span className="text-sm font-extrabold text-on-surface-variant uppercase tracking-widest group-hover:text-primary">{etat}</span>
-              </label>
-            ))}
-          </div></div>
-        </section>
-
         {/* VALIDER */}
         <div className="flex justify-end pt-4 pb-8">
           <button
             onClick={handleSubmit}
             disabled={loading || !activiteId}
-            className="bg-primary text-white px-8 py-4 rounded-xl font-headline font-extrabold shadow-lg hover:bg-primary-container hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+            className="bg-gradient-to-r from-primary to-primary-container text-white px-8 py-4 rounded-xl font-headline font-extrabold shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
           >
             <span className="material-symbols-outlined">save</span>
             {loading ? 'ENREGISTREMENT...' : 'VALIDER'}

@@ -22,6 +22,40 @@ type Toast = { key: number; label: string; heureAffichee: string; promesse: Prom
 const formatHeure = (iso: string) =>
   new Date(iso).toLocaleTimeString('fr-FR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
+// Identité visuelle par catégorie : chaque bouton porte la couleur et l'icône de sa famille de
+// moments, pour repérer d'un coup d'œil anesthésie / chirurgie / divers dans la chronologie.
+const CATEGORIE_STYLE: Record<CategorieMoment, {
+  icone: string; texte: string; anneau: string; puce: string; chip: string; chipHover: string; point: string;
+}> = {
+  ANESTHESIE: {
+    icone: 'monitor_heart',
+    texte: 'text-blue-700',
+    anneau: 'ring-blue-200',
+    puce: 'bg-blue-100 text-blue-700',
+    chip: 'border-blue-200 bg-blue-50/60 text-blue-800',
+    chipHover: 'hover:bg-blue-100 hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/10',
+    point: 'bg-blue-500',
+  },
+  CHIRURGIE: {
+    icone: 'content_cut',
+    texte: 'text-red-700',
+    anneau: 'ring-red-200',
+    puce: 'bg-red-100 text-red-700',
+    chip: 'border-red-200 bg-red-50/60 text-red-800',
+    chipHover: 'hover:bg-red-100 hover:border-red-400 hover:shadow-md hover:shadow-red-500/10',
+    point: 'bg-red-500',
+  },
+  DIVERS: {
+    icone: 'category',
+    texte: 'text-secondary',
+    anneau: 'ring-secondary-container/40',
+    puce: 'bg-secondary/10 text-secondary',
+    chip: 'border-secondary/20 bg-secondary/5 text-secondary',
+    chipHover: 'hover:bg-secondary/10 hover:border-secondary hover:shadow-md hover:shadow-secondary/10',
+    point: 'bg-secondary',
+  },
+}
+
 // Timeline des moments opératoires : un tap sur un bouton horodate immédiatement le moment
 // (capture client, avant même la réponse réseau) et l'annonce via un toast bas d'écran avec
 // annulation possible — pas de confirmation bloquante, la vitesse de saisie prime en
@@ -95,34 +129,42 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
   const categories = Object.keys(CATALOGUE_MOMENTS) as CategorieMoment[]
 
   return (
-    <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4">
+    <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5">
       <h2 className="text-lg font-bold font-headline text-primary flex items-center gap-2">
         <span className="material-symbols-outlined">timeline</span> Chronologie de l'opération
       </h2>
 
-      <div className="space-y-3">
-        {categories.map((categorie) => (
-          <div key={categorie}>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
-              {CATALOGUE_MOMENTS[categorie].titre}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {CATALOGUE_MOMENTS[categorie].items.map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => declencherMoment(label, categorie)}
-                  className="px-3 py-2 rounded-lg border border-outline-variant bg-white text-sm font-semibold hover:bg-primary-fixed/30 hover:border-primary transition-colors active:scale-95"
-                >
-                  {label}
-                </button>
-              ))}
+      <div className="space-y-4">
+        {categories.map((categorie) => {
+          const style = CATEGORIE_STYLE[categorie]
+          return (
+            <div key={categorie}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center ${style.puce}`}>
+                  <span className="material-symbols-outlined text-sm">{style.icone}</span>
+                </span>
+                <h3 className={`text-[11px] font-extrabold uppercase tracking-widest ${style.texte}`}>
+                  {CATALOGUE_MOMENTS[categorie].titre}
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {CATALOGUE_MOMENTS[categorie].items.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => declencherMoment(label, categorie)}
+                    className={`px-3.5 py-2 rounded-full border text-sm font-semibold transition-all active:scale-95 ${style.chip} ${style.chipHover}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      <div className="flex gap-2 items-center pt-3 border-t border-outline-variant/20">
+      <div className="flex gap-2 items-center pt-4 border-t border-outline-variant/20">
         <select
           value={categoriePerso}
           onChange={(e) => setCategoriePerso(e.target.value as CategorieMoment)}
@@ -137,35 +179,38 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
           onChange={(e) => setLabelPerso(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && ajouterMomentPersonnalise()}
           placeholder="+ Ajouter un moment personnalisé…"
-          className="flex-1 bg-surface-container-low border-none rounded-lg p-2 text-sm"
+          className="flex-1 bg-white border border-outline-variant/40 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
         />
-        <button type="button" onClick={ajouterMomentPersonnalise} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold">
-          Ajouter
+        <button type="button" onClick={ajouterMomentPersonnalise} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary/90 hover:shadow-md transition-all">
+          <span className="material-symbols-outlined text-base">add</span> Ajouter
         </button>
       </div>
 
       <div>
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Historique</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Historique</h3>
         {moments.length === 0 ? (
           <p className="text-xs text-on-surface-variant">Aucun moment horodaté pour l'instant.</p>
         ) : (
-          <ul className="space-y-1 max-h-64 overflow-y-auto">
-            {moments.map((m) => (
-              <li
-                key={m.id}
-                className={`flex items-center justify-between text-sm px-3 py-2 rounded-lg ${m.annule ? 'opacity-40 line-through' : 'bg-surface-container-low'}`}
-              >
-                <span className="font-semibold">{m.label}{m.estPersonnalise ? ' (perso.)' : ''}</span>
-                <span className="text-xs text-on-surface-variant flex items-center gap-3">
-                  <span>{formatHeure(m.horodatage)} · {m.auteurNom}</span>
+          <ul className="space-y-1.5 max-h-64 overflow-y-auto">
+            {moments.map((m) => {
+              const style = CATEGORIE_STYLE[m.categorie] || CATEGORIE_STYLE.DIVERS
+              return (
+                <li
+                  key={m.id}
+                  className={`flex items-center gap-3 text-sm px-3 py-2.5 rounded-lg border ${m.annule ? 'opacity-40 line-through border-transparent' : 'bg-white border-outline-variant/20 shadow-sm'}`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${style.point}`}></span>
+                  <span className="font-mono text-xs font-bold text-on-surface-variant shrink-0">{formatHeure(m.horodatage)}</span>
+                  <span className="font-semibold flex-1 truncate">{m.label}{m.estPersonnalise ? ' (perso.)' : ''}</span>
+                  <span className="text-xs text-on-surface-variant hidden sm:inline">{m.auteurNom}</span>
                   {!m.annule && (
-                    <button type="button" onClick={() => annulerMoment(m.id)} title="Annuler ce moment" className="text-error">
+                    <button type="button" onClick={() => annulerMoment(m.id)} title="Annuler ce moment" className="text-error hover:bg-error/10 rounded-full p-1 transition-colors">
                       <span className="material-symbols-outlined text-base">undo</span>
                     </button>
                   )}
-                </span>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
@@ -173,6 +218,7 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
         {toasts.map((t) => (
           <div key={t.key} className="bg-on-surface text-surface px-4 py-2 rounded-full shadow-lg flex items-center gap-3 text-sm">
+            <span className="material-symbols-outlined text-base text-emerald-400">check_circle</span>
             <span>{t.label} — {t.heureAffichee}</span>
             <button type="button" onClick={() => annulerDepuisToast(t)} className="font-bold underline">Annuler</button>
           </div>
