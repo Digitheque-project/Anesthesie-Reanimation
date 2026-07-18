@@ -80,8 +80,8 @@ function ActivitePendantOperationPageContent() {
         etatArrivee: form.etatArrivee ? [form.etatArrivee] : [],
       })
 
-      alert('✅ Activité enregistrée !')
-      router.push('/bloc/protocole-operatoire?patientId=' + patientId + '&patientNom=' + encodeURIComponent(patientNom))
+      alert('✅ Activité enregistrée ! Passage à la check-list après intervention.')
+      router.push(`/bloc/apres-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
     } catch (err: any) {
       console.error(err)
       const message = err.response?.data?.message || err.message || 'Erreur inconnue'

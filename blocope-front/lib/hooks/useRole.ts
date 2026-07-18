@@ -29,6 +29,9 @@ export function useRole() {
     peutPlanifierCpa: role === RoleClinique.RESPONSABLE_CPA || role === RoleClinique.MAJOR,
     peutGererCreneaux: role === RoleClinique.MAJOR,
     peutValiderSortieReveil: role === RoleClinique.ANESTHESISTE,
+    // Check-list après intervention (Sign Out OMS) : réservée à l'anesthésiste, miroir de
+    // @RequireRoleClinique sur POST /checklists-apres-op côté backend.
+    peutValiderChecklistApresOp: role === RoleClinique.ANESTHESISTE,
     // Saisir l'examen clinique CPA et décider APTE/INAPTE/REPORT : Anesthésiste, Responsable
     // CPA ou Major (miroir de @RequireRoleClinique sur POST/PATCH /cpa côté backend).
     peutDeciderAptitudeCpa:

@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
+import { useRole } from '@/lib/hooks/useRole'
 
 export default function ApresOperationPage() {
   return (
@@ -30,15 +31,20 @@ function ApresOperationPageContent() {
   const [loading, setLoading] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
   const { on } = useOperationRealtime(patientId)
+  const { peutValiderChecklistApresOp, roleName } = useRole()
 
   useEffect(() => on('checklist-apres-op:maj', () => setMajDistante(true)), [on])
 
   const handleSubmit = async () => {
+    if (!peutValiderChecklistApresOp) {
+      alert('❌ La check-list après intervention est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
     setLoading(true)
     try {
       await apiClient.post('/checklists-apres-op', { patientId, ...form })
-      alert('✅ Checklist après opération enregistrée !')
-      router.push(`/bloc/salle-de-reveil?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)
+      alert('✅ Check-list après intervention enregistrée ! Passage au protocole opératoire.')
+      router.push(`/bloc/protocole-operatoire?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
     } catch (err: any) {
       console.error(err)
       const message = err.response?.data?.message || err.message || 'Erreur inconnue'
@@ -70,6 +76,12 @@ function ApresOperationPageContent() {
       </div>
 
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
+
+      {!peutValiderChecklistApresOp && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+          La check-list après intervention est réservée à l'anesthésiste{roleName ? ` (votre rôle actuel est : ${roleName})` : ''}. Vous pouvez consulter cet écran mais pas l'enregistrer.
+        </div>
+      )}
 
       {/* Check-list Form */}
       <div className="grid grid-cols-1 gap-6">
@@ -118,9 +130,10 @@ function ApresOperationPageContent() {
 
       {/* Footer Action */}
       <div className="mt-10 flex justify-end pt-6 border-t border-outline-variant/10">
-        <button onClick={handleSubmit} disabled={loading}
-          className="px-8 py-4 bg-primary text-white font-headline font-bold rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl transition-all flex items-center gap-3">
-          <span>{loading ? 'Enregistrement...' : 'Valider et enregistrer'}</span>
+        <button onClick={handleSubmit} disabled={loading || !peutValiderChecklistApresOp}
+          title={!peutValiderChecklistApresOp ? 'Réservé à l\'anesthésiste' : undefined}
+          className="px-8 py-4 bg-primary text-white font-headline font-bold rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span>{loading ? 'Enregistrement...' : !peutValiderChecklistApresOp ? 'Accès non autorisé' : 'Valider et enregistrer'}</span>
           <span className="material-symbols-outlined">save_as</span>
         </button>
       </div>

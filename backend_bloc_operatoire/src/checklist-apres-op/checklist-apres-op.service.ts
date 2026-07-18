@@ -18,8 +18,15 @@ export class ChecklistApresOpService {
     private patientBlocStatutService: PatientBlocStatutService,
   ) {}
 
-  create(dto: CreateChecklistApresOpDto): Promise<ChecklistApresOp> {
-    return this.repo.save(this.repo.create(dto));
+  // La check-list après intervention est enregistrée en un seul POST (formulaire unique côté
+  // client, pas de brouillon puis validation séparée) — le transfert en salle de réveil peut
+  // donc déjà être coché dès la création, pas seulement lors d'une modification ultérieure.
+  async create(dto: CreateChecklistApresOpDto): Promise<ChecklistApresOp> {
+    const saved = await this.repo.save(this.repo.create(dto));
+    if (dto.transfertSalleReveil) {
+      await this.patientBlocStatutService.changerStatut(saved.patientId, PatientStatut.EN_SALLE_REVEIL);
+    }
+    return saved;
   }
 
   async findAll(patientId?: string) {
