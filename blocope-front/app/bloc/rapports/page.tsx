@@ -86,7 +86,7 @@ export default function RapportsPage() {
     { nom: 'Anesthésistes', colonnes: colonnesAnesthesistes, lignes: activiteAnesthesistes },
   ], nomFichier)
   const handlePDF = () => exporterPDF(
-    'Rapport d\'activité — Bloc Opératoire',
+    'Rapport d\'activité — Service Anesthésie-Réanimation',
     `Période : ${dateDebut ? fmtDate(dateDebut) : 'Depuis le début'} → ${dateFin ? fmtDate(dateFin) : "Aujourd'hui"} — ${session?.acces.chu?.name || ''}`,
     [
       { titre: 'Activité par chirurgien', colonnes: colonnesChirurgiens, lignes: activiteChirurgiens },
@@ -102,7 +102,7 @@ export default function RapportsPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-on-surface mb-1 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl">monitoring</span>
-            Rapports d'activité du Bloc Opératoire
+            Rapports d'activité du Service Anesthésie-Réanimation
           </h1>
           <p className="text-sm text-on-surface-variant">Statistiques, activité par personnel et détail des interventions</p>
         </div>

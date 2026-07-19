@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SIH Bloc Opératoire",
+  title: "SIH Anesthésie-Réanimation",
   description: "Plateforme médicale CHU",
 };
 

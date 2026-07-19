@@ -59,8 +59,8 @@ export default function Sidebar() {
           height={56}
           className="rounded-full object-cover border-2 border-blue-500 shadow-md" />
         </div>
-        <h1 className="font-headline font-extrabold text-primary text-center text-base tracking-tight leading-tight">
-          Bloc Opératoire
+        <h1 className="font-headline font-extrabold text-primary text-center text-sm tracking-tight leading-tight">
+          Service Anesthésie-Réanimation
         </h1>
         <p className="text-[9px] font-bold tracking-[0.15em] text-[#424752] opacity-70 uppercase mt-0.5">
           PLATEFORME MÉDICALE

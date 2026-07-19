@@ -92,8 +92,8 @@ export default function TopBar() {
           <Image src="/images/CHU-logos.png" alt="CHU" width={24} height={24} />
         </div>
         <div>
-          <h1 className="text-lg font-extrabold text-primary font-headline tracking-tight">CHU Bloc Opératoire</h1>
-          <p className="text-[10px] text-on-surface-variant font-medium">Service d'Anesthésie-Réanimation</p>
+          <h1 className="text-lg font-extrabold text-primary font-headline tracking-tight">Service Anesthésie-Réanimation</h1>
+          <p className="text-[10px] text-on-surface-variant font-medium">{session?.acces.chu?.name || 'CHU'}</p>
         </div>
       </div>
 
