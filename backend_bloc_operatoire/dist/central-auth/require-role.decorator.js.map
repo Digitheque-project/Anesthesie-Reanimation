@@ -1,0 +1,1 @@
+{"version":3,"file":"require-role.decorator.js","sourceRoot":"","sources":["../../src/central-auth/require-role.decorator.ts"],"names":[],"mappings":";;;AAAA,2CAA6C;AAKhC,QAAA,yBAAyB,GAAG,qBAAqB,CAAC;AACxD,MAAM,mBAAmB,GAAG,CAAC,GAAG,KAAqB,EAAE,EAAE,CAAC,IAAA,oBAAW,EAAC,iCAAyB,EAAE,KAAK,CAAC,CAAC;AAAlG,QAAA,mBAAmB,uBAA+E"}
