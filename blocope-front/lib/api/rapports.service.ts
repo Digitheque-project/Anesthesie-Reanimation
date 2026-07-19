@@ -10,14 +10,19 @@ const MOCK_STATS = {
 }
 
 export const rapportsService = {
-  getStatistiques: async (start?: string, end?: string) => {
+  getStatistiques: async (dateDebut?: string, dateFin?: string) => {
     try {
-      const { data } = await apiClient.get('/rapports/statistiques', { params: { start, end } })
+      const { data } = await apiClient.get('/rapports/statistiques', { params: { dateDebut, dateFin } })
       return data
     } catch (error) {
       console.warn('⚠️ API indisponible - utilisation des stats simulées')
       return MOCK_STATS
     }
+  },
+
+  getTableauDeBord: async (dateDebut?: string, dateFin?: string) => {
+    const { data } = await apiClient.get('/rapports/tableau-de-bord', { params: { dateDebut, dateFin } })
+    return data
   },
 
   getAlertes: async () => {

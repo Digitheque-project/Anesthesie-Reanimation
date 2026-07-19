@@ -7,6 +7,12 @@ import { RapportsService } from './rapports.service';
 export class RapportsController {
   constructor(private readonly rapportsService: RapportsService) {}
 
+  @Get('tableau-de-bord')
+  @ApiOperation({ summary: 'Tableau de bord complet (statistiques, activité par personnel, détail des opérations)' })
+  tableauDeBord(@Query('dateDebut') dd?: string, @Query('dateFin') df?: string) {
+    return this.rapportsService.tableauDeBord(dd, df);
+  }
+
   @Get('statistiques')
   @ApiOperation({ summary: 'Statistiques globales' })
   statistiques(@Query('dateDebut') dd?: string, @Query('dateFin') df?: string) {
