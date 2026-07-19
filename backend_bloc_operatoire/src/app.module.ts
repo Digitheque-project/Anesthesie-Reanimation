@@ -26,6 +26,7 @@ import { ChecklistPendantOpModule } from './checklist-pendant-op/checklist-penda
 import { ChecklistApresOpModule } from './checklist-apres-op/checklist-apres-op.module';
 import { WebhookNotificationModule } from './webhook-notification/webhook-notification.module';
 import { PrescriptionModule } from './prescription/prescription.module';
+import { PrescriptionImagerieModule } from './prescription-imagerie/prescription-imagerie.module';
 import { DemandeCpaExterneModule } from './demande-cpa-externe/demande-cpa-externe.module';
 import { ExternalModule } from './external/external.module';
 import { CentralAuthModule } from './central-auth/central-auth.module';
@@ -75,6 +76,7 @@ import centralAuthConfig from './config/central-auth.config';
     MomentsOperatoireModule,
     WebhookNotificationModule,
     PrescriptionModule,
+    PrescriptionImagerieModule,
     DemandeCpaExterneModule,
   ],
   controllers: [AppController],

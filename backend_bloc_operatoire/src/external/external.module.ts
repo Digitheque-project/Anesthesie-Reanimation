@@ -6,6 +6,7 @@ import { ServiceChuClient } from './service-chu.client';
 import { EndoscopieClient } from './endoscopie.client';
 import { NotificationOutgoingService } from './notification-outgoing.service';
 import { PrescriptionExterneClient } from './prescription-externe.client';
+import { PrescriptionImagerieClient } from './prescription-imagerie.client';
 import { NotificationBackClient } from './notification-back.client';
 import { DossierPatientClient } from './dossier-patient.client';
 
@@ -22,6 +23,7 @@ import { DossierPatientClient } from './dossier-patient.client';
     EndoscopieClient,
     NotificationOutgoingService,
     PrescriptionExterneClient,
+    PrescriptionImagerieClient,
     NotificationBackClient,
     DossierPatientClient,
   ],
@@ -31,6 +33,7 @@ import { DossierPatientClient } from './dossier-patient.client';
     EndoscopieClient,
     NotificationOutgoingService,
     PrescriptionExterneClient,
+    PrescriptionImagerieClient,
     NotificationBackClient,
     DossierPatientClient,
   ],

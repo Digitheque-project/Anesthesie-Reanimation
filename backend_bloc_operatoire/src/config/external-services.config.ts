@@ -16,6 +16,7 @@ export default registerAs('externalServices', () => {
     endoscopieServiceId: process.env.ENDOSCOPIE_SERVICE_ID,
     notificationOrigineUrl: process.env.NOTIFICATION_ORIGINE_URL,
     prescriptionApiUrl: process.env.PRESCRIPTION_API_URL,
+    prescriptionImagerieApiUrl: process.env.PRESCRIPTION_IMAGERIE_API_URL,
     notificationApiUrl: process.env.NOTIFICATION_API_URL,
     dossierPatientApiUrl: process.env.DOSSIER_PATIENT_API_URL,
   };
