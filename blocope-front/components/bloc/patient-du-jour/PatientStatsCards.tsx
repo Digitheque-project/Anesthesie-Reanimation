@@ -19,7 +19,7 @@ export default function PatientStatsCards({ stats }: PatientStatsCardsProps) {
         </div>
         <div>
           <p className="text-primary text-[10px] font-bold uppercase tracking-widest">
-            TOTAL PATIENTS (STAT + URGENTS + NORMAUX)
+            TOTAL PATIENTS (TRÈS URGENT + URGENT + NORMAL)
           </p>
           <h3 className="text-5xl font-black text-on-surface leading-none">
             {stats.total}
@@ -29,27 +29,27 @@ export default function PatientStatsCards({ stats }: PatientStatsCardsProps) {
 
       {/* Breakdown */}
       <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-        {/* STAT */}
+        {/* TRÈS URGENT */}
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
           <span className="text-xs font-bold text-on-surface uppercase tracking-wide">
-            STAT: <span className="font-black">{stats.stat.toString().padStart(2, '0')}</span>
+            Très urgent: <span className="font-black">{stats.stat.toString().padStart(2, '0')}</span>
           </span>
         </div>
 
-        {/* URGENTS */}
+        {/* URGENT */}
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#f48120]"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
           <span className="text-xs font-bold text-on-surface uppercase tracking-wide">
-            Urgents: <span className="font-black">{stats.urgents.toString().padStart(2, '0')}</span>
+            Urgent: <span className="font-black">{stats.urgents.toString().padStart(2, '0')}</span>
           </span>
         </div>
 
-        {/* NORMAUX */}
+        {/* NORMAL */}
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
           <span className="text-xs font-bold text-on-surface uppercase tracking-wide">
-            Normaux: <span className="font-black">{stats.normaux.toString().padStart(2, '0')}</span>
+            Normal: <span className="font-black">{stats.normaux.toString().padStart(2, '0')}</span>
           </span>
         </div>
       </div>

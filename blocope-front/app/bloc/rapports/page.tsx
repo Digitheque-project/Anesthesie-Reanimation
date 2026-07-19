@@ -5,19 +5,14 @@ import { rapportsService } from '@/lib/api'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import ExportToolbar from '@/components/bloc/layout/ExportToolbar'
 import { exporterCSV, exporterExcel, exporterPDF, imprimerSection, Colonne } from '@/lib/export/export'
+import { libelleUrgence, styleUrgence } from '@/lib/urgence'
 
 const fmtDate = (v: any) => (v ? new Date(v).toLocaleDateString('fr-FR') : '—')
 
 const DECISION_STYLE: Record<string, { label: string; couleur: string; barre: string }> = {
-  APTE: { label: 'Apte', couleur: 'text-emerald-700', barre: 'bg-emerald-500' },
-  INAPTE: { label: 'Inapte', couleur: 'text-red-700', barre: 'bg-red-500' },
-  REPORT: { label: 'Report', couleur: 'text-orange-700', barre: 'bg-orange-500' },
-}
-
-const URGENCE_STYLE: Record<string, { couleur: string; barre: string }> = {
-  STAT: { couleur: 'text-red-700', barre: 'bg-red-500' },
-  URGENT: { couleur: 'text-orange-700', barre: 'bg-orange-500' },
-  NORMAL: { couleur: 'text-blue-700', barre: 'bg-blue-500' },
+  APTE: { label: 'APTE', couleur: 'text-emerald-700', barre: 'bg-emerald-500' },
+  INAPTE: { label: 'INAPTE', couleur: 'text-red-700', barre: 'bg-red-500' },
+  REPORT: { label: 'REPORT', couleur: 'text-orange-700', barre: 'bg-orange-500' },
 }
 
 export default function RapportsPage() {
@@ -75,7 +70,7 @@ export default function RapportsPage() {
     { cle: 'niveauUrgence', titre: 'Urgence' }, { cle: 'statut', titre: 'Statut' }, { cle: 'dateOperationTxt', titre: 'Date' },
     { cle: 'chirurgien', titre: 'Chirurgien' }, { cle: 'anesthesiste', titre: 'Anesthésiste' },
   ]
-  const lignesDetailExport = detailFiltre.map((o: any) => ({ ...o, dateOperationTxt: fmtDate(o.dateOperation) }))
+  const lignesDetailExport = detailFiltre.map((o: any) => ({ ...o, niveauUrgence: libelleUrgence(o.niveauUrgence), dateOperationTxt: fmtDate(o.dateOperation) }))
 
   const nomFichier = `rapport-bloc-operatoire${dateDebut && dateFin ? `-${dateDebut}-${dateFin}` : ''}`
 
@@ -243,10 +238,10 @@ export default function RapportsPage() {
           </h3>
           <div className="flex flex-wrap gap-2">
             {urgencesParNiveau.map((u: any, i: number) => {
-              const style = URGENCE_STYLE[u.niveauUrgence] || URGENCE_STYLE.NORMAL
+              const style = styleUrgence(u.niveauUrgence)
               return (
-                <span key={i} className={`px-3 py-1.5 bg-white border rounded-full text-xs font-bold ${style.couleur}`} style={{ borderColor: 'currentColor' }}>
-                  {u.niveauUrgence} · {u.count}
+                <span key={i} className={`px-3 py-1.5 bg-white border rounded-full text-xs font-bold ${style.texte}`} style={{ borderColor: 'currentColor' }}>
+                  {libelleUrgence(u.niveauUrgence)} · {u.count}
                 </span>
               )
             })}
@@ -330,13 +325,12 @@ export default function RapportsPage() {
               ) : detailFiltre.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-10 text-center text-on-surface-variant">Aucune opération sur cette période</td></tr>
               ) : detailFiltre.map((o: any, i: number) => {
-                const styleUrg = URGENCE_STYLE[o.niveauUrgence] || URGENCE_STYLE.NORMAL
                 return (
                   <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-primary font-bold">{o.idDossier}</td>
                     <td className="px-4 py-3 font-medium">{o.libelle}</td>
                     <td className="px-4 py-3 text-on-surface-variant">{o.typeChirurgie}</td>
-                    <td className="px-4 py-3"><span className={`text-[10px] font-bold uppercase ${styleUrg.couleur}`}>{o.niveauUrgence}</span></td>
+                    <td className="px-4 py-3"><span className={`text-[10px] font-bold uppercase ${styleUrgence(o.niveauUrgence).texte}`}>{libelleUrgence(o.niveauUrgence)}</span></td>
                     <td className="px-4 py-3 text-on-surface-variant">{o.statut}</td>
                     <td className="px-4 py-3 text-xs text-on-surface-variant">{fmtDate(o.dateOperation)}</td>
                     <td className="px-4 py-3">{o.chirurgien}</td>

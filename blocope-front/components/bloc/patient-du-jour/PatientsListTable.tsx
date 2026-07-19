@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { libelleUrgence, styleUrgence } from "@/lib/urgence";
 
 interface Patient {
   id: string;
@@ -69,7 +70,7 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
                   <td className="px-8 py-5 text-sm font-mono text-on-surface-variant">{patient.id}</td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${patient.etat === 'STAT' ? 'bg-tertiary-fixed text-tertiary' : 'bg-primary-fixed text-primary'}`}>
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${patient.etat === 'NORMAL' ? 'bg-primary-fixed text-primary' : `${styleUrgence(patient.etat).fondClair} ${styleUrgence(patient.etat).texte}`}`}>
                         {patient.nom?.charAt(0)}{patient.prenom?.charAt(0)}
                       </div>
                       <span className="font-bold text-on-surface">{patient.nom} {patient.prenom}</span>
@@ -78,8 +79,8 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
                   <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface">{patient.operation}</span></td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${patient.etat === 'STAT' || patient.etat === 'Urgent' ? 'bg-tertiary animate-pulse' : 'bg-secondary'}`}></span>
-                      <span className={`text-xs font-bold uppercase ${patient.etat === 'STAT' || patient.etat === 'Urgent' ? 'text-tertiary' : 'text-secondary'}`}>{patient.etat}</span>
+                      <span className={`w-2 h-2 rounded-full ${styleUrgence(patient.etat).point} ${patient.etat !== 'NORMAL' ? 'animate-pulse' : ''}`}></span>
+                      <span className={`text-xs font-bold uppercase ${styleUrgence(patient.etat).texte}`}>{libelleUrgence(patient.etat)}</span>
                     </div>
                   </td>
                   <td className="px-8 py-5 text-right">

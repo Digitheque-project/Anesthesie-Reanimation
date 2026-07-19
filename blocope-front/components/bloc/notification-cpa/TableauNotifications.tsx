@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { libelleUrgence, styleUrgence, niveauUrgenceNotification } from '@/lib/urgence'
 
 interface TableauNotificationsProps {
   notifications: any[]
@@ -20,6 +21,8 @@ export default function TableauNotifications({
   const router = useRouter()
 
   const estPatientStat = (notif: any) => Boolean(notif.estUrgent || notif.urgence === 3)
+  // "STAT" (très urgent) déclenche la VPA directe ; URGENT/NORMAL restent sur la planification
+  // CPA classique — seul l'affichage (libellé/couleur) distingue les 3 niveaux.
 
   const formatDateIntervention = (notif: any) => {
     if (!notif.dateIntervention) return null
@@ -44,6 +47,7 @@ export default function TableauNotifications({
           <tbody className="divide-y divide-outline-variant/20">
             {notifications.map((n, idx) => {
               const isStat = estPatientStat(n)
+              const niveau = niveauUrgenceNotification(n)
               return (
                 <tr
                   key={n.id || idx}
@@ -60,8 +64,8 @@ export default function TableauNotifications({
                         </span>
                       )}
                       {isStat && (
-                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">
-                          ⚡ STAT
+                        <span className={`ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full ${styleUrgence(niveau).badge}`}>
+                          ⚡ {libelleUrgence(niveau)}
                         </span>
                       )}
                     </div>
@@ -80,22 +84,16 @@ export default function TableauNotifications({
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant">{n.prescripteur || n.professeurCPA || '-'}</td>
                   <td className="px-4 py-3">
-                    {isStat ? (
-                      <span className="px-3 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-full animate-pulse">
-                        🔴 URGENT
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 text-xs font-bold bg-gray-100 text-gray-700 rounded-full">
-                        Normal
-                      </span>
-                    )}
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${styleUrgence(niveau).badge} ${niveau === 'STAT' ? 'animate-pulse' : ''}`}>
+                      {libelleUrgence(niveau)}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         if (isStat) {
-                          // Patient STAT → VPA direct
+                          // Patient très urgent (STAT) → VPA direct
                           onActionUrgent(n)
                         } else {
                           // Patient normal → Planifier CPA

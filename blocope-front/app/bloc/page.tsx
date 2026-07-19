@@ -120,7 +120,7 @@ export default function DashboardPage() {
         role={session?.acces.roleName || null}
       />
 
-      {!loading && <AlerteBandeau count={statCount} message={`${statCount} patient${statCount > 1 ? 's' : ''} STAT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
+      {!loading && <AlerteBandeau count={statCount} message={`${statCount} patient${statCount > 1 ? 's' : ''} TRÈS URGENT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
 
       <EtatGlobalPatients total={total} stat={statCount} urgent={urgentCount} normal={normalCount} />
 

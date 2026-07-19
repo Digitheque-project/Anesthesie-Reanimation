@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { libelleUrgence, niveauUrgenceNotification } from '@/lib/urgence';
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -11,35 +12,31 @@ interface NotificationModalProps {
   onNotificationRead?: (notificationId: string) => void; // ← NOUVEAU
 }
 
-type NiveauUrgence = 'normal' | 'urgent' | 'tresUrgent';
+type NiveauUrgence = 'NORMAL' | 'URGENT' | 'STAT';
 
 // Code couleur IHM par niveau d'urgence : bleu = normal, orange = urgent, rouge = très urgent
 const URGENCE_CONFIG: Record<NiveauUrgence, {
-  label: string;
   icon: string;
   badgeClass: string;
   cardClass: string;
   iconWrapClass: string;
   dotClass: string;
 }> = {
-  normal: {
-    label: 'Normal',
+  NORMAL: {
     icon: 'info',
     badgeClass: 'bg-primary/10 text-primary border-primary/30',
     cardClass: 'border-primary/30 bg-primary/5',
     iconWrapClass: 'bg-primary/10 text-primary',
     dotClass: 'bg-primary',
   },
-  urgent: {
-    label: 'Urgent',
+  URGENT: {
     icon: 'warning',
     badgeClass: 'bg-orange-100 text-orange-700 border-orange-300',
     cardClass: 'border-orange-300 bg-orange-50',
     iconWrapClass: 'bg-orange-100 text-orange-600',
     dotClass: 'bg-orange-500',
   },
-  tresUrgent: {
-    label: 'Très urgent',
+  STAT: {
     icon: 'emergency',
     badgeClass: 'bg-red-100 text-red-700 border-red-300',
     cardClass: 'border-red-300 bg-red-50',
@@ -50,16 +47,7 @@ const URGENCE_CONFIG: Record<NiveauUrgence, {
 
 // Détermine le niveau d'urgence d'une notification (champ numérique `urgence`
 // ou, à défaut, le booléen `estUrgent` transmis par les notifications internes CPA)
-function getNiveauUrgence(notification: any): NiveauUrgence {
-  const urgence = notification?.urgence;
-  if (typeof urgence === 'number') {
-    if (urgence >= 3) return 'tresUrgent';
-    if (urgence === 2) return 'urgent';
-    return 'normal';
-  }
-  if (notification?.estUrgent) return 'urgent';
-  return 'normal';
-}
+const getNiveauUrgence = niveauUrgenceNotification;
 
 export default function NotificationModal({
   isOpen,
@@ -231,7 +219,7 @@ export default function NotificationModal({
                       </span>
                       <div className="flex items-center gap-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${config.badgeClass}`}>
-                          {config.label}
+                          {libelleUrgence(niveau)}
                         </span>
                         {isRead && (
                           <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">

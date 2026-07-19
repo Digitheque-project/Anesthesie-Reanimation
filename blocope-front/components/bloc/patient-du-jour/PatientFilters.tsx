@@ -65,9 +65,9 @@ export default function PatientFilters({ onFilterChange, date, onDateChange }: P
           className="w-full px-4 py-2 bg-white rounded-lg border border-outline-variant/20 text-sm font-medium text-on-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer shadow-sm"
         >
           <option>Tous les statuts</option>
-          <option>Stable</option>
-          <option>Urgent</option>
-          <option>STAT</option>
+          <option value="NORMAL">NORMAL</option>
+          <option value="URGENT">URGENT</option>
+          <option value="STAT">TRÈS URGENT</option>
         </select>
       </div>
 

@@ -25,7 +25,7 @@ export default function EtatGlobalPatients({ total, stat, urgent, normal }: Etat
         </div>
         <div>
           <p className="text-[10px] font-bold text-primary uppercase tracking-widest">
-            Total Patients (STAT + Urgents + Normaux)
+            Total Patients (Très Urgent + Urgent + Normal)
           </p>
           <p className="text-5xl font-black text-on-surface tracking-tighter">
             {total.toString().padStart(1, '0')}
@@ -36,21 +36,21 @@ export default function EtatGlobalPatients({ total, stat, urgent, normal }: Etat
       <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-error rounded-full"></span>
-            <span className="text-xs font-bold text-slate-600">
-              STAT: <span className="text-on-surface">{stat.toString().padStart(2, '0')}</span>
+            <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+            <span className="text-xs font-bold text-slate-600 uppercase">
+              Très urgent: <span className="text-on-surface">{stat.toString().padStart(2, '0')}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-            <span className="text-xs font-bold text-slate-600">
-              Urgents: <span className="text-on-surface">{urgent.toString().padStart(2, '0')}</span>
+            <span className="text-xs font-bold text-slate-600 uppercase">
+              Urgent: <span className="text-on-surface">{urgent.toString().padStart(2, '0')}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-primary rounded-full"></span>
-            <span className="text-xs font-bold text-slate-600">
-              Normaux: <span className="text-on-surface">{normal.toString().padStart(2, '0')}</span>
+            <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+            <span className="text-xs font-bold text-slate-600 uppercase">
+              Normal: <span className="text-on-surface">{normal.toString().padStart(2, '0')}</span>
             </span>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { PatientBloc, NiveauUrgence } from "@/types/bloc";
+import { libelleUrgence, styleUrgence } from "@/lib/urgence";
 
 interface PatientsTableProps {
   patients: PatientBloc[];
@@ -68,23 +69,13 @@ export default function PatientsTable({ patients }: PatientsTableProps) {
 }
 
 function PriorityBadge({ priorite }: { priorite: NiveauUrgence }) {
-  const styles = {
-    STAT: "bg-tertiary text-on-tertiary",
-    URGENT: "bg-orange-500 text-white",
-    NORMAL: "bg-primary text-on-primary",
-  };
-
   return (
-    <span className={`${styles[priorite]} px-2 py-0.5 rounded text-[10px] font-bold uppercase`}>
-      {priorite}
+    <span className={`${styleUrgence(priorite).fondPlein} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase`}>
+      {libelleUrgence(priorite)}
     </span>
   );
 }
 
 function getHeureColor(priorite: NiveauUrgence) {
-  switch (priorite) {
-    case 'STAT': return 'text-tertiary';
-    case 'URGENT': return 'text-orange-600';
-    default: return 'text-on-surface';
-  }
+  return priorite === 'NORMAL' ? 'text-on-surface' : styleUrgence(priorite).texte;
 }

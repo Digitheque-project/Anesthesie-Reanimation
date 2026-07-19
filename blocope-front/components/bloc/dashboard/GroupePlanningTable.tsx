@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { libelleUrgence, styleUrgence } from '@/lib/urgence'
 
 export interface LignePlanning {
   priorite: 'STAT' | 'URGENT' | 'NORMAL'
@@ -29,12 +30,6 @@ const ACCENTS: Record<string, { headerBg: string; text: string; badge: string; a
   secondary: { headerBg: 'bg-secondary/5', text: 'text-secondary', badge: 'bg-secondary text-on-secondary', actionBg: 'bg-secondary/5 hover:bg-secondary/10' },
   tertiary: { headerBg: 'bg-tertiary/5', text: 'text-tertiary', badge: 'bg-tertiary text-on-tertiary', actionBg: 'bg-tertiary/5 hover:bg-tertiary/10' },
   quaternary: { headerBg: 'bg-amber-50', text: 'text-amber-700', badge: 'bg-amber-600 text-white', actionBg: 'bg-amber-50 hover:bg-amber-100' },
-}
-
-const PRIORITE_STYLE: Record<string, string> = {
-  STAT: 'bg-tertiary text-on-tertiary',
-  URGENT: 'bg-orange-500 text-white',
-  NORMAL: 'bg-primary text-on-primary',
 }
 
 export default function GroupePlanningTable({ icon, titre, accent, lignes, loading, emptyMessage }: GroupePlanningTableProps) {
@@ -74,7 +69,7 @@ export default function GroupePlanningTable({ icon, titre, accent, lignes, loadi
               {lignes.map((l, i) => (
                 <tr key={i} className="hover:bg-surface-container-lowest transition-colors">
                   <td className="px-6 py-4">
-                    <span className={`${PRIORITE_STYLE[l.priorite]} px-2 py-0.5 rounded text-[10px] font-bold`}>{l.priorite}</span>
+                    <span className={`${styleUrgence(l.priorite).fondPlein} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase`}>{libelleUrgence(l.priorite)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <b className="text-on-surface">{l.nom}</b>
@@ -83,7 +78,7 @@ export default function GroupePlanningTable({ icon, titre, accent, lignes, loadi
                   </td>
                   <td className="px-6 py-4 text-on-surface-variant">{l.intervention || '—'}</td>
                   <td className="px-6 py-4 text-on-surface-variant">{l.responsable || '—'}</td>
-                  <td className={`px-6 py-4 font-bold ${l.priorite === 'STAT' ? 'text-tertiary' : l.priorite === 'URGENT' ? 'text-orange-600' : 'text-on-surface'}`}>
+                  <td className={`px-6 py-4 font-bold ${l.priorite === 'NORMAL' ? 'text-on-surface' : styleUrgence(l.priorite).texte}`}>
                     {l.heure || '—'}
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">

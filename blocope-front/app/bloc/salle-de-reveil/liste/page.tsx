@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { salleReveilService } from '@/lib/api/salle-reveil.service';
+import { libelleUrgence, styleUrgence } from '@/lib/urgence';
 
 interface PatientReveil {
   id: string;
@@ -44,21 +45,9 @@ export default function ListeSalleReveil() {
     }
   };
 
-  const getUrgenceBadge = (niveau: string) => {
-    switch (niveau) {
-      case 'STAT': return '🔴 STAT';
-      case 'URGENT': return '🟠 Urgent';
-      default: return '🟢 Normal';
-    }
-  };
+  const getUrgenceBadge = (niveau: string) => libelleUrgence(niveau);
 
-  const getUrgenceColor = (niveau: string) => {
-    switch (niveau) {
-      case 'STAT': return 'bg-red-100 text-red-800';
-      case 'URGENT': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-green-100 text-green-800';
-    }
-  };
+  const getUrgenceColor = (niveau: string) => styleUrgence(niveau).badge;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
