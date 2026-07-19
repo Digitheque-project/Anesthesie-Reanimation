@@ -68,7 +68,7 @@ export class PatientBlocController {
   }
 
   @Get(':patientId/dossier-medical')
-  @ApiOperation({ summary: "Contenu du dossier médical partagé pertinent pour le bloc (antécédents, alertes urgentes, dernier examen physique)" })
+  @ApiOperation({ summary: "Dossier médical partagé complet (antécédents, diagnostics, histoire de la maladie, alertes urgentes, dernier examen physique, examens complémentaires urgents, suivis)" })
   getDossierMedical(@Param('patientId') patientId: string, @Request() req: any) {
     const token = (req.headers?.authorization || '').replace(/^Bearer\s+/i, '');
     return this.patientBlocService.getDossierMedical(patientId, token);

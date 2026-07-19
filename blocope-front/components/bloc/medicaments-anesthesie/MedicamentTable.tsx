@@ -1,5 +1,7 @@
 "use client";
 
+import Checkbox from "@/components/ui/Checkbox";
+
 export type MedicamentRow = {
   id: string;
   label: string;
@@ -29,20 +31,6 @@ const barClass: Record<MedicamentTableAccent, string> = {
   "primary-container": "bg-primary-container",
   error: "bg-error",
   "inverse-primary": "bg-inverse-primary",
-};
-
-const checkboxClass: Record<MedicamentTableAccent, string> = {
-  primary:
-    "border-outline-variant accent-primary focus:ring-2 focus:ring-primary/30",
-  secondary:
-    "border-outline-variant accent-secondary focus:ring-2 focus:ring-secondary/30",
-  tertiary:
-    "border-outline-variant accent-tertiary focus:ring-2 focus:ring-tertiary/30",
-  "primary-container":
-    "border-outline-variant accent-primary focus:ring-2 focus:ring-primary/30",
-  error: "border-outline-variant accent-error focus:ring-2 focus:ring-error/30",
-  "inverse-primary":
-    "border-outline-variant accent-primary focus:ring-2 focus:ring-primary/30",
 };
 
 // Badge d'icône coloré dans l'en-tête de chaque catégorie.
@@ -161,13 +149,13 @@ export default function MedicamentTable({
                   className={`transition-colors ${row.selected ? rowSelectedClass[accent] : "hover:bg-surface-container-low/50"}`}
                 >
                   <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
+                    <Checkbox
+                      accent={accent}
+                      size="sm"
                       checked={row.selected}
                       onChange={(e) =>
                         patchRow(row.id, "selected", e.target.checked)
                       }
-                      className={`h-4 w-4 cursor-pointer rounded ${checkboxClass[accent]}`}
                     />
                   </td>
                   <td className={`px-4 py-3 font-semibold ${row.selected ? "text-on-surface" : "text-on-surface-variant"}`}>

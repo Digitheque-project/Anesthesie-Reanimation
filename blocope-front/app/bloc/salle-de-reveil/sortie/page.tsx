@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { medecinService } from '@/lib/api'
 import { useRole } from '@/lib/hooks/useRole'
+import Checkbox from '@/components/ui/Checkbox'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -104,9 +105,8 @@ function SortieSalleReveilPageContent() {
               { key: 'familleInformee', label: 'Famille informée' },
             ].map(item => (
               <label key={item.key} className="flex items-center space-x-3 p-3 rounded-lg bg-[#e6f6ff] border border-[#c7dde9]/20 cursor-pointer">
-                <input type="checkbox" checked={checklist[item.key as keyof typeof checklist]}
-                  onChange={e => setChecklist({...checklist, [item.key]: e.target.checked})}
-                  className="w-5 h-5 text-[#00478d] rounded" />
+                <Checkbox checked={checklist[item.key as keyof typeof checklist]}
+                  onChange={e => setChecklist({...checklist, [item.key]: e.target.checked})} />
                 <span className="font-medium">{item.label}</span>
               </label>
             ))}

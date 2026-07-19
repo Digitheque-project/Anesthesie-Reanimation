@@ -7,6 +7,7 @@ import { patientService } from '@/lib/api'
 import { apiClient } from '@/lib/api/client'
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
+import Checkbox from '@/components/ui/Checkbox'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -133,22 +134,22 @@ function SalleDeReveilPageContent() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#727783] mb-2">À l'arrivée en salle</p>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <input type="checkbox" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
+                  <Checkbox size="sm" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} />
                   <span className="ml-3 text-sm">Intubation (initial)</span>
                 </label>
                 <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <input type="checkbox" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
+                  <Checkbox size="sm" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} />
                   <span className="ml-3 text-sm">Curarisation (initial)</span>
                 </label>
               </div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#727783] mb-2">Réponse observée</p>
               <div className="grid grid-cols-2 gap-4">
                 <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <input type="checkbox" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
+                  <Checkbox size="sm" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} />
                   <span className="ml-3 text-sm">Extubation obtenue</span>
                 </label>
                 <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <input type="checkbox" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} className="w-4 h-4 text-[#00478d] rounded" />
+                  <Checkbox size="sm" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} />
                   <span className="ml-3 text-sm">Décurarisation obtenue</span>
                 </label>
               </div>
@@ -230,10 +231,9 @@ function SalleDeReveilPageContent() {
                 { key: 'familleInformee', label: 'Famille / service informé' },
               ].map(item => (
                 <label key={item.key} className="flex items-center gap-3 p-3 bg-[#e6f6ff] rounded-lg cursor-pointer">
-                  <input type="checkbox"
+                  <Checkbox
                     checked={checklistSortie[item.key as keyof typeof checklistSortie]}
-                    onChange={e => setChecklistSortie({ ...checklistSortie, [item.key]: e.target.checked })}
-                    className="w-5 h-5 text-[#00478d] rounded" />
+                    onChange={e => setChecklistSortie({ ...checklistSortie, [item.key]: e.target.checked })} />
                   <span className="text-sm font-medium">{item.label}</span>
                 </label>
               ))}

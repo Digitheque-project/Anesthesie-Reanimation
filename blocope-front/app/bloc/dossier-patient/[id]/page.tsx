@@ -91,8 +91,8 @@ function DossierPatientPageContent() {
         <span className="material-symbols-outlined">arrow_back</span> Retour
       </button>
 
-      <h1 className="text-3xl font-extrabold text-on-surface mb-2">📋 Detail prescription</h1>
-      <p className="text-sm text-on-surface-variant mb-4">Prescription et informations médicales</p>
+      <h1 className="text-3xl font-extrabold text-on-surface mb-2">📁 Dossier Patient</h1>
+      <p className="text-sm text-on-surface-variant mb-4">Dossier médical complet et suivi de la prise en charge</p>
 
       {/* En-tête Patient */}
       <div className="bg-white rounded-xl p-4 shadow-sm border mb-3">
@@ -113,6 +113,17 @@ function DossierPatientPageContent() {
           <div><span className="text-xs font-bold text-gray-500 uppercase">Urgence</span><p className={`font-bold uppercase ${styleUrgence(p.niveauUrgence).texte}`}>{libelleUrgence(p.niveauUrgence)}</p></div>
           <div><span className="text-xs font-bold text-gray-500 uppercase">Statut</span><p className="font-bold text-blue-600">{p.statut || '—'}</p></div>
         </div>
+      </div>
+
+      <DossierMedicalPanel patientId={patientId} />
+
+      {/* Contexte de prise en charge actuelle — distinct du dossier médical ci-dessus : ce qui
+          suit concerne uniquement la prescription/admission en cours, pas l'historique médical
+          du patient. */}
+      <div className="flex items-center gap-3 my-5">
+        <span className="material-symbols-outlined text-on-surface-variant">event_note</span>
+        <h2 className="text-sm font-extrabold text-on-surface-variant uppercase tracking-wide">Prise en charge en cours</h2>
+        <div className="flex-1 h-px bg-outline-variant/30" />
       </div>
 
       {/* Suivi CPA */}
@@ -203,8 +214,6 @@ function DossierPatientPageContent() {
           </div>
         </div>
       </div>
-
-      <DossierMedicalPanel patientId={patientId} />
 
       {/* Consignes */}
       <div className="bg-white rounded-xl p-4 shadow-sm border">

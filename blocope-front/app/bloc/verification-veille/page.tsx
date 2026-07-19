@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { patientService } from '@/lib/api'
 import { useRole } from '@/lib/hooks/useRole'
+import Checkbox from '@/components/ui/Checkbox'
 
 export default function VerificationVeillePage() {
   return (
@@ -170,11 +171,11 @@ function VerificationVeillePageContent() {
             </div>
             <div className="space-y-4">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={!form.premedicationFaite} onChange={e => setForm({...form, premedicationFaite: !e.target.checked})} className="w-4 h-4 text-primary rounded" />
+                <Checkbox checked={!form.premedicationFaite} onChange={e => setForm({...form, premedicationFaite: !e.target.checked})} />
                 <span className="text-sm font-semibold">Non-faite</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.premedicationFaite} onChange={e => setForm({...form, premedicationFaite: e.target.checked})} className="w-4 h-4 text-primary rounded" />
+                <Checkbox checked={form.premedicationFaite} onChange={e => setForm({...form, premedicationFaite: e.target.checked})} />
                 <span className="text-sm font-semibold">Faite</span>
               </label>
             </div>

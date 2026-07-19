@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 import { useRole } from '@/lib/hooks/useRole'
+import Checkbox from '@/components/ui/Checkbox'
 
 export default function ProtocoleOperatoirePage() {
   return (
@@ -124,7 +125,7 @@ function ProtocoleOperatoirePageContent() {
                   <div key={item.key} className="flex items-center justify-between bg-surface-container-low p-2 rounded-lg mb-1">
                     <span className="text-xs font-medium">{item.label}</span>
                     <label className="flex items-center space-x-2">
-                      <input className="w-4 h-4 rounded border-surface-dim text-secondary focus:ring-secondary/20" type="checkbox"
+                      <Checkbox size="sm" accent="secondary"
                         checked={form[item.key as keyof typeof form] as boolean} onChange={e => setForm({...form, [item.key]: e.target.checked})} />
                       <span className="text-[10px] font-bold text-secondary uppercase">En Y</span>
                     </label>

@@ -73,16 +73,23 @@ export class PatientBlocService {
     }
   }
 
-  // Contenu du dossier médical partagé (service externe Dossier Patient) pertinent pour le bloc :
-  // antécédents actifs (allergies...), alertes médicales urgentes, dernier examen physique.
-  // Tolérant aux pannes : une catégorie indisponible n'empêche pas les autres de s'afficher.
+  // Contenu complet du dossier médical partagé (service externe Dossier Patient), pour la vraie
+  // fiche "Dossier Patient" (pas seulement un résumé) : antécédents actifs, diagnostics posés,
+  // histoire de la maladie actuelle, alertes urgentes, dernier examen physique, examens
+  // complémentaires urgents, suivi/évolution. Tolérant aux pannes : une catégorie indisponible
+  // n'empêche pas les autres de s'afficher (chaque appel du client échoue en silence vers []).
   async getDossierMedical(patientId: string, token: string) {
-    const [antecedents, alertesUrgentes, dernierExamen] = await Promise.all([
-      this.dossierPatientClient.getAntecedentsActifs(patientId, token),
-      this.dossierPatientClient.getHistoriquesUrgents(patientId, token),
-      this.dossierPatientClient.getDernierExamenPhysique(patientId, token),
-    ]);
-    return { antecedents, alertesUrgentes, dernierExamen };
+    const [antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis] =
+      await Promise.all([
+        this.dossierPatientClient.getAntecedentsActifs(patientId, token),
+        this.dossierPatientClient.getDiagnostics(patientId, token),
+        this.dossierPatientClient.getHistoriqueMaladieRecente(patientId, token),
+        this.dossierPatientClient.getHistoriquesUrgents(patientId, token),
+        this.dossierPatientClient.getDernierExamenPhysique(patientId, token),
+        this.dossierPatientClient.getExamensComplementairesUrgents(patientId, token),
+        this.dossierPatientClient.getSuivis(patientId, token),
+      ]);
+    return { antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis };
   }
 
   async update(patientId: string, dto: any): Promise<PatientBloc> {
