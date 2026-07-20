@@ -179,7 +179,7 @@ function ConsultationCpaPageContent() {
     }
   }, [patient?.dateIntervention]);
 
-  const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'STAT';
+  const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'TRES_URGENT';
 
   // La CPA se remplit en deux temps : le Major/Responsable CPA saisit l'examen et la décision
   // (premier arrivé) ; une fois enregistrée, seul l'anesthésiste peut encore y toucher — pour y

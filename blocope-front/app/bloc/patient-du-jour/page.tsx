@@ -37,7 +37,7 @@ export default function PatientDuJourPage() {
           nom: p.nom,
           prenom: p.prenom,
           operation: notif?.intervention || p.libelle || 'Non spécifiée',
-          etat: p.niveauUrgence === 'STAT' ? 'STAT' : p.niveauUrgence === 'URGENT' ? 'URGENT' : 'NORMAL',
+          etat: p.niveauUrgence === 'TRES_URGENT' ? 'TRES_URGENT' : p.niveauUrgence === 'URGENT' ? 'URGENT' : 'NORMAL',
           chirurgien: notif?.chirurgien?.nom || p.chirurgien_nom || '',
         }
       })
@@ -56,7 +56,7 @@ export default function PatientDuJourPage() {
 
   const stats = {
     total: patients.length,
-    stat: patients.filter(p => p.etat === 'STAT').length,
+    tresUrgent: patients.filter(p => p.etat === 'TRES_URGENT').length,
     urgents: patients.filter(p => p.etat === 'URGENT').length,
     normaux: patients.filter(p => p.etat === 'NORMAL').length,
   }

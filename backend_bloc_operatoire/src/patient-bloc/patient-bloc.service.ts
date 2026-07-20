@@ -24,7 +24,7 @@ export class PatientBlocService {
     if (!demande) throw new Error('Demande non trouvée');
 
     const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
-    const niveauUrgence = estUrgence ? NiveauUrgence.STAT : NiveauUrgence.NORMAL;
+    const niveauUrgence = estUrgence ? NiveauUrgence.TRES_URGENT : NiveauUrgence.NORMAL;
     // Un patient urgent n'a pas de "vérification à la veille" (chirurgie immédiate) : il passe
     // par la même consultation que la CPA, juste étiquetée VPA côté interface. Le statut initial
     // est donc toujours EN_ATTENTE_CPA, urgent ou non.

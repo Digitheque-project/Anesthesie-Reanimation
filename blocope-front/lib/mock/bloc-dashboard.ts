@@ -49,7 +49,7 @@ export const mockPatientsJour: PatientBloc[] = [
     heure: "08:00",
     dureePrevue: "01:30",
     departBloc: "08:15",
-    priorite: "STAT",
+    priorite: "TRES_URGENT",
   },
   {
     id: "2",

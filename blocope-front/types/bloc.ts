@@ -21,7 +21,7 @@ export interface StatCard {
   color: string; // Tailwind color name like 'primary', 'secondary', etc.
 }
 
-export type NiveauUrgence = 'STAT' | 'URGENT' | 'NORMAL';
+export type NiveauUrgence = 'TRES_URGENT' | 'URGENT' | 'NORMAL';
 
 export interface PatientBloc {
   id: string;

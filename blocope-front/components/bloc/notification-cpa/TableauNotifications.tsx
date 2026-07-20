@@ -21,9 +21,9 @@ export default function TableauNotifications({
 }: TableauNotificationsProps) {
   const router = useRouter()
 
-  const estPatientStat = (notif: any) => Boolean(notif.estUrgent || notif.urgence === 3)
-  // "STAT" (très urgent) déclenche la VPA directe ; URGENT/NORMAL restent sur la planification
-  // CPA classique — seul l'affichage (libellé/couleur) distingue les 3 niveaux.
+  const estPatientTresUrgent = (notif: any) => Boolean(notif.estUrgent || notif.urgence === 3)
+  // TRÈS URGENT déclenche la VPA directe ; URGENT/NORMAL restent sur la planification CPA
+  // classique — seul l'affichage (libellé/couleur) distingue les 3 niveaux.
 
   const formatDateIntervention = (notif: any) => {
     if (!notif.dateIntervention) return null
@@ -47,7 +47,7 @@ export default function TableauNotifications({
           </thead>
           <tbody className="divide-y divide-outline-variant/20">
             {notifications.map((n, idx) => {
-              const isStat = estPatientStat(n)
+              const estTresUrgent = estPatientTresUrgent(n)
               const niveau = niveauUrgenceNotification(n)
               return (
                 <tr
@@ -64,7 +64,7 @@ export default function TableauNotifications({
                           🔗 {n.sourceServiceName || 'Externe'}
                         </span>
                       )}
-                      {isStat && (
+                      {estTresUrgent && (
                         <span className={`ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full ${styleUrgence(niveau).badge}`}>
                           ⚡ {libelleUrgence(niveau)}
                         </span>
@@ -84,7 +84,7 @@ export default function TableauNotifications({
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant">{n.prescripteur || n.professeurCPA || '-'}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${styleUrgence(niveau).badge} ${niveau === 'STAT' ? 'animate-pulse' : ''}`}>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${styleUrgence(niveau).badge} ${niveau === 'TRES_URGENT' ? 'animate-pulse' : ''}`}>
                       {libelleUrgence(niveau)}
                     </span>
                   </td>
@@ -92,23 +92,23 @@ export default function TableauNotifications({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (isStat) {
-                          // Patient très urgent (STAT) → VPA direct
+                        if (estTresUrgent) {
+                          // Patient très urgent → VPA direct
                           onActionUrgent(n)
                         } else {
                           // Patient normal → Planifier CPA
                           onPlanifier(n)
                         }
                       }}
-                      disabled={!isStat && !peutPlanifier}
-                      title={!isStat && !peutPlanifier ? 'Planification réservée au Responsable CPA ou au Major' : undefined}
+                      disabled={!estTresUrgent && !peutPlanifier}
+                      title={!estTresUrgent && !peutPlanifier ? 'Planification réservée au Responsable CPA ou au Major' : undefined}
                       className={`px-4 py-1.5 text-xs font-bold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed ${
-                        isStat
+                        estTresUrgent
                           ? 'bg-red-500 hover:bg-red-600 text-white shadow-sm'
                           : 'bg-primary text-white hover:bg-primary-dark'
                       }`}
                     >
-                      {isStat ? '⚡ VPA Direct' : '📋 Planifier CPA'}
+                      {estTresUrgent ? '⚡ VPA Direct' : '📋 Planifier CPA'}
                     </button>
                   </td>
                 </tr>

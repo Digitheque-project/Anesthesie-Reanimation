@@ -13,7 +13,7 @@ export enum PatientStatut {
 }
 
 export enum NiveauUrgence {
-  STAT = 'STAT',
+  TRES_URGENT = 'TRES_URGENT',
   URGENT = 'URGENT',
   NORMAL = 'NORMAL',
 }

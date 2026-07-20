@@ -16,7 +16,7 @@ const nomPatient = (p: any) => {
   const prenom = (p?.prenom || '').trim()
   return `${nom.toUpperCase()}${prenom ? `, ${prenom}` : ''}`
 }
-const priorite = (niveau?: string): LignePlanning['priorite'] => niveau === 'STAT' ? 'STAT' : niveau === 'URGENT' ? 'URGENT' : 'NORMAL'
+const priorite = (niveau?: string): LignePlanning['priorite'] => niveau === 'TRES_URGENT' ? 'TRES_URGENT' : niveau === 'URGENT' ? 'URGENT' : 'NORMAL'
 const estAujourdhui = (date?: string | Date | null) => {
   if (!date) return false
   return new Date(date).toDateString() === new Date().toDateString()
@@ -113,10 +113,10 @@ export default function DashboardPage() {
 
   const urgencesParNiveau: { niveauurgence?: string; niveauUrgence?: string; count: string }[] = stats.urgencesParNiveau || []
   const compte = (niveau: string) => Number(urgencesParNiveau.find(u => (u.niveauUrgence || u.niveauurgence) === niveau)?.count || 0)
-  const statCount = compte('STAT')
+  const tresUrgentCount = compte('TRES_URGENT')
   const urgentCount = compte('URGENT')
   const normalCount = compte('NORMAL')
-  const total = stats.totalPatientsActifs ?? (statCount + urgentCount + normalCount)
+  const total = stats.totalPatientsActifs ?? (tresUrgentCount + urgentCount + normalCount)
 
   return (
     <div className="p-8 space-y-6">
@@ -125,9 +125,9 @@ export default function DashboardPage() {
         role={session?.acces.roleName || null}
       />
 
-      {!loading && <AlerteBandeau count={statCount} message={`${statCount} patient${statCount > 1 ? 's' : ''} TRÈS URGENT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
+      {!loading && <AlerteBandeau count={tresUrgentCount} message={`${tresUrgentCount} patient${tresUrgentCount > 1 ? 's' : ''} TRÈS URGENT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
 
-      <EtatGlobalPatients total={total} stat={statCount} urgent={urgentCount} normal={normalCount} />
+      <EtatGlobalPatients total={total} stat={tresUrgentCount} urgent={urgentCount} normal={normalCount} />
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">

@@ -16,7 +16,7 @@ export interface PrescriptionBlocExterne {
   id: string;
   patientId: string;
   prescripteurId: string;
-  urgence: 'NORMALE' | 'URGENTE' | 'STAT' | string;
+  urgence: 'NORMAL' | 'URGENT' | 'TRES_URGENT' | string;
   alertes?: string | null;
   dateIntervention?: string | null;
   chirurgien?: string | null;

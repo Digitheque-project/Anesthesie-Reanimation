@@ -67,7 +67,7 @@ export default function PatientFilters({ onFilterChange, date, onDateChange }: P
           <option>Tous les statuts</option>
           <option value="NORMAL">NORMAL</option>
           <option value="URGENT">URGENT</option>
-          <option value="STAT">TRÈS URGENT</option>
+          <option value="TRES_URGENT">TRÈS URGENT</option>
         </select>
       </div>
 

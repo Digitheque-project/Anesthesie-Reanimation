@@ -64,7 +64,7 @@ export default function TopBar() {
     const onNotification = (notif: NotificationTempsReel) => {
       if (notif.type !== 'new_prescription' && notif.type !== 'new_demande_cpa_externe') return;
       const urgence = (notif.data?.urgence as string | number) ?? '';
-      const estUrgent = urgence === 'URGENTE' || urgence === 'STAT' || Number(urgence) >= 4;
+      const estUrgent = urgence === 'URGENT' || urgence === 'URGENTE' || urgence === 'TRES_URGENT' || urgence === 'STAT' || Number(urgence) >= 4;
       if (estUrgent) {
         jouerSonPrescriptionUrgente();
       } else {

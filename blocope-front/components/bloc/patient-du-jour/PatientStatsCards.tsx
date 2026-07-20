@@ -1,7 +1,7 @@
 interface PatientStatsCardsProps {
   stats: {
     total: number;
-    stat: number;
+    tresUrgent: number;
     urgents: number;
     normaux: number;
   };
@@ -33,7 +33,7 @@ export default function PatientStatsCards({ stats }: PatientStatsCardsProps) {
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
           <span className="text-xs font-bold text-on-surface uppercase tracking-wide">
-            Très urgent: <span className="font-black">{stats.stat.toString().padStart(2, '0')}</span>
+            Très urgent: <span className="font-black">{stats.tresUrgent.toString().padStart(2, '0')}</span>
           </span>
         </div>
 

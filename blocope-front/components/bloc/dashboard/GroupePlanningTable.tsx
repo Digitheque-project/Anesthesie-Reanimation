@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { libelleUrgence, styleUrgence } from '@/lib/urgence'
 
 export interface LignePlanning {
-  priorite: 'STAT' | 'URGENT' | 'NORMAL'
+  priorite: 'TRES_URGENT' | 'URGENT' | 'NORMAL'
   nom: string
   intervention: string
   responsable?: string

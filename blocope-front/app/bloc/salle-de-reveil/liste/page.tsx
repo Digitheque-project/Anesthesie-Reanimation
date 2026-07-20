@@ -12,7 +12,7 @@ interface PatientReveil {
   prenom: string;
   idDossier: string;
   intervention: string;
-  niveauUrgence: 'STAT' | 'URGENT' | 'NORMAL' | string;
+  niveauUrgence: 'TRES_URGENT' | 'URGENT' | 'NORMAL' | string;
   depuis: string;
 }
 

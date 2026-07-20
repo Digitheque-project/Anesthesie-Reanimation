@@ -13,7 +13,7 @@ interface NotificationModalProps {
   onNotificationRead?: (notificationId: string) => void; // ← NOUVEAU
 }
 
-type NiveauUrgence = 'NORMAL' | 'URGENT' | 'STAT';
+type NiveauUrgence = 'NORMAL' | 'URGENT' | 'TRES_URGENT';
 
 // Code couleur IHM par niveau d'urgence : bleu = normal, orange = urgent, rouge = très urgent
 const URGENCE_CONFIG: Record<NiveauUrgence, {
@@ -37,7 +37,7 @@ const URGENCE_CONFIG: Record<NiveauUrgence, {
     iconWrapClass: 'bg-orange-100 text-orange-600',
     dotClass: 'bg-orange-500',
   },
-  STAT: {
+  TRES_URGENT: {
     icon: 'emergency',
     badgeClass: 'bg-red-100 text-red-700 border-red-300',
     cardClass: 'border-red-300 bg-red-50',

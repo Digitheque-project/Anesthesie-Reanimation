@@ -62,8 +62,11 @@ export class PrescriptionService {
   }
 
   private mapUrgence(urgence: string): NiveauUrgence {
-    if (urgence === 'STAT') return NiveauUrgence.STAT;
-    if (urgence === 'URGENTE') return NiveauUrgence.URGENT;
+    // Le service Prescription (bloc) envoie 'TRES_URGENT'/'URGENT'/'NORMAL' — 'STAT'/'URGENTE'
+    // conservés en compatibilité avec d'anciens payloads ou d'autres sources.
+    const u = (urgence || '').toUpperCase();
+    if (u === 'TRES_URGENT' || u === 'STAT') return NiveauUrgence.TRES_URGENT;
+    if (u === 'URGENT' || u === 'URGENTE') return NiveauUrgence.URGENT;
     return NiveauUrgence.NORMAL;
   }
 
