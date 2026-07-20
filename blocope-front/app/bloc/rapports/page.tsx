@@ -53,7 +53,7 @@ export default function RapportsPage() {
     if (!rechercheDetail.trim()) return operationsDetail
     const q = rechercheDetail.trim().toLowerCase()
     return operationsDetail.filter((o: any) =>
-      [o.idDossier, o.libelle, o.chirurgien, o.anesthesiste, o.typeChirurgie].some((v: any) => String(v || '').toLowerCase().includes(q))
+      [o.patientNom, o.libelle, o.chirurgien, o.anesthesiste, o.typeChirurgie].some((v: any) => String(v || '').toLowerCase().includes(q))
     )
   }, [operationsDetail, rechercheDetail])
 
@@ -66,7 +66,7 @@ export default function RapportsPage() {
   const colonnesChirurgiens: Colonne[] = [{ cle: 'nomComplet', titre: 'Chirurgien' }, { cle: 'nbOperations', titre: "Nb opérations" }]
   const colonnesAnesthesistes: Colonne[] = [{ cle: 'nomComplet', titre: 'Anesthésiste' }, { cle: 'nbCPA', titre: 'CPA réalisées' }, { cle: 'nbOperations', titre: 'Opérations suivies' }, { cle: 'nbScoresSCCRE', titre: 'Scores SCCRE' }]
   const colonnesDetail: Colonne[] = [
-    { cle: 'idDossier', titre: 'Dossier' }, { cle: 'libelle', titre: 'Intervention' }, { cle: 'typeChirurgie', titre: 'Type' },
+    { cle: 'patientNom', titre: 'Patient' }, { cle: 'libelle', titre: 'Intervention' }, { cle: 'typeChirurgie', titre: 'Type' },
     { cle: 'niveauUrgence', titre: 'Urgence' }, { cle: 'statut', titre: 'Statut' }, { cle: 'dateOperationTxt', titre: 'Date' },
     { cle: 'chirurgien', titre: 'Chirurgien' }, { cle: 'anesthesiste', titre: 'Anesthésiste' },
   ]
@@ -309,7 +309,7 @@ export default function RapportsPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-surface-container-low sticky top-0">
               <tr className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-                <th className="px-4 py-3">Dossier</th>
+                <th className="px-4 py-3">Patient</th>
                 <th className="px-4 py-3">Intervention</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Urgence</th>
@@ -327,7 +327,7 @@ export default function RapportsPage() {
               ) : detailFiltre.map((o: any, i: number) => {
                 return (
                   <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-primary font-bold">{o.idDossier}</td>
+                    <td className="px-4 py-3 text-xs text-primary font-bold">{o.patientNom}</td>
                     <td className="px-4 py-3 font-medium">{o.libelle}</td>
                     <td className="px-4 py-3 text-on-surface-variant">{o.typeChirurgie}</td>
                     <td className="px-4 py-3"><span className={`text-[10px] font-bold uppercase ${styleUrgence(o.niveauUrgence).texte}`}>{libelleUrgence(o.niveauUrgence)}</span></td>

@@ -67,7 +67,6 @@ export default function ArchivesPage() {
   }
 
   const colonnesListe: Colonne[] = [
-    { cle: 'idDossier', titre: 'ID Dossier' },
     { cle: 'nomComplet', titre: 'Nom & Prénom' },
     { cle: 'sexe', titre: 'Sexe' },
     { cle: 'dateOperation', titre: "Date d'opération" },
@@ -76,7 +75,6 @@ export default function ArchivesPage() {
     { cle: 'statut', titre: 'Statut' },
   ]
   const versLignesExport = (liste: any[]) => liste.map(p => ({
-    idDossier: p.idDossier || p.id,
     nomComplet: formaterNomPatient(p),
     sexe: p.sexe || 'H',
     dateOperation: fmtDate(p.dateIntervention || p.updatedAt),
@@ -99,12 +97,12 @@ export default function ArchivesPage() {
       const equipe = collecterEquipe(dossier).map(m => ({ nom: m.nom, role: m.role, etapesTxt: Array.from(m.etapes).join(', ') }))
       await exporterPDF(
         `Dossier patient — ${nomAffiche}`,
-        `${dossier.patient?.idDossier || patientId} — Généré le ${fmtDateHeure(new Date())}`,
+        `Généré le ${fmtDateHeure(new Date())}`,
         [
           { titre: 'Chronologie du parcours', colonnes: [{ cle: 'etape', titre: 'Étape' }, { cle: 'date', titre: 'Date / Heure' }, { cle: 'detail', titre: 'Détail' }, { cle: 'personnel', titre: 'Personnel' }], lignes: chronologie },
           { titre: 'Personnel intervenu', colonnes: [{ cle: 'nom', titre: 'Nom' }, { cle: 'role', titre: 'Rôle' }, { cle: 'etapesTxt', titre: 'Étapes' }], lignes: equipe },
         ],
-        `dossier-${dossier.patient?.idDossier || patientId}`
+        `dossier-${nomAffiche.replace(/\s+/g, '-')}`
       )
     } catch (err) {
       console.error(err)

@@ -108,8 +108,7 @@ function DossierPatientPageContent() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-          <div><span className="text-xs font-bold text-gray-500 uppercase">ID Dossier</span><p className="font-bold">{p.idDossier || '—'}</p></div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
           <div><span className="text-xs font-bold text-gray-500 uppercase">Chambre</span><p>{p.chambre || '—'}</p></div>
           <div><span className="text-xs font-bold text-gray-500 uppercase">Urgence</span><p className={`font-bold uppercase ${styleUrgence(p.niveauUrgence).texte}`}>{libelleUrgence(p.niveauUrgence)}</p></div>
           <div><span className="text-xs font-bold text-gray-500 uppercase">Statut</span><p className="font-bold text-blue-600">{p.statut || '—'}</p></div>

@@ -54,7 +54,6 @@ export default function DashboardPage() {
         return {
           priorite: n.estUrgent ? 'URGENT' : priorite(n.patient?.niveauUrgence),
           nom: n.patientNom || nomPatient(n.patient),
-          idDossier: n.patient?.idDossier || '—',
           intervention: n.intervention || n.motif || '',
           responsable: n.chirurgienNom || n.chirurgien?.nom || n.prescripteur || '',
           heure: n.heurePrescription,
@@ -70,7 +69,6 @@ export default function DashboardPage() {
       return {
         priorite: priorite(p.niveauUrgence),
         nom: nomPatient(p),
-        idDossier: p.idDossier || '—',
         intervention: p.libelle || p.typeChirurgie || '',
         responsable: p.chirurgien_nom || '',
         heure: p.dateIntervention ? new Date(p.dateIntervention).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : undefined,

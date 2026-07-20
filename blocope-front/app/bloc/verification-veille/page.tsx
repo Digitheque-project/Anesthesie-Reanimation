@@ -80,8 +80,6 @@ function VerificationVeillePageContent() {
             <h2 className="text-2xl font-extrabold text-primary tracking-tight">{patientNom}</h2>
             <div className="flex gap-4 text-sm text-on-surface-variant font-medium">
               <span>{patient?.dateNaissance ? `Née le ${new Date(patient.dateNaissance).toLocaleDateString('fr-FR')} (${new Date().getFullYear() - new Date(patient.dateNaissance).getFullYear()} ans)` : '—'}</span>
-              <span className="text-outline-variant">•</span>
-              <span>IPP: {patient?.idDossier || '—'}</span>
             </div>
           </div>
         </div>

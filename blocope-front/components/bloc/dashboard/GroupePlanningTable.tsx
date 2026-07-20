@@ -6,7 +6,6 @@ import { libelleUrgence, styleUrgence } from '@/lib/urgence'
 export interface LignePlanning {
   priorite: 'STAT' | 'URGENT' | 'NORMAL'
   nom: string
-  idDossier: string
   intervention: string
   responsable?: string
   heure?: string
@@ -58,7 +57,7 @@ export default function GroupePlanningTable({ icon, titre, accent, lignes, loadi
             <thead>
               <tr className="bg-slate-50 text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
                 <th className="px-6 py-3">Priorité</th>
-                <th className="px-6 py-3">Patient &amp; ID</th>
+                <th className="px-6 py-3">Patient</th>
                 <th className="px-6 py-3">Intervention</th>
                 <th className="px-6 py-3">Responsable</th>
                 <th className="px-6 py-3">Heure</th>
@@ -73,8 +72,6 @@ export default function GroupePlanningTable({ icon, titre, accent, lignes, loadi
                   </td>
                   <td className="px-6 py-4">
                     <b className="text-on-surface">{l.nom}</b>
-                    <br />
-                    <span className="text-[10px] text-on-surface-variant">{l.idDossier}</span>
                   </td>
                   <td className="px-6 py-4 text-on-surface-variant">{l.intervention || '—'}</td>
                   <td className="px-6 py-4 text-on-surface-variant">{l.responsable || '—'}</td>

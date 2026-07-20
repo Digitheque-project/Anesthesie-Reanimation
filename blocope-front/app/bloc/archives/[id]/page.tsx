@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api/client'
 import ExportToolbar from '@/components/bloc/layout/ExportToolbar'
 import { exporterCSV, exporterExcel, exporterPDF, imprimerSection, Colonne } from '@/lib/export/export'
 import { fmtDate, fmtDateHeure, fmtHeure, nomPersonne, collecterEquipe, construireChronologie } from '@/lib/export/dossier-patient'
+import { formaterNomPatient } from '@/lib/patient'
 
 export default function ArchiveDetailPage() {
   const params = useParams()
@@ -38,8 +39,8 @@ export default function ArchiveDetailPage() {
 
   const p = dossier.patient || {}
   const age = p.dateNaissance ? new Date().getFullYear() - new Date(p.dateNaissance).getFullYear() : '?'
-  const nomComplet = `${p.nom || ''} ${p.prenom || ''}`.trim() || 'Patient'
-  const nomFichier = `dossier-${p.idDossier || patientId}`
+  const nomComplet = formaterNomPatient(p)
+  const nomFichier = `dossier-${nomComplet.replace(/\s+/g, '-')}`
 
   const colonnesChrono: Colonne[] = [
     { cle: 'etape', titre: 'Étape' },
@@ -72,7 +73,7 @@ export default function ArchiveDetailPage() {
             ], nomFichier)}
             onPDF={() => exporterPDF(
               `Dossier patient — ${nomComplet}`,
-              `${p.idDossier || patientId} — Archivé le ${fmtDateHeure(dossier.dateArchivage)}`,
+              `Archivé le ${fmtDateHeure(dossier.dateArchivage)}`,
               [
                 { titre: 'Chronologie du parcours', colonnes: colonnesChrono, lignes: chronologie },
                 { titre: 'Personnel intervenu', colonnes: colonnesEquipe, lignes: lignesEquipeExport },
@@ -90,8 +91,6 @@ export default function ArchiveDetailPage() {
             <div>
               <h1 className="font-headline text-3xl font-extrabold text-on-surface">{nomComplet}</h1>
               <p className="text-sm text-on-surface-variant flex items-center gap-3 mt-1 flex-wrap">
-                <span className="font-mono bg-surface-container px-2 py-0.5 rounded text-xs">{p.idDossier || '—'}</span>
-                <span className="w-1.5 h-1.5 bg-on-surface-variant rounded-full opacity-30"></span>
                 <span>Né le {fmtDate(p.dateNaissance)} ({age} ans)</span>
                 <span className="w-1.5 h-1.5 bg-on-surface-variant rounded-full opacity-30"></span>
                 <span>Groupe sanguin : <strong>{p.groupeSanguin || '—'}</strong></span>

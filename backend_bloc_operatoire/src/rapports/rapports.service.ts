@@ -162,13 +162,19 @@ export class RapportsService {
     });
     const patientIds = Array.from(new Set(activites.map(a => a.patientId)));
     const patients = patientIds.length ? await this.patientBlocRepo.findBy({ patientId: In(patientIds) }) : [];
-    const patientMap = new Map(patients.map(p => [p.patientId, p]));
+    // Identité (nom/prénom) enrichie depuis Accueil — jamais l'ID affiché à la place côté front.
+    let patientsEnrichis: any[] = patients;
+    try {
+      patientsEnrichis = await this.accueilClient.enrichWithIdentity(patients);
+    } catch {
+      // dégradé vers les données non enrichies
+    }
+    const patientMap = new Map(patientsEnrichis.map((p) => [p.patientId, p]));
 
     return activites.map(a => {
       const patient = patientMap.get(a.patientId);
       return {
-        patientId: a.patientId,
-        idDossier: patient?.idDossier || a.patientId,
+        patientNom: patient?.nom ? `${patient.nom}${patient.prenom ? ' ' + patient.prenom : ''}` : 'Patient inconnu',
         libelle: patient?.libelle || '—',
         typeChirurgie: patient?.typeChirurgie || '—',
         niveauUrgence: patient?.niveauUrgence || '—',

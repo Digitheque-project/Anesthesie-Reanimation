@@ -108,7 +108,6 @@ export default function RendezVousPage() {
                   <td className="px-6 py-4 font-extrabold text-primary text-sm">{c.heureDebut}</td>
                   <td className="px-6 py-4">
                     <div className="font-bold text-on-surface text-sm">{formaterNomPatient(c.patient)}</div>
-                    <div className="text-[10px] text-on-surface-variant font-mono">{c.patient?.idDossier || '—'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs font-bold px-2 py-1 rounded bg-primary/5 text-primary">
