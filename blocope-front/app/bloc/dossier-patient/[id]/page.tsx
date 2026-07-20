@@ -8,6 +8,7 @@ import DossierMedicalPanel from '@/components/bloc/dossier-patient/DossierMedica
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { libelleUrgence, styleUrgence } from '@/lib/urgence'
+import { formaterNomPatient } from '@/lib/patient'
 
 export default function DossierPatientPage() {
   return (
@@ -101,7 +102,7 @@ function DossierPatientPageContent() {
             {p.nom?.charAt(0)}{p.prenom?.charAt(0)}
           </div>
           <div>
-            <h2 className="text-2xl font-extrabold text-primary">{p.nom} {p.prenom}</h2>
+            <h2 className="text-2xl font-extrabold text-primary">{formaterNomPatient(p)}</h2>
             <p className="text-sm text-on-surface-variant">
               {p.dateNaissance ? `${new Date().getFullYear() - new Date(p.dateNaissance).getFullYear()} ans` : ''} • {p.sexe} • {p.groupeSanguin}
             </p>
@@ -165,7 +166,7 @@ function DossierPatientPageContent() {
         isOpen={showPlanifier}
         onClose={() => setShowPlanifier(false)}
         onValider={handleValiderPlanification}
-        patientNom={`${p.nom || ''} ${p.prenom || ''}`.trim() || 'Patient'}
+        patientNom={formaterNomPatient(p)}
         intervention={p.libelle || ''}
         estUrgent={false}
       />

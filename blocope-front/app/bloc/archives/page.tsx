@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api/client'
 import ExportToolbar from '@/components/bloc/layout/ExportToolbar'
 import { exporterCSV, exporterExcel, exporterPDF, imprimerSection, Colonne } from '@/lib/export/export'
 import { fmtDate, fmtDateHeure, collecterEquipe, construireChronologie } from '@/lib/export/dossier-patient'
+import { formaterNomPatient } from '@/lib/patient'
 
 const STATUT_STYLE: Record<string, string> = {
   SORTI: 'bg-emerald-100 text-emerald-700',
@@ -76,7 +77,7 @@ export default function ArchivesPage() {
   ]
   const versLignesExport = (liste: any[]) => liste.map(p => ({
     idDossier: p.idDossier || p.id,
-    nomComplet: `${p.nom || ''} ${p.prenom || ''}`.trim(),
+    nomComplet: formaterNomPatient(p),
     sexe: p.sexe || 'H',
     dateOperation: fmtDate(p.dateIntervention || p.updatedAt),
     intervention: p.libelle || '—',
@@ -208,7 +209,7 @@ export default function ArchivesPage() {
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${p.sexe === 'F' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
                           <span className="material-symbols-outlined text-[18px]">person</span>
                         </div>
-                        <span className="text-sm font-bold text-on-surface">{p.nom} {p.prenom}</span>
+                        <span className="text-sm font-bold text-on-surface">{formaterNomPatient(p)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -228,7 +229,7 @@ export default function ArchivesPage() {
                     </td>
                     <td className="px-6 py-4 text-right print:hidden" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleExportDossierPDF(p.id, `${p.nom} ${p.prenom}`)} disabled={exportPdfEnCours === p.id}
+                        <button onClick={() => handleExportDossierPDF(p.id, formaterNomPatient(p))} disabled={exportPdfEnCours === p.id}
                           className="px-2 py-1.5 rounded-lg border text-[11px] font-bold hover:bg-surface-container transition-colors text-red-600 disabled:opacity-50"
                           title="Exporter le dossier complet en PDF">
                           <span className="material-symbols-outlined text-sm">{exportPdfEnCours === p.id ? 'progress_activity' : 'picture_as_pdf'}</span>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { libelleUrgence, niveauUrgenceNotification } from '@/lib/urgence';
+import { formaterNomPatient } from '@/lib/patient';
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -246,7 +247,7 @@ export default function NotificationModal({
                     <div>
                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Patient</p>
                       <p className="text-sm font-medium text-gray-800">
-                        {notification.patientNom || notification.patientId || 'Inconnu'}
+                        {notification.patientNom || formaterNomPatient(notification.patient)}
                       </p>
                     </div>
                     <div>

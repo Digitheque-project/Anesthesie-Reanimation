@@ -7,8 +7,15 @@ import EtatGlobalPatients from '@/components/bloc/dashboard/EtatGlobalPatients'
 import AlerteBandeau from '@/components/bloc/dashboard/AlerteBandeau'
 import GroupePlanningTable, { LignePlanning } from '@/components/bloc/dashboard/GroupePlanningTable'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
+import { formaterNomPatient } from '@/lib/patient'
 
-const nomPatient = (p: any) => `${(p?.nom || '').toUpperCase()}${p?.nom && p?.prenom ? ', ' : ''}${p?.prenom || ''}`.trim() || p?.patientId || p?.id || 'Patient'
+// Jamais l'ID en remplacement du nom (interdit) — voir formaterNomPatient.
+const nomPatient = (p: any) => {
+  const nom = (p?.nom || '').trim()
+  if (!nom) return 'Patient inconnu'
+  const prenom = (p?.prenom || '').trim()
+  return `${nom.toUpperCase()}${prenom ? `, ${prenom}` : ''}`
+}
 const priorite = (niveau?: string): LignePlanning['priorite'] => niveau === 'STAT' ? 'STAT' : niveau === 'URGENT' ? 'URGENT' : 'NORMAL'
 const estAujourdhui = (date?: string | Date | null) => {
   if (!date) return false
@@ -46,8 +53,8 @@ export default function DashboardPage() {
         const patientId = n.patient?.id || n.patientId
         return {
           priorite: n.estUrgent ? 'URGENT' : priorite(n.patient?.niveauUrgence),
-          nom: n.patient?.nom ? nomPatient(n.patient) : (n.patientNom || patientId || 'Patient'),
-          idDossier: n.patient?.idDossier || patientId || '—',
+          nom: n.patientNom || nomPatient(n.patient),
+          idDossier: n.patient?.idDossier || '—',
           intervention: n.intervention || n.motif || '',
           responsable: n.chirurgienNom || n.chirurgien?.nom || n.prescripteur || '',
           heure: n.heurePrescription,
@@ -63,7 +70,7 @@ export default function DashboardPage() {
       return {
         priorite: priorite(p.niveauUrgence),
         nom: nomPatient(p),
-        idDossier: p.idDossier || p.patientId,
+        idDossier: p.idDossier || '—',
         intervention: p.libelle || p.typeChirurgie || '',
         responsable: p.chirurgien_nom || '',
         heure: p.dateIntervention ? new Date(p.dateIntervention).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : undefined,

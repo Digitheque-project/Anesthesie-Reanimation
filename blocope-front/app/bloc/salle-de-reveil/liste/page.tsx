@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { salleReveilService } from '@/lib/api/salle-reveil.service';
 import { libelleUrgence, styleUrgence } from '@/lib/urgence';
+import { formaterNomPatient } from '@/lib/patient';
 
 interface PatientReveil {
   id: string;
@@ -32,7 +33,7 @@ export default function ListeSalleReveil() {
         id: p.patientId || p.id,
         nom: p.nom || '',
         prenom: p.prenom || '',
-        idDossier: p.idDossier || p.patientId || p.id,
+        idDossier: p.idDossier || '—',
         intervention: p.libelle || p.typeChirurgie || 'Non spécifiée',
         niveauUrgence: p.niveauUrgence || 'NORMAL',
         depuis: p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—',
@@ -89,7 +90,7 @@ export default function ListeSalleReveil() {
                 patients.map((patient) => (
                   <tr key={patient.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4">
-                      <p className="font-medium text-gray-900">{patient.prenom} {patient.nom}</p>
+                      <p className="font-medium text-gray-900">{formaterNomPatient(patient)}</p>
                       <p className="text-xs text-gray-500">ID: {patient.idDossier}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{patient.intervention}</td>
@@ -102,7 +103,7 @@ export default function ListeSalleReveil() {
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center gap-2">
                         <button
-                          onClick={() => router.push(`/bloc/salle-de-reveil/suivi?patientId=${patient.id}&patientNom=${encodeURIComponent(`${patient.prenom} ${patient.nom}`.trim())}&intervention=${encodeURIComponent(patient.intervention)}`)}
+                          onClick={() => router.push(`/bloc/salle-de-reveil/suivi?patientId=${patient.id}&patientNom=${encodeURIComponent(formaterNomPatient(patient))}&intervention=${encodeURIComponent(patient.intervention)}`)}
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-md hover:shadow-lg"
                         >
                           📋 Surveiller
@@ -111,7 +112,7 @@ export default function ListeSalleReveil() {
                             écrans que l'anesthésiste, il doit pouvoir retrouver le patient ici pour
                             remplir le protocole opératoire, quel que soit qui a fait le reste. */}
                         <button
-                          onClick={() => router.push(`/bloc/protocole-operatoire?patientId=${patient.id}&patientNom=${encodeURIComponent(`${patient.prenom} ${patient.nom}`.trim())}&intervention=${encodeURIComponent(patient.intervention)}`)}
+                          onClick={() => router.push(`/bloc/protocole-operatoire?patientId=${patient.id}&patientNom=${encodeURIComponent(formaterNomPatient(patient))}&intervention=${encodeURIComponent(patient.intervention)}`)}
                           className="px-4 py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 text-sm font-bold rounded-lg transition"
                         >
                           🖋️ Protocole opératoire

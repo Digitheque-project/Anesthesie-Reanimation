@@ -10,6 +10,7 @@ import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
 import { NotificationBackClient } from '../external/notification-back.client';
+import { AccueilClient } from '../external/accueil.client';
 
 @Injectable()
 export class DemandeCpaExterneService {
@@ -22,6 +23,7 @@ export class DemandeCpaExterneService {
     private config: ConfigService,
     private http: HttpService,
     private notificationBackClient: NotificationBackClient,
+    private accueilClient: AccueilClient,
   ) {
     this.blocServiceId = this.config.get<string>('externalServices.serviceId') ?? '';
   }
@@ -53,14 +55,26 @@ export class DemandeCpaExterneService {
     return saved;
   }
 
+  // L'identité (nom/prénom) vit dans le service Accueil, jamais dans cette table — le front ne
+  // doit jamais afficher patientId à la place (interdit) : sans cet enrichissement, il n'a que
+  // l'ID à se mettre sous la dent.
   async findAll(statut?: StatutDemandeCpaExterne) {
-    return this.repo.find({ where: statut ? { statut } : {}, order: { createdAt: 'DESC' } });
+    const demandes = await this.repo.find({ where: statut ? { statut } : {}, order: { createdAt: 'DESC' } });
+    try {
+      return await this.accueilClient.enrichWithIdentity(demandes);
+    } catch {
+      return demandes;
+    }
   }
 
   async findOne(id: string): Promise<DemandeCpaExterne> {
     const demande = await this.repo.findOne({ where: { id } });
     if (!demande) throw new NotFoundException(`Demande de CPA externe ${id} non trouvée`);
-    return demande;
+    try {
+      return await this.accueilClient.enrichWithIdentity(demande);
+    } catch {
+      return demande;
+    }
   }
 
   async update(id: string, dto: UpdateDemandeCpaDto): Promise<DemandeCpaExterne> {

@@ -12,6 +12,7 @@ import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { useRole } from '@/lib/hooks/useRole'
 import { dedupeParPatient } from '@/lib/notifications/dedupe'
 import { normaliserDemandeExterne } from '@/lib/notifications/normaliser-demande-externe'
+import { formaterNomPatient } from '@/lib/patient'
 
 export default function NotificationCPAPage() {
   const [notifications, setNotifications] = useState<any[]>([])
@@ -126,7 +127,7 @@ export default function NotificationCPAPage() {
     }
 
     const patientId = notif.patientId || notif.patient?.id
-    const patientNom = notif.patientNom || notif.patient?.nom || 'Patient'
+    const patientNom = notif.patientNom || formaterNomPatient(notif.patient)
     const intervention = notif.intervention || notif.motif || ''
 
     // Patient urgent : pas de CPA planifiée à l'avance, la consultation a lieu immédiatement —
@@ -187,7 +188,7 @@ export default function NotificationCPAPage() {
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           onValider={handleValiderPlanification}
-          patientNom={selectedNotif.patientNom || selectedNotif.patient?.nom || 'Patient'}
+          patientNom={selectedNotif.patientNom || formaterNomPatient(selectedNotif.patient)}
           intervention={selectedNotif.intervention}
           estUrgent={selectedNotif.estUrgent}
         />

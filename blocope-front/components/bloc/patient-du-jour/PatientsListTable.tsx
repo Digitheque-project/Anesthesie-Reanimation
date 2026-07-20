@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { libelleUrgence, styleUrgence } from "@/lib/urgence";
+import { formaterNomPatient } from "@/lib/patient";
 
 interface Patient {
   id: string;
@@ -25,7 +26,7 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
   const handleDemarrer = async (patient: Patient) => {
     setLoadingPatients((prev) => new Set(prev).add(patient.id));
     const cleanId = patient.realId || patient.id.replace("#", "");
-    const nom = encodeURIComponent(`${patient.nom} ${patient.prenom}`.trim());
+    const nom = encodeURIComponent(formaterNomPatient(patient));
     const intervention = encodeURIComponent(patient.operation || '');
     router.push(`/bloc/checklist-oms?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`);
     setTimeout(() => setLoadingPatients((prev) => {
@@ -71,7 +72,7 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${patient.etat === 'NORMAL' ? 'bg-primary-fixed text-primary' : `${styleUrgence(patient.etat).fondClair} ${styleUrgence(patient.etat).texte}`}`}>
                         {patient.nom?.charAt(0)}{patient.prenom?.charAt(0)}
                       </div>
-                      <span className="font-bold text-on-surface">{patient.nom} {patient.prenom}</span>
+                      <span className="font-bold text-on-surface">{formaterNomPatient(patient)}</span>
                     </div>
                   </td>
                   <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface">{patient.operation}</span></td>

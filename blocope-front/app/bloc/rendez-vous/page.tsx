@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { planningService } from '@/lib/api';
+import { formaterNomPatient } from '@/lib/patient';
 
 type Onglet = 'CPA' | 'VERIFICATION_VEILLE';
 
@@ -106,8 +107,8 @@ export default function RendezVousPage() {
                 <tr key={c.id || i} className="hover:bg-surface-container/30 transition-colors">
                   <td className="px-6 py-4 font-extrabold text-primary text-sm">{c.heureDebut}</td>
                   <td className="px-6 py-4">
-                    <div className="font-bold text-on-surface text-sm">{c.patient?.nom} {c.patient?.prenom}</div>
-                    <div className="text-[10px] text-on-surface-variant font-mono">{c.patient?.idDossier || c.patientId}</div>
+                    <div className="font-bold text-on-surface text-sm">{formaterNomPatient(c.patient)}</div>
+                    <div className="text-[10px] text-on-surface-variant font-mono">{c.patient?.idDossier || '—'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs font-bold px-2 py-1 rounded bg-primary/5 text-primary">
@@ -130,7 +131,7 @@ export default function RendezVousPage() {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button
-                      onClick={() => router.push(`${ongletActif.cible}?patientId=${c.patient?.id}&patientNom=${encodeURIComponent((c.patient?.nom || '') + ' ' + (c.patient?.prenom || ''))}`)}
+                      onClick={() => router.push(`${ongletActif.cible}?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(formaterNomPatient(c.patient))}`)}
                       className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 whitespace-nowrap"
                     >
                       {ongletActif.actionLabel}

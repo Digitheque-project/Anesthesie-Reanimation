@@ -3,10 +3,10 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
-import { patientService } from '@/lib/api'
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
 import { useRole } from '@/lib/hooks/useRole'
 import { libelleUrgence, styleUrgence, niveauUrgenceNotification } from '@/lib/urgence'
+import { formaterNomPatient } from '@/lib/patient'
 
 const LIBELLE_STATUT: Record<string, string> = {
   EN_ATTENTE: 'En attente de planification',
@@ -37,7 +37,6 @@ function DemandeCpaExternePageContent() {
   const { peutPlanifierCpa, roleName } = useRole()
 
   const [demande, setDemande] = useState<any>(null)
-  const [patientNomAffiche, setPatientNomAffiche] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [erreur, setErreur] = useState(false)
   const [showPlanifier, setShowPlanifier] = useState(false)
@@ -46,15 +45,9 @@ function DemandeCpaExternePageContent() {
   const charger = () => {
     setLoading(true)
     setErreur(false)
+    // Le backend enrichit déjà la demande avec l'identité du service Accueil (nom/prénom).
     apiClient.get(`/demandes-cpa-externes/${id}`)
-      .then(({ data }) => {
-        setDemande(data)
-        // Enrichissement best-effort du nom du patient — ce patient n'a pas forcément de fiche
-        // de suivi bloc (PatientBloc), donc on ne bloque jamais l'affichage si ça échoue.
-        patientService.getById(data.patientId)
-          .then((p: any) => setPatientNomAffiche(`${p.nom || ''} ${p.prenom || ''}`.trim() || null))
-          .catch(() => {})
-      })
+      .then(({ data }) => setDemande(data))
       .catch(() => setErreur(true))
       .finally(() => setLoading(false))
   }
@@ -112,7 +105,7 @@ function DemandeCpaExternePageContent() {
       <div className="bg-white rounded-xl p-4 shadow-sm border mb-3">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <h2 className="text-xl font-extrabold text-primary">{patientNomAffiche || demande.patientId}</h2>
+            <h2 className="text-xl font-extrabold text-primary">{formaterNomPatient(demande)}</h2>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${style.badge}`}>{libelleUrgence(niveau)}</span>
         </div>
@@ -167,7 +160,7 @@ function DemandeCpaExternePageContent() {
 
         {(demande.statut === 'CPA_PLANIFIEE' || demande.statut === 'VPA_PLANIFIEE') && (
           <button
-            onClick={() => router.push(`/bloc/consultation-cpa?patientId=${demande.patientId}&patientNom=${encodeURIComponent(patientNomAffiche || demande.patientId)}&intervention=${encodeURIComponent(demande.motif || demande.typeAnesthesie || '')}`)}
+            onClick={() => router.push(`/bloc/consultation-cpa?patientId=${demande.patientId}&patientNom=${encodeURIComponent(formaterNomPatient(demande))}&intervention=${encodeURIComponent(demande.motif || demande.typeAnesthesie || '')}`)}
             className="w-full sm:w-auto px-4 py-3 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex items-center justify-center gap-2">
             <span className="material-symbols-outlined text-lg">clinical_notes</span>
             Aller à la consultation CPA
@@ -179,7 +172,7 @@ function DemandeCpaExternePageContent() {
         isOpen={showPlanifier}
         onClose={() => setShowPlanifier(false)}
         onValider={handleValiderPlanification}
-        patientNom={patientNomAffiche || demande.patientId}
+        patientNom={formaterNomPatient(demande)}
         intervention={demande.motif || demande.typeAnesthesie || ''}
         estUrgent={(demande.urgence ?? 0) >= 4}
       />

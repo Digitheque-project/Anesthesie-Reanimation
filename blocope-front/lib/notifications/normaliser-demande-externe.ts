@@ -1,11 +1,15 @@
+import { formaterNomPatient } from '@/lib/patient'
+
 // Les demandes de CPA/VPA émises par des services externes (ex: Endoscopie) sont un modèle
 // distinct des prescriptions internes — normalisées ici au même format que les notifications
-// pour pouvoir être affichées dans le même fil (bell TopBar, page Notification CPA).
+// pour pouvoir être affichées dans le même fil (bell TopBar, page Notification CPA). Le backend
+// enrichit déjà la demande avec l'identité du service Accueil (nom/prénom) — jamais l'ID en
+// remplacement du nom.
 export const normaliserDemandeExterne = (d: any) => ({
   id: d.id,
   origineExterne: true,
   patientId: d.patientId,
-  patientNom: d.patientId,
+  patientNom: formaterNomPatient(d),
   intervention: d.motif || d.typeAnesthesie,
   motif: d.motif,
   prescripteur: d.sourceServiceName || d.sourceServiceId,

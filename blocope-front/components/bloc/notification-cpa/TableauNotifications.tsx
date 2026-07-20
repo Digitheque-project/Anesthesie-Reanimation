@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { libelleUrgence, styleUrgence, niveauUrgenceNotification } from '@/lib/urgence'
+import { formaterNomPatient } from '@/lib/patient'
 
 interface TableauNotificationsProps {
   notifications: any[]
@@ -57,7 +58,7 @@ export default function TableauNotifications({
                   <td className="px-4 py-3 font-mono text-sm">{n.heure || 'N/A'}</td>
                   <td className="px-4 py-3">
                     <div className="font-semibold text-on-surface">
-                      {n.patientNom || n.patient?.nom || 'Patient'}
+                      {n.patientNom || formaterNomPatient(n.patient)}
                       {n.origineExterne && (
                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">
                           🔗 {n.sourceServiceName || 'Externe'}
@@ -69,7 +70,6 @@ export default function TableauNotifications({
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-on-surface-variant">{n.patientId || n.patient?.id || ''}</div>
                   </td>
                   <td className="px-4 py-3">{n.intervention || n.motif || '-'}</td>
                   <td className="px-4 py-3">
