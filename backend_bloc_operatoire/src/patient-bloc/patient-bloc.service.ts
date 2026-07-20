@@ -60,7 +60,17 @@ export class PatientBlocService {
     qb.skip((page - 1) * limite).take(limite);
 
     const [data, total] = await qb.getManyAndCount();
-    return { data, total, page, pages: Math.ceil(total / limite) };
+    // PatientBloc ne stocke pas l'identité (nom/prénom) — elle vit dans le service Accueil.
+    // Sans cet enrichissement, chaque écran de liste (Patient du jour, Archives...) n'a que le
+    // patientId à afficher, faute de nom disponible dans la réponse.
+    let enriched: any[] = data;
+    try {
+      enriched = await this.accueilClient.enrichWithIdentity(data);
+    } catch {
+      // dégradé silencieusement vers les données non enrichies (patientId visible plutôt que
+      // rien) si le service Accueil est indisponible
+    }
+    return { data: enriched, total, page, pages: Math.ceil(total / limite) };
   }
 
   async findOne(patientId: string): Promise<PatientBloc | null> {
