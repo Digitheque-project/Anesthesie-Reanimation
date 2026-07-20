@@ -54,9 +54,8 @@ export class VerificationVeilleService {
     const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
     if (demande) {
       await this.demandeCpaExterneService.marquerVpaRealisee(demande, saved.id);
-      if (demande.sourceCallbackUrl) {
-        await this.demandeCpaExterneService.notifierResultat(demande, 'VPA_REALISEE', { dateVpa: saved.dateVisite });
-      } else {
+      await this.demandeCpaExterneService.notifierResultat(demande, 'VPA_REALISEE', { dateVpa: saved.dateVisite });
+      if (!demande.sourceCallbackUrl) {
         await this.endoscopieClient.notifyVpaRealisee(demande, { dateVpa: saved.dateVisite });
       }
     }

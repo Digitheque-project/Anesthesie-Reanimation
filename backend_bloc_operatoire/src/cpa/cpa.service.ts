@@ -96,15 +96,15 @@ export class CPAService {
           const apte = saved.decision === DecisionCPA.APTE;
           await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
           try {
-            if (demande.sourceCallbackUrl) {
-              // Service externe générique (a fourni son URL de rappel à la réception).
-              await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_RESULTAT', {
-                decision: saved.decision,
-                dateCpa: saved.dateConsultation,
-                observations: saved.notesIncidents,
-              });
-            } else {
-              // Intégration historique Endoscopie (n'a jamais fourni d'URL de rappel explicite).
+            // Canal standard (service Notification, + sourceCallbackUrl si fournie) — toujours
+            // envoyé, quel que soit le service demandeur.
+            await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_RESULTAT', {
+              decision: saved.decision,
+              dateCpa: saved.dateConsultation,
+              observations: saved.notesIncidents,
+            });
+            if (!demande.sourceCallbackUrl) {
+              // Intégration historique Endoscopie, en plus (n'a jamais fourni d'URL de rappel).
               await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
                 dateCpa: saved.dateConsultation,
                 observations: saved.notesIncidents,

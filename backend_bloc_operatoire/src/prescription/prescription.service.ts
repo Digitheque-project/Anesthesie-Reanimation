@@ -22,12 +22,14 @@ export class PrescriptionService {
     private config: ConfigService,
   ) {}
 
-  // Webhook temps réel : le service Prescriptions nous signale qu'une nouvelle prescription est
-  // disponible. On ne construit pas la fiche patient depuis ce payload (sa forme générique
-  // couvre tous les types de prescriptions de l'hôpital, pas seulement le bloc opératoire) —
-  // on déclenche immédiatement une synchronisation (au lieu d'attendre jusqu'à 15s le prochain
-  // cycle de polling), qui va chercher et ingère les prescriptions de bloc via le contrat
-  // dédié (getPrescriptionsBloc), déjà fiable et dédoublonné.
+  // Webhook conservé pour compatibilité, mais dans l'architecture réelle le service
+  // Prescriptions ne l'appelle jamais directement : il avertit le service Notification, qui
+  // nous pousse l'évènement en WebSocket (voir PrescriptionImagerieListenerService, qui
+  // déclenche pollPrescriptionsBloc() dès réception). Si ce webhook est un jour appelé, il
+  // déclenche la même synchronisation immédiate, sans reconstruire la fiche patient depuis son
+  // payload (sa forme générique couvre tous les types de prescriptions de l'hôpital, pas
+  // seulement le bloc opératoire) — on va chercher et ingère les prescriptions de bloc via le
+  // contrat dédié (getPrescriptionsBloc), déjà fiable et dédoublonné.
   async processPrescription(dto: ReceivePrescriptionDto): Promise<boolean> {
     this.logger.log(`📦 Notification de prescription reçue (type ${dto.type}, patient ${dto.patientId}) — synchronisation immédiate`);
     this.pollPrescriptionsBloc().catch((err) =>

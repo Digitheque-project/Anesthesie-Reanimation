@@ -126,12 +126,27 @@ export class DemandeCpaExterneService {
     return this.repo.save(demande);
   }
 
-  // Renvoie le résultat de la CPA/VPA au service demandeur, à l'URL qu'il a fournie à la
-  // réception de la demande (sourceCallbackUrl) — fonctionne pour n'importe quel service
-  // externe, pas seulement Endoscopie. Si aucune URL de rappel n'a été fournie, ne fait rien :
-  // l'appelant (CPAService/VerificationVeilleService) se rabat alors sur l'intégration
-  // historique EndoscopieClient pour préserver le comportement existant.
+  // Renvoie le résultat de la CPA/VPA au service demandeur. Deux canaux, envoyés
+  // systématiquement (pas seulement pour Endoscopie) :
+  //  1. Le service Notification, ciblé sur sourceServiceId (toujours fourni à la réception) —
+  //     c'est le canal standard de l'écosystème, celui que chaque service écoute déjà en temps
+  //     réel (le nôtre y compris). Le demandeur peut aussi interroger GET
+  //     /demandes-cpa-externes/:id/statut (public) pour repartir de zéro s'il a manqué l'évènement.
+  //  2. sourceCallbackUrl, si le service demandeur en a fourni une (best-effort, en plus).
   async notifierResultat(demande: DemandeCpaExterne, type: string, payload: any): Promise<void> {
+    try {
+      await this.notificationBackClient.notifyService({
+        serviceId: demande.sourceServiceId,
+        title: type === 'CPA_RESULTAT' ? '✅ Résultat de votre demande de CPA disponible' : '✅ Vérification veille réalisée',
+        message: `Résultat disponible pour le patient ${demande.patientId} (réf. ${demande.sourceReferenceId})`,
+        type: type === 'CPA_RESULTAT' ? 'demande_cpa_resultat' : 'demande_vpa_resultat',
+        source: 'bloc-operatoire',
+        data: { patientId: demande.patientId, demandeId: demande.id, entiteRefType: demande.sourceReferenceType, entiteRefId: demande.sourceReferenceId, ...payload },
+      });
+    } catch (err) {
+      this.logger.error(`❌ Échec notification temps réel du résultat à ${demande.sourceServiceName || demande.sourceServiceId}: ${(err as Error).message}`);
+    }
+
     if (!demande.sourceCallbackUrl) return;
     try {
       await firstValueFrom(
@@ -153,5 +168,22 @@ export class DemandeCpaExterneService {
     } catch (err) {
       this.logger.error(`❌ Échec envoi résultat "${type}" à ${demande.sourceServiceName || demande.sourceServiceId}: ${(err as Error).message}`);
     }
+  }
+
+  // Endpoint public : permet au service demandeur de vérifier l'état de sa demande sans notre
+  // jeton SSO (il n'a pas de token scopé sur notre serviceId) — utile en secours de la
+  // notification temps réel, ou en poll simple côté service demandeur.
+  async findStatutPublic(id: string) {
+    const demande = await this.findOne(id);
+    return {
+      id: demande.id,
+      patientId: demande.patientId,
+      sourceReferenceId: demande.sourceReferenceId,
+      statut: demande.statut,
+      cpaId: demande.cpaId || null,
+      vpaId: demande.vpaId || null,
+      dateCpaPlanifiee: demande.dateCpaPlanifiee || null,
+      dateVpaPlanifiee: demande.dateVpaPlanifiee || null,
+    };
   }
 }

@@ -9,5 +9,6 @@ import { PrescriptionService } from './prescription.service';
   imports: [TypeOrmModule.forFeature([PatientBloc, NotificationCPA])],
   controllers: [PrescriptionController],
   providers: [PrescriptionService],
+  exports: [PrescriptionService],
 })
 export class PrescriptionModule {}

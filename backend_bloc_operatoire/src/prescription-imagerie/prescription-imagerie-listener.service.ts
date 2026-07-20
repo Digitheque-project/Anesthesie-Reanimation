@@ -5,14 +5,22 @@ import { Repository } from 'typeorm';
 import { io, Socket } from 'socket.io-client';
 import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
 import { PrescriptionImagerieClient, PrescriptionImagerieExterne } from '../external/prescription-imagerie.client';
+import { PrescriptionService } from '../prescription/prescription.service';
 
-// Le service Prescription (imagerie) ne nous pousse jamais la donnée directement : il crée une
-// prescription puis avertit le service Notification (POST /notifications/service), qui la
-// diffuse en temps réel par WebSocket à tous les postes connectés du service ciblé — exactement
-// comme le frontend s'y connecte déjà (voir blocope-front/lib/notifications/socket.ts). Ce
-// service reproduit la même connexion côté backend : dès réception d'une notification de
-// prescription, on va chercher son contenu par GET (le "push" ne sert qu'à savoir QUAND
-// regarder, jamais à transporter la donnée elle-même).
+// Ni le service Prescription (bloc), ni le service Prescription (imagerie) ne nous poussent
+// jamais la donnée directement : ils créent une prescription puis avertissent le service
+// Notification (POST /notifications/service), qui la diffuse en temps réel par WebSocket à
+// tous les postes connectés du service ciblé — exactement comme le frontend s'y connecte déjà
+// (voir blocope-front/lib/notifications/socket.ts). Ce service reproduit la même connexion
+// côté backend, sur une seule et même socket pour les deux sources :
+//  - Prescription imagerie : on va chercher le contenu par GET (le "push" ne sert qu'à savoir
+//    QUAND regarder, jamais à transporter la donnée elle-même).
+//  - Prescription bloc : on déclenche immédiatement un cycle de PrescriptionService.pollPrescriptionsBloc()
+//    (au lieu d'attendre jusqu'à son prochain cycle périodique) — ce service n'a pas d'endpoint
+//    GET "par patient", seulement "toutes les prescriptions en attente pour nous", donc pas de
+//    ciblage plus précis possible ici. Le webhook POST /prescription/receive existe toujours
+//    mais n'est jamais appelé par le vrai service Prescription — c'est ce canal (Notification)
+//    qui est réellement utilisé.
 @Injectable()
 export class PrescriptionImagerieListenerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrescriptionImagerieListenerService.name);
@@ -22,6 +30,7 @@ export class PrescriptionImagerieListenerService implements OnModuleInit, OnModu
   constructor(
     private readonly config: ConfigService,
     private readonly prescriptionImagerieClient: PrescriptionImagerieClient,
+    private readonly prescriptionService: PrescriptionService,
     @InjectRepository(NotificationCPA) private readonly notificationRepo: Repository<NotificationCPA>,
   ) {
     this.serviceId = this.config.get<string>('externalServices.serviceId') ?? '';
@@ -70,7 +79,14 @@ export class PrescriptionImagerieListenerService implements OnModuleInit, OnModu
   private async traiterNotification(notif: any): Promise<void> {
     if (!this.estNotificationPrescription(notif)) return;
     const patientId = String(notif.data.patientId);
-    this.logger.log(`📬 Notification de prescription imagerie reçue pour le patient ${patientId} — récupération par GET`);
+    this.logger.log(`📬 Notification de prescription reçue pour le patient ${patientId}`);
+
+    // Déclenché à chaque notification de prescription, imagerie ou bloc — sans distinction
+    // fiable possible entre les deux sources (même vocabulaire type/source), mais sans risque :
+    // le poll est dédoublonné et un cycle de plus ne coûte qu'un appel GET.
+    this.prescriptionService.pollPrescriptionsBloc().catch((err) =>
+      this.logger.error(`Erreur lors du poll bloc déclenché par notification: ${(err as Error).message}`),
+    );
 
     try {
       // Le ciblage réel se fait déjà au niveau de la notification elle-même (le service

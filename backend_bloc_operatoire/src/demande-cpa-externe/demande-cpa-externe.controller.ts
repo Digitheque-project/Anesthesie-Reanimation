@@ -37,6 +37,16 @@ export class DemandeCpaExterneController {
     return { received: true, id: demande.id, statut: demande.statut, timestamp: new Date().toISOString() };
   }
 
+  // Public (pas de token SSO scopé sur notre service côté demandeur) : lui permet de vérifier
+  // l'état de sa demande — filet de secours si la notification temps réel (voir
+  // DemandeCpaExterneService.notifierResultat) n'a pas été reçue.
+  @Public()
+  @Get(':id/statut')
+  @ApiOperation({ summary: "Consulter l'état d'une demande de CPA externe (accessible au service demandeur, sans authentification)" })
+  getStatutPublic(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.findStatutPublic(id);
+  }
+
   @Get()
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Lister les demandes de CPA externes' })
