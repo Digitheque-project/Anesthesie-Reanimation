@@ -113,7 +113,6 @@ function DemandeCpaExternePageContent() {
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h2 className="text-xl font-extrabold text-primary">{patientNomAffiche || demande.patientId}</h2>
-            <p className="text-sm text-on-surface-variant">ID patient : {demande.patientId}</p>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${style.badge}`}>{libelleUrgence(niveau)}</span>
         </div>

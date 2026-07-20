@@ -187,7 +187,6 @@ export default function ArchivesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-dim/30 border-b border-surface-container sticky top-0 z-10">
-                  <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">ID Patient</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Nom &amp; Prénom</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-center">Sexe</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Date d'opération</th>
@@ -199,12 +198,11 @@ export default function ArchivesPage() {
               </thead>
               <tbody className="divide-y divide-surface-container-low">
                 {loading ? (
-                  <tr><td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">Chargement...</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant">Chargement...</td></tr>
                 ) : patients.length === 0 ? (
-                  <tr><td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">Aucun patient archivé</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant">Aucun patient archivé</td></tr>
                 ) : patients.map(p => (
                   <tr key={p.id} className="hover:bg-surface-container-low transition-colors group cursor-pointer" onClick={() => router.push(`/bloc/archives/${p.id}`)}>
-                    <td className="px-6 py-4 text-sm font-mono text-primary font-bold">{p.idDossier || p.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${p.sexe === 'F' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>

@@ -55,7 +55,6 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-white shadow-sm">
             <tr>
-              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">ID Patient</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nom & Prénom</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">TYPE D'OPÉRATION</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">État</th>
@@ -67,7 +66,6 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
               const isLoading = loadingPatients.has(patient.id);
               return (
                 <tr key={patient.id} className="hover:bg-surface-container-high/40 transition-colors duration-200">
-                  <td className="px-8 py-5 text-sm font-mono text-on-surface-variant">{patient.id}</td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${patient.etat === 'NORMAL' ? 'bg-primary-fixed text-primary' : `${styleUrgence(patient.etat).fondClair} ${styleUrgence(patient.etat).texte}`}`}>
