@@ -172,6 +172,10 @@ export default function NotificationCPAPage() {
           onPlanifier={handlePlanifier}
           onActionUrgent={handleActionPrescription}
           onVoirDossier={(n: any) => {
+            if (n.origineExterne && n.id) {
+              router.push(`/bloc/demande-cpa-externe/${n.id}`)
+              return
+            }
             const id = (n.patient as any)?.id || n.patientId
             if (id) router.push(`/bloc/dossier-patient/${id}?notifId=${n.id || ''}`)
           }}

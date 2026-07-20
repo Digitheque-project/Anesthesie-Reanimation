@@ -106,7 +106,12 @@ export default function NotificationModal({
       }
     }
 
-    if (notification.patientId) {
+    if (notification.origineExterne && notification.id) {
+      // Demande de CPA externe (Endoscopie...) : pas de fiche de suivi bloc pour ce patient —
+      // sa page dédiée n'a besoin que de l'id de la demande, pas d'un patientId de suivi bloc.
+      router.push(`/bloc/demande-cpa-externe/${notification.id}`);
+      handleClose();
+    } else if (notification.patientId) {
       router.push(`/bloc/dossier-patient/${notification.patientId}`);
       handleClose();
     }
