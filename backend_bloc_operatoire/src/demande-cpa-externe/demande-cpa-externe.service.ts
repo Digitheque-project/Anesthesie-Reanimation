@@ -9,6 +9,7 @@ import { CreneauBloc, TypeRDV } from '../entities/creneau-bloc.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
+import { NotificationBackClient } from '../external/notification-back.client';
 
 @Injectable()
 export class DemandeCpaExterneService {
@@ -20,6 +21,7 @@ export class DemandeCpaExterneService {
     @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
     private config: ConfigService,
     private http: HttpService,
+    private notificationBackClient: NotificationBackClient,
   ) {
     this.blocServiceId = this.config.get<string>('externalServices.serviceId') ?? '';
   }
@@ -34,6 +36,20 @@ export class DemandeCpaExterneService {
     });
     const saved = await this.repo.save(demande);
     this.logger.log(`📋 Demande de CPA externe reçue pour patient ${dto.patientId} (source: ${dto.sourceServiceName || dto.sourceServiceId})`);
+
+    // Pousse la même notification temps réel que les prescriptions internes (voir
+    // PrescriptionService.ingerer) — sans ça, cette demande n'apparaît que si l'utilisateur
+    // ouvre manuellement la page /bloc/notification-cpa (aucune alerte sonore ni badge live).
+    const estUrgent = (dto.urgence ?? 0) >= 4;
+    await this.notificationBackClient.notifyService({
+      serviceId: this.blocServiceId,
+      title: estUrgent ? '🔴 Demande de CPA externe urgente' : '📋 Nouvelle demande de CPA externe',
+      message: `${dto.motif || dto.typeAnesthesie} — patient ${dto.patientId} (${dto.sourceServiceName || dto.sourceServiceId})`,
+      type: 'new_demande_cpa_externe',
+      source: 'bloc-operatoire',
+      data: { patientId: dto.patientId, demandeId: saved.id, urgence: dto.urgence },
+    });
+
     return saved;
   }
 

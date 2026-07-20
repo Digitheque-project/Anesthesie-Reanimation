@@ -9,6 +9,8 @@ import { connecterNotificationsTempsReel, NotificationTempsReel } from '@/lib/no
 import { jouerSonPrescription, jouerSonPrescriptionUrgente } from '@/lib/notifications/sound';
 import { obtenirSessionValide } from '@/lib/auth/central-session';
 import { dedupeParPatient } from '@/lib/notifications/dedupe';
+import { normaliserDemandeExterne } from '@/lib/notifications/normaliser-demande-externe';
+import { apiClient } from '@/lib/api/client';
 
 export default function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -21,9 +23,15 @@ export default function TopBar() {
 
   const fetchData = async () => {
     try {
-      // Récupérer la liste des notifications — un même patient ne doit apparaître qu'une fois
-      const notifsRes = await notificationService.getAll(1, 50);
-      const notifs = dedupeParPatient(notifsRes.data || []);
+      // Récupérer la liste des notifications — un même patient ne doit apparaître qu'une fois.
+      // Fusionne aussi les demandes de CPA externes (Endoscopie...), sinon elles n'apparaissent
+      // jamais dans la cloche (seulement sur la page dédiée /bloc/notification-cpa).
+      const [notifsRes, demandesExternesRes] = await Promise.all([
+        notificationService.getAll(1, 50),
+        apiClient.get('/demandes-cpa-externes', { params: { statut: 'EN_ATTENTE' } }).catch(() => ({ data: [] })),
+      ]);
+      const demandesExternes = (Array.isArray(demandesExternesRes.data) ? demandesExternesRes.data : []).map(normaliserDemandeExterne);
+      const notifs = dedupeParPatient([...(notifsRes.data || []), ...demandesExternes]);
       setNotifications(notifs);
 
       // ← MODIFIÉ: Compter les notifications non lues
@@ -54,9 +62,10 @@ export default function TopBar() {
     if (!socket) return;
 
     const onNotification = (notif: NotificationTempsReel) => {
-      if (notif.type !== 'new_prescription') return;
-      const urgence = (notif.data?.urgence as string) || '';
-      if (urgence === 'URGENTE' || urgence === 'STAT') {
+      if (notif.type !== 'new_prescription' && notif.type !== 'new_demande_cpa_externe') return;
+      const urgence = (notif.data?.urgence as string | number) ?? '';
+      const estUrgent = urgence === 'URGENTE' || urgence === 'STAT' || Number(urgence) >= 4;
+      if (estUrgent) {
         jouerSonPrescriptionUrgente();
       } else {
         jouerSonPrescription();
