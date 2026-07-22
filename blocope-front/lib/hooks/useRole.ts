@@ -39,5 +39,7 @@ export function useRole() {
     // Distingue l'anesthésiste connecté (auto-attribué depuis sa session) d'un Responsable
     // CPA/Major qui doit désigner explicitement l'anesthésiste ayant réalisé la consultation.
     estAnesthesisteConnecte: role === RoleClinique.ANESTHESISTE,
+    // Valider la CPA en tant que professeur responsable (RESPONSABLE_CPA ou MAJOR uniquement).
+    peutValiderCpaProfesseur: role === RoleClinique.RESPONSABLE_CPA || role === RoleClinique.MAJOR,
   }
 }

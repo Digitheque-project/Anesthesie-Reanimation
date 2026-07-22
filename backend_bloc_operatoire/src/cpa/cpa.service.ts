@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CPA, DecisionCPA } from '../entities/cpa.entity';
+import { CPA, DecisionCPA, StatutValidationCPA } from '../entities/cpa.entity';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { Premedicament } from '../entities/premedicament.entity';
 import { AccueilClient } from '../external/accueil.client';
@@ -14,6 +14,7 @@ import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 import { Medecin, RoleMedecin } from '../entities/medecin.entity';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
+import { ValiderCPADto } from './dto/valider-cpa.dto';
 
 @Injectable()
 export class CPAService {
@@ -70,7 +71,16 @@ export class CPAService {
     }
 
     const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto as any;
-    const cpa = this.cpaRepository.create({ ...cpaData, anesthesisteId: anesthesiste.id });
+    const statutValidationInit = roleUtilisateur === RoleClinique.RESPONSABLE_CPA
+      ? StatutValidationCPA.VALIDE_PAR_PROFESSEUR
+      : StatutValidationCPA.EN_ATTENTE_VALIDATION;
+    const cpa = this.cpaRepository.create({
+      ...cpaData,
+      anesthesisteId: anesthesiste.id,
+      statutValidation: statutValidationInit,
+      valideParProfesseurId: roleUtilisateur === RoleClinique.RESPONSABLE_CPA ? anesthesiste.id : null,
+      dateValidationProfesseur: roleUtilisateur === RoleClinique.RESPONSABLE_CPA ? new Date() : null,
+    });
     const savedCPA = await this.cpaRepository.save(cpa);
     const saved = Array.isArray(savedCPA) ? savedCPA[0] : savedCPA;
 
@@ -169,5 +179,32 @@ export class CPAService {
     if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
     await this.cpaRepository.delete(id);
     return { message: 'CPA supprimée' };
+  }
+
+  async valider(id: string, dto: ValiderCPADto, centralUser: CentralUser): Promise<CPA> {
+    const roleUtilisateur = matchRoleClinique(centralUser.role);
+
+    if (roleUtilisateur !== RoleClinique.RESPONSABLE_CPA && roleUtilisateur !== RoleClinique.MAJOR) {
+      throw new ForbiddenException('Seul le professeur responsable CPA peut valider une CPA.');
+    }
+
+    const cpa = await this.cpaRepository.findOne({ where: { id } });
+    if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
+
+    if (cpa.statutValidation === StatutValidationCPA.VALIDE_PAR_PROFESSEUR) {
+      throw new BadRequestException('Cette CPA a déjà été validée par un professeur.');
+    }
+
+    const professeur = await this.medecinService.findByEmail(centralUser.email);
+    if (!professeur) {
+      throw new BadRequestException(`Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}).`);
+    }
+
+    cpa.statutValidation = StatutValidationCPA.VALIDE_PAR_PROFESSEUR;
+    cpa.valideParProfesseurId = professeur.id;
+    cpa.dateValidationProfesseur = new Date();
+
+    await this.cpaRepository.save(cpa);
+    return this.findOne(id);
   }
 }

@@ -1,6 +1,6 @@
 import { IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ScoreASA, DecisionCPA, StatutCPA } from '../../entities/cpa.entity';
+import { ScoreASA, DecisionCPA, StatutCPA, StatutValidationCPA } from '../../entities/cpa.entity';
 
 class TensionArterielleDto {
   @IsNumber() systolique: number;

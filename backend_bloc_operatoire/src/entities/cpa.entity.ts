@@ -32,6 +32,11 @@ export enum StatutCPA {
   REALISE = 'REALISE',
 }
 
+export enum StatutValidationCPA {
+  EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+  VALIDE_PAR_PROFESSEUR = 'VALIDE_PAR_PROFESSEUR',
+}
+
 @Entity('cpa')
 export class CPA {
   @PrimaryGeneratedColumn('uuid')
@@ -44,8 +49,8 @@ export class CPA {
   @ManyToOne(() => Medecin, { eager: true })
   anesthesiste: Medecin;
 
-  @Column()
-  anesthesisteId: string;
+  @Column({ nullable: true })
+  anesthesisteId: string | null;
 
   @Column({ type: 'date' })
   dateConsultation: Date;
@@ -150,6 +155,19 @@ export class CPA {
 
   @Column({ type: 'enum', enum: StatutCPA, default: StatutCPA.EN_ATTENTE })
   statut: StatutCPA;
+
+  // Validation professeur
+  @Column({ type: 'enum', enum: StatutValidationCPA, default: StatutValidationCPA.EN_ATTENTE_VALIDATION })
+  statutValidation: StatutValidationCPA;
+
+  @ManyToOne(() => Medecin, { eager: true, nullable: true })
+  valideParProfesseur: Medecin | null;
+
+  @Column({ nullable: true })
+  valideParProfesseurId: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  dateValidationProfesseur: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

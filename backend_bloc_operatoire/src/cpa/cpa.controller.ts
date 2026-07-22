@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CPAService } from './cpa.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
+import { ValiderCPADto } from './dto/valider-cpa.dto';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
 
@@ -23,6 +24,13 @@ export class CPAController {
   @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
   @ApiOperation({ summary: 'Modifier une CPA (Anesthésiste, Responsable CPA ou Major)' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() d: UpdateCPADto) { return this.service.update(id, d); }
+
+  @Patch(':id/valider')
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Valider une CPA par le professeur responsable CPA (RESPONSABLE_CPA ou MAJOR)' })
+  valider(@Param('id', ParseUUIDPipe) id: string, @Body() d: ValiderCPADto, @Request() req: any) {
+    return this.service.valider(id, d, req.centralUser);
+  }
 
   @Delete(':id')
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
