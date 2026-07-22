@@ -12,8 +12,17 @@ interface Patient {
   operation: string;
   etat: string;
   chirurgien?: string;
+  dateIntervention?: string | null;
+  salle?: string;
   realId?: string;
 }
+
+const formaterHeureDate = (iso?: string | null) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} · ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+};
 
 interface PatientsListTableProps {
   patients: Patient[];
@@ -56,8 +65,11 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-white shadow-sm">
             <tr>
+              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Heure / Date prévue</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nom & Prénom</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">TYPE D'OPÉRATION</th>
+              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chirurgien</th>
+              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Salle</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">État</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -67,6 +79,7 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
               const isLoading = loadingPatients.has(patient.id);
               return (
                 <tr key={patient.id} className="hover:bg-surface-container-high/40 transition-colors duration-200">
+                  <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface-variant whitespace-nowrap">{formaterHeureDate(patient.dateIntervention)}</span></td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${patient.etat === 'NORMAL' ? 'bg-primary-fixed text-primary' : `${styleUrgence(patient.etat).fondClair} ${styleUrgence(patient.etat).texte}`}`}>
@@ -76,6 +89,8 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
                     </div>
                   </td>
                   <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface">{patient.operation}</span></td>
+                  <td className="px-8 py-5"><span className="text-sm text-on-surface-variant">{patient.chirurgien || '—'}</span></td>
+                  <td className="px-8 py-5"><span className="text-sm text-on-surface-variant">{patient.salle || '—'}</span></td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${styleUrgence(patient.etat).point} ${patient.etat !== 'NORMAL' ? 'animate-pulse' : ''}`}></span>

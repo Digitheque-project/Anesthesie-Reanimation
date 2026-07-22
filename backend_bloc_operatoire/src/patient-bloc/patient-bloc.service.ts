@@ -6,6 +6,7 @@ import { PatientBloc, NiveauUrgence, PatientStatut } from '../entities/patient-b
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { DossierPatientClient } from '../external/dossier-patient.client';
+import { ProtocoleOperatoireService } from '../protocole-operatoire/protocole-operatoire.service';
 
 @Injectable()
 export class PatientBlocService {
@@ -16,6 +17,7 @@ export class PatientBlocService {
     private demandeRepo: Repository<DemandeCpaExterne>,
     private accueilClient: AccueilClient,
     private dossierPatientClient: DossierPatientClient,
+    private protocoleOperatoireService: ProtocoleOperatoireService,
     private config: ConfigService,
   ) {}
 
@@ -100,6 +102,38 @@ export class PatientBlocService {
         this.dossierPatientClient.getSuivis(patientId, token),
       ]);
     return { antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis };
+  }
+
+  // Vue complète et en lecture seule du dossier patient, organisée par onglets côté frontend
+  // (Observation médicale, Diagnostic, Suivi/Évolution, Compte-rendu opératoire, Résultats
+  // paracliniques, Sortie, Historique). Contrairement à getDossierMedical() (résumé condensé
+  // utilisé dans les écrans de suivi bloc), celui-ci récupère l'intégralité de ce que le service
+  // Dossier Patient externe expose, plus nos propres protocoles opératoires.
+  async getDossierComplet(patientId: string, token: string) {
+    const [
+      observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
+      examensComplementaires, suivis, protocolesOperatoires,
+    ] = await Promise.all([
+      this.dossierPatientClient.getObservations(patientId, token),
+      this.dossierPatientClient.getDiagnosticsTous(patientId, token),
+      this.dossierPatientClient.getAntecedentsTous(patientId, token),
+      this.dossierPatientClient.getHistoiresMaladie(patientId, token),
+      this.dossierPatientClient.getExamensPhysiquesTous(patientId, token),
+      this.dossierPatientClient.getExamensComplementairesTous(patientId, token),
+      this.dossierPatientClient.getSuivis(patientId, token),
+      this.protocoleOperatoireService.findAll(1, 50, patientId).then(r => r.data).catch(() => []),
+    ]);
+
+    // La sortie médicale se consulte par épisode d'hospitalisation, pas par patient — on prend
+    // le plus récent episodeId connu (diagnostic ou histoire de la maladie) à défaut d'un suivi
+    // d'admission dédié dans ce service.
+    const episodeId = diagnostics.find((d: any) => d.episodeId)?.episodeId;
+    const sortie = episodeId ? await this.dossierPatientClient.getSortieMedicale(episodeId, token) : [];
+
+    return {
+      observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
+      examensComplementaires, suivis, protocolesOperatoires, sortie,
+    };
   }
 
   async update(patientId: string, dto: any): Promise<PatientBloc> {

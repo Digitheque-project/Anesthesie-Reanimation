@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { patientService, notificationService, planningService } from '@/lib/api'
 import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifierRDV'
-import DossierMedicalPanel from '@/components/bloc/dossier-patient/DossierMedicalPanel'
+import DossierPatientTabs from '@/components/bloc/dossier-patient/DossierPatientTabs'
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { libelleUrgence, styleUrgence } from '@/lib/urgence'
@@ -115,60 +115,15 @@ function DossierPatientPageContent() {
         </div>
       </div>
 
-      <DossierMedicalPanel patientId={patientId} />
-
-      {/* Contexte de prise en charge actuelle — distinct du dossier médical ci-dessus : ce qui
-          suit concerne uniquement la prescription/admission en cours, pas l'historique médical
-          du patient. */}
+      {/* Accès direct au dossier patient complet (Service Clinique), en lecture seule */}
       <div className="flex items-center gap-3 my-5">
-        <span className="material-symbols-outlined text-on-surface-variant">event_note</span>
-        <h2 className="text-sm font-extrabold text-on-surface-variant uppercase tracking-wide">Prise en charge en cours</h2>
+        <span className="material-symbols-outlined text-on-surface-variant">folder_shared</span>
+        <h2 className="text-sm font-extrabold text-on-surface-variant uppercase tracking-wide">Dossier Patient</h2>
         <div className="flex-1 h-px bg-outline-variant/30" />
       </div>
-
-      {/* Suivi CPA */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border mb-3">
-        <h3 className="text-lg font-bold text-primary mb-3 flex items-center gap-2">
-          <span className="material-symbols-outlined">fact_check</span> Suivi CPA
-        </h3>
-
-        {p.statut === 'CPA_INAPTE' ? (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-bold text-red-700">❌ Patient inapte pour le CPA</p>
-            {p.motifRefusCpa && <p className="text-sm text-red-800 mt-1">Motif : {p.motifRefusCpa}</p>}
-          </div>
-        ) : p.statut && p.statut !== 'EN_ATTENTE_CPA' ? (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm font-bold text-green-700">✅ CPA réalisée</p>
-            <p className="text-xs text-green-800 mt-1">La décision d'aptitude est prise pendant la consultation CPA proprement dite.</p>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm text-on-surface-variant mb-3">
-              La décision d'aptitude (Apte / En attente / Refusé) se fait pendant la consultation CPA. Depuis cette fiche, vous pouvez planifier son rendez-vous.
-            </p>
-            {!peutPlanifierCpa && (
-              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Planification réservée au Responsable CPA ou au Major{roleName ? ` (votre rôle : ${roleName})` : ''}.
-              </div>
-            )}
-            <button onClick={() => setShowPlanifier(true)} disabled={submitting || !peutPlanifierCpa}
-              className="w-full sm:w-auto px-4 py-3 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-lg">event_available</span>
-              Planifier le rendez-vous CPA
-            </button>
-          </>
-        )}
+      <div className="mb-5">
+        <DossierPatientTabs patientId={patientId} />
       </div>
-
-      <ModalPlanifierRDV
-        isOpen={showPlanifier}
-        onClose={() => setShowPlanifier(false)}
-        onValider={handleValiderPlanification}
-        patientNom={formaterNomPatient(p)}
-        intervention={p.libelle || ''}
-        estUrgent={false}
-      />
 
       {/* Prescription — alertes et risque hémorragique regroupés dans la même plage que la
           prescription chirurgicale, pour que le prescripteur ait toute l'information critique
@@ -214,6 +169,51 @@ function DossierPatientPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Suivi CPA / planification — après la prescription, puisqu'on ne planifie qu'une fois la
+          prescription chirurgicale consultée */}
+      <div className="bg-white rounded-xl p-4 shadow-sm border mb-3">
+        <h3 className="text-lg font-bold text-primary mb-3 flex items-center gap-2">
+          <span className="material-symbols-outlined">fact_check</span> Suivi CPA
+        </h3>
+
+        {p.statut === 'CPA_INAPTE' ? (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-bold text-red-700">❌ Patient inapte pour le CPA</p>
+            {p.motifRefusCpa && <p className="text-sm text-red-800 mt-1">Motif : {p.motifRefusCpa}</p>}
+          </div>
+        ) : p.statut && p.statut !== 'EN_ATTENTE_CPA' ? (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm font-bold text-green-700">✅ CPA réalisée</p>
+            <p className="text-xs text-green-800 mt-1">La décision d'aptitude est prise pendant la consultation CPA proprement dite.</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-on-surface-variant mb-3">
+              La décision d'aptitude (Apte / En attente / Refusé) se fait pendant la consultation CPA. Depuis cette fiche, vous pouvez planifier son rendez-vous.
+            </p>
+            {!peutPlanifierCpa && (
+              <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Planification réservée au Responsable CPA ou au Major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </div>
+            )}
+            <button onClick={() => setShowPlanifier(true)} disabled={submitting || !peutPlanifierCpa}
+              className="w-full sm:w-auto px-4 py-3 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined text-lg">event_available</span>
+              Planifier le rendez-vous CPA
+            </button>
+          </>
+        )}
+      </div>
+
+      <ModalPlanifierRDV
+        isOpen={showPlanifier}
+        onClose={() => setShowPlanifier(false)}
+        onValider={handleValiderPlanification}
+        patientNom={formaterNomPatient(p)}
+        intervention={p.libelle || ''}
+        estUrgent={false}
+      />
 
       {/* Consignes */}
       <div className="bg-white rounded-xl p-4 shadow-sm border">

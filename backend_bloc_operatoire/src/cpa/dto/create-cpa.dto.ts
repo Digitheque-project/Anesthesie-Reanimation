@@ -58,4 +58,5 @@ export class CreateCPADto {
   @IsOptional() @IsDateString() dateVerificationVeille?: string;
   @IsOptional() @IsEnum(StatutCPA) statut?: StatutCPA;
   @IsOptional() @IsString() motifRefus?: string;
+  @IsOptional() @IsString() validationProfInformelle?: string;
 }

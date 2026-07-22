@@ -74,6 +74,13 @@ export class PatientBlocController {
     return this.patientBlocService.getDossierMedical(patientId, token);
   }
 
+  @Get(':patientId/dossier-complet')
+  @ApiOperation({ summary: 'Dossier patient complet en lecture seule, organisé par onglets (observations, diagnostics, antécédents, histoire de la maladie, examens physiques, examens complémentaires, suivis, protocoles opératoires, sortie)' })
+  getDossierComplet(@Param('patientId') patientId: string, @Request() req: any) {
+    const token = (req.headers?.authorization || '').replace(/^Bearer\s+/i, '');
+    return this.patientBlocService.getDossierComplet(patientId, token);
+  }
+
   @Patch(':patientId')
   @ApiOperation({ summary: 'Modifier une fiche de suivi bloc' })
   update(@Param('patientId') patientId: string, @Body() dto: UpdatePatientBlocDto) {

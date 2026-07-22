@@ -150,6 +150,9 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
 
   return (
     <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5">
+      {/* Boutons épinglés (sticky) : rester accessibles sans avoir à remonter la page, même
+          quand l'historique en dessous s'allonge au fil de l'opération. */}
+      <div className="sticky top-2 z-10 bg-surface-container-lowest pb-2 -mx-1 px-1 space-y-4">
       <h2 className="text-lg font-bold font-headline text-primary flex items-center gap-2">
         <span className="material-symbols-outlined">timeline</span> Chronologie de l'opération
       </h2>
@@ -213,13 +216,14 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
           </button>
         </div>
       )}
+      </div>
 
       <div>
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Historique</h3>
         {moments.length === 0 ? (
           <p className="text-xs text-on-surface-variant">Aucun moment horodaté pour l'instant.</p>
         ) : (
-          <ul className="space-y-1.5 max-h-64 overflow-y-auto">
+          <ul className="space-y-1.5 max-h-48 overflow-y-auto">
             {moments.map((m) => {
               const style = CATEGORIE_STYLE[m.categorie] || CATEGORIE_STYLE.DIVERS
               return (

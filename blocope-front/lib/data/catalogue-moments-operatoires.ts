@@ -16,8 +16,6 @@ export const CATALOGUE_MOMENTS: Record<CategorieMoment, { titre: string; items: 
   CHIRURGIE: {
     titre: 'Chirurgie',
     items: [
-      'Antisepsie / badigeonnage',
-      'Champage',
       'Incision',
       'Ouverture',
       'Exploration',

@@ -39,6 +39,8 @@ export default function PatientDuJourPage() {
           operation: notif?.intervention || p.libelle || 'Non spécifiée',
           etat: p.niveauUrgence === 'TRES_URGENT' ? 'TRES_URGENT' : p.niveauUrgence === 'URGENT' ? 'URGENT' : 'NORMAL',
           chirurgien: notif?.chirurgien?.nom || p.chirurgien_nom || '',
+          dateIntervention: p.dateIntervention || null,
+          salle: p.chambre || '',
         }
       })
 

@@ -46,4 +46,9 @@ export const patientService = {
     const { data } = await apiClient.get(`/patients/${cleanPatientId(id)}/dossier-medical`);
     return data;
   },
+
+  async getDossierComplet(id: string) {
+    const { data } = await apiClient.get(`/patients/${cleanPatientId(id)}/dossier-complet`);
+    return data;
+  },
 };

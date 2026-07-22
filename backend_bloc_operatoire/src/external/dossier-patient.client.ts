@@ -84,4 +84,39 @@ export class DossierPatientClient {
       token,
     );
   }
+
+  // Ensemble complet (pas seulement "actifs"/"urgents"/"dernier") pour la vue Dossier Patient en
+  // onglets — lecture seule, on y affiche tout ce que le service Dossier Patient expose.
+  getObservations(patientId: string, token: string) {
+    return this.get(
+      `/dossier-patient/observations/patient/${encodeURIComponent(patientId)}`,
+      { chuId: this.chuId, serviceId: this.serviceId },
+      token,
+    );
+  }
+
+  getDiagnosticsTous(patientId: string, token: string) {
+    return this.getParPatient('/dossier-patient/diagnostics', patientId, token);
+  }
+
+  getAntecedentsTous(patientId: string, token: string) {
+    return this.getParPatient('/dossier-patient/antecedents/all', patientId, token);
+  }
+
+  getHistoiresMaladie(patientId: string, token: string) {
+    return this.getParPatient('/dossier-patient/medical-histories', patientId, token);
+  }
+
+  getExamensPhysiquesTous(patientId: string, token: string) {
+    return this.getParPatient('/dossier-patient/physical-examinations/all/latest', patientId, token);
+  }
+
+  getExamensComplementairesTous(patientId: string, token: string) {
+    return this.getParPatient('/dossier-patient/complementary-examinations', patientId, token);
+  }
+
+  getSortieMedicale(episodeId: string, token: string) {
+    if (!this.baseUrl || !episodeId) return Promise.resolve<any[]>([]);
+    return this.get(`/dossier-patient/sorties-medicales/episode/${encodeURIComponent(episodeId)}`, {}, token);
+  }
 }

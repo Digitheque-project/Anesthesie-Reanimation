@@ -25,8 +25,12 @@ export class ProtocoleOperatoireService {
     this.gateway.emitToOperation(complet.patientId, 'protocole-operatoire:maj', { patientId: complet.patientId, protocole: complet });
     return complet;
   }
-  async findAll(page = 1, limite = 10) {
-    const [data, total] = await this.repo.findAndCount({ relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+  async findAll(page = 1, limite = 10, patientId?: string) {
+    const [data, total] = await this.repo.findAndCount({
+      where: patientId ? { patientId } : {},
+      relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'],
+      skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' },
+    });
     const enriched = await this.accueilClient.enrichWithIdentity(data);
     return { data: enriched, total, page, pages: Math.ceil(total / limite) };
   }

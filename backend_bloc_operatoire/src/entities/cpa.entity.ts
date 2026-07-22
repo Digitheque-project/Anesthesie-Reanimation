@@ -118,6 +118,12 @@ export class CPA {
   @Column({ type: 'text', nullable: true })
   motifRefus: string;
 
+  // Mention informelle (pas un vrai workflow d'approbation) : certaines CPA sont validées par un
+  // simple appel téléphonique au Prof/chef de service — ce champ ne fait que l'afficher, il ne
+  // bloque ni ne conditionne rien.
+  @Column({ type: 'text', nullable: true })
+  validationProfInformelle: string;
+
   @Column()
   typeAnesthesie: string;
 

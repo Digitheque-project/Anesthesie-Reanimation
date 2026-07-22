@@ -21,7 +21,8 @@ export class ProtocoleOperatoireController {
   @ApiOperation({ summary: 'Lister tous les protocoles' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limite', required: false })
-  findAll(@Query('page') p?: number, @Query('limite') l?: number) { return this.service.findAll(p, l); }
+  @ApiQuery({ name: 'patientId', required: false })
+  findAll(@Query('page') p?: number, @Query('limite') l?: number, @Query('patientId') patientId?: string) { return this.service.findAll(p, l, patientId); }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtenir un protocole par ID' })

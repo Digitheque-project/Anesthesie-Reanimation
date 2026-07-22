@@ -28,6 +28,7 @@ function ActivitePendantOperationPageContent() {
     perfusions: '', transfusions: '', journalSorties: '',
     intubationOT: false, sArme: false, masqueLarynge: false,
     ventilationSpontanee: '', ventilationAssistee: '', ventilationControlee: '', ventilationPEEP: '', ventilationCircuitFerme: '',
+    ventilationSpontaneeOn: false, ventilationAssisteeOn: false, ventilationControleeOn: false, ventilationPEEPOn: false, ventilationCircuitFermeOn: false,
     etatArrivee: '',
   })
 
@@ -71,11 +72,11 @@ function ActivitePendantOperationPageContent() {
         sArme: form.sArme,
         masqueLarynge: form.masqueLarynge,
         ventilation: {
-          spontanee: form.ventilationSpontanee,
-          assistee: form.ventilationAssistee,
-          controlee: form.ventilationControlee,
-          peep: form.ventilationPEEP,
-          circuitFerme: form.ventilationCircuitFerme,
+          spontanee: form.ventilationSpontaneeOn ? (form.ventilationSpontanee || 'Oui') : undefined,
+          assistee: form.ventilationAssisteeOn ? (form.ventilationAssistee || 'Oui') : undefined,
+          controlee: form.ventilationControleeOn ? (form.ventilationControlee || 'Oui') : undefined,
+          peep: form.ventilationPEEPOn ? (form.ventilationPEEP || 'Oui') : undefined,
+          circuitFerme: form.ventilationCircuitFermeOn ? (form.ventilationCircuitFerme || 'Oui') : undefined,
         },
         etatArrivee: form.etatArrivee ? [form.etatArrivee] : [],
       })
@@ -204,9 +205,9 @@ function ActivitePendantOperationPageContent() {
           </div>
           <div className="p-6"><div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { key: 'intubationOT', label: 'INTUB - OT', icone: 'air' },
-              { key: 'sArme', label: 'S.ARMEE', icone: 'health_and_safety' },
-              { key: 'masqueLarynge', label: 'M.LARYNGÉ', icone: 'masks' }
+              { key: 'intubationOT', label: 'Intub. Orotrachéale (IOT)', icone: 'air' },
+              { key: 'sArme', label: 'Intub. Nasotrachéale (INT)', icone: 'health_and_safety' },
+              { key: 'masqueLarynge', label: 'Masque Laryngé (M.Laryngé)', icone: 'masks' }
             ].map(item => {
               const actif = form[item.key as keyof typeof form] as boolean
               return (
@@ -235,25 +236,41 @@ function ActivitePendantOperationPageContent() {
             <span className="material-symbols-outlined text-blue-600 text-xl">settings_input_component</span>
             <h3 className="font-headline font-bold text-blue-900 uppercase tracking-wide text-sm">Options de ventilation</h3>
           </div>
-          <div className="p-6"><div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="p-6"><div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {[
-              { label: 'Spontanée', key: 'ventilationSpontanee' },
-              { label: 'Assistée', key: 'ventilationAssistee' },
-              { label: 'Controlée', key: 'ventilationControlee' },
-              { label: 'PEEP', key: 'ventilationPEEP' },
-              { label: 'Circuit fermé', key: 'ventilationCircuitFerme' }
-            ].map(item => (
-              <div key={item.key} className="flex flex-col gap-2">
-                <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{item.label}</label>
-                <input
-                  className="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Détails..."
-                  type="text"
-                  value={form[item.key as keyof typeof form] as string}
-                  onChange={e => setForm({...form, [item.key]: e.target.value})}
-                />
-              </div>
-            ))}
+              { label: 'Spontanée', key: 'ventilationSpontanee', onKey: 'ventilationSpontaneeOn' },
+              { label: 'Assistée', key: 'ventilationAssistee', onKey: 'ventilationAssisteeOn' },
+              { label: 'Contrôlée', key: 'ventilationControlee', onKey: 'ventilationControleeOn' },
+              { label: 'PEEP', key: 'ventilationPEEP', onKey: 'ventilationPEEPOn' },
+              { label: 'Circuit fermé', key: 'ventilationCircuitFerme', onKey: 'ventilationCircuitFermeOn' },
+            ].map(item => {
+              const actif = form[item.onKey as keyof typeof form] as boolean
+              return (
+                <div key={item.key} className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({...form, [item.onKey]: !actif})}
+                    className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      actif ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-background border-surface-container-highest hover:border-outline-variant'
+                    }`}
+                  >
+                    <span className={`material-symbols-outlined text-xl ${actif ? 'text-blue-600' : 'text-on-surface-variant/50'}`} style={actif ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+                      {actif ? 'check_circle' : 'radio_button_unchecked'}
+                    </span>
+                    <span className={`text-[11px] font-bold uppercase tracking-wide ${actif ? 'text-blue-900' : 'text-on-surface'}`}>{item.label}</span>
+                  </button>
+                  {actif && (
+                    <input
+                      className="w-full h-9 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="Détail (optionnel)..."
+                      type="text"
+                      value={form[item.key as keyof typeof form] as string}
+                      onChange={e => setForm({...form, [item.key]: e.target.value})}
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div></div>
         </section>
 

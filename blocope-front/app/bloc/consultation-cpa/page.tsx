@@ -35,12 +35,12 @@ const DEFAULT_FORM = {
   distanceMentoThyroidienne: '',
   dents: 'Denture saine',
   tabac: 'Non fumeur',
-  alcool: 'Occasionnel / Aucun',
+  alcool: 'Aucun',
   typeAnesthesie: 'Anesthésie Générale (AG)',
   techniqueIntubation: 'Sonde Endotrachéale',
   jeune: '',
-  jeuneSolides: 'À partir de minuit',
-  jeuneLiquides: "Jusqu'à H-2",
+  jeuneSolides: '',
+  jeuneLiquides: '',
   preparationPhysique: '',
   tachesInfirmieres: '',
 }
@@ -77,6 +77,7 @@ function ConsultationCpaPageContent() {
   const [scoreASA, setScoreASA] = useState<number | string>(1);
   const [decision, setDecision] = useState<'APTE' | 'INAPTE' | 'REPORT' | ''>('');
   const [motifRefus, setMotifRefus] = useState('');
+  const [validationProfInformelle, setValidationProfInformelle] = useState('');
   const [dateVPA, setDateVPA] = useState('');
   const [heureVPA, setHeureVPA] = useState('08:00');
   const [loading, setLoading] = useState(false);
@@ -93,6 +94,8 @@ function ConsultationCpaPageContent() {
   const [savingDateIntervention, setSavingDateIntervention] = useState(false);
   const [cpaExistante, setCpaExistante] = useState<any>(null);
   const [chargementCpa, setChargementCpa] = useState(true);
+  const [historiqueCpa, setHistoriqueCpa] = useState<any[]>([]);
+  const [ongletHistorique, setOngletHistorique] = useState(false);
 
   const estResponsableOuMajor = estResponsableCpa || estMajor;
 
@@ -120,8 +123,15 @@ function ConsultationCpaPageContent() {
   // médicaments d'anesthésie/réanimation et la date de vérification veille.
   useEffect(() => {
     if (!patientId) { setChargementCpa(false); return; }
-    apiClient.get('/cpa', { params: { patientId, limite: 1 } })
-      .then(({ data }) => setCpaExistante(data?.data?.[0] || null))
+    apiClient.get('/cpa', { params: { patientId, limite: 10 } })
+      .then(({ data }) => {
+        const liste = data?.data || [];
+        setCpaExistante(liste[0] || null);
+        // Quand le patient revient pour refaire sa CPA (après un report, ou plus tard dans son
+        // parcours), les tentatives précédentes restent visibles pour contexte — pas juste la
+        // dernière écrasant silencieusement l'historique.
+        setHistoriqueCpa(liste.slice(1));
+      })
       .catch(console.error)
       .finally(() => setChargementCpa(false));
   }, [patientId]);
@@ -161,6 +171,7 @@ function ConsultationCpaPageContent() {
     if (c.scoreASA != null) setScoreASA(c.scoreASA);
     if (c.decision) setDecision(c.decision);
     if (c.motifRefus) setMotifRefus(c.motifRefus);
+    if (c.validationProfInformelle) setValidationProfInformelle(c.validationProfInformelle);
     if (c.premedicaments?.length) {
       setMedicaments(c.premedicaments.map((p: any) => ({
         premedication: p.nom, dose: p.dose, voieAdmin: p.voieAdministration, debut: p.debut, frequence: p.frequence,
@@ -284,6 +295,7 @@ function ConsultationCpaPageContent() {
           scoreASA: typeof scoreASA === 'string' ? scoreASA : Number(scoreASA),
           decision,
           motifRefus: (decision === 'INAPTE' || decision === 'REPORT') ? motifRefus.trim() : undefined,
+          validationProfInformelle: validationProfInformelle.trim() || undefined,
           typeAnesthesie: form.typeAnesthesie,
           techniqueIntubation: form.techniqueIntubation,
           premedicaments: medicaments.map(m => ({
@@ -303,7 +315,7 @@ function ConsultationCpaPageContent() {
                 observation: r.observation || undefined,
               }))
             : undefined,
-          jeune: form.jeune || `Solides : ${form.jeuneSolides} — Liquides clairs : ${form.jeuneLiquides}`,
+          jeune: form.jeune || `Solides : ${form.jeuneSolides || 'À partir de minuit'} — Liquide : ${form.jeuneLiquides || "Jusqu'à H-2"}`,
           preparationPhysique: form.preparationPhysique || 'RAS',
           tachesInfirmieres: form.tachesInfirmieres || 'RAS',
           dateVerificationVeille: (peutEditerMedicamentsEtVpa && !estUrgent && decision !== 'INAPTE' && dateVPA) ? dateVPA : undefined,
@@ -537,12 +549,12 @@ function ConsultationCpaPageContent() {
               </div>
               <div className="space-y-2"><label className="text-sm font-semibold uppercase tracking-widest text-[10px]">TABAC</label>
                 <select disabled={!peutEditerExamenEtDecision} value={form.tabac} onChange={setField('tabac')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60">
-                  <option>Non fumeur</option><option>Fumeur actif</option><option>Ancien fumeur</option>
+                  <option>Non fumeur</option><option>Fumeur actif</option><option>Fumeur passif</option><option>Ancien fumeur</option>
                 </select>
               </div>
               <div className="space-y-2"><label className="text-sm font-semibold uppercase tracking-widest text-[10px]">ALCOOLS</label>
                 <select disabled={!peutEditerExamenEtDecision} value={form.alcool} onChange={setField('alcool')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60">
-                  <option>Occasionnel / Aucun</option><option>Régulier</option><option>Chronique / Sevrage</option>
+                  <option>Aucun</option><option>Occasionnel</option><option>Régulier</option><option>Chronique</option><option>Sevrage</option>
                 </select>
               </div>
             </div>
@@ -655,11 +667,11 @@ function ConsultationCpaPageContent() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-white p-3 rounded-lg">
                       <label className="text-[10px] font-bold uppercase block mb-1">Solides</label>
-                      <input disabled={!peutEditerExamenEtDecision} value={form.jeuneSolides} onChange={setField('jeuneSolides')} className="w-full bg-transparent border-none text-sm font-bold p-0 focus:ring-0 disabled:opacity-60" />
+                      <input disabled={!peutEditerExamenEtDecision} value={form.jeuneSolides} onChange={setField('jeuneSolides')} placeholder="À partir de minuit" className="w-full bg-transparent border-none text-sm font-bold p-0 focus:ring-0 disabled:opacity-60 placeholder:font-normal placeholder:text-gray-400" />
                     </div>
                     <div className="bg-white p-3 rounded-lg">
-                      <label className="text-[10px] font-bold uppercase block mb-1">Liquides Clairs</label>
-                      <input disabled={!peutEditerExamenEtDecision} value={form.jeuneLiquides} onChange={setField('jeuneLiquides')} className="w-full bg-transparent border-none text-sm font-bold p-0 focus:ring-0 disabled:opacity-60" />
+                      <label className="text-[10px] font-bold uppercase block mb-1">Liquide</label>
+                      <input disabled={!peutEditerExamenEtDecision} value={form.jeuneLiquides} onChange={setField('jeuneLiquides')} placeholder="Jusqu'à H-2" className="w-full bg-transparent border-none text-sm font-bold p-0 focus:ring-0 disabled:opacity-60 placeholder:font-normal placeholder:text-gray-400" />
                     </div>
                   </div>
                 </div>
@@ -713,7 +725,7 @@ function ConsultationCpaPageContent() {
                   {[
                     { key: 'APTE', label: "Apte à l'anesthésie", icon: 'check_circle', activeClass: 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30' },
                     { key: 'INAPTE', label: 'Inapte à ce jour', icon: 'cancel', activeClass: 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/30' },
-                    { key: 'REPORT', label: "Report d'intervention", icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' },
+                    { key: 'REPORT', label: 'CPA à reporter', sousLabel: '(pas l\'opération — à refaire après examens)', icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' },
                   ].map(opt => (
                     <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutEditerExamenEtDecision}
                       className={`w-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed ${
@@ -721,6 +733,7 @@ function ConsultationCpaPageContent() {
                       }`}>
                       <span className="material-symbols-outlined text-2xl" style={decision === opt.key ? { fontVariationSettings: "'FILL' 1" } : undefined}>{opt.icon}</span>
                       <span className="font-bold text-sm text-center">{opt.label}</span>
+                      {opt.sousLabel && <span className={`text-[10px] font-medium text-center leading-tight ${decision === opt.key ? 'text-white/85' : 'text-on-surface-variant/70'}`}>{opt.sousLabel}</span>}
                     </button>
                   ))}
                 </div>
@@ -733,14 +746,52 @@ function ConsultationCpaPageContent() {
                 )}
                 {decision === 'REPORT' && (
                   <div className="mt-3">
+                    <p className="text-[11px] text-orange-700 mb-2">Ce report concerne la CPA elle-même (à refaire plus tard, par exemple si des examens complémentaires sont nécessaires avant de statuer) — pas la date de l'opération.</p>
                     <label className="text-xs font-bold text-orange-700 block mb-1">Motif du report *</label>
                     <textarea disabled={!peutEditerExamenEtDecision} value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
-                      className="w-full h-20 bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-300 outline-none disabled:opacity-60" placeholder="Expliquez le motif du report d'intervention..." />
+                      className="w-full h-20 bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-300 outline-none disabled:opacity-60" placeholder="Ex : bilan biologique complémentaire nécessaire avant de statuer sur l'aptitude..." />
                   </div>
                 )}
+                {/* Mention informelle : pas un vrai workflow d'approbation, juste un aperçu si le
+                    Prof/chef de service a donné son accord par un simple appel téléphonique. */}
+                <div className="mt-3 pt-3 border-t border-amber-200/60">
+                  <label className="text-[11px] font-bold text-amber-800 block mb-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">call</span> Validation informelle du Prof (optionnel)
+                  </label>
+                  <input disabled={!peutEditerExamenEtDecision} value={validationProfInformelle} onChange={e => setValidationProfInformelle(e.target.value)}
+                    className="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs disabled:opacity-60"
+                    placeholder="Ex : validé par téléphone par le Pr Rakoto le 22/07 à 14h" />
+                </div>
               </div>
             </div>
           </div>
+
+          {historiqueCpa.length > 0 && (
+            <div className="mt-3 rounded-2xl border border-outline-variant/40 bg-white overflow-hidden">
+              <button type="button" onClick={() => setOngletHistorique(v => !v)}
+                className="w-full px-4 py-3 flex items-center gap-2 text-left hover:bg-surface-container-low transition-colors">
+                <span className="material-symbols-outlined text-on-surface-variant">history</span>
+                <span className="text-sm font-bold text-on-surface">Historique des CPA précédentes</span>
+                <span className="ml-1 px-2 py-0.5 bg-surface-container text-on-surface-variant text-[10px] font-extrabold rounded-full">{historiqueCpa.length}</span>
+                <span className="material-symbols-outlined ml-auto text-on-surface-variant">{ongletHistorique ? 'expand_less' : 'expand_more'}</span>
+              </button>
+              {ongletHistorique && (
+                <div className="px-4 pb-4 space-y-2">
+                  {historiqueCpa.map((h: any) => (
+                    <div key={h.id} className="p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest text-sm">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold">{h.dateConsultation ? new Date(h.dateConsultation).toLocaleDateString('fr-FR') : '—'}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                          h.decision === 'APTE' ? 'bg-emerald-100 text-emerald-700' : h.decision === 'INAPTE' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                        }`}>{h.decision === 'REPORT' ? 'CPA reportée' : h.decision}</span>
+                      </div>
+                      {h.motifRefus && <p className="text-xs text-on-surface-variant">Motif : {h.motifRefus}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Planification de la vérification à la veille — réservée à l'anesthésiste, sans objet
               pour un patient urgent (chirurgie immédiate, pas de "veille") */}

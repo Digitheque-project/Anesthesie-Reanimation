@@ -87,8 +87,11 @@ function ProtocoleOperatoirePageContent() {
       </section>
 
       {/* Colonne droite : Instructions */}
-      <section className="w-[500px] flex flex-col space-y-6">
-        <h2 className="text-2xl font-extrabold text-on-surface tracking-tight">Instructions Post-opératoires</h2>
+      <section className="w-[500px] flex flex-col space-y-6 bg-amber-50 border-2 border-amber-200 rounded-2xl p-5">
+        <h2 className="text-2xl font-extrabold text-amber-900 tracking-tight flex items-center gap-2">
+          <span className="material-symbols-outlined text-amber-600">priority_high</span>
+          Instructions Post-opératoires
+        </h2>
         <div className="space-y-4">
           {/* Surveillance */}
           <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm ring-1 ring-black/5">
