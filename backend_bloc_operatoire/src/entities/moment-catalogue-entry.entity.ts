@@ -18,7 +18,7 @@ export class MomentCatalogueEntry {
   @Column()
   label: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   creeParNom: string | null;
 
   @CreateDateColumn()
