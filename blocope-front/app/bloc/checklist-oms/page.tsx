@@ -7,12 +7,16 @@ import { apiClient } from '@/lib/api/client'
 import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
 import Radio from '@/components/ui/Radio'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 export default function ChecklistAvantOpPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ChecklistAvantOpPageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la check-list avant opération.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ChecklistAvantOpPageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 

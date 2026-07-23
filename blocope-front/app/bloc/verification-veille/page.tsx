@@ -7,12 +7,16 @@ import { apiClient } from '@/lib/api/client'
 import { patientService } from '@/lib/api'
 import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 export default function VerificationVeillePage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <VerificationVeillePageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la vérification de la veille.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <VerificationVeillePageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 

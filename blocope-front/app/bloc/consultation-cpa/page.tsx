@@ -8,12 +8,20 @@ import { useRole } from '@/lib/hooks/useRole';
 import { obtenirSessionValide } from '@/lib/auth/central-session';
 import MedicamentsAnesthesieModal, { construireLignesInitiales } from '@/components/bloc/medicaments-anesthesie/MedicamentsAnesthesieModal';
 import type { MedicamentRow } from '@/components/bloc/medicaments-anesthesie/MedicamentTable';
+import RoleGate from '@/components/bloc/auth/RoleGate';
+import { RoleClinique } from '@/lib/auth/role-clinique';
+import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
 
 export default function ConsultationCpaPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ConsultationCpaPageContent />
-    </Suspense>
+    <RoleGate
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR]}
+      message="Vous ne devez pas faire de CPA."
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ConsultationCpaPageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 
@@ -86,6 +94,7 @@ function ConsultationCpaPageContent() {
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
   const [showCatalogueModal, setShowCatalogueModal] = useState(false);
   const [medicamentsAnesthesieRows, setMedicamentsAnesthesieRows] = useState<MedicamentRow[]>(() => construireLignesInitiales());
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, estResponsableCpa, estMajor, roleName } = useRole();
   const [nomAnesthesiste, setNomAnesthesiste] = useState('');
   const [anesthesistes, setAnesthesistes] = useState<any[]>([]);
@@ -704,6 +713,45 @@ function ConsultationCpaPageContent() {
                 onRowsChange={setMedicamentsAnesthesieRows}
               />
             </div>
+          </div>
+
+          {/* Prescription pendant la CPA — au cas où l'anesthésiste/responsable CPA/major en a
+              besoin, avant la décision finale. Envoyée dans le dossier partagé du patient avec
+              son service d'origine comme destinataire explicite (pas d'action obligatoire). */}
+          <div className="mt-4 pt-4 border-t border-surface-container">
+            <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">clinical_notes</span> Prescription
+            </h3>
+            {!peutDeciderAptitudeCpa ? (
+              <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Prescrire pendant la CPA est réservé à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-on-surface-variant mb-2">
+                  Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
+                </p>
+                <button type="button" onClick={() => setShowPrescriptionModal(true)}
+                  className="w-full flex items-center justify-between p-4 border border-surface-container rounded-xl hover:bg-primary-fixed/10 transition-colors">
+                  <span className="flex items-center gap-2 text-sm font-bold text-primary">
+                    <span className="material-symbols-outlined">edit_note</span>
+                    Prescrire
+                  </span>
+                  <span className="text-xs font-bold text-primary underline">Ouvrir</span>
+                </button>
+              </>
+            )}
+
+            <PrescriptionCpaModal
+              open={showPrescriptionModal}
+              onClose={() => setShowPrescriptionModal(false)}
+              patientId={patientId || patient?.id || ''}
+              serviceDestOverride={
+                patient?.serviceOrigineId && patient?.serviceOrigine
+                  ? { serviceId: patient.serviceOrigineId, serviceName: patient.serviceOrigine }
+                  : undefined
+              }
+            />
           </div>
 
           {/* Décision Finale — seul champ réellement obligatoire de la consultation : mise en

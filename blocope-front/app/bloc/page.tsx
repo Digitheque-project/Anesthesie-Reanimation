@@ -127,7 +127,15 @@ export default function DashboardPage() {
 
       {!loading && <AlerteBandeau count={tresUrgentCount} message={`${tresUrgentCount} patient${tresUrgentCount > 1 ? 's' : ''} TRÈS URGENT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
 
-      <EtatGlobalPatients total={total} stat={tresUrgentCount} urgent={urgentCount} normal={normalCount} />
+      <EtatGlobalPatients
+        loading={loading}
+        sections={[
+          { titre: 'Prescription — Aujourd\'hui', icon: 'notification_important', accent: 'tertiary', lignes: prescriptions },
+          { titre: 'CPA — Aujourd\'hui', icon: 'fact_check', accent: 'quaternary', lignes: patientsCpa },
+          { titre: 'Bloc opératoire — Aujourd\'hui', icon: 'medical_services', accent: 'primary', lignes: patientsBloc },
+          { titre: 'Salle de réveil', icon: 'bed', accent: 'secondary', lignes: patientsReveil },
+        ]}
+      />
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">

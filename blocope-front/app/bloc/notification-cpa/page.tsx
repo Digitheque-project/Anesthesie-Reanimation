@@ -13,6 +13,8 @@ import { useRole } from '@/lib/hooks/useRole'
 import { dedupeParPatient } from '@/lib/notifications/dedupe'
 import { normaliserDemandeExterne } from '@/lib/notifications/normaliser-demande-externe'
 import { formaterNomPatient } from '@/lib/patient'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 export default function NotificationCPAPage() {
   const [notifications, setNotifications] = useState<any[]>([])
@@ -142,6 +144,10 @@ export default function NotificationCPAPage() {
     : notifications.filter(n => n.statut === filtreActif)
 
   return (
+    <RoleGate
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR]}
+      message="Les notifications de CPA ne sont pas accessibles pour votre rôle."
+    >
     <div className="p-8 flex flex-col gap-6">
       <HeaderNotification onActualiser={charger} onToggleFiltres={() => setShowFiltres(!showFiltres)} />
 
@@ -194,5 +200,6 @@ export default function NotificationCPAPage() {
         />
       )}
     </div>
+    </RoleGate>
   )
 }

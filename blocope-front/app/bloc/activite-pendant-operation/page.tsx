@@ -6,12 +6,19 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import MomentsTimeline from '@/components/bloc/moments-operatoire/MomentsTimeline'
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 export default function ActivitePendantOperationPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ActivitePendantOperationPageContent />
-    </Suspense>
+    <RoleGate
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.IBODE]}
+      message="Cette page (chronologie de l'opération) n'est pas accessible pour votre rôle."
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ActivitePendantOperationPageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 

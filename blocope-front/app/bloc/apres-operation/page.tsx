@@ -7,12 +7,16 @@ import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 import { useRole } from '@/lib/hooks/useRole'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 export default function ApresOperationPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ApresOperationPageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la check-list après intervention.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ApresOperationPageContent />
+      </Suspense>
+    </RoleGate>
   );
   }
 

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { salleReveilService } from '@/lib/api/salle-reveil.service';
 import { libelleUrgence, styleUrgence } from '@/lib/urgence';
 import { formaterNomPatient } from '@/lib/patient';
+import RoleGate from '@/components/bloc/auth/RoleGate';
+import { RoleClinique } from '@/lib/auth/role-clinique';
 
 interface PatientReveil {
   id: string;
@@ -51,6 +53,7 @@ export default function ListeSalleReveil() {
   const getUrgenceColor = (niveau: string) => styleUrgence(niveau).badge;
 
   return (
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste a accès à la salle de réveil.">
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">🛏️ Tous les patients en salle de réveil</h1>
@@ -126,5 +129,6 @@ export default function ListeSalleReveil() {
         </div>
       )}
     </div>
+    </RoleGate>
   );
 }

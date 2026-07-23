@@ -8,6 +8,8 @@ import { apiClient } from '@/lib/api/client'
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import Checkbox from '@/components/ui/Checkbox'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -17,9 +19,11 @@ const SERVICES_CLINIQUES = [
 
 export default function SalleDeReveilPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <SalleDeReveilPageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste a accès à la salle de réveil.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <SalleDeReveilPageContent />
+      </Suspense>
+    </RoleGate>
   );
   }
 
