@@ -40,7 +40,7 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
     const cleanId = patient.realId || patient.id.replace("#", "");
     const nom = encodeURIComponent(formaterNomPatient(patient));
     const intervention = encodeURIComponent(patient.operation || '');
-    router.push(`/bloc/checklist-oms?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`);
+    router.push(`/bloc/arrivee-bloc?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`);
     setTimeout(() => setLoadingPatients((prev) => {
       const next = new Set(prev);
       next.delete(patient.id);

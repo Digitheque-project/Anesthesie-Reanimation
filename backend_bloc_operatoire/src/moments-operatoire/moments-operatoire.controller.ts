@@ -11,8 +11,8 @@ export class MomentsOperatoireController {
   constructor(private readonly service: MomentsOperatoireService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN, RoleClinique.IBODE)
-  @ApiOperation({ summary: 'Horodater un moment opératoire (Anesthésiste, Chirurgien ou IBODE)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
+  @ApiOperation({ summary: 'Horodater un moment opératoire (Anesthésiste ou IBODE)' })
   create(@Body() dto: CreateMomentOperatoireDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
   }
@@ -26,7 +26,7 @@ export class MomentsOperatoireController {
   }
 
   @Patch(':id/annuler')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN, RoleClinique.IBODE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
   @ApiOperation({ summary: 'Annuler (suppression douce) un moment opératoire horodaté par erreur' })
   annuler(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     return this.service.annuler(id, req.centralUser);

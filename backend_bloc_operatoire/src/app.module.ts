@@ -33,6 +33,7 @@ import { CentralAuthModule } from './central-auth/central-auth.module';
 import { CentralAuthGuard } from './central-auth/central-auth.guard';
 import { OperationGatewayModule } from './operation-gateway/operation-gateway.module';
 import { MomentsOperatoireModule } from './moments-operatoire/moments-operatoire.module';
+import { MomentsCatalogueModule } from './moments-catalogue/moments-catalogue.module';
 import externalServicesConfig from './config/external-services.config';
 import centralAuthConfig from './config/central-auth.config';
 
@@ -74,6 +75,7 @@ import centralAuthConfig from './config/central-auth.config';
     ChecklistPendantOpModule,
     ChecklistApresOpModule,
     MomentsOperatoireModule,
+    MomentsCatalogueModule,
     WebhookNotificationModule,
     PrescriptionModule,
     PrescriptionImagerieModule,

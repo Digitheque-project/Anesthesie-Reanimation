@@ -98,7 +98,7 @@ export default function DashboardPage() {
     const pret = (pretRes.status === 'fulfilled' ? (pretRes.value?.data || []) : []).filter(duJour)
     const encours = (encoursRes.status === 'fulfilled' ? (encoursRes.value?.data || []) : []).filter(duJour)
     setPatientsBloc([
-      ...pret.map(versLignePatient('PRET_POUR_BLOC', 'Check-list', '/bloc/checklist-oms')),
+      ...pret.map(versLignePatient('PRET_POUR_BLOC', 'Arrivée au bloc', '/bloc/arrivee-bloc')),
       ...encours.map(versLignePatient('EN_COURS_OPERATION', 'Suivi', '/bloc/activite-pendant-operation')),
     ])
 

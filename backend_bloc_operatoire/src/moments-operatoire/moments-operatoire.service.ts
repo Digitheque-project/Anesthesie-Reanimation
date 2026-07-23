@@ -15,14 +15,13 @@ export class MomentsOperatoireService {
   ) {}
 
   async create(dto: CreateMomentOperatoireDto, centralUser: CentralUser): Promise<MomentOperatoire> {
-    // Chaque rôle horodate sa propre catégorie de moments : l'anesthésiste peut tout
-    // horodater, chirurgien et IBODE sont limités à la catégorie CHIRURGIE (l'IBODE assiste le
-    // chirurgien et peut horodater à sa place quand ses mains sont occupées).
+    // Séparation stricte par rôle : l'anesthésiste n'horodate que la catégorie ANESTHESIE ; le
+    // chirurgien ne clique jamais de bouton (délègue toujours à l'IBODE) ; l'IBODE couvre
+    // CHIRURGIE et DIVERS. Pas de chevauchement entre catégories anesthésiste/IBODE.
     const role = matchRoleClinique(centralUser.role);
     const categoriesAutorisees: Record<string, string[]> = {
-      [RoleClinique.ANESTHESISTE]: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
-      [RoleClinique.CHIRURGIEN]: ['CHIRURGIE'],
-      [RoleClinique.IBODE]: ['CHIRURGIE'],
+      [RoleClinique.ANESTHESISTE]: ['ANESTHESIE'],
+      [RoleClinique.IBODE]: ['CHIRURGIE', 'DIVERS'],
     };
     const autorisees = role ? categoriesAutorisees[role] : undefined;
     if (!autorisees || !autorisees.includes(dto.categorie)) {

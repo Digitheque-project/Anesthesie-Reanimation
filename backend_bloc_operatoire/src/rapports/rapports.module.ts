@@ -11,6 +11,7 @@ import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
+import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { RapportsService } from './rapports.service';
 import { RapportsController } from './rapports.controller';
 
@@ -18,6 +19,7 @@ import { RapportsController } from './rapports.controller';
   imports: [TypeOrmModule.forFeature([
     PatientBloc, ActivitePerOp, ScoreSCCRE, Medecin, CPA, NotificationCPA,
     SortieReveil, ChecklistAvantOp, ChecklistPendantOp, ChecklistApresOp, MomentOperatoire,
+    ProtocoleOperatoire,
   ])],
   controllers: [RapportsController],
   providers: [RapportsService],
