@@ -70,6 +70,30 @@ export class PrescriptionExterneClient {
     }
   }
 
+  // Historique complet des prescriptions du patient, toutes catégories confondues (médicale,
+  // non médicale, surveillance, transfusion, labo, imagerie, anapath, eeg, kine, dialyse,
+  // endoscopie, bloc opératoire...) — utilisé pour l'onglet "Prescription" du Dossier Patient.
+  // La catégorie "bloc" est exclue : c'est la prescription qui a déclenché l'admission du
+  // patient dans NOTRE service, déjà visible ailleurs dans l'interface (pas la peine de la
+  // dupliquer dans un historique censé montrer ce que les AUTRES services ont prescrit).
+  async getHistorique(patientId: string): Promise<any[]> {
+    if (!this.baseUrl) {
+      this.logger.warn('PRESCRIPTION_API_URL non configuré');
+      return [];
+    }
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<any[]>(`${this.baseUrl}/prescriptions/historique/patient/${encodeURIComponent(patientId)}`, {
+          headers: this.authHeaders(),
+        }),
+      );
+      return Array.isArray(data) ? data.filter((p) => p?._type !== 'bloc') : [];
+    } catch (err) {
+      this.logger.error(`Erreur récupération historique prescriptions pour ${patientId}: ${(err as Error).message}`);
+      return [];
+    }
+  }
+
   async updateStatut(id: string, statut: string): Promise<void> {
     if (!this.baseUrl) return;
     try {
