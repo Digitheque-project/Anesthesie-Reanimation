@@ -3,10 +3,10 @@ import { ConstantePerOp } from './constante-per-op.entity';
 export declare class ActivitePerOp {
     id: string;
     patientId: string;
-    chirurgien: Medecin;
-    chirurgienId: string;
-    anesthesiste: Medecin;
-    anesthesisteId: string;
+    chirurgien: Medecin | null;
+    chirurgienId: string | null;
+    anesthesiste: Medecin | null;
+    anesthesisteId: string | null;
     dateOperation: Date;
     perfusions: string;
     transfusions: string;

@@ -4,7 +4,7 @@ import { UpdateCPADto } from './dto/update-cpa.dto';
 export declare class CPAController {
     private readonly service;
     constructor(service: CPAService);
-    create(d: CreateCPADto): Promise<import("../entities").CPA>;
+    create(d: CreateCPADto, req: any): Promise<import("../entities").CPA>;
     findAll(p?: number, l?: number, patientId?: string): Promise<{
         data: any;
         total: number;

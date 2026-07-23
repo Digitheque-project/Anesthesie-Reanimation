@@ -1,4 +1,4 @@
-import { ScoreASA, DecisionCPA, StatutCPA } from '../../entities/cpa.entity';
+import { ScoreASA, DecisionCPA, StatutCPA, DecisionOperation } from '../../entities/cpa.entity';
 declare class PremedicamentDto {
     nom: string;
     dose: string;
@@ -6,28 +6,34 @@ declare class PremedicamentDto {
     debut: string;
     frequence: string;
 }
+declare class MedicamentAnesthesieReanimationDto {
+    categorie: string;
+    nom: string;
+    dosage?: string;
+    observation?: string;
+}
 export declare class CreateCPADto {
     patientId: string;
-    anesthesisteId: string;
+    anesthesisteId?: string;
     dateConsultation: string;
     antecedentsAnesthesie: boolean;
     notesIncidents?: string;
-    frequenceCardiaque: number;
-    tensionArterielle: {
+    frequenceCardiaque?: number;
+    tensionArterielle?: {
         systolique: number;
         diastolique: number;
     };
-    taille: number;
-    poids: number;
+    taille?: number;
+    poids?: number;
     examenCardiovasculaire: string;
     examenPulmonaire: string;
     examenNeurologique: string;
     colorationConjonctivale: string;
     abordVeineux: string;
     rachis: string;
-    mallampati: number;
-    ouvertureBuccale: number;
-    distanceMentoThyroidienne: number;
+    mallampati?: number;
+    ouvertureBuccale?: number;
+    distanceMentoThyroidienne?: number;
     dents: string;
     tabac: string;
     alcool: string;
@@ -36,11 +42,14 @@ export declare class CreateCPADto {
     typeAnesthesie: string;
     techniqueIntubation: string;
     premedicaments?: PremedicamentDto[];
+    medicamentsAnesthesieReanimation?: MedicamentAnesthesieReanimationDto[];
     jeune: string;
     preparationPhysique: string;
     tachesInfirmieres: string;
-    dateVPA?: string;
+    dateVerificationVeille?: string;
     statut?: StatutCPA;
     motifRefus?: string;
+    decisionOperation?: DecisionOperation;
+    validationProfInformelle?: string;
 }
 export {};

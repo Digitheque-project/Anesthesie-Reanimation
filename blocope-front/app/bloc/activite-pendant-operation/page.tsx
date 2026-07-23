@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { patientService } from '@/lib/api'
 import MomentsTimeline from '@/components/bloc/moments-operatoire/MomentsTimeline'
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 import RoleGate from '@/components/bloc/auth/RoleGate'
@@ -26,8 +27,14 @@ function ActivitePendantOperationPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''
-  const patientNom = searchParams.get('patientNom') || 'RADALO Jean-Pierre'
-  const intervention = searchParams.get('intervention') || 'Chirurgie Digestive'
+  const patientNom = searchParams.get('patientNom') || 'Patient'
+  const intervention = searchParams.get('intervention') || ''
+  const [patient, setPatient] = useState<any>(null)
+
+  useEffect(() => {
+    if (!patientId) return
+    patientService.getById(patientId).then(setPatient).catch(console.error)
+  }, [patientId])
 
   // État du formulaire (hors constantes, gérées par SurveillancePanel)
   const [form, setForm] = useState({
@@ -121,12 +128,13 @@ function ActivitePendantOperationPageContent() {
           <div className="h-10 w-px bg-surface-container-highest"></div>
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mb-0.5">Patient en cours</span>
-            <h2 className="font-headline font-bold text-lg text-on-surface leading-tight">{patientNom}</h2>
+            <h2 className="font-headline font-bold text-lg text-on-surface leading-tight">{patient?.nom || patientNom}{patient?.prenom ? ` ${patient.prenom}` : ''}</h2>
           </div>
           <div className="h-10 w-px bg-surface-container-highest"></div>
           <div className="grid grid-cols-4 gap-x-8 gap-y-1">
-            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">ID / MRN</p><p className="font-label text-xs font-bold text-on-surface">#982-CH-2024</p></div>
-            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">Opération</p><p className="font-label text-xs font-bold text-on-surface truncate">{intervention}</p></div>
+            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">N° Dossier</p><p className="font-label text-xs font-bold text-on-surface">{patient?.idDossier ? `#${patient.idDossier}` : '—'}</p></div>
+            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">Âge / Sexe</p><p className="font-label text-xs font-bold text-on-surface">{patient?.dateNaissance ? `${Math.max(0, Math.floor((Date.now() - new Date(patient.dateNaissance).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))} ans` : '—'} / {patient?.sexe || '—'}</p></div>
+            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">Opération</p><p className="font-label text-xs font-bold text-on-surface truncate">{intervention || patient?.libelle || '—'}</p></div>
           </div>
         </div>
         <div className="flex items-center gap-4">

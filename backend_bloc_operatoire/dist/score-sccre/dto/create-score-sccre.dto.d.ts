@@ -1,7 +1,7 @@
 import { StatutScoreSCCRE } from '../../entities/score-sccre.entity';
 export declare class CreateScoreSCCREDto {
     patientId: string;
-    anesthesisteId: string;
+    anesthesisteId?: string;
     heureArrivee: string;
     dateEvaluation: string;
     motricite: number;

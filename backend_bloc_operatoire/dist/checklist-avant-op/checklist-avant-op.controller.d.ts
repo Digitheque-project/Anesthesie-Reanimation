@@ -5,7 +5,7 @@ export declare class ChecklistAvantOpController {
     private repo;
     private accueilClient;
     constructor(repo: Repository<ChecklistAvantOp>, accueilClient: AccueilClient);
-    create(dto: any): Promise<ChecklistAvantOp[]>;
+    create(dto: any, req: any): Promise<ChecklistAvantOp[]>;
     findAll(patientId?: string): Promise<any>;
     findOne(id: string): Promise<any>;
     update(id: string, dto: any): Promise<import("typeorm").UpdateResult>;

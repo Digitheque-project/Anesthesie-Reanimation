@@ -16,8 +16,8 @@ var PatientStatut;
     PatientStatut["EN_ATTENTE_CPA"] = "EN_ATTENTE_CPA";
     PatientStatut["CPA_REALISE"] = "CPA_REALISE";
     PatientStatut["CPA_INAPTE"] = "CPA_INAPTE";
-    PatientStatut["EN_ATTENTE_VPA"] = "EN_ATTENTE_VPA";
-    PatientStatut["VPA_REALISE"] = "VPA_REALISE";
+    PatientStatut["EN_ATTENTE_VERIFICATION_VEILLE"] = "EN_ATTENTE_VERIFICATION_VEILLE";
+    PatientStatut["VERIFICATION_VEILLE_REALISEE"] = "VERIFICATION_VEILLE_REALISEE";
     PatientStatut["PRET_POUR_BLOC"] = "PRET_POUR_BLOC";
     PatientStatut["EN_COURS_OPERATION"] = "EN_COURS_OPERATION";
     PatientStatut["EN_SALLE_REVEIL"] = "EN_SALLE_REVEIL";
@@ -25,7 +25,7 @@ var PatientStatut;
 })(PatientStatut || (exports.PatientStatut = PatientStatut = {}));
 var NiveauUrgence;
 (function (NiveauUrgence) {
-    NiveauUrgence["STAT"] = "STAT";
+    NiveauUrgence["TRES_URGENT"] = "TRES_URGENT";
     NiveauUrgence["URGENT"] = "URGENT";
     NiveauUrgence["NORMAL"] = "NORMAL";
 })(NiveauUrgence || (exports.NiveauUrgence = NiveauUrgence = {}));
@@ -47,6 +47,8 @@ let PatientBloc = class PatientBloc {
     chambre;
     serviceOrigine;
     serviceOrigineId;
+    motifRefusCpa;
+    prescriptionExterneId;
     createdAt;
     updatedAt;
 };
@@ -112,13 +114,21 @@ __decorate([
     __metadata("design:type", String)
 ], PatientBloc.prototype, "chambre", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", Object)
 ], PatientBloc.prototype, "serviceOrigine", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 50, nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50, nullable: true }),
     __metadata("design:type", Object)
 ], PatientBloc.prototype, "serviceOrigineId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "motifRefusCpa", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50, nullable: true, unique: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "prescriptionExterneId", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

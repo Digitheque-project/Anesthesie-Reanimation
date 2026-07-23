@@ -111,9 +111,11 @@ function SalleDeReveilPageContent() {
 
       <div className="bg-[#d5ecf8] px-8 py-3 flex items-center border-b border-[#c7dde9] justify-between">
         <div className="flex items-center space-x-6">
-          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="text-sm font-bold text-[#00478d]">{patientNom}</p></div>
+          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="text-sm font-bold text-[#00478d]">{patient?.nom ? `${patient.nom} ${patient.prenom || ''}`.trim() : patientNom}</p></div>
           <div className="w-px h-6 bg-[#c7dde9]"></div>
-          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Intervention</p><p className="text-sm font-semibold">{intervention}</p></div>
+          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Âge / Sexe</p><p className="text-sm font-semibold">{patient?.dateNaissance ? `${Math.max(0, Math.floor((Date.now() - new Date(patient.dateNaissance).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))} ans` : '—'} / {patient?.sexe || '—'}</p></div>
+          <div className="w-px h-6 bg-[#c7dde9]"></div>
+          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Intervention</p><p className="text-sm font-semibold">{intervention || patient?.libelle || '—'}</p></div>
           <div className="w-px h-6 bg-[#c7dde9]"></div>
           <div>
             <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5 block">Anesthésiste</label>

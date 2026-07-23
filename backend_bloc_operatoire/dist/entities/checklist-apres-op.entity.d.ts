@@ -13,6 +13,9 @@ export declare class ChecklistApresOp {
     transfertSalleReveil: boolean;
     observationsParticulieres: string;
     statut: StatutChecklist;
+    validateurId: string | null;
+    validateurNom: string | null;
+    validateurRole: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -7,11 +7,13 @@ export declare enum StatutNotificationCPA {
 export declare class NotificationCPA {
     id: string;
     heurePrescription: string;
+    dateIntervention: Date | null;
     patientId: string;
     intervention: string;
-    chirurgien: Medecin;
-    chirurgienId: string;
-    professeurCPA: string;
+    chirurgien: Medecin | null;
+    chirurgienId: string | null;
+    chirurgienNom: string | null;
+    professeurCPA: string | null;
     estUrgent: boolean;
     statut: StatutNotificationCPA;
     createdAt: Date;

@@ -5,14 +5,15 @@ import PatientStatsCards from '@/components/bloc/patient-du-jour/PatientStatsCar
 import PatientFilters from '@/components/bloc/patient-du-jour/PatientFilters'
 import PatientsListTable from '@/components/bloc/patient-du-jour/PatientsListTable'
 import { patientService, notificationService } from '@/lib/api'
+import type { FiltresPatient } from '@/types/bloc'
 
 export default function PatientDuJourPage() {
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filtres, setFiltres] = useState({ statut: '', recherche: '' })
+  const [filtres, setFiltres] = useState<FiltresPatient>({ statut: '', specialite: '', recherche: '', sexe: '', ageMin: '', ageMax: '', heureDebut: '', heureFin: '' })
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
-  useEffect(() => { charger() }, [filtres, selectedDate])
+  useEffect(() => { charger() }, [selectedDate])
 
   const charger = async () => {
     try {
@@ -21,8 +22,8 @@ export default function PatientDuJourPage() {
       // n'importe quelle date. Les patients prêts/en cours dont l'intervention est prévue ce
       // jour-là (ou sans date renseignée, à traiter en priorité) y apparaissent.
       const [pretRes, encoursRes, notifsRes] = await Promise.all([
-        patientService.getAll({ statut: 'PRET_POUR_BLOC', recherche: filtres.recherche || undefined, limite: 100 }),
-        patientService.getAll({ statut: 'EN_COURS_OPERATION', recherche: filtres.recherche || undefined, limite: 100 }),
+        patientService.getAll({ statut: 'PRET_POUR_BLOC', limite: 100 }),
+        patientService.getAll({ statut: 'EN_COURS_OPERATION', limite: 100 }),
         notificationService.getAll(1, 100),
       ])
       const notifsData = notifsRes.data || []
@@ -30,23 +31,23 @@ export default function PatientDuJourPage() {
       const data = [...(pretRes.data || []), ...(encoursRes.data || [])].filter(estDateSelectionnee)
 
       // Fusionner : associer chaque patient à sa notification (si existe)
-      let liste = data.map((p: any) => {
+      const liste = data.map((p: any) => {
         const notif = notifsData.find((n: any) => n.patientId === p.id || n.patient?.id === p.id)
         return {
           id: p.idDossier || p.id, realId: p.id,
           nom: p.nom,
           prenom: p.prenom,
+          sexe: p.sexe || '',
+          dateNaissance: p.dateNaissance || null,
           operation: notif?.intervention || p.libelle || 'Non spécifiée',
+          typeChirurgie: p.typeChirurgie || '',
           etat: p.niveauUrgence === 'TRES_URGENT' ? 'TRES_URGENT' : p.niveauUrgence === 'URGENT' ? 'URGENT' : 'NORMAL',
+          statut: p.statut || '',
           chirurgien: notif?.chirurgien?.nom || p.chirurgien_nom || '',
           dateIntervention: p.dateIntervention || null,
           salle: p.chambre || '',
         }
       })
-
-      if (filtres.statut) {
-        liste = liste.filter(p => p.etat === filtres.statut)
-      }
 
       setPatients(liste)
     } catch (err) {
@@ -55,6 +56,38 @@ export default function PatientDuJourPage() {
       setLoading(false)
     }
   }
+
+  const calculerAge = (dateNaissance?: string | null) => {
+    if (!dateNaissance) return null
+    const diff = Date.now() - new Date(dateNaissance).getTime()
+    return Math.max(0, Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)))
+  }
+
+  // Tous les filtres (urgence, spécialité, recherche nom, sexe, plage horaire) s'appliquent
+  // côté client : le paramètre `recherche` du backend ne filtre que l'idDossier
+  // (patient-bloc.controller.ts), et /patients/search est un stub qui renvoie toujours [].
+  const patientsFiltres = patients.filter(p => {
+    if (filtres.statut && p.etat !== filtres.statut) return false
+    if (filtres.specialite && p.typeChirurgie !== filtres.specialite) return false
+    if (filtres.sexe && p.sexe !== filtres.sexe) return false
+    if (filtres.ageMin || filtres.ageMax) {
+      const age = calculerAge(p.dateNaissance)
+      if (age === null) return false
+      if (filtres.ageMin && age < Number(filtres.ageMin)) return false
+      if (filtres.ageMax && age > Number(filtres.ageMax)) return false
+    }
+    if (filtres.recherche) {
+      const q = filtres.recherche.trim().toLowerCase()
+      const cible = `${p.nom || ''} ${p.prenom || ''}`.toLowerCase()
+      if (q && !cible.includes(q)) return false
+    }
+    if ((filtres.heureDebut || filtres.heureFin) && p.dateIntervention) {
+      const heure = new Date(p.dateIntervention).toTimeString().slice(0, 5)
+      if (filtres.heureDebut && heure < filtres.heureDebut) return false
+      if (filtres.heureFin && heure > filtres.heureFin) return false
+    }
+    return true
+  })
 
   const stats = {
     total: patients.length,
@@ -78,13 +111,13 @@ export default function PatientDuJourPage() {
       <PatientFilters
         date={selectedDate}
         onDateChange={setSelectedDate}
-        onFilterChange={(f: any) => setFiltres({ statut: f.statut === 'Tous les statuts' ? '' : f.statut, recherche: f.specialite === 'Toutes les spécialités' ? '' : f.specialite })}
+        onFilterChange={setFiltres}
       />
 
       {loading ? (
         <div className="text-center py-12 text-gray-500">🔄 Chargement des patients...</div>
       ) : (
-        <PatientsListTable patients={patients} />
+        <PatientsListTable patients={patientsFiltres} />
       )}
     </div>
   )

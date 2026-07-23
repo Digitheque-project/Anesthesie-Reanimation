@@ -18,8 +18,11 @@ const swagger_1 = require("@nestjs/swagger");
 const demande_cpa_externe_service_1 = require("./demande-cpa-externe.service");
 const receive_demande_cpa_dto_1 = require("./dto/receive-demande-cpa.dto");
 const update_demande_cpa_dto_1 = require("./dto/update-demande-cpa.dto");
+const planifier_demande_cpa_dto_1 = require("./dto/planifier-demande-cpa.dto");
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
-const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const public_decorator_1 = require("../central-auth/public.decorator");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let DemandeCpaExterneController = class DemandeCpaExterneController {
     service;
     constructor(service) {
@@ -28,6 +31,9 @@ let DemandeCpaExterneController = class DemandeCpaExterneController {
     async receive(dto) {
         const demande = await this.service.receive(dto);
         return { received: true, id: demande.id, statut: demande.statut, timestamp: new Date().toISOString() };
+    }
+    getStatutPublic(id) {
+        return this.service.findStatutPublic(id);
     }
     findAll(statut) {
         return this.service.findAll(statut);
@@ -38,21 +44,38 @@ let DemandeCpaExterneController = class DemandeCpaExterneController {
     update(id, dto) {
         return this.service.update(id, dto);
     }
+    planifier(id, dto) {
+        return this.service.planifier(id, dto);
+    }
 };
 exports.DemandeCpaExterneController = DemandeCpaExterneController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('receive'),
     (0, common_1.HttpCode)(200),
-    (0, swagger_1.ApiOperation)({ summary: '📋 Recevoir une demande de CPA/VPA d\'un service externe (ex: Endoscopie)' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Demande reçue avec succès' }),
+    (0, swagger_1.ApiOperation)({
+        summary: "Recevoir une demande de CPA/VPA d'un service externe",
+        description: "Point d'entrée pour tout service externe du CHU souhaitant qu'un de ses patients passe une " +
+            "Consultation Pré-Anesthésique avant un acte sous anesthésie. Fournir `sourceCallbackUrl` pour " +
+            "recevoir automatiquement le résultat (décision APTE/INAPTE/REPORT) dès que la CPA est réalisée.",
+    }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Demande enregistrée avec succès.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [receive_demande_cpa_dto_1.ReceiveDemandeCpaDto]),
     __metadata("design:returntype", Promise)
 ], DemandeCpaExterneController.prototype, "receive", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)(':id/statut'),
+    (0, swagger_1.ApiOperation)({ summary: "Consulter l'état d'une demande de CPA externe (accessible au service demandeur, sans authentification)" }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], DemandeCpaExterneController.prototype, "getStatutPublic", null);
+__decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, swagger_1.ApiOperation)({ summary: 'Lister les demandes de CPA externes' }),
     (0, swagger_1.ApiQuery)({ name: 'statut', required: false, enum: demande_cpa_externe_entity_1.StatutDemandeCpaExterne }),
@@ -63,25 +86,35 @@ __decorate([
 ], DemandeCpaExterneController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, swagger_1.ApiOperation)({ summary: 'Obtenir une demande de CPA externe' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], DemandeCpaExterneController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
-    (0, swagger_1.ApiOperation)({ summary: 'Planifier / mettre à jour une demande de CPA externe' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une demande de CPA externe (Responsable CPA, Major)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_demande_cpa_dto_1.UpdateDemandeCpaDto]),
     __metadata("design:returntype", void 0)
 ], DemandeCpaExterneController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/planifier'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Planifier le rendez-vous CPA/VPA pour cette demande externe (Responsable CPA, Major)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, planifier_demande_cpa_dto_1.PlanifierDemandeCpaDto]),
+    __metadata("design:returntype", void 0)
+], DemandeCpaExterneController.prototype, "planifier", null);
 exports.DemandeCpaExterneController = DemandeCpaExterneController = __decorate([
     (0, swagger_1.ApiTags)('Demandes CPA externes'),
     (0, common_1.Controller)('demandes-cpa-externes'),

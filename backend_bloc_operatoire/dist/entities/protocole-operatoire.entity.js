@@ -48,36 +48,36 @@ __decorate([
     __metadata("design:type", Date)
 ], ProtocoleOperatoire.prototype, "dateOperation", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "chirurgien", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "chirurgienId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "anesthesiste", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "anesthesisteId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "infirmiere", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "infirmiereId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "aideOperatoire", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "aideOperatoireId", void 0);
 __decorate([
     (0, typeorm_1.Column)('text'),

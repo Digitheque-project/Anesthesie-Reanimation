@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ArchivesController = void 0;
 const common_1 = require("@nestjs/common");
 const archives_service_1 = require("./archives.service");
-const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let ArchivesController = class ArchivesController {
     archivesService;
     constructor(archivesService) {
@@ -45,7 +44,6 @@ __decorate([
 ], ArchivesController.prototype, "getResumePatient", null);
 exports.ArchivesController = ArchivesController = __decorate([
     (0, common_1.Controller)('archives'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [archives_service_1.ArchivesService])
 ], ArchivesController);
 //# sourceMappingURL=archives.controller.js.map

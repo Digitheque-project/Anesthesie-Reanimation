@@ -22,7 +22,7 @@ var StatutCreneau;
 var TypeRDV;
 (function (TypeRDV) {
     TypeRDV["CPA"] = "CPA";
-    TypeRDV["VPA"] = "VPA";
+    TypeRDV["VERIFICATION_VEILLE"] = "VERIFICATION_VEILLE";
 })(TypeRDV || (exports.TypeRDV = TypeRDV = {}));
 let CreneauBloc = class CreneauBloc {
     id;
@@ -33,6 +33,7 @@ let CreneauBloc = class CreneauBloc {
     patientId;
     chirurgien;
     chirurgienId;
+    responsable;
     statut;
     estUrgence;
     type;
@@ -65,13 +66,17 @@ __decorate([
     __metadata("design:type", String)
 ], CreneauBloc.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], CreneauBloc.prototype, "chirurgien", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Object)
 ], CreneauBloc.prototype, "chirurgienId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], CreneauBloc.prototype, "responsable", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: StatutCreneau, default: StatutCreneau.PLANIFIE }),
     __metadata("design:type", String)

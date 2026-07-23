@@ -18,12 +18,14 @@ const swagger_1 = require("@nestjs/swagger");
 const cpa_service_1 = require("./cpa.service");
 const create_cpa_dto_1 = require("./dto/create-cpa.dto");
 const update_cpa_dto_1 = require("./dto/update-cpa.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let CPAController = class CPAController {
     service;
     constructor(service) {
         this.service = service;
     }
-    create(d) { return this.service.create(d); }
+    create(d, req) { return this.service.create(d, req.centralUser); }
     findAll(p, l, patientId) { return this.service.findAll(p, l, patientId); }
     findOne(id) { return this.service.findOne(id); }
     update(id, d) { return this.service.update(id, d); }
@@ -32,10 +34,12 @@ let CPAController = class CPAController {
 exports.CPAController = CPAController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une CPA' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
+    (0, swagger_1.ApiOperation)({ summary: "Créer une CPA — décision Apte/Inapte/Report (Anesthésiste, Responsable CPA ou Major ; l'anesthésiste ayant réalisé la consultation est auto-attribué depuis la session si elle est ANESTHESISTE, sinon doit être sélectionné explicitement)" }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_cpa_dto_1.CreateCPADto]),
+    __metadata("design:paramtypes", [create_cpa_dto_1.CreateCPADto, Object]),
     __metadata("design:returntype", void 0)
 ], CPAController.prototype, "create", null);
 __decorate([
@@ -58,7 +62,8 @@ __decorate([
 ], CPAController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une CPA' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une CPA (Anesthésiste, Responsable CPA ou Major)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -67,7 +72,8 @@ __decorate([
 ], CPAController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une CPA' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une CPA (Anesthésiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

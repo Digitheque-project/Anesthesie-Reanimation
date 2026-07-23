@@ -14,12 +14,13 @@ const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.en
 const patient_bloc_service_1 = require("./patient-bloc.service");
 const patient_bloc_controller_1 = require("./patient-bloc.controller");
 const patient_bloc_statut_service_1 = require("./patient-bloc-statut.service");
+const protocole_operatoire_module_1 = require("../protocole-operatoire/protocole-operatoire.module");
 let PatientBlocModule = class PatientBlocModule {
 };
 exports.PatientBlocModule = PatientBlocModule;
 exports.PatientBlocModule = PatientBlocModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, demande_cpa_externe_entity_1.DemandeCpaExterne])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, demande_cpa_externe_entity_1.DemandeCpaExterne]), protocole_operatoire_module_1.ProtocoleOperatoireModule],
         controllers: [patient_bloc_controller_1.PatientBlocController],
         providers: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],
         exports: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],

@@ -44,20 +44,20 @@ __decorate([
     __metadata("design:type", String)
 ], ActivitePerOp.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "chirurgien", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "chirurgienId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "anesthesiste", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "anesthesisteId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'date' }),

@@ -72,7 +72,7 @@ class CreateActivitePerOpDto {
 }
 exports.CreateActivitePerOpDto = CreateActivitePerOpDto;
 __decorate([
-    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateActivitePerOpDto.prototype, "patientId", void 0);
 __decorate([

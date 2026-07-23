@@ -2,7 +2,7 @@ import { StatutSortieReveil } from '../../entities/sortie-reveil.entity';
 export declare class CreateSortieReveilDto {
     patientId: string;
     scoreSCCREId: string;
-    medecinId: string;
+    medecinId?: string;
     dateHeureSortie: string;
     versServiceOrigine: boolean;
     autresServicesDestination?: string[];

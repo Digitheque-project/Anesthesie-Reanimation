@@ -4,7 +4,7 @@ import { UpdateScoreSCCREDto } from './dto/update-score-sccre.dto';
 export declare class ScoreSCCREController {
     private readonly service;
     constructor(service: ScoreSCCREService);
-    create(dto: CreateScoreSCCREDto): Promise<import("../entities").ScoreSCCRE>;
+    create(dto: CreateScoreSCCREDto, req: any): Promise<import("../entities").ScoreSCCRE>;
     findAll(p?: number, l?: number): Promise<{
         data: any;
         total: number;

@@ -19,14 +19,17 @@ const typeorm_2 = require("typeorm");
 const protocole_operatoire_entity_1 = require("../entities/protocole-operatoire.entity");
 const drainage_entity_1 = require("../entities/drainage.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     repo;
     drainageRepo;
     accueilClient;
-    constructor(repo, drainageRepo, accueilClient) {
+    gateway;
+    constructor(repo, drainageRepo, accueilClient, gateway) {
         this.repo = repo;
         this.drainageRepo = drainageRepo;
         this.accueilClient = accueilClient;
+        this.gateway = gateway;
     }
     async create(dto) {
         const { drainages, ...data } = dto;
@@ -35,10 +38,16 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         const saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;
         if (drainages?.length)
             await this.drainageRepo.save(drainages.map((d) => this.drainageRepo.create({ ...d, protocole: saved })));
-        return this.findOne(saved.id);
+        const complet = await this.findOne(saved.id);
+        this.gateway.emitToOperation(complet.patientId, 'protocole-operatoire:maj', { patientId: complet.patientId, protocole: complet });
+        return complet;
     }
-    async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+    async findAll(page = 1, limite = 10, patientId) {
+        const [data, total] = await this.repo.findAndCount({
+            where: patientId ? { patientId } : {},
+            relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'],
+            skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' },
+        });
         const enriched = await this.accueilClient.enrichWithIdentity(data);
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
@@ -53,7 +62,9 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         const p = await this.repo.findOne({ where: { id } });
         if (!p)
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
-        return this.repo.save(Object.assign(p, dto));
+        const updated = await this.repo.save(Object.assign(p, dto));
+        this.gateway.emitToOperation(updated.patientId, 'protocole-operatoire:maj', { patientId: updated.patientId, protocole: updated });
+        return updated;
     }
     async remove(id) {
         const p = await this.repo.findOne({ where: { id } });
@@ -70,6 +81,7 @@ exports.ProtocoleOperatoireService = ProtocoleOperatoireService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(drainage_entity_1.Drainage)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        operation_gateway_1.OperationGateway])
 ], ProtocoleOperatoireService);
 //# sourceMappingURL=protocole-operatoire.service.js.map

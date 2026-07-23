@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CPA = exports.StatutCPA = exports.DecisionCPA = exports.ScoreASA = void 0;
+exports.CPA = exports.StatutCPA = exports.DecisionOperation = exports.DecisionCPA = exports.ScoreASA = void 0;
 const typeorm_1 = require("typeorm");
 const medecin_entity_1 = require("./medecin.entity");
 const premedicament_entity_1 = require("./premedicament.entity");
@@ -29,6 +29,12 @@ var DecisionCPA;
     DecisionCPA["INAPTE"] = "INAPTE";
     DecisionCPA["REPORT"] = "REPORT";
 })(DecisionCPA || (exports.DecisionCPA = DecisionCPA = {}));
+var DecisionOperation;
+(function (DecisionOperation) {
+    DecisionOperation["RETENUE"] = "RETENUE";
+    DecisionOperation["REPORTEE"] = "REPORTEE";
+    DecisionOperation["REFUSEE"] = "REFUSEE";
+})(DecisionOperation || (exports.DecisionOperation = DecisionOperation = {}));
 var StatutCPA;
 (function (StatutCPA) {
     StatutCPA["EN_ATTENTE"] = "EN_ATTENTE";
@@ -61,13 +67,16 @@ let CPA = class CPA {
     scoreASA;
     decision;
     motifRefus;
+    decisionOperation;
+    validationProfInformelle;
     typeAnesthesie;
     techniqueIntubation;
     premedicaments;
+    medicamentsAnesthesieReanimation;
     jeune;
     preparationPhysique;
     tachesInfirmieres;
-    dateVPA;
+    dateVerificationVeille;
     statut;
     createdAt;
     updatedAt;
@@ -103,20 +112,20 @@ __decorate([
     __metadata("design:type", String)
 ], CPA.prototype, "notesIncidents", void 0);
 __decorate([
-    (0, typeorm_1.Column)('int'),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)('int', { nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "frequenceCardiaque", void 0);
 __decorate([
-    (0, typeorm_1.Column)('simple-json'),
+    (0, typeorm_1.Column)('simple-json', { nullable: true }),
     __metadata("design:type", Object)
 ], CPA.prototype, "tensionArterielle", void 0);
 __decorate([
-    (0, typeorm_1.Column)('float'),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)('float', { nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "taille", void 0);
 __decorate([
-    (0, typeorm_1.Column)('float'),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)('float', { nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "poids", void 0);
 __decorate([
     (0, typeorm_1.Column)('text'),
@@ -143,16 +152,16 @@ __decorate([
     __metadata("design:type", String)
 ], CPA.prototype, "rachis", void 0);
 __decorate([
-    (0, typeorm_1.Column)('int'),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)('int', { nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "mallampati", void 0);
 __decorate([
-    (0, typeorm_1.Column)('float'),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)('float', { nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "ouvertureBuccale", void 0);
 __decorate([
-    (0, typeorm_1.Column)('float'),
-    __metadata("design:type", Number)
+    (0, typeorm_1.Column)('float', { nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "distanceMentoThyroidienne", void 0);
 __decorate([
     (0, typeorm_1.Column)('text'),
@@ -179,6 +188,14 @@ __decorate([
     __metadata("design:type", String)
 ], CPA.prototype, "motifRefus", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'enum', enum: DecisionOperation, nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "decisionOperation", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], CPA.prototype, "validationProfInformelle", void 0);
+__decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], CPA.prototype, "typeAnesthesie", void 0);
@@ -190,6 +207,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => premedicament_entity_1.Premedicament, (premed) => premed.cpa, { cascade: true }),
     __metadata("design:type", Array)
 ], CPA.prototype, "premedicaments", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Array)
+], CPA.prototype, "medicamentsAnesthesieReanimation", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
@@ -205,7 +226,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: 'date', nullable: true }),
     __metadata("design:type", Date)
-], CPA.prototype, "dateVPA", void 0);
+], CPA.prototype, "dateVerificationVeille", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: StatutCPA, default: StatutCPA.EN_ATTENTE }),
     __metadata("design:type", String)

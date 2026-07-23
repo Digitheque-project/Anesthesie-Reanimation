@@ -15,30 +15,41 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PatientBlocService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
 const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
+const accueil_client_1 = require("../external/accueil.client");
+const dossier_patient_client_1 = require("../external/dossier-patient.client");
+const protocole_operatoire_service_1 = require("../protocole-operatoire/protocole-operatoire.service");
 let PatientBlocService = class PatientBlocService {
     patientRepo;
     demandeRepo;
-    constructor(patientRepo, demandeRepo) {
+    accueilClient;
+    dossierPatientClient;
+    protocoleOperatoireService;
+    config;
+    constructor(patientRepo, demandeRepo, accueilClient, dossierPatientClient, protocoleOperatoireService, config) {
         this.patientRepo = patientRepo;
         this.demandeRepo = demandeRepo;
+        this.accueilClient = accueilClient;
+        this.dossierPatientClient = dossierPatientClient;
+        this.protocoleOperatoireService = protocoleOperatoireService;
+        this.config = config;
     }
     async creerDepuisPrescription(demandeId) {
         const demande = await this.demandeRepo.findOne({ where: { id: demandeId } });
         if (!demande)
             throw new Error('Demande non trouvée');
         const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
-        const niveauUrgence = estUrgence ? patient_bloc_entity_1.NiveauUrgence.STAT : patient_bloc_entity_1.NiveauUrgence.NORMAL;
-        const statutInitial = estUrgence ? patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VPA : patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
+        const niveauUrgence = estUrgence ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT : patient_bloc_entity_1.NiveauUrgence.NORMAL;
         const patient = new patient_bloc_entity_1.PatientBloc();
         patient.patientId = demande.patientId;
         patient.chuId = demande.chuId;
         patient.idDossier = `CHU-${Date.now()}`;
         patient.groupeSanguin = 'A+';
         patient.niveauUrgence = niveauUrgence;
-        patient.statut = statutInitial;
+        patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
         patient.prescripteurId = demande.sourceServiceId;
         patient.serviceOrigine = demande.sourceServiceName || null;
         patient.serviceOrigineId = demande.sourceServiceId || null;
@@ -60,10 +71,54 @@ let PatientBlocService = class PatientBlocService {
         qb.orderBy('p.createdAt', 'DESC');
         qb.skip((page - 1) * limite).take(limite);
         const [data, total] = await qb.getManyAndCount();
-        return { data, total, page, pages: Math.ceil(total / limite) };
+        let enriched = data;
+        try {
+            enriched = await this.accueilClient.enrichWithIdentity(data);
+        }
+        catch {
+        }
+        return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(patientId) {
-        return this.patientRepo.findOne({ where: { patientId } });
+        const patient = await this.patientRepo.findOne({ where: { patientId } });
+        if (!patient)
+            return null;
+        try {
+            return await this.accueilClient.enrichWithIdentity(patient);
+        }
+        catch {
+            return patient;
+        }
+    }
+    async getDossierMedical(patientId, token) {
+        const [antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis] = await Promise.all([
+            this.dossierPatientClient.getAntecedentsActifs(patientId, token),
+            this.dossierPatientClient.getDiagnostics(patientId, token),
+            this.dossierPatientClient.getHistoriqueMaladieRecente(patientId, token),
+            this.dossierPatientClient.getHistoriquesUrgents(patientId, token),
+            this.dossierPatientClient.getDernierExamenPhysique(patientId, token),
+            this.dossierPatientClient.getExamensComplementairesUrgents(patientId, token),
+            this.dossierPatientClient.getSuivis(patientId, token),
+        ]);
+        return { antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis };
+    }
+    async getDossierComplet(patientId, token) {
+        const [observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques, examensComplementaires, suivis, protocolesOperatoires,] = await Promise.all([
+            this.dossierPatientClient.getObservations(patientId, token),
+            this.dossierPatientClient.getDiagnosticsTous(patientId, token),
+            this.dossierPatientClient.getAntecedentsTous(patientId, token),
+            this.dossierPatientClient.getHistoiresMaladie(patientId, token),
+            this.dossierPatientClient.getExamensPhysiquesTous(patientId, token),
+            this.dossierPatientClient.getExamensComplementairesTous(patientId, token),
+            this.dossierPatientClient.getSuivis(patientId, token),
+            this.protocoleOperatoireService.findAll(1, 50, patientId).then(r => r.data).catch(() => []),
+        ]);
+        const episodeId = diagnostics.find((d) => d.episodeId)?.episodeId;
+        const sortie = episodeId ? await this.dossierPatientClient.getSortieMedicale(episodeId, token) : [];
+        return {
+            observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
+            examensComplementaires, suivis, protocolesOperatoires, sortie,
+        };
     }
     async update(patientId, dto) {
         const patient = await this.patientRepo.findOne({ where: { patientId } });
@@ -86,6 +141,7 @@ let PatientBlocService = class PatientBlocService {
     async admitExisting(dto) {
         const patient = this.patientRepo.create({
             ...dto,
+            chuId: dto.chuId || this.config.get('externalServices.chuId'),
             statut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA,
             niveauUrgence: dto.niveauUrgence || patient_bloc_entity_1.NiveauUrgence.NORMAL,
         });
@@ -95,6 +151,7 @@ let PatientBlocService = class PatientBlocService {
     async registerAndAdmit(dto, createdBy) {
         const patient = this.patientRepo.create({
             ...dto,
+            chuId: dto.chuId || this.config.get('externalServices.chuId'),
             statut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA,
             niveauUrgence: dto.niveauUrgence || patient_bloc_entity_1.NiveauUrgence.NORMAL,
         });
@@ -108,6 +165,10 @@ exports.PatientBlocService = PatientBlocService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(demande_cpa_externe_entity_1.DemandeCpaExterne)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        accueil_client_1.AccueilClient,
+        dossier_patient_client_1.DossierPatientClient,
+        protocole_operatoire_service_1.ProtocoleOperatoireService,
+        config_1.ConfigService])
 ], PatientBlocService);
 //# sourceMappingURL=patient-bloc.service.js.map

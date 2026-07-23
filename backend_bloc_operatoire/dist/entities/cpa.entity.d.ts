@@ -14,6 +14,11 @@ export declare enum DecisionCPA {
     INAPTE = "INAPTE",
     REPORT = "REPORT"
 }
+export declare enum DecisionOperation {
+    RETENUE = "RETENUE",
+    REPORTEE = "REPORTEE",
+    REFUSEE = "REFUSEE"
+}
 export declare enum StatutCPA {
     EN_ATTENTE = "EN_ATTENTE",
     REALISE = "REALISE"
@@ -26,35 +31,43 @@ export declare class CPA {
     dateConsultation: Date;
     antecedentsAnesthesie: boolean;
     notesIncidents: string;
-    frequenceCardiaque: number;
+    frequenceCardiaque: number | null;
     tensionArterielle: {
         systolique: number;
         diastolique: number;
-    };
-    taille: number;
-    poids: number;
+    } | null;
+    taille: number | null;
+    poids: number | null;
     examenCardiovasculaire: string;
     examenPulmonaire: string;
     examenNeurologique: string;
     colorationConjonctivale: string;
     abordVeineux: string;
     rachis: string;
-    mallampati: number;
-    ouvertureBuccale: number;
-    distanceMentoThyroidienne: number;
+    mallampati: number | null;
+    ouvertureBuccale: number | null;
+    distanceMentoThyroidienne: number | null;
     dents: string;
     tabac: string;
     alcool: string;
     scoreASA: ScoreASA;
     decision: DecisionCPA;
     motifRefus: string;
+    decisionOperation: DecisionOperation | null;
+    validationProfInformelle: string;
     typeAnesthesie: string;
     techniqueIntubation: string;
     premedicaments: Premedicament[];
+    medicamentsAnesthesieReanimation: {
+        categorie: string;
+        nom: string;
+        dosage?: string;
+        observation?: string;
+    }[];
     jeune: string;
     preparationPhysique: string;
     tachesInfirmieres: string;
-    dateVPA: Date;
+    dateVerificationVeille: Date;
     statut: StatutCPA;
     createdAt: Date;
     updatedAt: Date;

@@ -54,18 +54,22 @@ __decorate([
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "dateOperation", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "chirurgienId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "anesthesisteId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "infirmiereId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "aideOperatoireId", void 0);

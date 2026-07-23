@@ -36,6 +36,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateScoreSCCREDto.prototype, "patientId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateScoreSCCREDto.prototype, "anesthesisteId", void 0);

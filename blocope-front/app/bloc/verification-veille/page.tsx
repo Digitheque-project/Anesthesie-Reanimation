@@ -9,6 +9,7 @@ import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
+import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 
 export default function VerificationVeillePage() {
   return (
@@ -74,26 +75,13 @@ function VerificationVeillePageContent() {
 
   return (
     <main className="p-6">
-      {/* Patient Context Header */}
-      <div className="p-6 bg-white rounded-xl flex flex-wrap items-center justify-between gap-6 shadow-sm border border-outline-variant/30">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm">
-            <span className="material-symbols-outlined text-4xl text-primary flex items-center justify-center w-full h-full bg-primary-fixed">account_circle</span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-extrabold text-primary tracking-tight">{patientNom}</h2>
-            <div className="flex gap-4 text-sm text-on-surface-variant font-medium">
-              <span>{patient?.dateNaissance ? `Née le ${new Date(patient.dateNaissance).toLocaleDateString('fr-FR')} (${new Date().getFullYear() - new Date(patient.dateNaissance).getFullYear()} ans)` : '—'}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {cpaId ? (
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase tracking-wider">✅ CPA validée</span>
-          ) : (
-            <span className="px-3 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wider">⚠️ CPA non réalisée</span>
-          )}
-        </div>
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} />
+      <div className="flex justify-end -mt-2 mb-3">
+        {cpaId ? (
+          <span className="px-3 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase tracking-wider">✅ CPA validée</span>
+        ) : (
+          <span className="px-3 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wider">⚠️ CPA non réalisée</span>
+        )}
       </div>
 
       <p className="mt-2 text-sm text-on-surface-variant">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>

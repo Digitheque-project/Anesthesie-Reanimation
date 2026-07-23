@@ -29,6 +29,9 @@ let ChecklistPendantOp = class ChecklistPendantOp {
     constantesStables;
     ventilationOK;
     statut;
+    validateurId;
+    validateurNom;
+    validateurRole;
     createdAt;
     updatedAt;
 };
@@ -82,6 +85,18 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }),
     __metadata("design:type", String)
 ], ChecklistPendantOp.prototype, "statut", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistPendantOp.prototype, "validateurId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistPendantOp.prototype, "validateurNom", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistPendantOp.prototype, "validateurRole", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

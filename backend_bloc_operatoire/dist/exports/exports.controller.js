@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExportsController = void 0;
 const common_1 = require("@nestjs/common");
 const exports_service_1 = require("./exports.service");
-const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let ExportsController = class ExportsController {
     exportsService;
     constructor(exportsService) {
@@ -66,7 +65,6 @@ __decorate([
 ], ExportsController.prototype, "exportPatientJSON", null);
 exports.ExportsController = ExportsController = __decorate([
     (0, common_1.Controller)('exports'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [exports_service_1.ExportsService])
 ], ExportsController);
 //# sourceMappingURL=exports.controller.js.map

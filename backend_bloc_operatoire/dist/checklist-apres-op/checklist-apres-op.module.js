@@ -11,13 +11,17 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const checklist_apres_op_entity_1 = require("../entities/checklist-apres-op.entity");
 const checklist_apres_op_controller_1 = require("./checklist-apres-op.controller");
+const checklist_apres_op_service_1 = require("./checklist-apres-op.service");
+const operation_gateway_module_1 = require("../operation-gateway/operation-gateway.module");
+const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
 let ChecklistApresOpModule = class ChecklistApresOpModule {
 };
 exports.ChecklistApresOpModule = ChecklistApresOpModule;
 exports.ChecklistApresOpModule = ChecklistApresOpModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([checklist_apres_op_entity_1.ChecklistApresOp])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([checklist_apres_op_entity_1.ChecklistApresOp]), operation_gateway_module_1.OperationGatewayModule, patient_bloc_module_1.PatientBlocModule],
         controllers: [checklist_apres_op_controller_1.ChecklistApresOpController],
+        providers: [checklist_apres_op_service_1.ChecklistApresOpService],
     })
 ], ChecklistApresOpModule);
 //# sourceMappingURL=checklist-apres-op.module.js.map

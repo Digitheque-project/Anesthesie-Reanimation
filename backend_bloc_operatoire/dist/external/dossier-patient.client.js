@@ -75,6 +75,29 @@ let DossierPatientClient = DossierPatientClient_1 = class DossierPatientClient {
     getSuivis(patientId, token) {
         return this.get(`/dossier-patient/patients/${encodeURIComponent(patientId)}/suivis`, { chuId: this.chuId, serviceId: this.serviceId }, token);
     }
+    getObservations(patientId, token) {
+        return this.get(`/dossier-patient/observations/patient/${encodeURIComponent(patientId)}`, { chuId: this.chuId, serviceId: this.serviceId }, token);
+    }
+    getDiagnosticsTous(patientId, token) {
+        return this.getParPatient('/dossier-patient/diagnostics', patientId, token);
+    }
+    getAntecedentsTous(patientId, token) {
+        return this.getParPatient('/dossier-patient/antecedents/all', patientId, token);
+    }
+    getHistoiresMaladie(patientId, token) {
+        return this.getParPatient('/dossier-patient/medical-histories', patientId, token);
+    }
+    getExamensPhysiquesTous(patientId, token) {
+        return this.getParPatient('/dossier-patient/physical-examinations/all/latest', patientId, token);
+    }
+    getExamensComplementairesTous(patientId, token) {
+        return this.getParPatient('/dossier-patient/complementary-examinations', patientId, token);
+    }
+    getSortieMedicale(episodeId, token) {
+        if (!this.baseUrl || !episodeId)
+            return Promise.resolve([]);
+        return this.get(`/dossier-patient/sorties-medicales/episode/${encodeURIComponent(episodeId)}`, {}, token);
+    }
 };
 exports.DossierPatientClient = DossierPatientClient;
 exports.DossierPatientClient = DossierPatientClient = DossierPatientClient_1 = __decorate([

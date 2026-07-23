@@ -10,6 +10,7 @@ exports.ScoreSCCREModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const score_sccre_entity_1 = require("../entities/score-sccre.entity");
+const medecin_module_1 = require("../medecin/medecin.module");
 const score_sccre_service_1 = require("./score-sccre.service");
 const score_sccre_controller_1 = require("./score-sccre.controller");
 let ScoreSCCREModule = class ScoreSCCREModule {
@@ -17,7 +18,7 @@ let ScoreSCCREModule = class ScoreSCCREModule {
 exports.ScoreSCCREModule = ScoreSCCREModule;
 exports.ScoreSCCREModule = ScoreSCCREModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([score_sccre_entity_1.ScoreSCCRE])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([score_sccre_entity_1.ScoreSCCRE]), medecin_module_1.MedecinModule],
         controllers: [score_sccre_controller_1.ScoreSCCREController],
         providers: [score_sccre_service_1.ScoreSCCREService],
         exports: [score_sccre_service_1.ScoreSCCREService],

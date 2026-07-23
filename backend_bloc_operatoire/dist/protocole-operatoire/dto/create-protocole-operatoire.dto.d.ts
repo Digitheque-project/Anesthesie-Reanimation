@@ -7,10 +7,10 @@ declare class DrainageDto {
 export declare class CreateProtocoleOperatoireDto {
     patientId: string;
     dateOperation: string;
-    chirurgienId: string;
-    anesthesisteId: string;
-    infirmiereId: string;
-    aideOperatoireId: string;
+    chirurgienId?: string;
+    anesthesisteId?: string;
+    infirmiereId?: string;
+    aideOperatoireId?: string;
     compteRenduIntervention: string;
     surveillance?: any;
     drainages?: DrainageDto[];

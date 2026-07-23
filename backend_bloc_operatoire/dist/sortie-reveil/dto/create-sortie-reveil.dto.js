@@ -32,6 +32,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateSortieReveilDto.prototype, "scoreSCCREId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateSortieReveilDto.prototype, "medecinId", void 0);

@@ -9,19 +9,46 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExternalModule = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = require("@nestjs/axios");
+const config_1 = require("@nestjs/config");
 const accueil_client_1 = require("./accueil.client");
 const service_chu_client_1 = require("./service-chu.client");
 const endoscopie_client_1 = require("./endoscopie.client");
 const notification_outgoing_service_1 = require("./notification-outgoing.service");
+const prescription_externe_client_1 = require("./prescription-externe.client");
+const prescription_imagerie_client_1 = require("./prescription-imagerie.client");
+const notification_back_client_1 = require("./notification-back.client");
+const dossier_patient_client_1 = require("./dossier-patient.client");
 let ExternalModule = class ExternalModule {
 };
 exports.ExternalModule = ExternalModule;
 exports.ExternalModule = ExternalModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [axios_1.HttpModule.register({ timeout: 45000 })],
-        providers: [accueil_client_1.AccueilClient, service_chu_client_1.ServiceChuClient, endoscopie_client_1.EndoscopieClient, notification_outgoing_service_1.NotificationOutgoingService],
-        exports: [accueil_client_1.AccueilClient, service_chu_client_1.ServiceChuClient, endoscopie_client_1.EndoscopieClient, notification_outgoing_service_1.NotificationOutgoingService],
+        imports: [axios_1.HttpModule.register({ timeout: 45000 }), config_1.ConfigModule],
+        providers: [
+            {
+                provide: accueil_client_1.AccueilClient,
+                useFactory: (config) => new accueil_client_1.AccueilClient(config.getOrThrow('externalServices.accueilApiUrl')),
+                inject: [config_1.ConfigService],
+            },
+            service_chu_client_1.ServiceChuClient,
+            endoscopie_client_1.EndoscopieClient,
+            notification_outgoing_service_1.NotificationOutgoingService,
+            prescription_externe_client_1.PrescriptionExterneClient,
+            prescription_imagerie_client_1.PrescriptionImagerieClient,
+            notification_back_client_1.NotificationBackClient,
+            dossier_patient_client_1.DossierPatientClient,
+        ],
+        exports: [
+            accueil_client_1.AccueilClient,
+            service_chu_client_1.ServiceChuClient,
+            endoscopie_client_1.EndoscopieClient,
+            notification_outgoing_service_1.NotificationOutgoingService,
+            prescription_externe_client_1.PrescriptionExterneClient,
+            prescription_imagerie_client_1.PrescriptionImagerieClient,
+            notification_back_client_1.NotificationBackClient,
+            dossier_patient_client_1.DossierPatientClient,
+        ],
     })
 ], ExternalModule);
 //# sourceMappingURL=external.module.js.map

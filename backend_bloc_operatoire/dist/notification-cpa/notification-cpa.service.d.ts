@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { NotificationCPA } from '../entities/notification-cpa.entity';
+import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
@@ -16,7 +16,29 @@ export declare class NotificationCPAService {
     constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, notificationOutgoing: NotificationOutgoingService);
     create(dto: CreateNotificationCPADto): Promise<NotificationCPA>;
     findAll(page?: number, limite?: number): Promise<{
-        data: any[];
+        data: (WebhookNotification | {
+            patient: {
+                id: string;
+                nom: any;
+                prenom: any;
+                idDossier: any;
+                statut: import("../entities/patient-bloc.entity").PatientStatut | undefined;
+                niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence | undefined;
+            };
+            id: string;
+            heurePrescription: string;
+            dateIntervention: Date | null;
+            patientId: string;
+            intervention: string;
+            chirurgien: import("../entities").Medecin | null;
+            chirurgienId: string | null;
+            chirurgienNom: string | null;
+            professeurCPA: string | null;
+            estUrgent: boolean;
+            statut: StatutNotificationCPA;
+            createdAt: Date;
+            updatedAt: Date;
+        })[];
         total: number;
         page: number;
         pages: number;

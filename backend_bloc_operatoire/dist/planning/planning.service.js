@@ -28,6 +28,31 @@ let PlanningService = class PlanningService {
         this.patientBlocRepo = patientBlocRepo;
         this.accueilClient = accueilClient;
     }
+    async enrichCreneaux(data) {
+        if (data.length === 0)
+            return [];
+        const identities = await this.accueilClient.enrichWithIdentity(data);
+        const patientIds = Array.from(new Set(data.map((c) => c.patientId).filter(Boolean)));
+        const patients = patientIds.length
+            ? await this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(patientIds) } })
+            : [];
+        const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+        return data.map((c, idx) => {
+            const identity = identities[idx] || {};
+            const pb = patientMap.get(c.patientId);
+            return {
+                ...c,
+                patient: {
+                    id: c.patientId,
+                    nom: identity.nom,
+                    prenom: identity.prenom,
+                    idDossier: identity.idDossier ?? pb?.idDossier,
+                    statut: pb?.statut,
+                    niveauUrgence: pb?.niveauUrgence,
+                },
+            };
+        });
+    }
     async getPlanningJour(jour, type) {
         const qb = this.creneauRepo.createQueryBuilder('c')
             .leftJoinAndSelect('c.chirurgien', 'm')
@@ -36,7 +61,7 @@ let PlanningService = class PlanningService {
         if (type)
             qb.andWhere('c.type = :type', { type });
         const data = await qb.getMany();
-        return this.accueilClient.enrichWithIdentity(data);
+        return this.enrichCreneaux(data);
     }
     async getPlanningSemaine(debut, fin, type) {
         const qb = this.creneauRepo.createQueryBuilder('c')
@@ -47,7 +72,7 @@ let PlanningService = class PlanningService {
         if (type)
             qb.andWhere('c.type = :type', { type });
         const data = await qb.getMany();
-        return this.accueilClient.enrichWithIdentity(data);
+        return this.enrichCreneaux(data);
     }
     async reserverCreneau(dto) {
         const creneau = this.creneauRepo.create({ ...dto, type: dto.type || creneau_bloc_entity_1.TypeRDV.CPA });
@@ -62,26 +87,26 @@ let PlanningService = class PlanningService {
     }
     async getUrgencesEnAttente() {
         const data = await this.creneauRepo.find({ where: { estUrgence: true }, relations: ['chirurgien'] });
-        return this.accueilClient.enrichWithIdentity(data);
+        return this.enrichCreneaux(data);
     }
-    async transfererCpaVersVpa(dto) {
+    async transfererCpaVersVerificationVeille(dto) {
         const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
-        patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VPA;
+        patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE;
         await this.patientBlocRepo.save(patient);
         const creneau = this.creneauRepo.create({
             patientId: dto.patientId,
             chirurgienId: dto.chirurgienId,
-            date: dto.dateVPA,
+            date: dto.dateVerificationVeille,
             heureDebut: dto.heureDebut,
             heureFin: dto.heureDebut,
             salle: dto.salle,
-            type: creneau_bloc_entity_1.TypeRDV.VPA,
+            type: creneau_bloc_entity_1.TypeRDV.VERIFICATION_VEILLE,
         });
         return this.creneauRepo.save(creneau);
     }
-    async transfererVpaVersPatientJour(dto) {
+    async transfererVerificationVeilleVersPatientJour(dto) {
         const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
@@ -94,7 +119,7 @@ let PlanningService = class PlanningService {
             heureDebut: dto.heureDebut,
             heureFin: dto.heureDebut,
             salle: dto.salle,
-            type: creneau_bloc_entity_1.TypeRDV.VPA,
+            type: creneau_bloc_entity_1.TypeRDV.VERIFICATION_VEILLE,
             statut: creneau_bloc_entity_1.StatutCreneau.TERMINE,
         });
         return this.creneauRepo.save(creneau);

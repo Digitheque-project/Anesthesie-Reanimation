@@ -15,6 +15,11 @@ const score_sccre_entity_1 = require("../entities/score-sccre.entity");
 const medecin_entity_1 = require("../entities/medecin.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
+const sortie_reveil_entity_1 = require("../entities/sortie-reveil.entity");
+const checklist_avant_op_entity_1 = require("../entities/checklist-avant-op.entity");
+const checklist_pendant_op_entity_1 = require("../entities/checklist-pendant-op.entity");
+const checklist_apres_op_entity_1 = require("../entities/checklist-apres-op.entity");
+const moment_operatoire_entity_1 = require("../entities/moment-operatoire.entity");
 const rapports_service_1 = require("./rapports.service");
 const rapports_controller_1 = require("./rapports.controller");
 let RapportsModule = class RapportsModule {
@@ -22,7 +27,10 @@ let RapportsModule = class RapportsModule {
 exports.RapportsModule = RapportsModule;
 exports.RapportsModule = RapportsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, activite_per_op_entity_1.ActivitePerOp, score_sccre_entity_1.ScoreSCCRE, medecin_entity_1.Medecin, cpa_entity_1.CPA, notification_cpa_entity_1.NotificationCPA])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([
+                patient_bloc_entity_1.PatientBloc, activite_per_op_entity_1.ActivitePerOp, score_sccre_entity_1.ScoreSCCRE, medecin_entity_1.Medecin, cpa_entity_1.CPA, notification_cpa_entity_1.NotificationCPA,
+                sortie_reveil_entity_1.SortieReveil, checklist_avant_op_entity_1.ChecklistAvantOp, checklist_pendant_op_entity_1.ChecklistPendantOp, checklist_apres_op_entity_1.ChecklistApresOp, moment_operatoire_entity_1.MomentOperatoire,
+            ])],
         controllers: [rapports_controller_1.RapportsController],
         providers: [rapports_service_1.RapportsService],
         exports: [rapports_service_1.RapportsService],

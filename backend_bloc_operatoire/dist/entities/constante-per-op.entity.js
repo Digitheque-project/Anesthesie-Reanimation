@@ -15,6 +15,7 @@ const activite_per_op_entity_1 = require("./activite-per-op.entity");
 let ConstantePerOp = class ConstantePerOp {
     id;
     heure;
+    horodatage;
     fc;
     ta;
     spo2;
@@ -32,6 +33,10 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], ConstantePerOp.prototype, "heure", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Object)
+], ConstantePerOp.prototype, "horodatage", void 0);
 __decorate([
     (0, typeorm_1.Column)('int'),
     __metadata("design:type", Number)

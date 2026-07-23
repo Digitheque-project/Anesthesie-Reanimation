@@ -15,15 +15,21 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const axios_1 = require("@nestjs/axios");
 const rxjs_1 = require("rxjs");
+const service_token_service_1 = require("../central-auth/service-token.service");
 let PrescriptionExterneClient = PrescriptionExterneClient_1 = class PrescriptionExterneClient {
     http;
     config;
+    serviceToken;
     logger = new common_1.Logger(PrescriptionExterneClient_1.name);
     baseUrl;
-    constructor(http, config) {
+    constructor(http, config, serviceToken) {
         this.http = http;
         this.config = config;
+        this.serviceToken = serviceToken;
         this.baseUrl = this.config.get('externalServices.prescriptionApiUrl') ?? '';
+    }
+    authHeaders() {
+        return { Authorization: `Bearer ${this.serviceToken.mint()}` };
     }
     async getPrescriptionsBloc(serviceIdDest) {
         if (!this.baseUrl) {
@@ -33,6 +39,7 @@ let PrescriptionExterneClient = PrescriptionExterneClient_1 = class Prescription
         try {
             const { data } = await (0, rxjs_1.firstValueFrom)(this.http.get(`${this.baseUrl}/prescriptions/bloc`, {
                 params: { serviceIdDest },
+                headers: this.authHeaders(),
             }));
             return Array.isArray(data) ? data : [];
         }
@@ -45,7 +52,7 @@ let PrescriptionExterneClient = PrescriptionExterneClient_1 = class Prescription
         if (!this.baseUrl)
             return;
         try {
-            await (0, rxjs_1.firstValueFrom)(this.http.put(`${this.baseUrl}/prescriptions/bloc/${id}/statut`, { statut }));
+            await (0, rxjs_1.firstValueFrom)(this.http.put(`${this.baseUrl}/prescriptions/bloc/${id}/statut`, { statut }, { headers: this.authHeaders() }));
         }
         catch (err) {
             this.logger.error(`Erreur mise à jour statut prescription ${id}: ${err.message}`);
@@ -56,6 +63,7 @@ exports.PrescriptionExterneClient = PrescriptionExterneClient;
 exports.PrescriptionExterneClient = PrescriptionExterneClient = PrescriptionExterneClient_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [axios_1.HttpService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        service_token_service_1.ServiceTokenService])
 ], PrescriptionExterneClient);
 //# sourceMappingURL=prescription-externe.client.js.map

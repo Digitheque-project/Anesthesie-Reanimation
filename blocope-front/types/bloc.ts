@@ -90,6 +90,12 @@ export type ServiceDestination = {
 export interface FiltresPatient {
   statut: string;
   specialite: string;
+  recherche?: string;
+  sexe?: string;
+  ageMin?: string;
+  ageMax?: string;
+  heureDebut?: string;
+  heureFin?: string;
 }
 
 // ── Checklist OMS ─────────────────────────────────────────────────────────────

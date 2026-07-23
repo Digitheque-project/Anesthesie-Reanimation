@@ -17,6 +17,7 @@ exports.WebhookNotificationController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const webhook_notification_service_1 = require("./webhook-notification.service");
+const public_decorator_1 = require("../central-auth/public.decorator");
 let WebhookNotificationController = WebhookNotificationController_1 = class WebhookNotificationController {
     service;
     logger = new common_1.Logger(WebhookNotificationController_1.name);
@@ -39,6 +40,7 @@ let WebhookNotificationController = WebhookNotificationController_1 = class Webh
 };
 exports.WebhookNotificationController = WebhookNotificationController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(200),
     (0, swagger_1.ApiOperation)({ summary: '📨 Recevoir une notification externe' }),

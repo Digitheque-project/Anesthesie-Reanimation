@@ -6,7 +6,29 @@ export declare class NotificationCPAController {
     constructor(service: NotificationCPAService);
     create(d: CreateNotificationCPADto): Promise<import("../entities").NotificationCPA>;
     findAll(p?: number, l?: number): Promise<{
-        data: any[];
+        data: (import("../entities").WebhookNotification | {
+            patient: {
+                id: string;
+                nom: any;
+                prenom: any;
+                idDossier: any;
+                statut: import("../entities").PatientStatut | undefined;
+                niveauUrgence: import("../entities").NiveauUrgence | undefined;
+            };
+            id: string;
+            heurePrescription: string;
+            dateIntervention: Date | null;
+            patientId: string;
+            intervention: string;
+            chirurgien: import("../entities").Medecin | null;
+            chirurgienId: string | null;
+            chirurgienNom: string | null;
+            professeurCPA: string | null;
+            estUrgent: boolean;
+            statut: import("../entities").StatutNotificationCPA;
+            createdAt: Date;
+            updatedAt: Date;
+        })[];
         total: number;
         page: number;
         pages: number;

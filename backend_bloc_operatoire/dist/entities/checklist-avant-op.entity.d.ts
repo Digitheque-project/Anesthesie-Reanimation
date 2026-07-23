@@ -15,8 +15,16 @@ export declare class ChecklistAvantOp {
     allergiePatient: boolean;
     risqueIntubation: boolean;
     risqueSaignement: boolean;
-    medicamentsRemplis: boolean;
+    identiteConfirmeeUltime: boolean;
+    interventionConfirmeeUltime: boolean;
+    antibioprophylaxieFaite: boolean;
+    notesChirurgicales: string;
+    notesAnesthesiques: string;
+    notesIdeIbode: string;
     statut: StatutChecklist;
+    validateurId: string | null;
+    validateurNom: string | null;
+    validateurRole: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

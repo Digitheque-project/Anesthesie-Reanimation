@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const prescription_imagerie_listener_service_1 = require("./prescription-imagerie-listener.service");
+const prescription_module_1 = require("../prescription/prescription.module");
 let PrescriptionImagerieModule = class PrescriptionImagerieModule {
 };
 exports.PrescriptionImagerieModule = PrescriptionImagerieModule;
 exports.PrescriptionImagerieModule = PrescriptionImagerieModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([notification_cpa_entity_1.NotificationCPA])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([notification_cpa_entity_1.NotificationCPA]), prescription_module_1.PrescriptionModule],
         providers: [prescription_imagerie_listener_service_1.PrescriptionImagerieListenerService],
     })
 ], PrescriptionImagerieModule);

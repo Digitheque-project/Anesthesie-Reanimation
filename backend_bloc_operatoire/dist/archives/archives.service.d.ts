@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
-import { VPA } from '../entities/vpa.entity';
+import { VerificationVeille } from '../entities/verification-veille.entity';
 import { BonCommandeAnesthesie } from '../entities/bon-commande-anesthesie.entity';
 import { ActivitePerOp } from '../entities/activite-per-op.entity';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
@@ -10,11 +10,14 @@ import { SortieReveil } from '../entities/sortie-reveil.entity';
 import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
+import { NotificationCPA } from '../entities/notification-cpa.entity';
+import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
+import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { AccueilClient } from '../external/accueil.client';
 export declare class ArchivesService {
     private patientBlocRepo;
     private cpaRepository;
-    private vpaRepository;
+    private verificationVeilleRepository;
     private bonRepo;
     private activiteRepo;
     private protocoleRepo;
@@ -23,8 +26,11 @@ export declare class ArchivesService {
     private checklistAvantRepo;
     private checklistPendantRepo;
     private checklistApresRepo;
+    private notificationRepo;
+    private demandeExterneRepo;
+    private momentRepo;
     private accueilClient;
-    constructor(patientBlocRepo: Repository<PatientBloc>, cpaRepository: Repository<CPA>, vpaRepository: Repository<VPA>, bonRepo: Repository<BonCommandeAnesthesie>, activiteRepo: Repository<ActivitePerOp>, protocoleRepo: Repository<ProtocoleOperatoire>, scoreRepo: Repository<ScoreSCCRE>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, accueilClient: AccueilClient);
+    constructor(patientBlocRepo: Repository<PatientBloc>, cpaRepository: Repository<CPA>, verificationVeilleRepository: Repository<VerificationVeille>, bonRepo: Repository<BonCommandeAnesthesie>, activiteRepo: Repository<ActivitePerOp>, protocoleRepo: Repository<ProtocoleOperatoire>, scoreRepo: Repository<ScoreSCCRE>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, notificationRepo: Repository<NotificationCPA>, demandeExterneRepo: Repository<DemandeCpaExterne>, momentRepo: Repository<MomentOperatoire>, accueilClient: AccueilClient);
     private getPatientEnrichi;
     getDossierComplet(patientId: string): Promise<any>;
     getResumePatient(patientId: string): Promise<any>;
