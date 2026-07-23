@@ -47,7 +47,27 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             take: limite,
             order: { createdAt: 'DESC' },
         });
-        const internalData = await this.accueilClient.enrichWithIdentity(internalDataRaw);
+        const identities = await this.accueilClient.enrichWithIdentity(internalDataRaw);
+        const patientIds = Array.from(new Set(internalDataRaw.map((n) => n.patientId).filter(Boolean)));
+        const patients = patientIds.length
+            ? await this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(patientIds) } })
+            : [];
+        const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+        const internalData = internalDataRaw.map((n, idx) => {
+            const identity = identities[idx] || {};
+            const pb = patientMap.get(n.patientId);
+            return {
+                ...n,
+                patient: {
+                    id: n.patientId,
+                    nom: identity.nom,
+                    prenom: identity.prenom,
+                    idDossier: identity.idDossier ?? pb?.idDossier,
+                    statut: pb?.statut,
+                    niveauUrgence: pb?.niveauUrgence,
+                },
+            };
+        });
         const externalData = await this.webhookRepo.find({
             order: { receivedAt: 'DESC' },
             take: limite,

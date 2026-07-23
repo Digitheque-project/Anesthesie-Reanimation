@@ -1,4 +1,4 @@
-import { VPA } from './vpa.entity';
+import { VerificationVeille } from './verification-veille.entity';
 import { Medecin } from './medecin.entity';
 import { ItemCommande } from './item-commande.entity';
 export declare enum StatutBonCommande {
@@ -8,8 +8,8 @@ export declare enum StatutBonCommande {
 export declare class BonCommandeAnesthesie {
     id: string;
     patientId: string;
-    vpa: VPA;
-    vpaId: string;
+    verificationVeille: VerificationVeille;
+    verificationVeilleId: string;
     chirurgien: Medecin;
     chirurgienId: string;
     anesthesiste: Medecin;

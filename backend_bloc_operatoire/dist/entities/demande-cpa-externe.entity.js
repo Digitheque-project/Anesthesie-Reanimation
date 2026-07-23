@@ -28,6 +28,7 @@ let DemandeCpaExterne = class DemandeCpaExterne {
     chuId;
     sourceServiceId;
     sourceServiceName;
+    sourceCallbackUrl;
     sourceReferenceType;
     sourceReferenceId;
     typeAnesthesie;
@@ -65,6 +66,10 @@ __decorate([
     (0, typeorm_1.Column)({ length: 100, nullable: true }),
     __metadata("design:type", String)
 ], DemandeCpaExterne.prototype, "sourceServiceName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true }),
+    __metadata("design:type", Object)
+], DemandeCpaExterne.prototype, "sourceCallbackUrl", void 0);
 __decorate([
     (0, typeorm_1.Column)({ length: 50 }),
     __metadata("design:type", String)

@@ -19,6 +19,8 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const checklist_avant_op_entity_1 = require("../entities/checklist-avant-op.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let ChecklistAvantOpController = class ChecklistAvantOpController {
     repo;
     accueilClient;
@@ -26,7 +28,15 @@ let ChecklistAvantOpController = class ChecklistAvantOpController {
         this.repo = repo;
         this.accueilClient = accueilClient;
     }
-    create(dto) { return this.repo.save(this.repo.create(dto)); }
+    create(dto, req) {
+        const centralUser = req.centralUser;
+        return this.repo.save(this.repo.create({
+            ...dto,
+            validateurId: centralUser?.userId,
+            validateurNom: centralUser ? `${centralUser.prenom} ${centralUser.nom}`.trim() : undefined,
+            validateurRole: centralUser?.role,
+        }));
+    }
     async findAll(patientId) {
         const data = await this.repo.find({ where: patientId ? { patientId } : {} });
         return this.accueilClient.enrichWithIdentity(data);
@@ -43,10 +53,12 @@ let ChecklistAvantOpController = class ChecklistAvantOpController {
 exports.ChecklistAvantOpController = ChecklistAvantOpController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une checklist avant opération' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer une checklist avant opération (Anesthésiste)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], ChecklistAvantOpController.prototype, "create", null);
 __decorate([
@@ -66,6 +78,8 @@ __decorate([
 ], ChecklistAvantOpController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une checklist avant opération (Anesthésiste)' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

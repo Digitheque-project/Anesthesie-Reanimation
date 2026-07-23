@@ -4,15 +4,21 @@ import { Suspense } from "react";
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { patientService } from '@/lib/api'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 import { useRole } from '@/lib/hooks/useRole'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
+import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 
 export default function ApresOperationPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ApresOperationPageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la check-list après intervention.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ApresOperationPageContent />
+      </Suspense>
+    </RoleGate>
   );
   }
 
@@ -20,8 +26,15 @@ function ApresOperationPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''
-  const patientNom = searchParams.get('patientNom') || 'Jean-Luc Moreau'
+  const patientNom = searchParams.get('patientNom') || 'Patient'
   const intervention = searchParams.get('intervention') || ''
+  const [patient, setPatient] = useState<any>(null)
+  const [loadingPatient, setLoadingPatient] = useState(true)
+
+  useEffect(() => {
+    if (!patientId) { setLoadingPatient(false); return }
+    patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
+  }, [patientId])
 
   const [form, setForm] = useState({
     dateCreation: new Date().toISOString().split('T')[0],
@@ -59,21 +72,9 @@ function ApresOperationPageContent() {
         <span className="material-symbols-outlined">arrow_back</span> Retour
       </button>
 
-      {/* Patient Context Header */}
-      <div className="mb-6 p-6 bg-surface-container-lowest rounded-2xl shadow-sm flex items-center justify-between border border-primary-fixed/30">
-        <div className="flex items-center gap-5">
-          <div className="w-14 h-14 bg-surface-container rounded-full flex items-center justify-center text-primary">
-            <span className="material-symbols-outlined text-3xl">patient_list</span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight">Check-list après intervention – Check de sortie du bloc</h2>
-            <div className="flex items-center gap-4 mt-1 text-sm text-on-surface-variant">
-              <span className="font-medium">Patient: <strong className="text-on-surface">{patientNom}</strong></span>
-              {intervention && <><span className="w-1 h-1 bg-outline-variant rounded-full"></span><span>{intervention}</span></>}
-            </div>
-          </div>
-        </div>
-      </div>
+      <h1 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight mb-4">Check-list après intervention – Check de sortie du bloc</h1>
+
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} />
 
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
 

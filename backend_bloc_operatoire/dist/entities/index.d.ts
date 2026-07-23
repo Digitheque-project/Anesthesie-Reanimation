@@ -1,7 +1,7 @@
 export { PatientBloc, PatientStatut, NiveauUrgence } from './patient-bloc.entity';
 export { Medecin, RoleMedecin, OrdreProfessionnel } from './medecin.entity';
 export { CPA, ScoreASA, DecisionCPA, StatutCPA } from './cpa.entity';
-export { VPA, StatutVPA } from './vpa.entity';
+export { VerificationVeille, StatutVerificationVeille } from './verification-veille.entity';
 export { Premedicament } from './premedicament.entity';
 export { BonCommandeAnesthesie, StatutBonCommande } from './bon-commande-anesthesie.entity';
 export { ItemCommande } from './item-commande.entity';
@@ -20,3 +20,4 @@ export { HistoriqueModification } from './historique-modification.entity';
 export { User } from '../user/user.entity';
 export { WebhookNotification } from "./webhook-notification.entity";
 export { DemandeCpaExterne, StatutDemandeCpaExterne } from "./demande-cpa-externe.entity";
+export { MomentOperatoire, CategorieMoment } from './moment-operatoire.entity';

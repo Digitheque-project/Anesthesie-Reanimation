@@ -13,12 +13,13 @@ const protocole_operatoire_entity_1 = require("../entities/protocole-operatoire.
 const drainage_entity_1 = require("../entities/drainage.entity");
 const protocole_operatoire_service_1 = require("./protocole-operatoire.service");
 const protocole_operatoire_controller_1 = require("./protocole-operatoire.controller");
+const operation_gateway_module_1 = require("../operation-gateway/operation-gateway.module");
 let ProtocoleOperatoireModule = class ProtocoleOperatoireModule {
 };
 exports.ProtocoleOperatoireModule = ProtocoleOperatoireModule;
 exports.ProtocoleOperatoireModule = ProtocoleOperatoireModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([protocole_operatoire_entity_1.ProtocoleOperatoire, drainage_entity_1.Drainage])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([protocole_operatoire_entity_1.ProtocoleOperatoire, drainage_entity_1.Drainage]), operation_gateway_module_1.OperationGatewayModule],
         controllers: [protocole_operatoire_controller_1.ProtocoleOperatoireController],
         providers: [protocole_operatoire_service_1.ProtocoleOperatoireService],
         exports: [protocole_operatoire_service_1.ProtocoleOperatoireService],

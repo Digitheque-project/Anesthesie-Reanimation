@@ -8,12 +8,20 @@ import { useRole } from '@/lib/hooks/useRole';
 import { obtenirSessionValide } from '@/lib/auth/central-session';
 import MedicamentsAnesthesieModal, { construireLignesInitiales } from '@/components/bloc/medicaments-anesthesie/MedicamentsAnesthesieModal';
 import type { MedicamentRow } from '@/components/bloc/medicaments-anesthesie/MedicamentTable';
+import RoleGate from '@/components/bloc/auth/RoleGate';
+import { RoleClinique } from '@/lib/auth/role-clinique';
+import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
 
 export default function ConsultationCpaPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ConsultationCpaPageContent />
-    </Suspense>
+    <RoleGate
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR]}
+      message="Vous ne devez pas faire de CPA."
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ConsultationCpaPageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 
@@ -76,6 +84,9 @@ function ConsultationCpaPageContent() {
   const [scoreMallampati, setScoreMallampati] = useState<number>(1);
   const [scoreASA, setScoreASA] = useState<number | string>(1);
   const [decision, setDecision] = useState<'APTE' | 'INAPTE' | 'REPORT' | ''>('');
+  // Devenir de l'opération une fois l'aptitude tranchée — distinct de `decision === 'REPORT'`
+  // qui concerne la CPA elle-même (à refaire), pas l'opération.
+  const [decisionOperation, setDecisionOperation] = useState<'RETENUE' | 'REPORTEE' | 'REFUSEE' | ''>('');
   const [motifRefus, setMotifRefus] = useState('');
   const [validationProfInformelle, setValidationProfInformelle] = useState('');
   const [dateVPA, setDateVPA] = useState('');
@@ -86,6 +97,7 @@ function ConsultationCpaPageContent() {
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
   const [showCatalogueModal, setShowCatalogueModal] = useState(false);
   const [medicamentsAnesthesieRows, setMedicamentsAnesthesieRows] = useState<MedicamentRow[]>(() => construireLignesInitiales());
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, estResponsableCpa, estMajor, roleName } = useRole();
   const [nomAnesthesiste, setNomAnesthesiste] = useState('');
   const [anesthesistes, setAnesthesistes] = useState<any[]>([]);
@@ -170,6 +182,7 @@ function ConsultationCpaPageContent() {
     if (c.mallampati != null) setScoreMallampati(c.mallampati);
     if (c.scoreASA != null) setScoreASA(c.scoreASA);
     if (c.decision) setDecision(c.decision);
+    if (c.decisionOperation) setDecisionOperation(c.decisionOperation);
     if (c.motifRefus) setMotifRefus(c.motifRefus);
     if (c.validationProfInformelle) setValidationProfInformelle(c.validationProfInformelle);
     if (c.premedicaments?.length) {
@@ -294,6 +307,7 @@ function ConsultationCpaPageContent() {
           alcool: form.alcool,
           scoreASA: typeof scoreASA === 'string' ? scoreASA : Number(scoreASA),
           decision,
+          decisionOperation: (decision === 'APTE' || decision === 'INAPTE') ? (decisionOperation || undefined) : undefined,
           motifRefus: (decision === 'INAPTE' || decision === 'REPORT') ? motifRefus.trim() : undefined,
           validationProfInformelle: validationProfInformelle.trim() || undefined,
           typeAnesthesie: form.typeAnesthesie,
@@ -380,11 +394,13 @@ function ConsultationCpaPageContent() {
           </div>
           <div>
             <h1 className="text-xl font-bold font-headline text-on-surface">{patientNom}</h1>
-            <p className="text-sm text-on-surface-variant">{patientAge ? `${patientAge} ans` : ''}{patientIpp ? ` • IPP: ${patientIpp}` : ''}</p>
+            <p className="text-sm text-on-surface-variant">
+              {patientAge ? `${patientAge} ans` : ''}{patient?.sexe ? ` • ${patient.sexe}` : ''}{patient?.chambre ? ` • Chambre ${patient.chambre}` : ''}{patientIpp ? ` • IPP: ${patientIpp}` : ''}
+            </p>
           </div>
         </div>
         <div className="flex gap-2 items-center">
-          <button onClick={() => router.push(`/bloc/dossier-patient/${patientId}`)}
+          <button onClick={() => router.push(`/bloc/dossier-patient/${patientId}/complet`)}
             className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-all">
             <span className="material-symbols-outlined text-lg">folder_open</span> Voir dossier
           </button>
@@ -610,14 +626,16 @@ function ConsultationCpaPageContent() {
       </div>
 
       {/* Instructions & Prescription */}
-      <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex border-b border-surface-container">
-          <button className="px-8 py-4 text-primary font-bold border-b-2 border-primary bg-primary-fixed/30 flex-1 text-center">Instructions Pré-opératoires</button>
+      <div className="rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-blue-50/80 to-white shadow-md overflow-hidden">
+        <div className="px-4 py-3 bg-blue-100/70 border-b border-blue-200 flex items-center gap-2">
+          <span className="material-symbols-outlined text-blue-600">assignment</span>
+          <h2 className="text-sm font-extrabold text-blue-900 uppercase tracking-widest">Instructions Pré-opératoires</h2>
         </div>
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className={!peutEditerExamenEtDecision ? 'opacity-80' : ''}>
-              <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-primary">pill</span> Prémédication</h3>
+              <div className="bg-white rounded-xl border border-blue-200 p-4 shadow-sm mb-4">
+              <h3 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-blue-600">pill</span> Prémédication</h3>
               <div className="overflow-hidden border border-surface-container rounded-xl">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface-container text-[10px] uppercase font-bold text-on-surface-variant">
@@ -640,6 +658,7 @@ function ConsultationCpaPageContent() {
                   <button onClick={() => setShowMedicamentModal(true)} className="w-full py-3 text-xs font-bold text-primary hover:bg-primary-fixed/20 transition-colors">+ AJOUTER UN MÉDICAMENT</button>
                 )}
               </div>
+              </div>
 
               {showMedicamentModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -660,10 +679,10 @@ function ConsultationCpaPageContent() {
                 </div>
               )}
 
-              <div className="mt-4 space-y-2">
-                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Jeûne</label><textarea disabled={!peutEditerExamenEtDecision} value={form.jeune} onChange={setField('jeune')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Instructions spécifiques..."></textarea></div>
-                <div className="bg-surface-container-low rounded-xl p-4 border-l-4 border-secondary">
-                  <h3 className="text-sm font-bold text-secondary flex items-center gap-2 mb-2"><span className="material-symbols-outlined">no_food</span>Règles de jeûne</h3>
+              <div className="bg-white rounded-xl border border-blue-200 p-4 shadow-sm space-y-2">
+                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-blue-800">Jeûne</label><textarea disabled={!peutEditerExamenEtDecision} value={form.jeune} onChange={setField('jeune')} className="w-full h-20 bg-blue-50/60 border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Instructions spécifiques..."></textarea></div>
+                <div className="bg-blue-50/60 rounded-xl p-4 border-l-4 border-blue-400">
+                  <h3 className="text-sm font-bold text-blue-700 flex items-center gap-2 mb-2"><span className="material-symbols-outlined">no_food</span>Règles de jeûne</h3>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-white p-3 rounded-lg">
                       <label className="text-[10px] font-bold uppercase block mb-1">Solides</label>
@@ -675,13 +694,14 @@ function ConsultationCpaPageContent() {
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Préparation physique</label><textarea disabled={!peutEditerExamenEtDecision} value={form.preparationPhysique} onChange={setField('preparationPhysique')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Douche, dépilation..."></textarea></div>
-                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider">Tâches soignantes</label><textarea disabled={!peutEditerExamenEtDecision} value={form.tachesInfirmieres} onChange={setField('tachesInfirmieres')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Surveillance, constantes..."></textarea></div>
+                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-blue-800">Préparation physique</label><textarea disabled={!peutEditerExamenEtDecision} value={form.preparationPhysique} onChange={setField('preparationPhysique')} className="w-full h-20 bg-blue-50/60 border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Douche, dépilation..."></textarea></div>
+                <div className="space-y-2"><label className="text-xs font-bold uppercase tracking-wider text-blue-800">Tâches soignantes</label><textarea disabled={!peutEditerExamenEtDecision} value={form.tachesInfirmieres} onChange={setField('tachesInfirmieres')} className="w-full h-20 bg-blue-50/60 border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Surveillance, constantes..."></textarea></div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-primary">medication</span> Médicaments d'anesthésie et de réanimation</h3>
+              <div className="bg-white rounded-xl border border-blue-200 p-4 shadow-sm">
+              <h3 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2"><span className="material-symbols-outlined text-blue-600">medication</span> Médicaments d'anesthésie et de réanimation</h3>
               <p className="text-xs text-on-surface-variant mb-2">À prévoir pour l'anesthésie et une éventuelle réanimation peropératoire — distinct de la prémédication, rempli par l'anesthésiste.</p>
               {!peutEditerMedicamentsEtVpa && (
                 <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
@@ -703,7 +723,47 @@ function ConsultationCpaPageContent() {
                 rows={medicamentsAnesthesieRows}
                 onRowsChange={setMedicamentsAnesthesieRows}
               />
+              </div>
             </div>
+          </div>
+
+          {/* Prescription pendant la CPA — au cas où l'anesthésiste/responsable CPA/major en a
+              besoin, avant la décision finale. Envoyée dans le dossier partagé du patient avec
+              son service d'origine comme destinataire explicite (pas d'action obligatoire). */}
+          <div className="mt-4 pt-4 border-t border-surface-container">
+            <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">clinical_notes</span> Prescription
+            </h3>
+            {!peutDeciderAptitudeCpa ? (
+              <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Prescrire pendant la CPA est réservé à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-on-surface-variant mb-2">
+                  Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
+                </p>
+                <button type="button" onClick={() => setShowPrescriptionModal(true)}
+                  className="w-full flex items-center justify-between p-4 border border-surface-container rounded-xl hover:bg-primary-fixed/10 transition-colors">
+                  <span className="flex items-center gap-2 text-sm font-bold text-primary">
+                    <span className="material-symbols-outlined">edit_note</span>
+                    Prescrire
+                  </span>
+                  <span className="text-xs font-bold text-primary underline">Ouvrir</span>
+                </button>
+              </>
+            )}
+
+            <PrescriptionCpaModal
+              open={showPrescriptionModal}
+              onClose={() => setShowPrescriptionModal(false)}
+              patientId={patientId || patient?.id || ''}
+              serviceDestOverride={
+                patient?.serviceOrigineId && patient?.serviceOrigine
+                  ? { serviceId: patient.serviceOrigineId, serviceName: patient.serviceOrigine }
+                  : undefined
+              }
+            />
           </div>
 
           {/* Décision Finale — seul champ réellement obligatoire de la consultation : mise en
@@ -727,7 +787,7 @@ function ConsultationCpaPageContent() {
                     { key: 'INAPTE', label: 'Inapte à ce jour', icon: 'cancel', activeClass: 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/30' },
                     { key: 'REPORT', label: 'CPA à reporter', sousLabel: '(pas l\'opération — à refaire après examens)', icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' },
                   ].map(opt => (
-                    <button key={opt.key} onClick={() => setDecision(opt.key as any)} disabled={!peutEditerExamenEtDecision}
+                    <button key={opt.key} onClick={() => { setDecision(opt.key as any); setDecisionOperation(''); }} disabled={!peutEditerExamenEtDecision}
                       className={`w-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed ${
                         decision === opt.key ? opt.activeClass + ' scale-[1.02]' : 'border-outline-variant bg-white text-on-surface-variant hover:border-amber-300 hover:bg-amber-50'
                       }`}>
@@ -737,6 +797,40 @@ function ConsultationCpaPageContent() {
                     </button>
                   ))}
                 </div>
+
+                {/* Devenir de l'opération — sous-choix affiché une fois l'aptitude tranchée.
+                    Distinct du bouton "CPA à reporter" ci-dessus : ici la CPA est terminée, on
+                    statue sur l'opération elle-même. Le rendez-vous n'est pas obligatoire en cas
+                    de report. */}
+                {(decision === 'APTE' || decision === 'INAPTE') && (
+                  <div className="mt-3 pt-3 border-t border-amber-200/60">
+                    <label className="text-xs font-bold text-amber-900 uppercase tracking-wide block mb-2">Devenir de l'opération</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(decision === 'APTE'
+                        ? [
+                            { key: 'RETENUE', label: "Date d'opération retenue", icon: 'event_available', activeClass: 'bg-emerald-500 border-emerald-500 text-white' },
+                            { key: 'REPORTEE', label: "Date d'opération reportée", icon: 'event_busy', activeClass: 'bg-orange-500 border-orange-500 text-white' },
+                          ]
+                        : [
+                            { key: 'REPORTEE', label: "Date d'opération reportée", icon: 'event_busy', activeClass: 'bg-orange-500 border-orange-500 text-white' },
+                            { key: 'REFUSEE', label: 'Opération refusée (impossible)', icon: 'block', activeClass: 'bg-red-600 border-red-600 text-white' },
+                          ]
+                      ).map(opt => (
+                        <button key={opt.key} type="button" onClick={() => setDecisionOperation(opt.key as any)} disabled={!peutEditerExamenEtDecision}
+                          className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all disabled:opacity-70 disabled:cursor-not-allowed ${
+                            decisionOperation === opt.key ? opt.activeClass : 'border-outline-variant bg-white text-on-surface-variant hover:border-amber-300 hover:bg-amber-50'
+                          }`}>
+                          <span className="material-symbols-outlined text-lg">{opt.icon}</span>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    {decisionOperation === 'REPORTEE' && (
+                      <p className="text-[11px] text-orange-700 mt-2">La prise de rendez-vous pour la nouvelle date n'est pas obligatoire à cette étape — elle pourra être planifiée plus tard.</p>
+                    )}
+                  </div>
+                )}
+
                 {decision === 'INAPTE' && (
                   <div className="mt-3">
                     <label className="text-xs font-bold text-red-700 block mb-1">Motif du refus *</label>

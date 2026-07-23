@@ -18,12 +18,14 @@ const swagger_1 = require("@nestjs/swagger");
 const score_sccre_service_1 = require("./score-sccre.service");
 const create_score_sccre_dto_1 = require("./dto/create-score-sccre.dto");
 const update_score_sccre_dto_1 = require("./dto/update-score-sccre.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let ScoreSCCREController = class ScoreSCCREController {
     service;
     constructor(service) {
         this.service = service;
     }
-    create(dto) { return this.service.create(dto); }
+    create(dto, req) { return this.service.create(dto, req.centralUser); }
     findAll(p, l) { return this.service.findAll(p, l); }
     findOne(id) { return this.service.findOne(id); }
     update(id, dto) { return this.service.update(id, dto); }
@@ -32,10 +34,12 @@ let ScoreSCCREController = class ScoreSCCREController {
 exports.ScoreSCCREController = ScoreSCCREController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un score SCCRE' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer un score SCCRE (Anesthésiste — auto-attribué depuis la session)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_score_sccre_dto_1.CreateScoreSCCREDto]),
+    __metadata("design:paramtypes", [create_score_sccre_dto_1.CreateScoreSCCREDto, Object]),
     __metadata("design:returntype", void 0)
 ], ScoreSCCREController.prototype, "create", null);
 __decorate([

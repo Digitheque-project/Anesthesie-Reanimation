@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { ServiceTokenService } from '../central-auth/service-token.service';
 export interface ActeBlocExterne {
     id: string;
     libelle: string;
@@ -11,7 +12,7 @@ export interface PrescriptionBlocExterne {
     id: string;
     patientId: string;
     prescripteurId: string;
-    urgence: 'NORMALE' | 'URGENTE' | 'STAT' | string;
+    urgence: 'NORMAL' | 'URGENT' | 'TRES_URGENT' | string;
     alertes?: string | null;
     dateIntervention?: string | null;
     chirurgien?: string | null;
@@ -25,9 +26,11 @@ export interface PrescriptionBlocExterne {
 export declare class PrescriptionExterneClient {
     private readonly http;
     private readonly config;
+    private readonly serviceToken;
     private readonly logger;
     private readonly baseUrl;
-    constructor(http: HttpService, config: ConfigService);
+    constructor(http: HttpService, config: ConfigService, serviceToken: ServiceTokenService);
+    private authHeaders;
     getPrescriptionsBloc(serviceIdDest: string): Promise<PrescriptionBlocExterne[]>;
     updateStatut(id: string, statut: string): Promise<void>;
 }

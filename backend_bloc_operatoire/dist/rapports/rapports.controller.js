@@ -21,6 +21,9 @@ let RapportsController = class RapportsController {
     constructor(rapportsService) {
         this.rapportsService = rapportsService;
     }
+    tableauDeBord(dd, df) {
+        return this.rapportsService.tableauDeBord(dd, df);
+    }
     statistiques(dd, df) {
         return this.rapportsService.statistiquesGenerales(dd, df);
     }
@@ -32,6 +35,15 @@ let RapportsController = class RapportsController {
     exportStats() { return this.rapportsService.exportStatistiques('excel'); }
 };
 exports.RapportsController = RapportsController;
+__decorate([
+    (0, common_1.Get)('tableau-de-bord'),
+    (0, swagger_1.ApiOperation)({ summary: 'Tableau de bord complet (statistiques, activité par personnel, détail des opérations)' }),
+    __param(0, (0, common_1.Query)('dateDebut')),
+    __param(1, (0, common_1.Query)('dateFin')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], RapportsController.prototype, "tableauDeBord", null);
 __decorate([
     (0, common_1.Get)('statistiques'),
     (0, swagger_1.ApiOperation)({ summary: 'Statistiques globales' }),

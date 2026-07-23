@@ -8,6 +8,8 @@ import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
+import { patientService } from '@/lib/api'
+import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 
 export default function ProtocoleOperatoirePage() {
   return (
@@ -21,7 +23,14 @@ function ProtocoleOperatoirePageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''
-  const patientNom = searchParams.get('patientNom') || 'Marc LAHINIRINA'
+  const patientNom = searchParams.get('patientNom') || 'Patient'
+  const [patient, setPatient] = useState<any>(null)
+  const [loadingPatient, setLoadingPatient] = useState(true)
+
+  useEffect(() => {
+    if (!patientId) { setLoadingPatient(false); return }
+    patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
+  }, [patientId])
 
   const [form, setForm] = useState({
     dateOperation: new Date().toISOString().split('T')[0],
@@ -65,6 +74,7 @@ function ProtocoleOperatoirePageContent() {
 
   return (
     <main className="p-6 h-full overflow-y-auto">
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole opératoire" />
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
       {!estChirurgien && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">

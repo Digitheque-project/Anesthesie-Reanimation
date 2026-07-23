@@ -56,6 +56,12 @@ export class VerificationVeille {
   @Column('simple-json', { nullable: true })
   commandeSang: any;
 
+  // Noms des médicaments d'anesthésie/réanimation (cochés pendant la CPA, cf.
+  // CPA.medicamentsAnesthesieReanimation) reconfirmés par l'anesthésiste à la veille de
+  // l'opération — traçabilité de la re-vérification, pas juste un affichage écran.
+  @Column('simple-json', { nullable: true })
+  medicamentsVerifies: string[] | null;
+
   @Column({ length: 20 })
   heureDepart: string;
 

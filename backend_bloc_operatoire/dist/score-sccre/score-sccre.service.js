@@ -18,14 +18,24 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const score_sccre_entity_1 = require("../entities/score-sccre.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_service_1 = require("../medecin/medecin.service");
 let ScoreSCCREService = class ScoreSCCREService {
     repo;
     accueilClient;
-    constructor(repo, accueilClient) {
+    medecinService;
+    constructor(repo, accueilClient, medecinService) {
         this.repo = repo;
         this.accueilClient = accueilClient;
+        this.medecinService = medecinService;
     }
-    async create(dto) { const saved = await this.repo.save(this.repo.create(dto)); return Array.isArray(saved) ? saved[0] : saved; }
+    async create(dto, centralUser) {
+        const anesthesiste = await this.medecinService.findByEmail(centralUser.email);
+        if (!anesthesiste) {
+            throw new common_1.BadRequestException(`Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`);
+        }
+        const saved = await this.repo.save(this.repo.create({ ...dto, anesthesisteId: anesthesiste.id }));
+        return Array.isArray(saved) ? saved[0] : saved;
+    }
     async findAll(page = 1, limite = 10) {
         const [data, total] = await this.repo.findAndCount({ relations: ['anesthesiste'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
         const enriched = await this.accueilClient.enrichWithIdentity(data);
@@ -57,6 +67,7 @@ exports.ScoreSCCREService = ScoreSCCREService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(score_sccre_entity_1.ScoreSCCRE)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        medecin_service_1.MedecinService])
 ], ScoreSCCREService);
 //# sourceMappingURL=score-sccre.service.js.map

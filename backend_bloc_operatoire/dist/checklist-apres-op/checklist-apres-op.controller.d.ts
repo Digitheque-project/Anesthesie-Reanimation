@@ -1,12 +1,11 @@
-import { Repository } from 'typeorm';
-import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
-import { AccueilClient } from '../external/accueil.client';
+import { ChecklistApresOpService } from './checklist-apres-op.service';
+import { CreateChecklistApresOpDto } from './dto/create-checklist-apres-op.dto';
+import { UpdateChecklistApresOpDto } from './dto/update-checklist-apres-op.dto';
 export declare class ChecklistApresOpController {
-    private repo;
-    private accueilClient;
-    constructor(repo: Repository<ChecklistApresOp>, accueilClient: AccueilClient);
-    create(dto: any): Promise<ChecklistApresOp[]>;
+    private readonly service;
+    constructor(service: ChecklistApresOpService);
+    create(dto: CreateChecklistApresOpDto, req: any): Promise<import("../entities").ChecklistApresOp>;
     findAll(patientId?: string): Promise<any>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: any): Promise<import("typeorm").UpdateResult>;
+    update(id: string, dto: UpdateChecklistApresOpDto): Promise<import("../entities").ChecklistApresOp>;
 }

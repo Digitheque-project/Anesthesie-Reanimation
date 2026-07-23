@@ -1,18 +1,24 @@
 'use client'
 import { Suspense } from "react";
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { patientService } from '@/lib/api'
 import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
 import Radio from '@/components/ui/Radio'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
+import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 
 export default function ChecklistAvantOpPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ChecklistAvantOpPageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la check-list avant opération.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ChecklistAvantOpPageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 
@@ -22,6 +28,13 @@ function ChecklistAvantOpPageContent() {
   const patientId = searchParams.get('patientId') || ''
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const intervention = searchParams.get('intervention') || ''
+  const [patient, setPatient] = useState<any>(null)
+  const [loadingPatient, setLoadingPatient] = useState(true)
+
+  useEffect(() => {
+    if (!patientId) { setLoadingPatient(false); return }
+    patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
+  }, [patientId])
 
   const [form, setForm] = useState({
     dateCreation: new Date().toISOString().split('T')[0],
@@ -61,16 +74,15 @@ function ChecklistAvantOpPageContent() {
   return (
     <main className="p-6">
       {/* Header */}
-      <header className="mb-10 flex flex-col md:flex-row md:items-center gap-4">
+      <header className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
         <button onClick={() => router.back()} className="flex items-center space-x-2 px-6 py-2.5 border border-outline-variant/30 rounded-lg hover:bg-surface-container transition-all font-semibold shrink-0 order-first">
           <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           <span className="text-sm">Retour</span>
         </button>
-        <div>
-          <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
-          <p className="text-on-surface-variant mt-2 text-lg">{patientNom} — {intervention}</p>
-        </div>
+        <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
       </header>
+
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} />
 
       {!estAnesthesiste && (
         <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">

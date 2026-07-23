@@ -8,7 +8,7 @@ declare class ItemDto {
 }
 export declare class CreateBonCommandeDto {
     patientId: string;
-    vpaId?: string;
+    verificationVeilleId?: string;
     chirurgienId?: string;
     anesthesisteId?: string;
     dateCreation: string;

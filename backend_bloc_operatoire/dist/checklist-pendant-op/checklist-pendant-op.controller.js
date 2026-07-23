@@ -15,38 +15,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChecklistPendantOpController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const checklist_pendant_op_entity_1 = require("../entities/checklist-pendant-op.entity");
-const accueil_client_1 = require("../external/accueil.client");
+const checklist_pendant_op_service_1 = require("./checklist-pendant-op.service");
+const create_checklist_pendant_op_dto_1 = require("./dto/create-checklist-pendant-op.dto");
+const update_checklist_pendant_op_dto_1 = require("./dto/update-checklist-pendant-op.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let ChecklistPendantOpController = class ChecklistPendantOpController {
-    repo;
-    accueilClient;
-    constructor(repo, accueilClient) {
-        this.repo = repo;
-        this.accueilClient = accueilClient;
+    service;
+    constructor(service) {
+        this.service = service;
     }
-    create(dto) { return this.repo.save(this.repo.create(dto)); }
-    async findAll(patientId) {
-        const data = await this.repo.find({ where: patientId ? { patientId } : {} });
-        return this.accueilClient.enrichWithIdentity(data);
-    }
-    async findOne(id) {
-        const checklist = await this.repo.findOne({ where: { id } });
-        if (!checklist)
-            return null;
-        const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
-        return enriched;
-    }
-    update(id, dto) { return this.repo.update(id, dto); }
+    create(dto, req) { return this.service.create(dto, req.centralUser); }
+    findAll(patientId) { return this.service.findAll(patientId); }
+    findOne(id) { return this.service.findOne(id); }
+    update(id, dto) { return this.service.update(id, dto); }
 };
 exports.ChecklistPendantOpController = ChecklistPendantOpController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une checklist pendant opération' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [create_checklist_pendant_op_dto_1.CreateChecklistPendantOpDto, Object]),
     __metadata("design:returntype", void 0)
 ], ChecklistPendantOpController.prototype, "create", null);
 __decorate([
@@ -55,28 +47,29 @@ __decorate([
     __param(0, (0, common_1.Query)('patientId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], ChecklistPendantOpController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtenir une checklist pendant opération' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], ChecklistPendantOpController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une checklist pendant opération (Anesthésiste)' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, update_checklist_pendant_op_dto_1.UpdateChecklistPendantOpDto]),
     __metadata("design:returntype", void 0)
 ], ChecklistPendantOpController.prototype, "update", null);
 exports.ChecklistPendantOpController = ChecklistPendantOpController = __decorate([
     (0, swagger_1.ApiTags)('Checklist Pendant Op'),
     (0, common_1.Controller)('checklists-pendant-op'),
-    __param(0, (0, typeorm_1.InjectRepository)(checklist_pendant_op_entity_1.ChecklistPendantOp)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+    __metadata("design:paramtypes", [checklist_pendant_op_service_1.ChecklistPendantOpService])
 ], ChecklistPendantOpController);
 //# sourceMappingURL=checklist-pendant-op.controller.js.map

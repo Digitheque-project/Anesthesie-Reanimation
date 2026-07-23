@@ -15,6 +15,9 @@ export declare class ChecklistPendantOp {
     constantesStables: boolean;
     ventilationOK: boolean;
     statut: StatutChecklist;
+    validateurId: string | null;
+    validateurNom: string | null;
+    validateurRole: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

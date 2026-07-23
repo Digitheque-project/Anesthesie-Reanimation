@@ -5,7 +5,7 @@ export declare class ProtocoleOperatoireController {
     private readonly service;
     constructor(service: ProtocoleOperatoireService);
     create(dto: CreateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
-    findAll(p?: number, l?: number): Promise<{
+    findAll(p?: number, l?: number, patientId?: string): Promise<{
         data: any;
         total: number;
         page: number;

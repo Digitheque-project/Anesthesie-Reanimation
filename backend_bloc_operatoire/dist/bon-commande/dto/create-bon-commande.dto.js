@@ -45,7 +45,7 @@ __decorate([
 ], ItemDto.prototype, "observation", void 0);
 class CreateBonCommandeDto {
     patientId;
-    vpaId;
+    verificationVeilleId;
     chirurgienId;
     anesthesisteId;
     dateCreation;
@@ -62,7 +62,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateBonCommandeDto.prototype, "vpaId", void 0);
+], CreateBonCommandeDto.prototype, "verificationVeilleId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

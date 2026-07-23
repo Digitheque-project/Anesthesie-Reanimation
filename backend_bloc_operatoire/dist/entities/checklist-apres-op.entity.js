@@ -27,6 +27,9 @@ let ChecklistApresOp = class ChecklistApresOp {
     transfertSalleReveil;
     observationsParticulieres;
     statut;
+    validateurId;
+    validateurNom;
+    validateurRole;
     createdAt;
     updatedAt;
 };
@@ -72,6 +75,18 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }),
     __metadata("design:type", String)
 ], ChecklistApresOp.prototype, "statut", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistApresOp.prototype, "validateurId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistApresOp.prototype, "validateurNom", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistApresOp.prototype, "validateurRole", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

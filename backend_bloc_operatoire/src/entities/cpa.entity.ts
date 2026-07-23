@@ -27,6 +27,16 @@ export enum DecisionCPA {
   REPORT = 'REPORT',
 }
 
+// Devenir de l'opération une fois la décision d'aptitude prise (distinct de DecisionCPA.REPORT,
+// qui concerne la CPA elle-même à refaire — pas l'opération) :
+//   - Apte    -> RETENUE (date confirmée) ou REPORTEE (opération à reporter)
+//   - Inapte  -> REPORTEE ou REFUSEE (opération impossible)
+export enum DecisionOperation {
+  RETENUE = 'RETENUE',
+  REPORTEE = 'REPORTEE',
+  REFUSEE = 'REFUSEE',
+}
+
 export enum StatutCPA {
   EN_ATTENTE = 'EN_ATTENTE',
   REALISE = 'REALISE',
@@ -117,6 +127,9 @@ export class CPA {
 
   @Column({ type: 'text', nullable: true })
   motifRefus: string;
+
+  @Column({ type: 'enum', enum: DecisionOperation, nullable: true })
+  decisionOperation: DecisionOperation | null;
 
   // Mention informelle (pas un vrai workflow d'approbation) : certaines CPA sont validées par un
   // simple appel téléphonique au Prof/chef de service — ce champ ne fait que l'afficher, il ne

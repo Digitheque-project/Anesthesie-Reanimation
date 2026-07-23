@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StatutDemandeCpaExterne = exports.DemandeCpaExterne = exports.WebhookNotification = exports.User = exports.HistoriqueModification = exports.TypeRDV = exports.StatutCreneau = exports.CreneauBloc = exports.StatutNotificationCPA = exports.NotificationCPA = exports.StatutSortieReveil = exports.SortieReveil = exports.StatutScoreSCCRE = exports.ScoreSCCRE = exports.ProtocoleOperatoire = exports.CoteDrainage = exports.ModeDrainage = exports.TypeDrainage = exports.Drainage = exports.ActivitePerOp = exports.ConstantePerOp = exports.ChecklistApresOp = exports.ChecklistPendantOp = exports.StatutChecklist = exports.ChecklistAvantOp = exports.ItemCommande = exports.StatutBonCommande = exports.BonCommandeAnesthesie = exports.Premedicament = exports.StatutVPA = exports.VPA = exports.StatutCPA = exports.DecisionCPA = exports.ScoreASA = exports.CPA = exports.OrdreProfessionnel = exports.RoleMedecin = exports.Medecin = exports.NiveauUrgence = exports.PatientStatut = exports.PatientBloc = void 0;
+exports.CategorieMoment = exports.MomentOperatoire = exports.StatutDemandeCpaExterne = exports.DemandeCpaExterne = exports.WebhookNotification = exports.User = exports.HistoriqueModification = exports.TypeRDV = exports.StatutCreneau = exports.CreneauBloc = exports.StatutNotificationCPA = exports.NotificationCPA = exports.StatutSortieReveil = exports.SortieReveil = exports.StatutScoreSCCRE = exports.ScoreSCCRE = exports.ProtocoleOperatoire = exports.CoteDrainage = exports.ModeDrainage = exports.TypeDrainage = exports.Drainage = exports.ActivitePerOp = exports.ConstantePerOp = exports.ChecklistApresOp = exports.ChecklistPendantOp = exports.StatutChecklist = exports.ChecklistAvantOp = exports.ItemCommande = exports.StatutBonCommande = exports.BonCommandeAnesthesie = exports.Premedicament = exports.StatutVerificationVeille = exports.VerificationVeille = exports.StatutCPA = exports.DecisionCPA = exports.ScoreASA = exports.CPA = exports.OrdreProfessionnel = exports.RoleMedecin = exports.Medecin = exports.NiveauUrgence = exports.PatientStatut = exports.PatientBloc = void 0;
 var patient_bloc_entity_1 = require("./patient-bloc.entity");
 Object.defineProperty(exports, "PatientBloc", { enumerable: true, get: function () { return patient_bloc_entity_1.PatientBloc; } });
 Object.defineProperty(exports, "PatientStatut", { enumerable: true, get: function () { return patient_bloc_entity_1.PatientStatut; } });
@@ -14,9 +14,9 @@ Object.defineProperty(exports, "CPA", { enumerable: true, get: function () { ret
 Object.defineProperty(exports, "ScoreASA", { enumerable: true, get: function () { return cpa_entity_1.ScoreASA; } });
 Object.defineProperty(exports, "DecisionCPA", { enumerable: true, get: function () { return cpa_entity_1.DecisionCPA; } });
 Object.defineProperty(exports, "StatutCPA", { enumerable: true, get: function () { return cpa_entity_1.StatutCPA; } });
-var vpa_entity_1 = require("./vpa.entity");
-Object.defineProperty(exports, "VPA", { enumerable: true, get: function () { return vpa_entity_1.VPA; } });
-Object.defineProperty(exports, "StatutVPA", { enumerable: true, get: function () { return vpa_entity_1.StatutVPA; } });
+var verification_veille_entity_1 = require("./verification-veille.entity");
+Object.defineProperty(exports, "VerificationVeille", { enumerable: true, get: function () { return verification_veille_entity_1.VerificationVeille; } });
+Object.defineProperty(exports, "StatutVerificationVeille", { enumerable: true, get: function () { return verification_veille_entity_1.StatutVerificationVeille; } });
 var premedicament_entity_1 = require("./premedicament.entity");
 Object.defineProperty(exports, "Premedicament", { enumerable: true, get: function () { return premedicament_entity_1.Premedicament; } });
 var bon_commande_anesthesie_entity_1 = require("./bon-commande-anesthesie.entity");
@@ -64,4 +64,7 @@ Object.defineProperty(exports, "WebhookNotification", { enumerable: true, get: f
 var demande_cpa_externe_entity_1 = require("./demande-cpa-externe.entity");
 Object.defineProperty(exports, "DemandeCpaExterne", { enumerable: true, get: function () { return demande_cpa_externe_entity_1.DemandeCpaExterne; } });
 Object.defineProperty(exports, "StatutDemandeCpaExterne", { enumerable: true, get: function () { return demande_cpa_externe_entity_1.StatutDemandeCpaExterne; } });
+var moment_operatoire_entity_1 = require("./moment-operatoire.entity");
+Object.defineProperty(exports, "MomentOperatoire", { enumerable: true, get: function () { return moment_operatoire_entity_1.MomentOperatoire; } });
+Object.defineProperty(exports, "CategorieMoment", { enumerable: true, get: function () { return moment_operatoire_entity_1.CategorieMoment; } });
 //# sourceMappingURL=index.js.map

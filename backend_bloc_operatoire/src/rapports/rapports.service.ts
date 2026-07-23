@@ -12,6 +12,7 @@ import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
+import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { AccueilClient } from '../external/accueil.client';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class RapportsService {
     @InjectRepository(ChecklistPendantOp) private checklistPendantRepo: Repository<ChecklistPendantOp>,
     @InjectRepository(ChecklistApresOp) private checklistApresRepo: Repository<ChecklistApresOp>,
     @InjectRepository(MomentOperatoire) private momentRepo: Repository<MomentOperatoire>,
+    @InjectRepository(ProtocoleOperatoire) private protocoleRepo: Repository<ProtocoleOperatoire>,
     private accueilClient: AccueilClient,
   ) {}
 
@@ -126,13 +128,21 @@ export class RapportsService {
 
   async tachesAccomplies(dateDebut?: string, dateFin?: string) {
     const periode = dateDebut && dateFin ? { dateCreation: Between(new Date(dateDebut), new Date(dateFin)) } : {};
-    const [signIn, timeOut, signOut, moments] = await Promise.all([
+    const periodeProtocole = dateDebut && dateFin ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) } : {};
+    const [signIn, timeOut, signOut, moments, comptesRendus] = await Promise.all([
       this.checklistAvantRepo.count({ where: periode }),
       this.checklistPendantRepo.count({ where: periode }),
       this.checklistApresRepo.count({ where: periode }),
       this.momentRepo.count({ where: { annule: false } }),
+      this.protocoleRepo.count({ where: periodeProtocole }),
     ]);
-    return { checklistsAvantOp: signIn, checklistsPendantOp: timeOut, checklistsApresOp: signOut, momentsOperatoires: moments };
+    return {
+      checklistsAvantOp: signIn,
+      checklistsPendantOp: timeOut,
+      checklistsApresOp: signOut,
+      momentsOperatoires: moments,
+      comptesRendusOperatoires: comptesRendus,
+    };
   }
 
   async cpaEnAttente() {
@@ -161,7 +171,10 @@ export class RapportsService {
       take: limite,
     });
     const patientIds = Array.from(new Set(activites.map(a => a.patientId)));
-    const patients = patientIds.length ? await this.patientBlocRepo.findBy({ patientId: In(patientIds) }) : [];
+    const [patients, protocoles] = await Promise.all([
+      patientIds.length ? this.patientBlocRepo.findBy({ patientId: In(patientIds) }) : Promise.resolve([]),
+      patientIds.length ? this.protocoleRepo.findBy({ patientId: In(patientIds) }) : Promise.resolve([]),
+    ]);
     // Identité (nom/prénom) enrichie depuis Accueil — jamais l'ID affiché à la place côté front.
     let patientsEnrichis: any[] = patients;
     try {
@@ -170,6 +183,7 @@ export class RapportsService {
       // dégradé vers les données non enrichies
     }
     const patientMap = new Map(patientsEnrichis.map((p) => [p.patientId, p]));
+    const patientsAvecCompteRendu = new Set(protocoles.map((p) => p.patientId));
 
     return activites.map(a => {
       const patient = patientMap.get(a.patientId);
@@ -182,6 +196,7 @@ export class RapportsService {
         dateOperation: a.dateOperation,
         chirurgien: a.chirurgien ? `${a.chirurgien.prenom} ${a.chirurgien.nom}` : '—',
         anesthesiste: a.anesthesiste ? `${a.anesthesiste.prenom} ${a.anesthesiste.nom}` : '—',
+        compteRenduDisponible: patientsAvecCompteRendu.has(a.patientId),
       };
     });
   }

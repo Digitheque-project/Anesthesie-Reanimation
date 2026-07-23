@@ -4,14 +4,14 @@ export declare class ProtocoleOperatoire {
     id: string;
     patientId: string;
     dateOperation: Date;
-    chirurgien: Medecin;
-    chirurgienId: string;
-    anesthesiste: Medecin;
-    anesthesisteId: string;
-    infirmiere: Medecin;
-    infirmiereId: string;
-    aideOperatoire: Medecin;
-    aideOperatoireId: string;
+    chirurgien: Medecin | null;
+    chirurgienId: string | null;
+    anesthesiste: Medecin | null;
+    anesthesisteId: string | null;
+    infirmiere: Medecin | null;
+    infirmiereId: string | null;
+    aideOperatoire: Medecin | null;
+    aideOperatoireId: string | null;
     compteRenduIntervention: string;
     surveillance: {
         ta: string;

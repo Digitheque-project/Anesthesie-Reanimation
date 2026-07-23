@@ -1,6 +1,6 @@
 import { IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ScoreASA, DecisionCPA, StatutCPA } from '../../entities/cpa.entity';
+import { ScoreASA, DecisionCPA, StatutCPA, DecisionOperation } from '../../entities/cpa.entity';
 
 class TensionArterielleDto {
   @IsNumber() systolique: number;
@@ -58,5 +58,6 @@ export class CreateCPADto {
   @IsOptional() @IsDateString() dateVerificationVeille?: string;
   @IsOptional() @IsEnum(StatutCPA) statut?: StatutCPA;
   @IsOptional() @IsString() motifRefus?: string;
+  @IsOptional() @IsEnum(DecisionOperation) decisionOperation?: DecisionOperation;
   @IsOptional() @IsString() validationProfInformelle?: string;
 }

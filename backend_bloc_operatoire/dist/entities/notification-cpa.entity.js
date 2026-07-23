@@ -21,10 +21,12 @@ var StatutNotificationCPA;
 let NotificationCPA = class NotificationCPA {
     id;
     heurePrescription;
+    dateIntervention;
     patientId;
     intervention;
     chirurgien;
     chirurgienId;
+    chirurgienNom;
     professeurCPA;
     estUrgent;
     statut;
@@ -41,6 +43,10 @@ __decorate([
     __metadata("design:type", String)
 ], NotificationCPA.prototype, "heurePrescription", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], NotificationCPA.prototype, "dateIntervention", void 0);
+__decorate([
     (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
@@ -50,16 +56,20 @@ __decorate([
     __metadata("design:type", String)
 ], NotificationCPA.prototype, "intervention", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
+    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
+    __metadata("design:type", Object)
 ], NotificationCPA.prototype, "chirurgien", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], NotificationCPA.prototype, "chirurgienId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], NotificationCPA.prototype, "chirurgienNom", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], NotificationCPA.prototype, "professeurCPA", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: false }),

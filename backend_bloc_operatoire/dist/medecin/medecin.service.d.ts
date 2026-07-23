@@ -17,6 +17,7 @@ export declare class MedecinService {
         page: number;
         pages: number;
     }>;
+    findByEmail(email: string): Promise<Medecin | null>;
     findOne(id: string): Promise<Medecin>;
     update(id: string, updateMedecinDto: UpdateMedecinDto): Promise<Medecin>;
     remove(id: string): Promise<{

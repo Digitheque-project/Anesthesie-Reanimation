@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { rapportsService, notificationService, patientService } from '@/lib/api'
 import WelcomeBanner from '@/components/bloc/dashboard/WelcomeBanner'
 import EtatGlobalPatients from '@/components/bloc/dashboard/EtatGlobalPatients'
-import AlerteBandeau from '@/components/bloc/dashboard/AlerteBandeau'
+import AlerteBandeau, { type PatientTresUrgent } from '@/components/bloc/dashboard/AlerteBandeau'
 import GroupePlanningTable, { LignePlanning } from '@/components/bloc/dashboard/GroupePlanningTable'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { formaterNomPatient } from '@/lib/patient'
@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [patientsCpa, setPatientsCpa] = useState<LignePlanning[]>([])
   const [patientsBloc, setPatientsBloc] = useState<LignePlanning[]>([])
   const [patientsReveil, setPatientsReveil] = useState<LignePlanning[]>([])
+  const [patientsTresUrgents, setPatientsTresUrgents] = useState<PatientTresUrgent[]>([])
   const session = obtenirSessionValide()
 
   useEffect(() => { chargerToutesLesDonnees() }, [])
@@ -36,16 +37,22 @@ export default function DashboardPage() {
   const chargerToutesLesDonnees = async () => {
     setLoading(true)
 
-    const [statsRes, notifsRes, cpaRes, pretRes, encoursRes, reveilRes] = await Promise.allSettled([
+    const [statsRes, notifsRes, cpaRes, pretRes, encoursRes, reveilRes, tresUrgentsRes] = await Promise.allSettled([
       rapportsService.getStatistiques(),
       notificationService.getAll(1, 100),
       patientService.getAll({ statut: 'EN_ATTENTE_CPA', limite: 50 }),
       patientService.getAll({ statut: 'PRET_POUR_BLOC', limite: 50 }),
       patientService.getAll({ statut: 'EN_COURS_OPERATION', limite: 50 }),
       patientService.getAll({ statut: 'EN_SALLE_REVEIL', limite: 50 }),
+      patientService.getAll({ niveauUrgence: 'TRES_URGENT', limite: 50 }),
     ])
 
     if (statsRes.status === 'fulfilled') setStats(statsRes.value)
+
+    if (tresUrgentsRes.status === 'fulfilled') {
+      const liste = tresUrgentsRes.value?.data || []
+      setPatientsTresUrgents(liste.map((p: any) => ({ id: p.patientId || p.id, nom: nomPatient(p) })))
+    }
 
     if (notifsRes.status === 'fulfilled') {
       const enAttente = (notifsRes.value?.data || []).filter((n: any) => n.statut === 'EN_ATTENTE' && estAujourdhui(n.createdAt))
@@ -91,7 +98,7 @@ export default function DashboardPage() {
     const pret = (pretRes.status === 'fulfilled' ? (pretRes.value?.data || []) : []).filter(duJour)
     const encours = (encoursRes.status === 'fulfilled' ? (encoursRes.value?.data || []) : []).filter(duJour)
     setPatientsBloc([
-      ...pret.map(versLignePatient('PRET_POUR_BLOC', 'Check-list', '/bloc/checklist-oms')),
+      ...pret.map(versLignePatient('PRET_POUR_BLOC', 'Arrivée au bloc', '/bloc/arrivee-bloc')),
       ...encours.map(versLignePatient('EN_COURS_OPERATION', 'Suivi', '/bloc/activite-pendant-operation')),
     ])
 
@@ -125,9 +132,17 @@ export default function DashboardPage() {
         role={session?.acces.roleName || null}
       />
 
-      {!loading && <AlerteBandeau count={tresUrgentCount} message={`${tresUrgentCount} patient${tresUrgentCount > 1 ? 's' : ''} TRÈS URGENT en attente de prise en charge`} href="/bloc/patient-du-jour" />}
+      {!loading && <AlerteBandeau patients={patientsTresUrgents} />}
 
-      <EtatGlobalPatients total={total} stat={tresUrgentCount} urgent={urgentCount} normal={normalCount} />
+      <EtatGlobalPatients
+        loading={loading}
+        sections={[
+          { titre: 'Prescription — Aujourd\'hui', icon: 'notification_important', accent: 'tertiary', lignes: prescriptions },
+          { titre: 'CPA — Aujourd\'hui', icon: 'fact_check', accent: 'quaternary', lignes: patientsCpa },
+          { titre: 'Bloc opératoire — Aujourd\'hui', icon: 'medical_services', accent: 'primary', lignes: patientsBloc },
+          { titre: 'Salle de réveil', icon: 'bed', accent: 'secondary', lignes: patientsReveil },
+        ]}
+      />
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">

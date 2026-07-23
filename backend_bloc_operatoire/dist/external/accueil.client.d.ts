@@ -1,6 +1,6 @@
 export declare class AccueilClient {
     private readonly baseUrl;
-    constructor(baseUrl?: string);
+    constructor(baseUrl: string);
     getAccueilData(): Promise<any>;
     getPatientData(patientId: string): Promise<any>;
     getPatient(patientId: string): Promise<any>;

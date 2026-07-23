@@ -2,15 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { libelleUrgence, styleUrgence } from "@/lib/urgence";
+import { styleUrgence } from "@/lib/urgence";
 import { formaterNomPatient } from "@/lib/patient";
+import { libelleStatutPatient, styleStatutPatient } from "@/lib/statut";
 
 interface Patient {
   id: string;
   nom: string;
   prenom: string;
   operation: string;
+  typeChirurgie?: string;
   etat: string;
+  statut?: string;
   chirurgien?: string;
   dateIntervention?: string | null;
   salle?: string;
@@ -37,7 +40,7 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
     const cleanId = patient.realId || patient.id.replace("#", "");
     const nom = encodeURIComponent(formaterNomPatient(patient));
     const intervention = encodeURIComponent(patient.operation || '');
-    router.push(`/bloc/checklist-oms?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`);
+    router.push(`/bloc/arrivee-bloc?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`);
     setTimeout(() => setLoadingPatients((prev) => {
       const next = new Set(prev);
       next.delete(patient.id);
@@ -47,18 +50,14 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
 
   const handleDossier = (patient: Patient) => {
     const cleanId = patient.realId || patient.id.replace("#", "");
-    router.push(`/bloc/dossier-patient/${cleanId}`);
+    router.push(`/bloc/dossier-patient/${cleanId}/complet`);
   };
 
   return (
     <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden border border-surface-container">
-      <div className="px-8 py-6 bg-white border-b border-surface-container">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xl font-extrabold text-on-surface tracking-tight font-headline">Liste des patients</h4>
-          <button className="flex items-center gap-2 px-4 py-2 bg-surface-container text-on-surface-variant rounded-lg text-sm font-bold hover:bg-surface-container-high transition-all border border-outline-variant">
-            <span className="material-symbols-outlined text-lg">filter_list</span> Filtrer
-          </button>
-        </div>
+      <div className="px-8 py-6 bg-white border-b border-surface-container flex items-center justify-between">
+        <h4 className="text-xl font-extrabold text-on-surface tracking-tight font-headline">Liste des patients</h4>
+        <span className="text-sm font-bold text-on-surface-variant">{patients.length} patient{patients.length > 1 ? 's' : ''}</span>
       </div>
 
       <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
@@ -67,16 +66,24 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
             <tr>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Heure / Date prévue</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nom & Prénom</th>
-              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">TYPE D'OPÉRATION</th>
+              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Type d'intervention</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chirurgien</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Salle</th>
-              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">État</th>
+              <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Statut</th>
               <th className="px-8 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-container">
+            {patients.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-8 py-12 text-center text-sm text-on-surface-variant">
+                  Aucun patient ne correspond aux filtres sélectionnés.
+                </td>
+              </tr>
+            )}
             {patients.map((patient) => {
               const isLoading = loadingPatients.has(patient.id);
+              const styleStatut = styleStatutPatient(patient.statut);
               return (
                 <tr key={patient.id} className="hover:bg-surface-container-high/40 transition-colors duration-200">
                   <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface-variant whitespace-nowrap">{formaterHeureDate(patient.dateIntervention)}</span></td>
@@ -86,16 +93,18 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
                         {patient.nom?.charAt(0)}{patient.prenom?.charAt(0)}
                       </div>
                       <span className="font-bold text-on-surface">{formaterNomPatient(patient)}</span>
+                      {patient.etat !== 'NORMAL' && (
+                        <span className={`w-1.5 h-1.5 rounded-full ${styleUrgence(patient.etat).point} animate-pulse`} title={patient.etat === 'TRES_URGENT' ? 'Très urgent' : 'Urgent'} />
+                      )}
                     </div>
                   </td>
-                  <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface">{patient.operation}</span></td>
+                  <td className="px-8 py-5"><span className="text-sm font-medium text-on-surface">{patient.typeChirurgie || patient.operation || '—'}</span></td>
                   <td className="px-8 py-5"><span className="text-sm text-on-surface-variant">{patient.chirurgien || '—'}</span></td>
                   <td className="px-8 py-5"><span className="text-sm text-on-surface-variant">{patient.salle || '—'}</span></td>
                   <td className="px-8 py-5">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${styleUrgence(patient.etat).point} ${patient.etat !== 'NORMAL' ? 'animate-pulse' : ''}`}></span>
-                      <span className={`text-xs font-bold uppercase ${styleUrgence(patient.etat).texte}`}>{libelleUrgence(patient.etat)}</span>
-                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${styleStatut.badge}`}>
+                      {libelleStatutPatient(patient.statut)}
+                    </span>
                   </td>
                   <td className="px-8 py-5 text-right">
                     <div className="flex justify-end gap-2">

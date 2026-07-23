@@ -48,6 +48,11 @@ let MedecinService = class MedecinService {
         });
         return { data, total, page, pages: Math.ceil(total / limite) };
     }
+    async findByEmail(email) {
+        if (!email)
+            return null;
+        return this.medecinRepository.findOne({ where: { email } });
+    }
     async findOne(id) {
         const medecin = await this.medecinRepository.findOne({ where: { id } });
         if (!medecin) {

@@ -3,9 +3,11 @@
 import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
-import { medecinService } from '@/lib/api'
+import { medecinService, patientService } from '@/lib/api'
 import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -15,9 +17,11 @@ const SERVICES_CLINIQUES = [
 
 export default function SortieSalleReveilPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <SortieSalleReveilPageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste a accès à la salle de réveil.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <SortieSalleReveilPageContent />
+      </Suspense>
+    </RoleGate>
   )
 }
 
@@ -25,9 +29,15 @@ function SortieSalleReveilPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''
-  const patientNom = searchParams.get('patientNom') || 'DUPONT Jean-Marc'
+  const patientNom = searchParams.get('patientNom') || 'Patient'
   const scoreSCCREId = searchParams.get('scoreSCCREId') || ''
   const scoreTotal = Number(searchParams.get('scoreTotal') || '0')
+  const [patient, setPatient] = useState<any>(null)
+
+  useEffect(() => {
+    if (!patientId) return
+    patientService.getById(patientId).then(setPatient).catch(console.error)
+  }, [patientId])
 
   const [checklist, setChecklist] = useState({
     signesVitauxStables: false,
@@ -83,7 +93,8 @@ function SortieSalleReveilPageContent() {
       <div className="p-8 max-w-3xl mx-auto space-y-8">
         {/* Contexte patient */}
         <div className="bg-[#d5ecf8] p-4 rounded-xl flex items-center space-x-6">
-          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="font-bold text-[#00478d]">{patientNom}</p></div>
+          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="font-bold text-[#00478d]">{patient?.nom ? `${patient.nom} ${patient.prenom || ''}`.trim() : patientNom}</p></div>
+          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Âge / Sexe</p><p className="font-bold text-[#00478d]">{patient?.dateNaissance ? `${Math.max(0, Math.floor((Date.now() - new Date(patient.dateNaissance).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))} ans` : '—'} / {patient?.sexe || '—'}</p></div>
           <div><p className="text-[10px] text-[#424752] font-bold uppercase">Score SCCRE</p><p className={`font-bold ${scoreTotal >= 9 ? 'text-[#006a6a]' : 'text-[#940010]'}`}>{scoreTotal}/10</p></div>
           <div className="flex-1">
             <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5 block">Anesthésiste autorisant la sortie</label>

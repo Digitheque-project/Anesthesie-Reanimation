@@ -7,7 +7,6 @@ import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { DossierPatientClient } from '../external/dossier-patient.client';
 import { ProtocoleOperatoireService } from '../protocole-operatoire/protocole-operatoire.service';
-import { PrescriptionExterneClient } from '../external/prescription-externe.client';
 
 @Injectable()
 export class PatientBlocService {
@@ -19,7 +18,6 @@ export class PatientBlocService {
     private accueilClient: AccueilClient,
     private dossierPatientClient: DossierPatientClient,
     private protocoleOperatoireService: ProtocoleOperatoireService,
-    private prescriptionExterneClient: PrescriptionExterneClient,
     private config: ConfigService,
   ) {}
 
@@ -114,7 +112,7 @@ export class PatientBlocService {
   async getDossierComplet(patientId: string, token: string) {
     const [
       observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
-      examensComplementaires, suivis, protocolesOperatoires, prescriptions,
+      examensComplementaires, suivis, protocolesOperatoires,
     ] = await Promise.all([
       this.dossierPatientClient.getObservations(patientId, token),
       this.dossierPatientClient.getDiagnosticsTous(patientId, token),
@@ -124,7 +122,6 @@ export class PatientBlocService {
       this.dossierPatientClient.getExamensComplementairesTous(patientId, token),
       this.dossierPatientClient.getSuivis(patientId, token),
       this.protocoleOperatoireService.findAll(1, 50, patientId).then(r => r.data).catch(() => []),
-      this.prescriptionExterneClient.getHistorique(patientId),
     ]);
 
     // La sortie médicale se consulte par épisode d'hospitalisation, pas par patient — on prend
@@ -135,7 +132,7 @@ export class PatientBlocService {
 
     return {
       observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
-      examensComplementaires, suivis, protocolesOperatoires, sortie, prescriptions,
+      examensComplementaires, suivis, protocolesOperatoires, sortie,
     };
   }
 

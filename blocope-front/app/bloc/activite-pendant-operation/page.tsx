@@ -4,14 +4,22 @@ import { Suspense } from "react";
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
+import { patientService } from '@/lib/api'
 import MomentsTimeline from '@/components/bloc/moments-operatoire/MomentsTimeline'
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 export default function ActivitePendantOperationPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ActivitePendantOperationPageContent />
-    </Suspense>
+    <RoleGate
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.IBODE]}
+      message="Cette page (chronologie de l'opération) n'est pas accessible pour votre rôle."
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ActivitePendantOperationPageContent />
+      </Suspense>
+    </RoleGate>
   );
 }
 
@@ -19,8 +27,14 @@ function ActivitePendantOperationPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const patientId = searchParams.get('patientId') || ''
-  const patientNom = searchParams.get('patientNom') || 'RADALO Jean-Pierre'
-  const intervention = searchParams.get('intervention') || 'Chirurgie Digestive'
+  const patientNom = searchParams.get('patientNom') || 'Patient'
+  const intervention = searchParams.get('intervention') || ''
+  const [patient, setPatient] = useState<any>(null)
+
+  useEffect(() => {
+    if (!patientId) return
+    patientService.getById(patientId).then(setPatient).catch(console.error)
+  }, [patientId])
 
   // État du formulaire (hors constantes, gérées par SurveillancePanel)
   const [form, setForm] = useState({
@@ -29,7 +43,6 @@ function ActivitePendantOperationPageContent() {
     intubationOT: false, sArme: false, masqueLarynge: false,
     ventilationSpontanee: '', ventilationAssistee: '', ventilationControlee: '', ventilationPEEP: '', ventilationCircuitFerme: '',
     ventilationSpontaneeOn: false, ventilationAssisteeOn: false, ventilationControleeOn: false, ventilationPEEPOn: false, ventilationCircuitFermeOn: false,
-    etatArrivee: '',
   })
 
   const [loading, setLoading] = useState(false)
@@ -78,7 +91,6 @@ function ActivitePendantOperationPageContent() {
           peep: form.ventilationPEEPOn ? (form.ventilationPEEP || 'Oui') : undefined,
           circuitFerme: form.ventilationCircuitFermeOn ? (form.ventilationCircuitFerme || 'Oui') : undefined,
         },
-        etatArrivee: form.etatArrivee ? [form.etatArrivee] : [],
       })
 
       alert('✅ Activité enregistrée ! Passage à la check-list après intervention.')
@@ -92,21 +104,10 @@ function ActivitePendantOperationPageContent() {
     }
   }
 
-  const ETATS = ['CALME', 'DETENDU', 'ANXIEUX', 'AGITE'] as const
-
-  // Code couleur IHM de l'état émotionnel à l'arrivée : vert/bleu = serein, orange/rouge = état
-  // à surveiller — cohérent avec le code couleur par urgence utilisé ailleurs dans l'app.
-  const ETAT_CONFIG: Record<typeof ETATS[number], { icone: string; bg: string; border: string; icon: string; texte: string }> = {
-    CALME: { icone: 'sentiment_very_satisfied', bg: 'bg-emerald-50', border: 'border-emerald-400', icon: 'text-emerald-600', texte: 'text-emerald-800' },
-    DETENDU: { icone: 'sentiment_satisfied', bg: 'bg-blue-50', border: 'border-blue-400', icon: 'text-blue-600', texte: 'text-blue-800' },
-    ANXIEUX: { icone: 'sentiment_dissatisfied', bg: 'bg-amber-50', border: 'border-amber-400', icon: 'text-amber-600', texte: 'text-amber-800' },
-    AGITE: { icone: 'sentiment_very_dissatisfied', bg: 'bg-red-50', border: 'border-red-400', icon: 'text-red-600', texte: 'text-red-800' },
-  }
-
   return (
-    <main className="p-6">
+    <main className="h-screen flex flex-col overflow-hidden">
       {/* TopAppBar */}
-      <header className="bg-white/80 backdrop-blur-xl z-50 sticky top-0 border-b border-surface-container-highest shadow-sm flex justify-between items-center w-full px-6 py-2">
+      <header className="bg-white/80 backdrop-blur-xl z-50 shrink-0 border-b border-surface-container-highest shadow-sm flex justify-between items-center w-full px-6 py-2">
         <div className="flex items-center gap-6">
           <button onClick={() => router.back()} className="text-sm text-primary font-bold hover:underline flex items-center gap-1 shrink-0">
             <span className="material-symbols-outlined text-sm">arrow_back</span> Retour
@@ -114,12 +115,13 @@ function ActivitePendantOperationPageContent() {
           <div className="h-10 w-px bg-surface-container-highest"></div>
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mb-0.5">Patient en cours</span>
-            <h2 className="font-headline font-bold text-lg text-on-surface leading-tight">{patientNom}</h2>
+            <h2 className="font-headline font-bold text-lg text-on-surface leading-tight">{patient?.nom || patientNom}{patient?.prenom ? ` ${patient.prenom}` : ''}</h2>
           </div>
           <div className="h-10 w-px bg-surface-container-highest"></div>
           <div className="grid grid-cols-4 gap-x-8 gap-y-1">
-            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">ID / MRN</p><p className="font-label text-xs font-bold text-on-surface">#982-CH-2024</p></div>
-            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">Opération</p><p className="font-label text-xs font-bold text-on-surface truncate">{intervention}</p></div>
+            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">N° Dossier</p><p className="font-label text-xs font-bold text-on-surface">{patient?.idDossier ? `#${patient.idDossier}` : '—'}</p></div>
+            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">Âge / Sexe</p><p className="font-label text-xs font-bold text-on-surface">{patient?.dateNaissance ? `${Math.max(0, Math.floor((Date.now() - new Date(patient.dateNaissance).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))} ans` : '—'} / {patient?.sexe || '—'}</p></div>
+            <div><p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-tighter">Opération</p><p className="font-label text-xs font-bold text-on-surface truncate">{intervention || patient?.libelle || '—'}</p></div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -133,46 +135,10 @@ function ActivitePendantOperationPageContent() {
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-24">
-        {/* Section 0: PATIENT À L'ARRIVÉE — en tête d'interface : premier constat clinique posé
-            en entrant en salle, avant tout le reste du suivi peropératoire */}
-        <section className="bg-white rounded-2xl shadow-md border border-surface-container-highest overflow-hidden">
-          <div className="bg-gradient-to-r from-secondary to-secondary/80 px-6 py-4 flex items-center gap-3">
-            <span className="material-symbols-outlined text-white text-2xl">mood</span>
-            <div>
-              <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">État du patient à l'arrivée</h3>
-              <p className="text-white/80 text-[11px] font-medium">Premier constat clinique en entrant en salle d'opération</p>
-            </div>
-          </div>
-          <div className="p-6"><div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {ETATS.map(etat => {
-              const cfg = ETAT_CONFIG[etat]
-              const actif = form.etatArrivee === etat
-              return (
-                <label key={etat} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-all group ${
-                  actif ? `${cfg.bg} ${cfg.border} shadow-md scale-[1.03]` : 'bg-background border-surface-container-highest hover:border-outline-variant hover:shadow-sm'
-                }`}>
-                  <input
-                    className="sr-only"
-                    type="radio"
-                    name="etatArrivee"
-                    checked={actif}
-                    onChange={() => setForm({...form, etatArrivee: etat})}
-                  />
-                  <span className={`material-symbols-outlined text-3xl ${actif ? cfg.icon : 'text-on-surface-variant/50'}`} style={actif ? { fontVariationSettings: "'FILL' 1" } : undefined}>
-                    {cfg.icone}
-                  </span>
-                  <span className={`text-sm font-extrabold uppercase tracking-widest ${actif ? cfg.texte : 'text-on-surface-variant'}`}>{etat}</span>
-                </label>
-              )
-            })}
-          </div></div>
-        </section>
-
-        {/* Chronologie des moments opératoires */}
-        <MomentsTimeline patientId={patientId} />
-
+      {/* Body : colonne gauche scrollable + colonne droite fixe (boutons de chronologie, ne
+          défile jamais avec la page) */}
+      <div className="flex-1 min-h-0 flex gap-6 p-6">
+        <div className="flex-1 min-w-0 overflow-y-auto space-y-6 pb-24">
         {/* Section 1: APPORTS */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
           <div className="bg-emerald-50 px-6 py-3 border-b border-emerald-100 flex items-center gap-2">
@@ -284,6 +250,13 @@ function ActivitePendantOperationPageContent() {
             <span className="material-symbols-outlined">save</span>
             {loading ? 'ENREGISTREMENT...' : 'VALIDER'}
           </button>
+        </div>
+        </div>
+
+        {/* Colonne droite fixe : boutons de chronologie + historique juste à côté, jamais
+            emportés par le défilement de la colonne de gauche */}
+        <div className="w-[420px] shrink-0 h-full">
+          <MomentsTimeline patientId={patientId} />
         </div>
       </div>
     </main>

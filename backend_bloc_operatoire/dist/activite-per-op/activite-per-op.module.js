@@ -13,12 +13,13 @@ const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const constante_per_op_entity_1 = require("../entities/constante-per-op.entity");
 const activite_per_op_service_1 = require("./activite-per-op.service");
 const activite_per_op_controller_1 = require("./activite-per-op.controller");
+const operation_gateway_module_1 = require("../operation-gateway/operation-gateway.module");
 let ActivitePerOpModule = class ActivitePerOpModule {
 };
 exports.ActivitePerOpModule = ActivitePerOpModule;
 exports.ActivitePerOpModule = ActivitePerOpModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([activite_per_op_entity_1.ActivitePerOp, constante_per_op_entity_1.ConstantePerOp])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([activite_per_op_entity_1.ActivitePerOp, constante_per_op_entity_1.ConstantePerOp]), operation_gateway_module_1.OperationGatewayModule],
         controllers: [activite_per_op_controller_1.ActivitePerOpController],
         providers: [activite_per_op_service_1.ActivitePerOpService],
         exports: [activite_per_op_service_1.ActivitePerOpService],

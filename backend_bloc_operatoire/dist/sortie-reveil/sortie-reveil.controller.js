@@ -18,12 +18,14 @@ const swagger_1 = require("@nestjs/swagger");
 const sortie_reveil_service_1 = require("./sortie-reveil.service");
 const create_sortie_reveil_dto_1 = require("./dto/create-sortie-reveil.dto");
 const update_sortie_reveil_dto_1 = require("./dto/update-sortie-reveil.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let SortieReveilController = class SortieReveilController {
     service;
     constructor(service) {
         this.service = service;
     }
-    create(dto) { return this.service.create(dto); }
+    create(dto, req) { return this.service.create(dto, req.centralUser); }
     findAll(p, l) { return this.service.findAll(p, l); }
     findOne(id) { return this.service.findOne(id); }
     update(id, dto) { return this.service.update(id, dto); }
@@ -32,10 +34,12 @@ let SortieReveilController = class SortieReveilController {
 exports.SortieReveilController = SortieReveilController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une sortie de réveil' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer une sortie de réveil (Anesthésiste — auto-attribué depuis la session)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_sortie_reveil_dto_1.CreateSortieReveilDto]),
+    __metadata("design:paramtypes", [create_sortie_reveil_dto_1.CreateSortieReveilDto, Object]),
     __metadata("design:returntype", void 0)
 ], SortieReveilController.prototype, "create", null);
 __decorate([
@@ -59,7 +63,8 @@ __decorate([
 ], SortieReveilController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une sortie' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une sortie (Anesthésiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -68,7 +73,8 @@ __decorate([
 ], SortieReveilController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une sortie' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une sortie (Anesthésiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

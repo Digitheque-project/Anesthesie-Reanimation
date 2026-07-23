@@ -29,8 +29,16 @@ let ChecklistAvantOp = class ChecklistAvantOp {
     allergiePatient;
     risqueIntubation;
     risqueSaignement;
-    medicamentsRemplis;
+    identiteConfirmeeUltime;
+    interventionConfirmeeUltime;
+    antibioprophylaxieFaite;
+    notesChirurgicales;
+    notesAnesthesiques;
+    notesIdeIbode;
     statut;
+    validateurId;
+    validateurNom;
+    validateurRole;
     createdAt;
     updatedAt;
 };
@@ -87,11 +95,43 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
-], ChecklistAvantOp.prototype, "medicamentsRemplis", void 0);
+], ChecklistAvantOp.prototype, "identiteConfirmeeUltime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], ChecklistAvantOp.prototype, "interventionConfirmeeUltime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], ChecklistAvantOp.prototype, "antibioprophylaxieFaite", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], ChecklistAvantOp.prototype, "notesChirurgicales", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], ChecklistAvantOp.prototype, "notesAnesthesiques", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], ChecklistAvantOp.prototype, "notesIdeIbode", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }),
     __metadata("design:type", String)
 ], ChecklistAvantOp.prototype, "statut", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistAvantOp.prototype, "validateurId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistAvantOp.prototype, "validateurNom", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], ChecklistAvantOp.prototype, "validateurRole", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

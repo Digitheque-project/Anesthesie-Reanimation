@@ -10,7 +10,7 @@ function isAxiosError(error) {
 }
 class AccueilClient {
     baseUrl;
-    constructor(baseUrl = 'https://api.example.com') {
+    constructor(baseUrl) {
         this.baseUrl = baseUrl;
     }
     async getAccueilData() {

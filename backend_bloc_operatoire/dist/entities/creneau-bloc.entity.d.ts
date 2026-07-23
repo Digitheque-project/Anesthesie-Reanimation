@@ -7,7 +7,7 @@ export declare enum StatutCreneau {
 }
 export declare enum TypeRDV {
     CPA = "CPA",
-    VPA = "VPA"
+    VERIFICATION_VEILLE = "VERIFICATION_VEILLE"
 }
 export declare class CreneauBloc {
     id: string;
@@ -16,8 +16,9 @@ export declare class CreneauBloc {
     heureFin: string;
     salle: string;
     patientId: string;
-    chirurgien: Medecin;
-    chirurgienId: string;
+    chirurgien: Medecin | null;
+    chirurgienId: string | null;
+    responsable: string | null;
     statut: StatutCreneau;
     estUrgence: boolean;
     type: TypeRDV;

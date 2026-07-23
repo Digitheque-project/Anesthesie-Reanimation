@@ -1,40 +1,5 @@
+// Le catalogue des boutons de la chronologie opératoire (Anesthésie/Chirurgie/Divers) est
+// désormais servi dynamiquement par le backend (GET /moments-catalogue) — voir
+// MomentsTimeline.tsx — plutôt que codé en dur ici, pour permettre à chaque rôle d'ajouter un
+// bouton réutilisable sans déploiement. Seul le type de catégorie reste utile côté frontend.
 export type CategorieMoment = 'ANESTHESIE' | 'CHIRURGIE' | 'DIVERS'
-
-export const CATALOGUE_MOMENTS: Record<CategorieMoment, { titre: string; items: string[] }> = {
-  ANESTHESIE: {
-    titre: 'Anesthésie',
-    items: [
-      'Arrivée en salle',
-      'Installation du patient',
-      'Pose voie veineuse',
-      'Induction anesthésique',
-      'Intubation',
-      'Extubation',
-      'Réveil anesthésique',
-    ],
-  },
-  CHIRURGIE: {
-    titre: 'Chirurgie',
-    items: [
-      'Incision',
-      'Ouverture',
-      'Exploration',
-      'Début du geste principal',
-      'Fin du geste principal',
-      'Hémostase',
-      'Fermeture pariétale',
-      'Fermeture cutanée',
-      'Pansement',
-    ],
-  },
-  DIVERS: {
-    titre: 'Divers',
-    items: [
-      'Antibioprophylaxie administrée',
-      'Début transfusion',
-      'Fin transfusion',
-      'Incident / complication',
-      'Sortie de salle',
-    ],
-  },
-}

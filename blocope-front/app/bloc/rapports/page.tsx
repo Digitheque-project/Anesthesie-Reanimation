@@ -69,8 +69,9 @@ export default function RapportsPage() {
     { cle: 'patientNom', titre: 'Patient' }, { cle: 'libelle', titre: 'Intervention' }, { cle: 'typeChirurgie', titre: 'Type' },
     { cle: 'niveauUrgence', titre: 'Urgence' }, { cle: 'statut', titre: 'Statut' }, { cle: 'dateOperationTxt', titre: 'Date' },
     { cle: 'chirurgien', titre: 'Chirurgien' }, { cle: 'anesthesiste', titre: 'Anesthésiste' },
+    { cle: 'compteRenduTxt', titre: 'Compte-rendu' },
   ]
-  const lignesDetailExport = detailFiltre.map((o: any) => ({ ...o, niveauUrgence: libelleUrgence(o.niveauUrgence), dateOperationTxt: fmtDate(o.dateOperation) }))
+  const lignesDetailExport = detailFiltre.map((o: any) => ({ ...o, niveauUrgence: libelleUrgence(o.niveauUrgence), dateOperationTxt: fmtDate(o.dateOperation), compteRenduTxt: o.compteRenduDisponible ? 'Disponible' : '—' }))
 
   const nomFichier = `rapport-bloc-operatoire${dateDebut && dateFin ? `-${dateDebut}-${dateFin}` : ''}`
 
@@ -146,11 +147,12 @@ export default function RapportsPage() {
         <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">task_alt</span> Tâches accomplies dans le bloc
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <TacheCard label="Check-lists Sign In" val={taches.checklistsAvantOp} icone="checklist" couleur="blue" />
           <TacheCard label="Check-lists Time Out" val={taches.checklistsPendantOp} icone="pause_circle" couleur="teal" />
           <TacheCard label="Check-lists Sign Out" val={taches.checklistsApresOp} icone="assignment_turned_in" couleur="indigo" />
           <TacheCard label="Moments horodatés" val={taches.momentsOperatoires} icone="timeline" couleur="rose" />
+          <TacheCard label="Comptes-rendus opératoires" val={taches.comptesRendusOperatoires} icone="description" couleur="amber" />
         </div>
       </div>
 
@@ -317,13 +319,14 @@ export default function RapportsPage() {
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Chirurgien</th>
                 <th className="px-4 py-3">Anesthésiste</th>
+                <th className="px-4 py-3">Compte-rendu</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/10">
               {loading ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-on-surface-variant">Chargement...</td></tr>
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-on-surface-variant">Chargement...</td></tr>
               ) : detailFiltre.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-on-surface-variant">Aucune opération sur cette période</td></tr>
+                <tr><td colSpan={9} className="px-4 py-10 text-center text-on-surface-variant">Aucune opération sur cette période</td></tr>
               ) : detailFiltre.map((o: any, i: number) => {
                 return (
                   <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
@@ -335,6 +338,15 @@ export default function RapportsPage() {
                     <td className="px-4 py-3 text-xs text-on-surface-variant">{fmtDate(o.dateOperation)}</td>
                     <td className="px-4 py-3">{o.chirurgien}</td>
                     <td className="px-4 py-3">{o.anesthesiste}</td>
+                    <td className="px-4 py-3">
+                      {o.compteRenduDisponible ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-green-700">
+                          <span className="material-symbols-outlined text-sm">check_circle</span> Disponible
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase text-on-surface-variant/60">—</span>
+                      )}
+                    </td>
                   </tr>
                 )
               })}

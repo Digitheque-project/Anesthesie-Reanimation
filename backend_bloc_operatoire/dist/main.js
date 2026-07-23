@@ -38,19 +38,12 @@ const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const swagger_1 = require("@nestjs/swagger");
 const helmet = __importStar(require("helmet"));
+const cors_origins_1 = require("./config/cors-origins");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use(helmet.default());
     app.enableCors({
-        origin: [
-            'http://localhost:3000',
-            'http://localhost:3001',
-            'http://127.0.0.1:3000',
-            'http://127.0.0.1:3001',
-            'https://ton-frontend.onrender.com',
-            'https://blocbackfront.onrender.com',
-            'https://chu-bloc-backend.onrender.com',
-        ],
+        origin: cors_origins_1.CORS_ORIGINS,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     });

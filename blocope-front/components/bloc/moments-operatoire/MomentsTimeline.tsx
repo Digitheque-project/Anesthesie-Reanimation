@@ -4,17 +4,24 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import { useRole } from '@/lib/hooks/useRole'
-import { CATALOGUE_MOMENTS, CategorieMoment } from '@/lib/data/catalogue-moments-operatoires'
+import type { CategorieMoment } from '@/lib/data/catalogue-moments-operatoires'
 
-// Chaque rôle horodate sa propre catégorie de moments — miroir de MomentsOperatoireService.create
-// côté backend. L'anesthésiste peut tout horodater ; le chirurgien et l'IBODE sont limités à la
-// catégorie CHIRURGIE (l'IBODE assiste le chirurgien et peut horodater à sa place). Les autres
-// rôles (Responsable CPA, Major) consultent l'historique mais ne déclenchent aucun moment.
+// Séparation stricte par rôle — miroir de MomentsCatalogueService/MomentsOperatoireService côté
+// backend. Le chirurgien ne clique jamais de bouton (délègue toujours à l'IBODE) ; l'anesthésiste
+// et l'IBODE ne partagent aucune catégorie. Les autres rôles (Responsable CPA, Major) consultent
+// l'historique mais ne déclenchent/créent rien ici.
 const CATEGORIES_AUTORISEES: Record<string, CategorieMoment[]> = {
-  ANESTHESISTE: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
-  CHIRURGIEN: ['CHIRURGIE'],
-  IBODE: ['CHIRURGIE'],
+  ANESTHESISTE: ['ANESTHESIE'],
+  IBODE: ['CHIRURGIE', 'DIVERS'],
 }
+
+const TITRES_CATEGORIE: Record<CategorieMoment, string> = {
+  ANESTHESIE: 'Anesthésie',
+  CHIRURGIE: 'Chirurgie',
+  DIVERS: 'Divers',
+}
+
+type CatalogueEntry = { id: string; categorie: CategorieMoment; label: string; creeParNom: string | null; createdAt: string }
 
 type MomentOperatoire = {
   id: string
@@ -73,17 +80,19 @@ const CATEGORIE_STYLE: Record<CategorieMoment, {
 // situation réelle. Synchronisé en temps réel entre tous les postes connectés sur ce patient.
 export default function MomentsTimeline({ patientId }: { patientId: string }) {
   const [moments, setMoments] = useState<MomentOperatoire[]>([])
+  const [catalogue, setCatalogue] = useState<CatalogueEntry[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [labelPerso, setLabelPerso] = useState('')
+  const [nouveauLabel, setNouveauLabel] = useState('')
+  const [ajoutEnCours, setAjoutEnCours] = useState(false)
   const toastSeq = useRef(0)
   const { on } = useOperationRealtime(patientId)
   const { role } = useRole()
 
   const categoriesAutorisees = useMemo(() => (role ? CATEGORIES_AUTORISEES[role] || [] : []), [role])
-  const [categoriePerso, setCategoriePerso] = useState<CategorieMoment>('DIVERS')
+  const [categorieNouveauBouton, setCategorieNouveauBouton] = useState<CategorieMoment>('ANESTHESIE')
   useEffect(() => {
-    if (categoriesAutorisees.length && !categoriesAutorisees.includes(categoriePerso)) {
-      setCategoriePerso(categoriesAutorisees[0])
+    if (categoriesAutorisees.length && !categoriesAutorisees.includes(categorieNouveauBouton)) {
+      setCategorieNouveauBouton(categoriesAutorisees[0])
     }
   }, [categoriesAutorisees])
 
@@ -102,6 +111,10 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
       .catch(console.error)
   }, [patientId])
 
+  useEffect(() => {
+    apiClient.get('/moments-catalogue').then(({ data }) => setCatalogue(data || [])).catch(console.error)
+  }, [])
+
   useEffect(() => on('moment:cree', (payload: any) => {
     if (payload?.patientId === patientId && payload?.moment) upsertMoment(payload.moment)
   }), [on, patientId])
@@ -111,12 +124,12 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
     setMoments(prev => prev.map(m => (m.id === payload.momentId ? { ...m, annule: true, annuleParNom: payload.annuleParNom } : m)))
   }), [on, patientId])
 
-  const declencherMoment = (label: string, categorie: CategorieMoment, estPersonnalise = false) => {
+  const declencherMoment = (label: string, categorie: CategorieMoment) => {
     const horodatage = new Date().toISOString()
     const key = toastSeq.current++
 
     const promesse = apiClient
-      .post('/moments-operatoires', { patientId, label, categorie, estPersonnalise, horodatage })
+      .post('/moments-operatoires', { patientId, label, categorie, estPersonnalise: false, horodatage })
       .then(({ data }) => { upsertMoment(data); return data as MomentOperatoire })
       .catch((err) => { console.error(err); return null })
 
@@ -139,21 +152,30 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
     if (moment) annulerMoment(moment.id)
   }
 
-  const ajouterMomentPersonnalise = () => {
-    if (!labelPerso.trim()) return
-    declencherMoment(labelPerso.trim(), categoriePerso, true)
-    setLabelPerso('')
+  // Créer un nouveau bouton réutilisable dans le catalogue — action distincte de
+  // "déclencher un moment" : le bouton devient disponible immédiatement, mais n'horodate rien
+  // tant qu'il n'est pas ensuite cliqué comme les autres.
+  const ajouterBouton = async () => {
+    const label = nouveauLabel.trim()
+    if (!label) return
+    setAjoutEnCours(true)
+    try {
+      const { data } = await apiClient.post('/moments-catalogue', { categorie: categorieNouveauBouton, label })
+      setCatalogue(prev => [data, ...prev])
+      setNouveauLabel('')
+    } catch (err) {
+      console.error(err)
+      alert("❌ Erreur lors de la création du bouton")
+    } finally {
+      setAjoutEnCours(false)
+    }
   }
 
-  const categories = Object.keys(CATALOGUE_MOMENTS) as CategorieMoment[]
-  const categoriesVisibles = categories.filter((c) => categoriesAutorisees.includes(c))
+  const categoriesVisibles = categoriesAutorisees
 
   return (
-    <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5">
-      {/* Boutons épinglés (sticky) : rester accessibles sans avoir à remonter la page, même
-          quand l'historique en dessous s'allonge au fil de l'opération. */}
-      <div className="sticky top-2 z-10 bg-surface-container-lowest pb-2 -mx-1 px-1 space-y-4">
-      <h2 className="text-lg font-bold font-headline text-primary flex items-center gap-2">
+    <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5 h-full flex flex-col">
+      <h2 className="text-lg font-bold font-headline text-primary flex items-center gap-2 shrink-0">
         <span className="material-symbols-outlined">timeline</span> Chronologie de l'opération
       </h2>
 
@@ -163,9 +185,10 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
         </p>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-4 shrink-0">
         {categoriesVisibles.map((categorie) => {
           const style = CATEGORIE_STYLE[categorie]
+          const entries = catalogue.filter((c) => c.categorie === categorie)
           return (
             <div key={categorie}>
               <div className="flex items-center gap-2 mb-2">
@@ -173,20 +196,23 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
                   <span className="material-symbols-outlined text-sm">{style.icone}</span>
                 </span>
                 <h3 className={`text-[11px] font-extrabold uppercase tracking-widest ${style.texte}`}>
-                  {CATALOGUE_MOMENTS[categorie].titre}
+                  {TITRES_CATEGORIE[categorie]}
                 </h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                {CATALOGUE_MOMENTS[categorie].items.map((label) => (
+                {entries.map((entry) => (
                   <button
-                    key={label}
+                    key={entry.id}
                     type="button"
-                    onClick={() => declencherMoment(label, categorie)}
+                    onClick={() => declencherMoment(entry.label, categorie)}
                     className={`px-3.5 py-2 rounded-full border text-sm font-semibold transition-all active:scale-95 ${style.chip} ${style.chipHover}`}
                   >
-                    {label}
+                    {entry.label}
                   </button>
                 ))}
+                {entries.length === 0 && (
+                  <p className="text-xs text-on-surface-variant italic">Aucun bouton pour l'instant — ajoutez-en un ci-dessous.</p>
+                )}
               </div>
             </div>
           )
@@ -194,36 +220,35 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
       </div>
 
       {categoriesVisibles.length > 0 && (
-        <div className="flex gap-2 items-center pt-4 border-t border-outline-variant/20">
+        <div className="flex gap-2 items-center pt-4 border-t border-outline-variant/20 shrink-0">
           <select
-            value={categoriePerso}
-            onChange={(e) => setCategoriePerso(e.target.value as CategorieMoment)}
+            value={categorieNouveauBouton}
+            onChange={(e) => setCategorieNouveauBouton(e.target.value as CategorieMoment)}
             className="bg-surface-container-low border-none rounded-lg p-2 text-xs font-bold"
           >
             {categoriesVisibles.map((c) => (
-              <option key={c} value={c}>{CATALOGUE_MOMENTS[c].titre}</option>
+              <option key={c} value={c}>{TITRES_CATEGORIE[c]}</option>
             ))}
           </select>
           <input
-            value={labelPerso}
-            onChange={(e) => setLabelPerso(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && ajouterMomentPersonnalise()}
-            placeholder="+ Ajouter un moment personnalisé…"
+            value={nouveauLabel}
+            onChange={(e) => setNouveauLabel(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && ajouterBouton()}
+            placeholder="+ Créer un nouveau bouton…"
             className="flex-1 bg-white border border-outline-variant/40 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
           />
-          <button type="button" onClick={ajouterMomentPersonnalise} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary/90 hover:shadow-md transition-all">
-            <span className="material-symbols-outlined text-base">add</span> Ajouter
+          <button type="button" onClick={ajouterBouton} disabled={ajoutEnCours} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary/90 hover:shadow-md transition-all disabled:opacity-60">
+            <span className="material-symbols-outlined text-base">add</span> Créer
           </button>
         </div>
       )}
-      </div>
 
-      <div>
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Historique</h3>
+      <div className="flex-1 min-h-0 flex flex-col">
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 shrink-0">Historique</h3>
         {moments.length === 0 ? (
           <p className="text-xs text-on-surface-variant">Aucun moment horodaté pour l'instant.</p>
         ) : (
-          <ul className="space-y-1.5 max-h-48 overflow-y-auto">
+          <ul className="space-y-1.5 overflow-y-auto flex-1 min-h-0">
             {moments.map((m) => {
               const style = CATEGORIE_STYLE[m.categorie] || CATEGORIE_STYLE.DIVERS
               return (

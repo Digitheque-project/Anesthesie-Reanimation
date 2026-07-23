@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { patientService } from '@/lib/api'
 
 interface DossierPatientTabsProps {
@@ -17,45 +18,6 @@ interface DossierComplet {
   suivis: any[]
   protocolesOperatoires: any[]
   sortie: any[]
-  prescriptions: any[]
-}
-
-// Catalogue des types de prescriptions (miroir de prescription_front/components/prescription/
-// HistoriqueForm.tsx) — le type "bloc" est volontairement absent : c'est la prescription qui a
-// déclenché l'admission du patient dans NOTRE service, déjà visible ailleurs dans cette
-// interface (section Prescription chirurgicale), pas la peine de la dupliquer ici.
-const PRESCRIPTION_TYPES: { id: string; label: string; icone: string; couleur: string }[] = [
-  { id: 'medicale', label: 'Médicamenteuse', icone: 'medication', couleur: '#3b82f6' },
-  { id: 'nonMedicale', label: 'Non médicamenteuse', icone: 'self_care', couleur: '#8b5cf6' },
-  { id: 'surveillance', label: 'Surveillance', icone: 'monitor_heart', couleur: '#10b981' },
-  { id: 'transfusion', label: 'Transfusion', icone: 'bloodtype', couleur: '#ef4444' },
-  { id: 'labo', label: 'Laboratoire', icone: 'science', couleur: '#f59e0b' },
-  { id: 'imagerie', label: 'Imagerie', icone: 'radiology', couleur: '#06b6d4' },
-  { id: 'eeg', label: 'EEG', icone: 'neurology', couleur: '#6366f1' },
-  { id: 'kine', label: 'Kinésithérapie', icone: 'exercise', couleur: '#84cc16' },
-  { id: 'endoscopie', label: 'Endoscopie', icone: 'visibility', couleur: '#f97316' },
-  { id: 'dialyse', label: 'Dialyse', icone: 'water_full', couleur: '#14b8a6' },
-  { id: 'anapath', label: 'Anapath', icone: 'biotech', couleur: '#ec4899' },
-]
-const prescriptionMeta = (type: string) => PRESCRIPTION_TYPES.find((t) => t.id === type)
-const STATUTS_OK = new Set(['ACTIVE', 'EXECUTEE', 'validé', 'CREEE'])
-const STATUTS_KO = new Set(['ANNULEE', 'REJETEE', 'EXPIREE'])
-
-const resumePrescription = (item: any, type: string): string => {
-  switch (type) {
-    case 'medicale': return item.medicament || item.nom || 'Médicament'
-    case 'nonMedicale': return item.type || item.description || 'Non médicamenteuse'
-    case 'surveillance': return item.parametre || item.type || 'Surveillance'
-    case 'transfusion': return item.produit || item.groupe || 'Transfusion'
-    case 'labo': return item.examen || item.analyse || 'Analyse laboratoire'
-    case 'imagerie': return item.typeExamen || item.examen || item.type || 'Imagerie'
-    case 'eeg': return item.typeEEG || item.type || 'EEG'
-    case 'kine': return item.typeKine || item.type || 'Kinésithérapie'
-    case 'endoscopie': return item.type || 'Endoscopie'
-    case 'dialyse': return item.type || 'Dialyse'
-    case 'anapath': return item.examen || item.type || 'Anapath'
-    default: return item.description || item.nom || '—'
-  }
 }
 
 type OngletId = 'observation' | 'diagnostic' | 'suivi' | 'prescription' | 'compteRendu' | 'paraclinique' | 'sortie' | 'historique'
@@ -117,173 +79,11 @@ function CarteBase({ enTete, children }: { enTete: React.ReactNode; children?: R
   )
 }
 
-function ChampDetail({ label, valeur }: { label: string; valeur: unknown }) {
-  if (valeur === undefined || valeur === null || valeur === '') return null
-  return (
-    <div className="text-xs mb-1.5">
-      <span className="font-bold text-on-surface-variant">{label} : </span>
-      <span className="text-on-surface">{String(valeur)}</span>
-    </div>
-  )
-}
-
-// Détails spécifiques par type — champs choisis d'après le modèle de référence
-// (prescription_front/components/prescription/HistoriqueForm.tsx), simplifiés pour rester
-// lisibles dans ce contexte de consultation (pas de saisie).
-function DetailsPrescription({ item, type }: { item: any; type: string }) {
-  const sousListe = (titre: string, liste: any[], champs: [string, (x: any) => unknown][]) => (
-    <div className="mt-3">
-      <p className="text-xs font-extrabold text-on-surface-variant uppercase mb-2">{titre} ({liste.length})</p>
-      <div className="space-y-2">
-        {liste.map((x, i) => (
-          <div key={i} className="bg-surface-container-lowest rounded-lg p-2.5">
-            {champs.map(([label, get]) => <ChampDetail key={label} label={label} valeur={get(x)} />)}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  switch (type) {
-    case 'medicale':
-      return (
-        <div>
-          <ChampDetail label="Alertes" valeur={item.alertes} />
-          <ChampDetail label="Renseignements cliniques" valeur={item.renseignements} />
-          <ChampDetail label="Remarques" valeur={item.remarques} />
-          {item.medicaments?.length > 0 && sousListe('Médicaments prescrits', item.medicaments, [
-            ['Nom', (m) => m.nom], ['Dose', (m) => m.dose], ['Voie', (m) => m.voie],
-            ['Fréquence', (m) => m.frequence || (m.frequenceType ? `${m.frequenceType} ${m.frequenceValeur || ''}`.trim() : undefined)],
-            ['Durée', (m) => m.dureeJours ? `${m.dureeJours} jours` : m.duree], ['Instructions', (m) => m.instructions],
-          ])}
-        </div>
-      )
-    case 'nonMedicale':
-      return (
-        <div>
-          <ChampDetail label="Alertes" valeur={item.alertes} />
-          {item.items?.length > 0 && sousListe('Prescriptions', item.items, [
-            ['Type', (m) => m.typeLabel || m.type], ['Description', (m) => m.description],
-            ['Durée', (m) => m.dureeJours ? `${m.dureeJours} jours` : m.duree], ['Instructions', (m) => m.instructions],
-          ])}
-        </div>
-      )
-    case 'surveillance':
-      return (
-        <div>
-          <ChampDetail label="Alertes" valeur={item.alertes} />
-          <ChampDetail label="Notes" valeur={item.notes} />
-          {item.parametres?.length > 0 && sousListe('Paramètres à surveiller', item.parametres, [
-            ['Paramètre', (m) => m.parametre], ['Fréquence', (m) => m.frequence], ['Seuil', (m) => m.seuil],
-          ])}
-        </div>
-      )
-    case 'transfusion':
-      return (
-        <div>
-          <ChampDetail label="Groupage sanguin" valeur={item.groupage} />
-          <ChampDetail label="Hémoglobine" valeur={item.hb} />
-          <ChampDetail label="Incidents précédents" valeur={item.incident} />
-          {item.produits?.length > 0 && sousListe('Produits sanguins', item.produits, [
-            ['Type', (m) => m.produit], ['Quantité', (m) => m.quantite], ['Statut Banque de Sang', (m) => m.statutBanqueSang],
-          ])}
-        </div>
-      )
-    case 'labo':
-      return (
-        <div>
-          <ChampDetail label="À jeun" valeur={item.aJeun !== undefined ? (item.aJeun ? 'Oui' : 'Non') : undefined} />
-          <ChampDetail label="Renseignements cliniques" valeur={item.renseignements} />
-          {item.analyses?.length > 0 && (
-            <div className="mt-2">
-              <p className="text-xs font-extrabold text-on-surface-variant uppercase mb-1">Analyses demandées</p>
-              {item.analyses.map((a: string, i: number) => <p key={i} className="text-xs">• {a}</p>)}
-            </div>
-          )}
-          <ChampDetail label="Motif de refus" valeur={item.motifRefus} />
-        </div>
-      )
-    case 'imagerie':
-      return (
-        <div>
-          <ChampDetail label="Type d'examen" valeur={item.typeExamen} />
-          <ChampDetail label="Statut patient" valeur={item.statutPatient} />
-          <ChampDetail label="Renseignements cliniques" valeur={item.renseignements} />
-          <ChampDetail label="Motif de refus" valeur={item.motifRefus} />
-        </div>
-      )
-    default:
-      return (
-        <div>
-          <ChampDetail label="Alertes" valeur={item.alertes} />
-          <ChampDetail label="Renseignements cliniques" valeur={item.renseignements} />
-          <ChampDetail label="Remarques" valeur={item.remarques} />
-          <ChampDetail label="Description" valeur={item.description} />
-          <ChampDetail label="Motif de refus" valeur={item.motifRefus} />
-        </div>
-      )
-  }
-}
-
-function PrescriptionDetailModal({ item, onClose }: { item: any; onClose: () => void }) {
-  const meta = prescriptionMeta(item._type)
-  const couleur = meta?.couleur || '#1e3a5f'
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl max-w-xl w-full max-h-[85vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="px-6 py-5 rounded-t-2xl flex items-center justify-between" style={{ background: couleur }}>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-lg bg-white/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-xl">{meta?.icone || 'description'}</span>
-            </div>
-            <div>
-              <p className="text-white font-extrabold">Prescription {meta?.label || item._type}</p>
-              <p className="text-white/75 text-xs">{formaterDate(item.createdAt || item.date, true)}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center font-bold">×</button>
-        </div>
-        <div className="p-6 space-y-4">
-          {item.statut && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${STATUTS_OK.has(item.statut) ? 'bg-emerald-50 text-emerald-800' : STATUTS_KO.has(item.statut) ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800'}`}>
-              <span className="material-symbols-outlined text-lg">{STATUTS_OK.has(item.statut) ? 'check_circle' : STATUTS_KO.has(item.statut) ? 'cancel' : 'pending'}</span>
-              <span className="text-sm font-bold">Statut : {item.statut}</span>
-            </div>
-          )}
-          <div className="border border-outline-variant/30 rounded-xl overflow-hidden">
-            <div className="bg-surface-container-lowest px-3 py-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm text-primary">stethoscope</span>
-              <span className="text-[11px] font-extrabold text-primary uppercase">Prescripteur</span>
-            </div>
-            <div className="p-3">
-              {item.nomMedecinPrescripteur ? (
-                <p className="text-sm font-bold">Dr {item.nomMedecinPrescripteur}</p>
-              ) : <p className="text-sm text-on-surface-variant italic">Prescripteur non renseigné</p>}
-              {item.sourceType && <p className="text-xs text-on-surface-variant mt-1">Via {String(item.sourceType).toUpperCase()}</p>}
-            </div>
-          </div>
-          <div className="border border-outline-variant/30 rounded-xl overflow-hidden">
-            <div className="bg-surface-container-lowest px-3 py-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm text-primary">clinical_notes</span>
-              <span className="text-[11px] font-extrabold text-primary uppercase">Détails cliniques</span>
-            </div>
-            <div className="p-3">
-              <DetailsPrescription item={item} type={item._type} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function DossierPatientTabs({ patientId }: DossierPatientTabsProps) {
   const [onglet, setOnglet] = useState<OngletId>('observation')
   const [loading, setLoading] = useState(true)
   const [erreur, setErreur] = useState(false)
   const [dossier, setDossier] = useState<DossierComplet | null>(null)
-  const [filtrePrescription, setFiltrePrescription] = useState<string>('all')
-  const [prescriptionSelectionnee, setPrescriptionSelectionnee] = useState<any>(null)
 
   useEffect(() => {
     if (!patientId) return
@@ -523,69 +323,11 @@ export default function DossierPatientTabs({ patientId }: DossierPatientTabsProp
     )
   }
 
-  const renderPrescription = () => {
-    const toutes = dossier?.prescriptions || []
-    const items = filtrePrescription === 'all' ? toutes : toutes.filter((p: any) => p._type === filtrePrescription)
-    return (
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-1.5">
-          <button onClick={() => setFiltrePrescription('all')}
-            className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors ${filtrePrescription === 'all' ? 'bg-primary text-white border-primary' : 'bg-white text-on-surface-variant border-outline-variant/40 hover:bg-surface-container-low'}`}>
-            Tout ({toutes.length})
-          </button>
-          {PRESCRIPTION_TYPES.map((t) => {
-            const n = toutes.filter((p: any) => p._type === t.id).length
-            if (!n) return null
-            const actif = filtrePrescription === t.id
-            return (
-              <button key={t.id} onClick={() => setFiltrePrescription(t.id)}
-                className="px-3 py-1 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1"
-                style={actif ? { background: t.couleur, borderColor: t.couleur, color: '#fff' } : { background: '#fff', borderColor: `${t.couleur}40`, color: t.couleur }}>
-                <span className="material-symbols-outlined text-xs">{t.icone}</span>{t.label} ({n})
-              </button>
-            )
-          })}
-        </div>
-
-        {items.length === 0 ? <Vide texte="Aucune prescription trouvée." /> : (
-          <div className="space-y-2">
-            {items.map((item: any, i: number) => {
-              const meta = prescriptionMeta(item._type)
-              const couleur = meta?.couleur || '#1e3a5f'
-              return (
-                <button key={item.id || i} onClick={() => setPrescriptionSelectionnee(item)}
-                  className="w-full flex items-start gap-3 p-3 rounded-xl border border-outline-variant/20 bg-white shadow-sm hover:shadow-md transition-shadow text-left"
-                  style={{ borderLeftWidth: 4, borderLeftColor: couleur }}>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${couleur}20` }}>
-                    <span className="material-symbols-outlined text-lg" style={{ color: couleur }}>{meta?.icone || 'description'}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: `${couleur}20`, color: couleur }}>{meta?.label || item._type}</span>
-                      <span className="text-[11px] text-on-surface-variant">{formaterDate(item.createdAt || item.date, true)}</span>
-                    </div>
-                    <p className="text-sm font-bold text-on-surface mt-1 truncate">{resumePrescription(item, item._type)}</p>
-                    {(item.remarque || item.remarques || item.instructions) && (
-                      <p className="text-xs text-on-surface-variant mt-0.5 truncate">{item.remarque || item.remarques || item.instructions}</p>
-                    )}
-                  </div>
-                  {item.statut && (
-                    <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full shrink-0 ${STATUTS_OK.has(item.statut) ? 'bg-emerald-100 text-emerald-700' : STATUTS_KO.has(item.statut) ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {item.statut}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        {prescriptionSelectionnee && (
-          <PrescriptionDetailModal item={prescriptionSelectionnee} onClose={() => setPrescriptionSelectionnee(null)} />
-        )}
-      </div>
-    )
-  }
+  const renderPrescription = () => (
+    <div className="text-sm text-on-surface-variant italic py-6 text-center">
+      Intégration avec le service Prescription en cours — les prescriptions apparaîtront ici prochainement.
+    </div>
+  )
 
   const renderContenu = () => {
     if (loading) return <p className="text-sm text-on-surface-variant py-6 text-center">Chargement du dossier...</p>
@@ -604,6 +346,15 @@ export default function DossierPatientTabs({ patientId }: DossierPatientTabsProp
 
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <div className="flex items-center justify-end px-3 py-2 border-b border-outline-variant/20 bg-surface-container-lowest">
+        <Link
+          href={`/bloc/dossier-patient/${patientId}/complet`}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-bold hover:bg-primary/20 transition-colors"
+        >
+          <span className="material-symbols-outlined text-base">open_in_new</span>
+          Ouvrir le dossier complet (édition + prescription)
+        </Link>
+      </div>
       <div className="flex overflow-x-auto border-b border-outline-variant/20 bg-surface-container-lowest">
         {ONGLETS.map(o => (
           <button key={o.id} onClick={() => setOnglet(o.id)}

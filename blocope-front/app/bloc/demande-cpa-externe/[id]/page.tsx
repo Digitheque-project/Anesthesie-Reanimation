@@ -7,6 +7,8 @@ import ModalPlanifierRDV from '@/components/bloc/notification-cpa/ModalPlanifier
 import { useRole } from '@/lib/hooks/useRole'
 import { libelleUrgence, styleUrgence, niveauUrgenceNotification } from '@/lib/urgence'
 import { formaterNomPatient } from '@/lib/patient'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 
 const LIBELLE_STATUT: Record<string, string> = {
   EN_ATTENTE: 'En attente de planification',
@@ -24,9 +26,14 @@ const formaterDate = (d?: string | null) =>
 
 export default function DemandeCpaExternePage() {
   return (
-    <Suspense fallback={<main className="p-4">Chargement...</main>}>
-      <DemandeCpaExternePageContent />
-    </Suspense>
+    <RoleGate
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR]}
+      message="Les demandes de CPA externes ne sont pas accessibles pour votre rôle."
+    >
+      <Suspense fallback={<main className="p-4">Chargement...</main>}>
+        <DemandeCpaExternePageContent />
+      </Suspense>
+    </RoleGate>
   )
 }
 

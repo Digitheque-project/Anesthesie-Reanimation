@@ -18,6 +18,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const prescription_service_1 = require("./prescription.service");
 const receive_prescription_dto_1 = require("./dto/receive-prescription.dto");
+const public_decorator_1 = require("../central-auth/public.decorator");
 let PrescriptionController = PrescriptionController_1 = class PrescriptionController {
     service;
     logger = new common_1.Logger(PrescriptionController_1.name);
@@ -32,6 +33,7 @@ let PrescriptionController = PrescriptionController_1 = class PrescriptionContro
 };
 exports.PrescriptionController = PrescriptionController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('receive'),
     (0, common_1.HttpCode)(200),
     (0, swagger_1.ApiOperation)({ summary: '📋 Recevoir une prescription du service Prescription' }),

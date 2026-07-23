@@ -19,14 +19,17 @@ const typeorm_2 = require("typeorm");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const constante_per_op_entity_1 = require("../entities/constante-per-op.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 let ActivitePerOpService = class ActivitePerOpService {
     repo;
     constanteRepo;
     accueilClient;
-    constructor(repo, constanteRepo, accueilClient) {
+    gateway;
+    constructor(repo, constanteRepo, accueilClient, gateway) {
         this.repo = repo;
         this.constanteRepo = constanteRepo;
         this.accueilClient = accueilClient;
+        this.gateway = gateway;
     }
     async create(dto) {
         const { constantes, ...data } = dto;
@@ -43,8 +46,9 @@ let ActivitePerOpService = class ActivitePerOpService {
         }
         return this.findOne(saved.id);
     }
-    async findAll(page = 1, limite = 10) {
+    async findAll(page = 1, limite = 10, patientId) {
         const [data, total] = await this.repo.findAndCount({
+            where: patientId ? { patientId } : {},
             relations: ['chirurgien', 'anesthesiste', 'constantes'],
             skip: (page - 1) * limite,
             take: limite,
@@ -76,6 +80,26 @@ let ActivitePerOpService = class ActivitePerOpService {
         await this.repo.delete(id);
         return { message: 'Activité supprimée' };
     }
+    async ajouterConstante(activiteId, dto) {
+        const activite = await this.repo.findOne({ where: { id: activiteId } });
+        if (!activite)
+            throw new common_1.NotFoundException(`Activité ${activiteId} non trouvée`);
+        const horodatage = new Date(dto.horodatage);
+        const constante = this.constanteRepo.create({
+            fc: dto.fc,
+            ta: dto.ta,
+            spo2: dto.spo2,
+            temperature: dto.temperature,
+            capnie: dto.capnie,
+            score: dto.score,
+            horodatage,
+            heure: horodatage.toTimeString().split(' ')[0].substring(0, 5),
+            activitePerOp: activite,
+        });
+        const saved = await this.constanteRepo.save(constante);
+        this.gateway.emitToOperation(activite.patientId, 'constante:ajoutee', { patientId: activite.patientId, constante: saved });
+        return saved;
+    }
 };
 exports.ActivitePerOpService = ActivitePerOpService;
 exports.ActivitePerOpService = ActivitePerOpService = __decorate([
@@ -84,6 +108,7 @@ exports.ActivitePerOpService = ActivitePerOpService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(constante_per_op_entity_1.ConstantePerOp)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        operation_gateway_1.OperationGateway])
 ], ActivitePerOpService);
 //# sourceMappingURL=activite-per-op.service.js.map

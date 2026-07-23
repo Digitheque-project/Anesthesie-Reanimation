@@ -17,4 +17,11 @@ export declare class DossierPatientClient {
     getDernierExamenPhysique(patientId: string, token: string): Promise<any[]>;
     getExamensComplementairesUrgents(patientId: string, token: string): Promise<any[]>;
     getSuivis(patientId: string, token: string): Promise<any[]>;
+    getObservations(patientId: string, token: string): Promise<any[]>;
+    getDiagnosticsTous(patientId: string, token: string): Promise<any[]>;
+    getAntecedentsTous(patientId: string, token: string): Promise<any[]>;
+    getHistoiresMaladie(patientId: string, token: string): Promise<any[]>;
+    getExamensPhysiquesTous(patientId: string, token: string): Promise<any[]>;
+    getExamensComplementairesTous(patientId: string, token: string): Promise<any[]>;
+    getSortieMedicale(episodeId: string, token: string): Promise<any[]>;
 }

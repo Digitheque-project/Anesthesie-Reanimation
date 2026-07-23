@@ -4,7 +4,7 @@ import { UpdateSortieReveilDto } from './dto/update-sortie-reveil.dto';
 export declare class SortieReveilController {
     private readonly service;
     constructor(service: SortieReveilService);
-    create(dto: CreateSortieReveilDto): Promise<import("../entities").SortieReveil>;
+    create(dto: CreateSortieReveilDto, req: any): Promise<import("../entities").SortieReveil>;
     findAll(p?: number, l?: number): Promise<{
         data: any;
         total: number;

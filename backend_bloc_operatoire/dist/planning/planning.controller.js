@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const planning_service_1 = require("./planning.service");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let PlanningController = class PlanningController {
     service;
     constructor(service) {
@@ -31,11 +33,11 @@ let PlanningController = class PlanningController {
     reserver(dto) { return this.service.reserverCreneau(dto); }
     annuler(id) { return this.service.annulerCreneau(id); }
     urgences() { return this.service.getUrgencesEnAttente(); }
-    transfererCpaVersVpa(dto) {
-        return this.service.transfererCpaVersVpa(dto);
+    transfererCpaVersVerificationVeille(dto) {
+        return this.service.transfererCpaVersVerificationVeille(dto);
     }
-    transfererVpaVersPatientJour(dto) {
-        return this.service.transfererVpaVersPatientJour(dto);
+    transfererVerificationVeilleVersPatientJour(dto) {
+        return this.service.transfererVerificationVeilleVersPatientJour(dto);
     }
 };
 exports.PlanningController = PlanningController;
@@ -60,6 +62,8 @@ __decorate([
 ], PlanningController.prototype, "getSemaine", null);
 __decorate([
     (0, common_1.Post)('reserver'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Réserver un créneau (Major, ou Responsable CPA pour la planification CPA)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -67,6 +71,8 @@ __decorate([
 ], PlanningController.prototype, "reserver", null);
 __decorate([
     (0, common_1.Delete)(':id'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Annuler un créneau (Major, ou Responsable CPA pour la planification CPA)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -79,21 +85,23 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PlanningController.prototype, "urgences", null);
 __decorate([
-    (0, common_1.Post)('transferer-cpa-vers-vpa'),
-    (0, swagger_1.ApiOperation)({ summary: 'Transférer un patient de CPA vers VPA' }),
+    (0, common_1.Post)('transferer-cpa-vers-verification-veille'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Transférer un patient de CPA vers Vérification veille (Responsable CPA)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], PlanningController.prototype, "transfererCpaVersVpa", null);
+], PlanningController.prototype, "transfererCpaVersVerificationVeille", null);
 __decorate([
-    (0, common_1.Post)('transferer-vpa-vers-patient-jour'),
-    (0, swagger_1.ApiOperation)({ summary: 'Transférer un patient de VPA vers Patient du jour' }),
+    (0, common_1.Post)('transferer-verification-veille-vers-patient-jour'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Transférer un patient de Vérification veille vers Patient du jour (Responsable CPA)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], PlanningController.prototype, "transfererVpaVersPatientJour", null);
+], PlanningController.prototype, "transfererVerificationVeilleVersPatientJour", null);
 exports.PlanningController = PlanningController = __decorate([
     (0, swagger_1.ApiTags)('Planning'),
     (0, common_1.Controller)('planning'),

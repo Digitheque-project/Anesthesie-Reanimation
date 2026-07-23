@@ -14,6 +14,7 @@ export declare class DemandeCpaExterne {
     chuId: string;
     sourceServiceId: string;
     sourceServiceName: string;
+    sourceCallbackUrl: string | null;
     sourceReferenceType: string;
     sourceReferenceId: string;
     typeAnesthesie: string;

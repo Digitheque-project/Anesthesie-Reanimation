@@ -24,6 +24,9 @@ const accueil_client_1 = require("../external/accueil.client");
 const endoscopie_client_1 = require("../external/endoscopie.client");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
 const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cpa-externe.service");
+const medecin_service_1 = require("../medecin/medecin.service");
+const role_clinique_1 = require("../central-auth/role-clinique");
+const medecin_entity_1 = require("../entities/medecin.entity");
 let CPAService = CPAService_1 = class CPAService {
     cpaRepository;
     patientBlocRepo;
@@ -32,8 +35,9 @@ let CPAService = CPAService_1 = class CPAService {
     endoscopieClient;
     notificationOutgoing;
     demandeCpaExterneService;
+    medecinService;
     logger = new common_1.Logger(CPAService_1.name);
-    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService) {
+    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService) {
         this.cpaRepository = cpaRepository;
         this.patientBlocRepo = patientBlocRepo;
         this.premedRepository = premedRepository;
@@ -41,13 +45,35 @@ let CPAService = CPAService_1 = class CPAService {
         this.endoscopieClient = endoscopieClient;
         this.notificationOutgoing = notificationOutgoing;
         this.demandeCpaExterneService = demandeCpaExterneService;
+        this.medecinService = medecinService;
     }
-    async create(dto) {
-        if (dto.decision === cpa_entity_1.DecisionCPA.INAPTE && (!dto.motifRefus || dto.motifRefus.trim() === '')) {
-            throw new common_1.BadRequestException('Le motif du refus est obligatoire lorsque la décision est INAPTE.');
+    async create(dto, centralUser) {
+        if ((dto.decision === cpa_entity_1.DecisionCPA.INAPTE || dto.decision === cpa_entity_1.DecisionCPA.REPORT) &&
+            (!dto.motifRefus || dto.motifRefus.trim() === '')) {
+            throw new common_1.BadRequestException(dto.decision === cpa_entity_1.DecisionCPA.INAPTE
+                ? 'Le motif du refus est obligatoire lorsque la décision est INAPTE.'
+                : "Le motif du report est obligatoire lorsque la décision est REPORT.");
         }
-        const { premedicaments, ...cpaData } = dto;
-        const cpa = this.cpaRepository.create(cpaData);
+        const roleUtilisateur = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
+        let anesthesiste;
+        if (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE) {
+            const trouve = await this.medecinService.findByEmail(centralUser.email);
+            if (!trouve) {
+                throw new common_1.BadRequestException(`Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`);
+            }
+            anesthesiste = trouve;
+        }
+        else {
+            if (!dto.anesthesisteId) {
+                throw new common_1.BadRequestException("L'anesthésiste ayant réalisé la consultation doit être sélectionné.");
+            }
+            anesthesiste = await this.medecinService.findOne(dto.anesthesisteId);
+            if (anesthesiste.role !== medecin_entity_1.RoleMedecin.ANESTHESISTE) {
+                throw new common_1.BadRequestException(`${anesthesiste.prenom} ${anesthesiste.nom} n'est pas enregistré(e) comme anesthésiste.`);
+            }
+        }
+        const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto;
+        const cpa = this.cpaRepository.create({ ...cpaData, anesthesisteId: anesthesiste.id });
         const savedCPA = await this.cpaRepository.save(cpa);
         const saved = Array.isArray(savedCPA) ? savedCPA[0] : savedCPA;
         if (premedicaments?.length) {
@@ -57,20 +83,31 @@ let CPAService = CPAService_1 = class CPAService {
         if (dto.patientId) {
             const nouveauStatut = dto.decision === cpa_entity_1.DecisionCPA.INAPTE
                 ? patient_bloc_entity_1.PatientStatut.CPA_INAPTE
-                : patient_bloc_entity_1.PatientStatut.CPA_REALISE;
+                : dto.decision === cpa_entity_1.DecisionCPA.REPORT
+                    ? patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA
+                    : patient_bloc_entity_1.PatientStatut.CPA_REALISE;
             await this.patientBlocRepo.update(dto.patientId, { statut: nouveauStatut });
-            const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
-            if (demande) {
-                const apte = saved.decision === cpa_entity_1.DecisionCPA.APTE;
-                await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
-                try {
-                    await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
-                        dateCpa: saved.dateConsultation,
-                        observations: saved.notesIncidents,
-                    });
-                }
-                catch (err) {
-                    this.logger.error(`Erreur notification Endoscopie: ${err.message}`);
+            if (dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
+                const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
+                if (demande) {
+                    const apte = saved.decision === cpa_entity_1.DecisionCPA.APTE;
+                    await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
+                    try {
+                        await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_RESULTAT', {
+                            decision: saved.decision,
+                            dateCpa: saved.dateConsultation,
+                            observations: saved.notesIncidents,
+                        });
+                        if (!demande.sourceCallbackUrl) {
+                            await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
+                                dateCpa: saved.dateConsultation,
+                                observations: saved.notesIncidents,
+                            });
+                        }
+                    }
+                    catch (err) {
+                        this.logger.error(`Erreur notification résultat CPA au service demandeur: ${err.message}`);
+                    }
                 }
             }
             try {
@@ -78,7 +115,7 @@ let CPAService = CPAService_1 = class CPAService {
                 if (patient?.serviceOrigineId && patient?.serviceOrigine) {
                     await this.notificationOutgoing.notifyOriginService({
                         patientId: dto.patientId,
-                        type: dto.decision === cpa_entity_1.DecisionCPA.INAPTE ? 'CPA_INAPTE' : 'CPA_APTE',
+                        type: dto.decision === cpa_entity_1.DecisionCPA.INAPTE ? 'CPA_INAPTE' : dto.decision === cpa_entity_1.DecisionCPA.REPORT ? 'CPA_REPORT' : 'CPA_APTE',
                         serviceOrigineId: patient.serviceOrigineId,
                         serviceOrigineName: patient.serviceOrigine,
                         payload: {
@@ -139,6 +176,7 @@ exports.CPAService = CPAService = CPAService_1 = __decorate([
         accueil_client_1.AccueilClient,
         endoscopie_client_1.EndoscopieClient,
         notification_outgoing_service_1.NotificationOutgoingService,
-        demande_cpa_externe_service_1.DemandeCpaExterneService])
+        demande_cpa_externe_service_1.DemandeCpaExterneService,
+        medecin_service_1.MedecinService])
 ], CPAService);
 //# sourceMappingURL=cpa.service.js.map

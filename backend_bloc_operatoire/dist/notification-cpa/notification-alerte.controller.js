@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationAlerteController = void 0;
 const common_1 = require("@nestjs/common");
 const notification_alerte_service_1 = require("./notification-alerte.service");
-const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 let NotificationAlerteController = class NotificationAlerteController {
     service;
     constructor(service) {
@@ -36,7 +35,6 @@ __decorate([
 ], NotificationAlerteController.prototype, "getResumeJour", null);
 exports.NotificationAlerteController = NotificationAlerteController = __decorate([
     (0, common_1.Controller)('alertes'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [notification_alerte_service_1.NotificationAlerteService])
 ], NotificationAlerteController);
 //# sourceMappingURL=notification-alerte.controller.js.map
