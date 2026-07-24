@@ -60,16 +60,13 @@ export class CPAService {
     // ayant réalisé l'examen doit être désigné explicitement dans le formulaire, via la table
     // locale `medecins` (traitée comme un médecin externe par convention).
     const roleUtilisateur = matchRoleClinique(centralUser.role);
-    let anesthesisteId: string;
+    let anesthesisteId: string | null;
 
     if (roleUtilisateur === RoleClinique.ANESTHESISTE) {
       anesthesisteId = centralUser.userId;
-    } else {
-      if (!dto.anesthesisteId) {
-        throw new BadRequestException(
-          "L'anesthésiste ayant réalisé la consultation doit être sélectionné.",
-        );
-      }
+    } else if (dto.anesthesisteId) {
+      // Désignation facultative : la liste (table locale `medecins`) peut être vide si aucun
+      // anesthésiste externe n'y a été enregistré — ne bloque plus la création de la CPA.
       const anesthesiste = await this.medecinService.findOne(
         dto.anesthesisteId,
       );
@@ -79,6 +76,8 @@ export class CPAService {
         );
       }
       anesthesisteId = anesthesiste.id;
+    } else {
+      anesthesisteId = null;
     }
 
     const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto as any;

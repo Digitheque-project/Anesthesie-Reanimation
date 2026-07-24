@@ -54,7 +54,10 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({ isGlobal: true, load: [external_services_config_1.default, central_auth_config_1.default] }),
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+                load: [external_services_config_1.default, central_auth_config_1.default],
+            }),
             schedule_1.ScheduleModule.forRoot(),
             external_module_1.ExternalModule,
             central_auth_module_1.CentralAuthModule,

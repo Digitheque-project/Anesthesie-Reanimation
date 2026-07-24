@@ -32,23 +32,44 @@ let NotificationAlerteService = class NotificationAlerteService {
         this.accueilClient = accueilClient;
     }
     async getAlertesUrgentes() {
-        const patientsUrgents = await this.patientBlocRepo.find({ where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT } });
+        const patientsUrgents = await this.patientBlocRepo.find({
+            where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT },
+        });
         const patientsUrgentsEnrichis = await this.accueilClient.enrichWithIdentity(patientsUrgents);
         const alertes = [];
         for (const patient of patientsUrgentsEnrichis) {
-            const creneau = await this.creneauRepo.findOne({ where: { patientId: patient.patientId, statut: creneau_bloc_entity_1.StatutCreneau.PLANIFIE } });
+            const creneau = await this.creneauRepo.findOne({
+                where: { patientId: patient.patientId, statut: creneau_bloc_entity_1.StatutCreneau.PLANIFIE },
+            });
             if (!creneau) {
-                const nomComplet = patient.patient ? `${patient.patient.nom} ${patient.patient.prenom}` : patient.patientId;
-                alertes.push({ type: 'URGENCE_SANS_CRENEAU', patient, message: `Patient urgent sans créneau : ${nomComplet}` });
+                const nomComplet = patient.patient
+                    ? `${patient.patient.nom} ${patient.patient.prenom}`
+                    : patient.patientId;
+                alertes.push({
+                    type: 'URGENCE_SANS_CRENEAU',
+                    patient,
+                    message: `Patient urgent sans créneau : ${nomComplet}`,
+                });
             }
         }
         const dateLimite = new Date();
         dateLimite.setHours(dateLimite.getHours() - 48);
-        const notifsEnRetardRaw = await this.notifRepo.find({ where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, createdAt: (0, typeorm_2.LessThanOrEqual)(dateLimite) } });
+        const notifsEnRetardRaw = await this.notifRepo.find({
+            where: {
+                statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+                createdAt: (0, typeorm_2.LessThanOrEqual)(dateLimite),
+            },
+        });
         const notifsEnRetard = await this.accueilClient.enrichWithIdentity(notifsEnRetardRaw);
         for (const notif of notifsEnRetard) {
-            const nomComplet = notif.patient ? `${notif.patient.nom} ${notif.patient.prenom}` : notif.patientId;
-            alertes.push({ type: 'NOTIFICATION_RETARD', notification: notif, message: `Notification CPA en attente depuis +48h pour ${nomComplet}` });
+            const nomComplet = notif.patient
+                ? `${notif.patient.nom} ${notif.patient.prenom}`
+                : notif.patientId;
+            alertes.push({
+                type: 'NOTIFICATION_RETARD',
+                notification: notif,
+                message: `Notification CPA en attente depuis +48h pour ${nomComplet}`,
+            });
         }
         return { total: alertes.length, alertes };
     }
@@ -56,8 +77,12 @@ let NotificationAlerteService = class NotificationAlerteService {
         const aujourdhui = new Date().toISOString().split('T')[0];
         const [creneauxJourRaw, urgences, notifsEnAttente] = await Promise.all([
             this.creneauRepo.find({ where: { date: new Date(aujourdhui) } }),
-            this.patientBlocRepo.count({ where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT } }),
-            this.notifRepo.count({ where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE } }),
+            this.patientBlocRepo.count({
+                where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT },
+            }),
+            this.notifRepo.count({
+                where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE },
+            }),
         ]);
         const creneauxJour = await this.accueilClient.enrichWithIdentity(creneauxJourRaw);
         return {

@@ -102,7 +102,11 @@ __decorate([
     __metadata("design:type", String)
 ], PatientBloc.prototype, "chirurgien_nom", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: PatientStatut, default: PatientStatut.EN_ATTENTE_CPA }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: PatientStatut,
+        default: PatientStatut.EN_ATTENTE_CPA,
+    }),
     __metadata("design:type", String)
 ], PatientBloc.prototype, "statut", void 0);
 __decorate([

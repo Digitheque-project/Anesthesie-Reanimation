@@ -70,7 +70,11 @@ __decorate([
     __metadata("design:type", Object)
 ], SortieReveil.prototype, "checklistSortie", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutSortieReveil, default: StatutSortieReveil.EN_ATTENTE }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutSortieReveil,
+        default: StatutSortieReveil.EN_ATTENTE,
+    }),
     __metadata("design:type", String)
 ], SortieReveil.prototype, "statut", void 0);
 __decorate([

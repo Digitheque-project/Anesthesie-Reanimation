@@ -33,13 +33,21 @@ let SortieReveilService = class SortieReveilService {
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ relations: ['scoreSCCRE'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const [data, total] = await this.repo.findAndCount({
+            relations: ['scoreSCCRE'],
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
+        });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'medecinId', 'medecin');
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const s = await this.repo.findOne({ where: { id }, relations: ['scoreSCCRE'] });
+        const s = await this.repo.findOne({
+            where: { id },
+            relations: ['scoreSCCRE'],
+        });
         if (!s)
             throw new common_1.NotFoundException(`Sortie ${id} non trouvée`);
         const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([s]);

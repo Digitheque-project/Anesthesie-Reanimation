@@ -39,7 +39,9 @@ let OperationGateway = OperationGateway_1 = class OperationGateway {
         }
         catch (err) {
             this.logger.warn(`Connexion WebSocket refusée: ${err.message}`);
-            client.emit('erreur-auth', { message: 'Authentification WebSocket invalide' });
+            client.emit('erreur-auth', {
+                message: 'Authentification WebSocket invalide',
+            });
             client.disconnect(true);
         }
     }

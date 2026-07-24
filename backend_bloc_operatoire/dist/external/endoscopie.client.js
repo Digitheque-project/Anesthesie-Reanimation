@@ -25,9 +25,12 @@ let EndoscopieClient = EndoscopieClient_1 = class EndoscopieClient {
     constructor(http, config) {
         this.http = http;
         this.config = config;
-        this.baseUrl = this.config.get('externalServices.endoscopieApiUrl') ?? '';
-        this.serviceId = this.config.get('externalServices.endoscopieServiceId') ?? '';
-        this.blocServiceId = this.config.get('externalServices.serviceId') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.endoscopieApiUrl') ?? '';
+        this.serviceId =
+            this.config.get('externalServices.endoscopieServiceId') ?? '';
+        this.blocServiceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     async notify(demande, type, payload) {
         if (!this.baseUrl) {

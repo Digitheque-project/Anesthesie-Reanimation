@@ -33,7 +33,11 @@ let ScoreSCCREService = class ScoreSCCREService {
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const [data, total] = await this.repo.findAndCount({
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
+        });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'anesthesisteId', 'anesthesiste');
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };

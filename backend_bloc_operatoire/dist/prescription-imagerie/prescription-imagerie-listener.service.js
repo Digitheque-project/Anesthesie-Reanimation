@@ -35,7 +35,8 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
         this.prescriptionImagerieClient = prescriptionImagerieClient;
         this.prescriptionService = prescriptionService;
         this.notificationRepo = notificationRepo;
-        this.serviceId = this.config.get('externalServices.serviceId') ?? '';
+        this.serviceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     onModuleInit() {
         const notificationUrl = this.config.get('externalServices.notificationApiUrl');
@@ -67,14 +68,17 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
     estNotificationPrescription(notif) {
         const type = String(notif?.type || '').toLowerCase();
         const source = String(notif?.source || '').toLowerCase();
-        return Boolean(notif?.data?.patientId) && (type.includes('prescription') || source.includes('prescription'));
+        return (Boolean(notif?.data?.patientId) &&
+            (type.includes('prescription') || source.includes('prescription')));
     }
     async traiterNotification(notif) {
         if (!this.estNotificationPrescription(notif))
             return;
         const patientId = String(notif.data.patientId);
         this.logger.log(`📬 Notification de prescription reçue pour le patient ${patientId}`);
-        this.prescriptionService.pollPrescriptionsBloc().catch((err) => this.logger.error(`Erreur lors du poll bloc déclenché par notification: ${err.message}`));
+        this.prescriptionService
+            .pollPrescriptionsBloc()
+            .catch((err) => this.logger.error(`Erreur lors du poll bloc déclenché par notification: ${err.message}`));
         try {
             const prescriptions = await this.prescriptionImagerieClient.getParPatient(patientId);
             const nousConcernant = prescriptions.filter((p) => !p.serviceIdDest || p.serviceIdDest === this.serviceId);
@@ -88,13 +92,19 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
     }
     async ingerer(prescription) {
         const dejaEnAttente = await this.notificationRepo.findOne({
-            where: { patientId: prescription.patientId, statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE },
+            where: {
+                patientId: prescription.patientId,
+                statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+            },
         });
         if (dejaEnAttente)
             return;
         const urgence = (prescription.urgence || '').toUpperCase();
         const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
-        const prescripteurNom = [prescription.prescripteurPrenomManuel, prescription.prescripteurNomManuel]
+        const prescripteurNom = [
+            prescription.prescripteurPrenomManuel,
+            prescription.prescripteurNomManuel,
+        ]
             .filter(Boolean)
             .join(' ')
             .trim();

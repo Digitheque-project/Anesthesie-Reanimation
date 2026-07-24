@@ -34,7 +34,9 @@ let MomentsCatalogueController = class MomentsCatalogueController {
 exports.MomentsCatalogueController = MomentsCatalogueController;
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Lister le catalogue des boutons de la chronologie opératoire' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Lister le catalogue des boutons de la chronologie opératoire',
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -42,7 +44,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.IBODE),
-    (0, swagger_1.ApiOperation)({ summary: "Ajouter un bouton réutilisable au catalogue (à sa propre catégorie)" }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Ajouter un bouton réutilisable au catalogue (à sa propre catégorie)',
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),

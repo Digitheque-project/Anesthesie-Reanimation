@@ -25,17 +25,29 @@ let ScoreSCCREController = class ScoreSCCREController {
     constructor(service) {
         this.service = service;
     }
-    create(dto, req) { return this.service.create(dto, req.centralUser); }
-    findAll(p, l) { return this.service.findAll(p, l); }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, dto) { return this.service.update(id, dto); }
-    remove(id) { return this.service.remove(id); }
+    create(dto, req) {
+        return this.service.create(dto, req.centralUser);
+    }
+    findAll(p, l) {
+        return this.service.findAll(p, l);
+    }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, dto) {
+        return this.service.update(id, dto);
+    }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.ScoreSCCREController = ScoreSCCREController;
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un score SCCRE (Anesthésiste — auto-attribué depuis la session)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Créer un score SCCRE (Anesthésiste — auto-attribué depuis la session)',
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),

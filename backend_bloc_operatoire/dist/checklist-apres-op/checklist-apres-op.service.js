@@ -45,7 +45,9 @@ let ChecklistApresOpService = class ChecklistApresOpService {
         return saved;
     }
     async findAll(patientId) {
-        const data = await this.repo.find({ where: patientId ? { patientId } : {} });
+        const data = await this.repo.find({
+            where: patientId ? { patientId } : {},
+        });
         return this.accueilClient.enrichWithIdentity(data);
     }
     async findOne(id) {
@@ -64,7 +66,10 @@ let ChecklistApresOpService = class ChecklistApresOpService {
         if (transfertVientDEtreConfirme) {
             await this.patientBlocStatutService.changerStatut(updated.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL);
         }
-        this.gateway.emitToOperation(updated.patientId, 'checklist-apres-op:maj', { patientId: updated.patientId, checklist: updated });
+        this.gateway.emitToOperation(updated.patientId, 'checklist-apres-op:maj', {
+            patientId: updated.patientId,
+            checklist: updated,
+        });
         return updated;
     }
 };

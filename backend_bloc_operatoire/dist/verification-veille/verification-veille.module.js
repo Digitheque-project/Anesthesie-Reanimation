@@ -22,7 +22,12 @@ let VerificationVeilleModule = class VerificationVeilleModule {
 exports.VerificationVeilleModule = VerificationVeilleModule;
 exports.VerificationVeilleModule = VerificationVeilleModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([verification_veille_entity_1.VerificationVeille, cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc]), demande_cpa_externe_module_1.DemandeCpaExterneModule, patient_bloc_module_1.PatientBlocModule, medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([verification_veille_entity_1.VerificationVeille, cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc]),
+            demande_cpa_externe_module_1.DemandeCpaExterneModule,
+            patient_bloc_module_1.PatientBlocModule,
+            medecin_module_1.MedecinModule,
+        ],
         controllers: [verification_veille_controller_1.VerificationVeilleController],
         providers: [verification_veille_service_1.VerificationVeilleService],
         exports: [verification_veille_service_1.VerificationVeilleService],

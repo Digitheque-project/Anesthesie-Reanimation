@@ -42,7 +42,9 @@ let ChecklistPendantOpService = class ChecklistPendantOpService {
         return saved;
     }
     async findAll(patientId) {
-        const data = await this.repo.find({ where: patientId ? { patientId } : {} });
+        const data = await this.repo.find({
+            where: patientId ? { patientId } : {},
+        });
         return this.accueilClient.enrichWithIdentity(data);
     }
     async findOne(id) {

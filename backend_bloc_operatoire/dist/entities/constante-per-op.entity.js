@@ -62,7 +62,9 @@ __decorate([
     __metadata("design:type", Number)
 ], ConstantePerOp.prototype, "score", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => activite_per_op_entity_1.ActivitePerOp, (activite) => activite.constantes, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToOne)(() => activite_per_op_entity_1.ActivitePerOp, (activite) => activite.constantes, {
+        onDelete: 'CASCADE',
+    }),
     __metadata("design:type", activite_per_op_entity_1.ActivitePerOp)
 ], ConstantePerOp.prototype, "activitePerOp", void 0);
 exports.ConstantePerOp = ConstantePerOp = __decorate([

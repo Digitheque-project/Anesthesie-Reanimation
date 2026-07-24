@@ -55,14 +55,19 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         const [data, total] = await this.repo.findAndCount({
             where: patientId ? { patientId } : {},
             relations: ['drainages'],
-            skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' },
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
         });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         const enriched = await this.medecinIdentiteService.enrichirPlusieurs(enrichedPatient, INTERVENANTS);
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const p = await this.repo.findOne({ where: { id }, relations: ['drainages'] });
+        const p = await this.repo.findOne({
+            where: { id },
+            relations: ['drainages'],
+        });
         if (!p)
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
         const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([p]);

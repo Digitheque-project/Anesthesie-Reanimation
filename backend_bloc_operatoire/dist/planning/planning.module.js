@@ -19,7 +19,10 @@ let PlanningModule = class PlanningModule {
 exports.PlanningModule = PlanningModule;
 exports.PlanningModule = PlanningModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([creneau_bloc_entity_1.CreneauBloc, patient_bloc_entity_1.PatientBloc]), medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([creneau_bloc_entity_1.CreneauBloc, patient_bloc_entity_1.PatientBloc]),
+            medecin_module_1.MedecinModule,
+        ],
         controllers: [planning_controller_1.PlanningController],
         providers: [planning_service_1.PlanningService],
         exports: [planning_service_1.PlanningService],

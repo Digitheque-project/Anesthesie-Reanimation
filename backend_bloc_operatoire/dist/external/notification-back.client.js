@@ -23,7 +23,8 @@ let NotificationBackClient = NotificationBackClient_1 = class NotificationBackCl
     constructor(http, config) {
         this.http = http;
         this.config = config;
-        this.baseUrl = this.config.get('externalServices.notificationApiUrl') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.notificationApiUrl') ?? '';
     }
     async notifyService(params) {
         if (!this.baseUrl) {

@@ -24,7 +24,11 @@ class PlanifierDemandeCpaDto {
 }
 exports.PlanifierDemandeCpaDto = PlanifierDemandeCpaDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ enum: creneau_bloc_entity_1.TypeRDV, description: "CPA (défaut) pour la consultation initiale, VERIFICATION_VEILLE pour le contrôle la veille de l'intervention.", default: creneau_bloc_entity_1.TypeRDV.CPA }),
+    (0, swagger_1.ApiPropertyOptional)({
+        enum: creneau_bloc_entity_1.TypeRDV,
+        description: "CPA (défaut) pour la consultation initiale, VERIFICATION_VEILLE pour le contrôle la veille de l'intervention.",
+        default: creneau_bloc_entity_1.TypeRDV.CPA,
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(creneau_bloc_entity_1.TypeRDV),
     __metadata("design:type", String)
@@ -56,7 +60,9 @@ __decorate([
     __metadata("design:type", String)
 ], PlanifierDemandeCpaDto.prototype, "chirurgienId", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: 'Nom libre du responsable si aucun médecin n\'est sélectionné.' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        description: "Nom libre du responsable si aucun médecin n'est sélectionné.",
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

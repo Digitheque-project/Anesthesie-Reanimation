@@ -38,7 +38,9 @@ let PlanningService = class PlanningService {
         const avecChirurgien = await this.medecinIdentiteService.enrichir(data, 'chirurgienId', 'chirurgien');
         const patientIds = Array.from(new Set(data.map((c) => c.patientId).filter(Boolean)));
         const patients = patientIds.length
-            ? await this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(patientIds) } })
+            ? await this.patientBlocRepo.find({
+                where: { patientId: (0, typeorm_2.In)(patientIds) },
+            })
             : [];
         const patientMap = new Map(patients.map((p) => [p.patientId, p]));
         return data.map((c, idx) => {
@@ -59,7 +61,8 @@ let PlanningService = class PlanningService {
         });
     }
     async getPlanningJour(jour, type) {
-        const qb = this.creneauRepo.createQueryBuilder('c')
+        const qb = this.creneauRepo
+            .createQueryBuilder('c')
             .where('c.date = :date', { date: jour })
             .orderBy('c.heureDebut', 'ASC');
         if (type)
@@ -68,17 +71,22 @@ let PlanningService = class PlanningService {
         return this.enrichCreneaux(data);
     }
     async getPlanningSemaine(debut, fin, type) {
-        const qb = this.creneauRepo.createQueryBuilder('c')
+        const qb = this.creneauRepo
+            .createQueryBuilder('c')
             .where('c.date >= :debut', { debut })
             .andWhere('c.date <= :fin', { fin })
-            .orderBy('c.date', 'ASC').addOrderBy('c.heureDebut', 'ASC');
+            .orderBy('c.date', 'ASC')
+            .addOrderBy('c.heureDebut', 'ASC');
         if (type)
             qb.andWhere('c.type = :type', { type });
         const data = await qb.getMany();
         return this.enrichCreneaux(data);
     }
     async reserverCreneau(dto) {
-        const creneau = this.creneauRepo.create({ ...dto, type: dto.type || creneau_bloc_entity_1.TypeRDV.CPA });
+        const creneau = this.creneauRepo.create({
+            ...dto,
+            type: dto.type || creneau_bloc_entity_1.TypeRDV.CPA,
+        });
         return this.creneauRepo.save(creneau);
     }
     async annulerCreneau(id) {
@@ -93,7 +101,9 @@ let PlanningService = class PlanningService {
         return this.enrichCreneaux(data);
     }
     async transfererCpaVersVerificationVeille(dto) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId: dto.patientId },
+        });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
         patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE;
@@ -110,7 +120,9 @@ let PlanningService = class PlanningService {
         return this.creneauRepo.save(creneau);
     }
     async transfererVerificationVeilleVersPatientJour(dto) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId: dto.patientId },
+        });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
         patient.statut = patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC;

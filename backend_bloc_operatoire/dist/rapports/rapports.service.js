@@ -62,16 +62,29 @@ let RapportsService = class RapportsService {
         this.medecinIdentiteService = medecinIdentiteService;
     }
     async statistiquesGenerales(dateDebut, dateFin) {
-        const whereAct = dateDebut && dateFin ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
+        const whereAct = dateDebut && dateFin
+            ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
         const actifs = { statut: (0, typeorm_2.Not)('SORTI') };
         const [totalPatients, totalPatientsActifs, totalOperations, totalUrgences, totalScores, patientsParStatut, urgencesParNiveau, totalMedecins,] = await Promise.all([
             this.patientBlocRepo.count(),
             this.patientBlocRepo.count({ where: actifs }),
             this.activiteRepo.count({ where: whereAct }),
-            this.patientBlocRepo.count({ where: { ...actifs, niveauUrgence: 'URGENT' } }),
+            this.patientBlocRepo.count({
+                where: { ...actifs, niveauUrgence: 'URGENT' },
+            }),
             this.scoreRepo.count(),
-            this.patientBlocRepo.createQueryBuilder('p').select('p.statut, COUNT(*) as count').groupBy('p.statut').getRawMany(),
-            this.patientBlocRepo.createQueryBuilder('p').select('p.niveauUrgence, COUNT(*) as count').where('p.statut != :sorti', { sorti: 'SORTI' }).groupBy('p.niveauUrgence').getRawMany(),
+            this.patientBlocRepo
+                .createQueryBuilder('p')
+                .select('p.statut, COUNT(*) as count')
+                .groupBy('p.statut')
+                .getRawMany(),
+            this.patientBlocRepo
+                .createQueryBuilder('p')
+                .select('p.niveauUrgence, COUNT(*) as count')
+                .where('p.statut != :sorti', { sorti: 'SORTI' })
+                .groupBy('p.niveauUrgence')
+                .getRawMany(),
             this.medecinRepo.count(),
         ]);
         return {
@@ -86,7 +99,9 @@ let RapportsService = class RapportsService {
         };
     }
     async activiteParChirurgien(dateDebut, dateFin) {
-        const whereAct = dateDebut && dateFin ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
+        const whereAct = dateDebut && dateFin
+            ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
         const rows = await this.activiteRepo
             .createQueryBuilder('a')
             .select('a.chirurgienId', 'medecinId')
@@ -99,24 +114,47 @@ let RapportsService = class RapportsService {
         const identites = await this.medecinIdentiteService.resoudreLot(rows.map((r) => r.medecinId));
         return rows.map((r) => {
             const identite = identites[r.medecinId];
-            return { ...r, nomComplet: identite ? `${identite.prenom} ${identite.nom}` : '—' };
+            return {
+                ...r,
+                nomComplet: identite ? `${identite.prenom} ${identite.nom}` : '—',
+            };
         });
     }
     async activiteParAnesthesiste(dateDebut, dateFin) {
-        const periodeCPA = dateDebut && dateFin ? { dateConsultation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
-        const periodeAct = dateDebut && dateFin ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
-        const [cpaParAnesthesiste, operationsParAnesthesiste, scoresParAnesthesiste] = await Promise.all([
-            this.cpaRepository.createQueryBuilder('c')
-                .select('c.anesthesisteId', 'medecinId').addSelect('COUNT(*)', 'nb')
-                .where(periodeCPA).groupBy('c.anesthesisteId').getRawMany(),
-            this.activiteRepo.createQueryBuilder('a')
-                .select('a.anesthesisteId', 'medecinId').addSelect('COUNT(*)', 'nb')
-                .where(periodeAct).andWhere('a.anesthesisteId IS NOT NULL').groupBy('a.anesthesisteId').getRawMany(),
-            this.scoreRepo.createQueryBuilder('s')
-                .select('s.anesthesisteId', 'medecinId').addSelect('COUNT(*)', 'nb')
-                .groupBy('s.anesthesisteId').getRawMany(),
+        const periodeCPA = dateDebut && dateFin
+            ? { dateConsultation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        const periodeAct = dateDebut && dateFin
+            ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        const [cpaParAnesthesiste, operationsParAnesthesiste, scoresParAnesthesiste,] = await Promise.all([
+            this.cpaRepository
+                .createQueryBuilder('c')
+                .select('c.anesthesisteId', 'medecinId')
+                .addSelect('COUNT(*)', 'nb')
+                .where(periodeCPA)
+                .groupBy('c.anesthesisteId')
+                .getRawMany(),
+            this.activiteRepo
+                .createQueryBuilder('a')
+                .select('a.anesthesisteId', 'medecinId')
+                .addSelect('COUNT(*)', 'nb')
+                .where(periodeAct)
+                .andWhere('a.anesthesisteId IS NOT NULL')
+                .groupBy('a.anesthesisteId')
+                .getRawMany(),
+            this.scoreRepo
+                .createQueryBuilder('s')
+                .select('s.anesthesisteId', 'medecinId')
+                .addSelect('COUNT(*)', 'nb')
+                .groupBy('s.anesthesisteId')
+                .getRawMany(),
         ]);
-        const tousLesIds = [...cpaParAnesthesiste, ...operationsParAnesthesiste, ...scoresParAnesthesiste].map((r) => r.medecinId);
+        const tousLesIds = [
+            ...cpaParAnesthesiste,
+            ...operationsParAnesthesiste,
+            ...scoresParAnesthesiste,
+        ].map((r) => r.medecinId);
         const identites = await this.medecinIdentiteService.resoudreLot(tousLesIds);
         const nomComplet = (id) => {
             const identite = identites[id];
@@ -125,32 +163,60 @@ let RapportsService = class RapportsService {
         const parId = new Map();
         const assurer = (id) => {
             if (!parId.has(id))
-                parId.set(id, { medecinId: id, nomComplet: nomComplet(id), nbCPA: 0, nbOperations: 0, nbScoresSCCRE: 0 });
+                parId.set(id, {
+                    medecinId: id,
+                    nomComplet: nomComplet(id),
+                    nbCPA: 0,
+                    nbOperations: 0,
+                    nbScoresSCCRE: 0,
+                });
             return parId.get(id);
         };
-        cpaParAnesthesiste.forEach((r) => { if (r.medecinId)
-            assurer(r.medecinId).nbCPA = Number(r.nb); });
-        operationsParAnesthesiste.forEach((r) => { if (r.medecinId)
-            assurer(r.medecinId).nbOperations = Number(r.nb); });
-        scoresParAnesthesiste.forEach((r) => { if (r.medecinId)
-            assurer(r.medecinId).nbScoresSCCRE = Number(r.nb); });
-        return Array.from(parId.values()).sort((a, b) => (b.nbCPA + b.nbOperations + b.nbScoresSCCRE) - (a.nbCPA + a.nbOperations + a.nbScoresSCCRE));
+        cpaParAnesthesiste.forEach((r) => {
+            if (r.medecinId)
+                assurer(r.medecinId).nbCPA = Number(r.nb);
+        });
+        operationsParAnesthesiste.forEach((r) => {
+            if (r.medecinId)
+                assurer(r.medecinId).nbOperations = Number(r.nb);
+        });
+        scoresParAnesthesiste.forEach((r) => {
+            if (r.medecinId)
+                assurer(r.medecinId).nbScoresSCCRE = Number(r.nb);
+        });
+        return Array.from(parId.values()).sort((a, b) => b.nbCPA +
+            b.nbOperations +
+            b.nbScoresSCCRE -
+            (a.nbCPA + a.nbOperations + a.nbScoresSCCRE));
     }
     async decisionsCPA(dateDebut, dateFin) {
-        const periode = dateDebut && dateFin ? { dateConsultation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
-        return this.cpaRepository.createQueryBuilder('c').select('c.decision', 'decision').addSelect('COUNT(*)', 'count').where(periode).groupBy('c.decision').getRawMany();
+        const periode = dateDebut && dateFin
+            ? { dateConsultation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        return this.cpaRepository
+            .createQueryBuilder('c')
+            .select('c.decision', 'decision')
+            .addSelect('COUNT(*)', 'count')
+            .where(periode)
+            .groupBy('c.decision')
+            .getRawMany();
     }
     async typesChirurgie() {
-        return this.patientBlocRepo.createQueryBuilder('p')
-            .select('COALESCE(p.typeChirurgie, \'Non spécifié\')', 'type')
+        return this.patientBlocRepo
+            .createQueryBuilder('p')
+            .select("COALESCE(p.typeChirurgie, 'Non spécifié')", 'type')
             .addSelect('COUNT(*)', 'count')
             .groupBy('p.typeChirurgie')
             .orderBy('count', 'DESC')
             .getRawMany();
     }
     async tachesAccomplies(dateDebut, dateFin) {
-        const periode = dateDebut && dateFin ? { dateCreation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
-        const periodeProtocole = dateDebut && dateFin ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
+        const periode = dateDebut && dateFin
+            ? { dateCreation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        const periodeProtocole = dateDebut && dateFin
+            ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
         const [signIn, timeOut, signOut, moments, comptesRendus] = await Promise.all([
             this.checklistAvantRepo.count({ where: periode }),
             this.checklistPendantRepo.count({ where: periode }),
@@ -167,31 +233,44 @@ let RapportsService = class RapportsService {
         };
     }
     async cpaEnAttente() {
-        const data = await this.notifRepo.find({ where: { statut: 'EN_ATTENTE' }, order: { createdAt: 'ASC' } });
+        const data = await this.notifRepo.find({
+            where: { statut: 'EN_ATTENTE' },
+            order: { createdAt: 'ASC' },
+        });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         return this.medecinIdentiteService.enrichir(enrichedPatient, 'chirurgienId', 'chirurgien');
     }
     async tauxOccupation(dateDebut, dateFin) {
-        const qb = this.activiteRepo.createQueryBuilder('a')
+        const qb = this.activiteRepo
+            .createQueryBuilder('a')
             .select('DATE(a.dateOperation)', 'date')
             .addSelect('COUNT(*)', 'nbOperations')
             .groupBy('DATE(a.dateOperation)')
             .orderBy('date', 'ASC');
         if (dateDebut && dateFin)
-            qb.where('a.dateOperation BETWEEN :debut AND :fin', { debut: dateDebut, fin: dateFin });
+            qb.where('a.dateOperation BETWEEN :debut AND :fin', {
+                debut: dateDebut,
+                fin: dateFin,
+            });
         return qb.getRawMany();
     }
     async operationsDetail(dateDebut, dateFin, limite = 300) {
-        const whereAct = dateDebut && dateFin ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) } : {};
+        const whereAct = dateDebut && dateFin
+            ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
         const activites = await this.activiteRepo.find({
             where: whereAct,
             order: { dateOperation: 'DESC' },
             take: limite,
         });
-        const patientIds = Array.from(new Set(activites.map(a => a.patientId)));
+        const patientIds = Array.from(new Set(activites.map((a) => a.patientId)));
         const [patients, protocoles, identitesChirurgien, identitesAnesthesiste] = await Promise.all([
-            patientIds.length ? this.patientBlocRepo.findBy({ patientId: (0, typeorm_2.In)(patientIds) }) : Promise.resolve([]),
-            patientIds.length ? this.protocoleRepo.findBy({ patientId: (0, typeorm_2.In)(patientIds) }) : Promise.resolve([]),
+            patientIds.length
+                ? this.patientBlocRepo.findBy({ patientId: (0, typeorm_2.In)(patientIds) })
+                : Promise.resolve([]),
+            patientIds.length
+                ? this.protocoleRepo.findBy({ patientId: (0, typeorm_2.In)(patientIds) })
+                : Promise.resolve([]),
             this.medecinIdentiteService.resoudreLot(activites.map((a) => a.chirurgienId)),
             this.medecinIdentiteService.resoudreLot(activites.map((a) => a.anesthesisteId)),
         ]);
@@ -203,19 +282,27 @@ let RapportsService = class RapportsService {
         }
         const patientMap = new Map(patientsEnrichis.map((p) => [p.patientId, p]));
         const patientsAvecCompteRendu = new Set(protocoles.map((p) => p.patientId));
-        return activites.map(a => {
+        return activites.map((a) => {
             const patient = patientMap.get(a.patientId);
-            const chirurgien = a.chirurgienId ? identitesChirurgien[a.chirurgienId] : null;
-            const anesthesiste = a.anesthesisteId ? identitesAnesthesiste[a.anesthesisteId] : null;
+            const chirurgien = a.chirurgienId
+                ? identitesChirurgien[a.chirurgienId]
+                : null;
+            const anesthesiste = a.anesthesisteId
+                ? identitesAnesthesiste[a.anesthesisteId]
+                : null;
             return {
-                patientNom: patient?.nom ? `${patient.nom}${patient.prenom ? ' ' + patient.prenom : ''}` : 'Patient inconnu',
+                patientNom: patient?.nom
+                    ? `${patient.nom}${patient.prenom ? ' ' + patient.prenom : ''}`
+                    : 'Patient inconnu',
                 libelle: patient?.libelle || '—',
                 typeChirurgie: patient?.typeChirurgie || '—',
                 niveauUrgence: patient?.niveauUrgence || '—',
                 statut: patient?.statut || '—',
                 dateOperation: a.dateOperation,
                 chirurgien: chirurgien ? `${chirurgien.prenom} ${chirurgien.nom}` : '—',
-                anesthesiste: anesthesiste ? `${anesthesiste.prenom} ${anesthesiste.nom}` : '—',
+                anesthesiste: anesthesiste
+                    ? `${anesthesiste.prenom} ${anesthesiste.nom}`
+                    : '—',
                 compteRenduDisponible: patientsAvecCompteRendu.has(a.patientId),
             };
         });

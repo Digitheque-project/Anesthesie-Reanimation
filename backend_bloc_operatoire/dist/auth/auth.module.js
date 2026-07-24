@@ -28,18 +28,17 @@ exports.AuthModule = AuthModule = __decorate([
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
                 useFactory: (configService) => ({
-                    secret: configService.get('JWT_SECRET') || 'chuchu_secret_key_change_me_in_production_2025',
-                    signOptions: { expiresIn: Number(configService.get('JWT_EXPIRATION')) || 86400 },
+                    secret: configService.get('JWT_SECRET') ||
+                        'chuchu_secret_key_change_me_in_production_2025',
+                    signOptions: {
+                        expiresIn: Number(configService.get('JWT_EXPIRATION')) || 86400,
+                    },
                 }),
             }),
             typeorm_1.TypeOrmModule.forFeature([user_entity_1.User]),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [
-            auth_service_1.AuthService,
-            jwt_strategy_1.JwtStrategy,
-            roles_guard_1.RolesGuard,
-        ],
+        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, roles_guard_1.RolesGuard],
         exports: [auth_service_1.AuthService, roles_guard_1.RolesGuard, jwt_1.JwtModule],
     })
 ], AuthModule);

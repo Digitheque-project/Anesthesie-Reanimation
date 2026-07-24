@@ -100,7 +100,11 @@ __decorate([
     __metadata("design:type", String)
 ], VerificationVeille.prototype, "heureDepart", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutVerificationVeille, default: StatutVerificationVeille.EN_ATTENTE }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutVerificationVeille,
+        default: StatutVerificationVeille.EN_ATTENTE,
+    }),
     __metadata("design:type", String)
 ], VerificationVeille.prototype, "statut", void 0);
 __decorate([

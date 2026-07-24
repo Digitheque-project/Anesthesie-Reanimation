@@ -28,7 +28,11 @@ let PrescriptionController = PrescriptionController_1 = class PrescriptionContro
     async receivePrescription(dto) {
         this.logger.log(`📋 Prescription reçue du service Prescription pour patient ${dto.patientId}`);
         const result = await this.service.processPrescription(dto);
-        return { received: true, processed: result, timestamp: new Date().toISOString() };
+        return {
+            received: true,
+            processed: result,
+            timestamp: new Date().toISOString(),
+        };
     }
 };
 exports.PrescriptionController = PrescriptionController;
@@ -36,7 +40,9 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('receive'),
     (0, common_1.HttpCode)(200),
-    (0, swagger_1.ApiOperation)({ summary: '📋 Recevoir une prescription du service Prescription' }),
+    (0, swagger_1.ApiOperation)({
+        summary: '📋 Recevoir une prescription du service Prescription',
+    }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Prescription reçue avec succès' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),

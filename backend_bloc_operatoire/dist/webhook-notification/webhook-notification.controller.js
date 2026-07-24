@@ -28,7 +28,12 @@ let WebhookNotificationController = WebhookNotificationController_1 = class Webh
         const sourceName = source || payload.sourceServiceName || 'service externe';
         this.logger.log(`📨 POST notification reçue de ${sourceName}`);
         const result = await this.service.processIncomingNotification(payload, sourceName);
-        return { received: true, processed: result, method: 'POST', timestamp: new Date().toISOString() };
+        return {
+            received: true,
+            processed: result,
+            method: 'POST',
+            timestamp: new Date().toISOString(),
+        };
     }
     async getUnreadCount() {
         const count = await this.service.getUnreadCount();

@@ -44,7 +44,10 @@ let MomentsOperatoireService = class MomentsOperatoireService {
             auteurRole: centralUser.role,
         });
         const saved = await this.repo.save(moment);
-        this.gateway.emitToOperation(saved.patientId, 'moment:cree', { patientId: saved.patientId, moment: saved });
+        this.gateway.emitToOperation(saved.patientId, 'moment:cree', {
+            patientId: saved.patientId,
+            moment: saved,
+        });
         return saved;
     }
     async findAll(patientId, inclureAnnules = false) {

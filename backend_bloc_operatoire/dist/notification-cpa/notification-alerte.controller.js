@@ -17,8 +17,12 @@ let NotificationAlerteController = class NotificationAlerteController {
     constructor(service) {
         this.service = service;
     }
-    getAlertes() { return this.service.getAlertesUrgentes(); }
-    getResumeJour() { return this.service.getResumeJour(); }
+    getAlertes() {
+        return this.service.getAlertesUrgentes();
+    }
+    getResumeJour() {
+        return this.service.getResumeJour();
+    }
 };
 exports.NotificationAlerteController = NotificationAlerteController;
 __decorate([

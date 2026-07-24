@@ -23,16 +23,28 @@ let NotificationCPAController = class NotificationCPAController {
     constructor(service) {
         this.service = service;
     }
-    create(d) { return this.service.create(d); }
-    findAll(p, l) { return this.service.findAll(p, l); }
+    create(d) {
+        return this.service.create(d);
+    }
+    findAll(p, l) {
+        return this.service.findAll(p, l);
+    }
     async getUnreadCount() {
         const count = await this.service.getUnreadCount();
         return { unread: count };
     }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, d) { return this.service.update(id, d); }
-    planifier(id, dto) { return this.service.planifierRDV(id, dto); }
-    remove(id) { return this.service.remove(id); }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, d) {
+        return this.service.update(id, d);
+    }
+    planifier(id, dto) {
+        return this.service.planifierRDV(id, dto);
+    }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.NotificationCPAController = NotificationCPAController;
 __decorate([
@@ -54,7 +66,9 @@ __decorate([
 ], NotificationCPAController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('unread/count'),
-    (0, swagger_1.ApiOperation)({ summary: 'Nombre de notifications non lues (pour la cloche)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Nombre de notifications non lues (pour la cloche)',
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

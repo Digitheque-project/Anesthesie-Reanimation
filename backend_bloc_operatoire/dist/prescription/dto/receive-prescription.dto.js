@@ -20,7 +20,10 @@ class ItemPrescriptionDto {
     duree;
 }
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Doliprane', description: 'Nom du médicament/produit' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'Doliprane',
+        description: 'Nom du médicament/produit',
+    }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ItemPrescriptionDto.prototype, "nom", void 0);
@@ -51,23 +54,45 @@ class ReceivePrescriptionDto {
 }
 exports.ReceivePrescriptionDto = ReceivePrescriptionDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'P-2026-001', description: 'ID de la prescription source' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'P-2026-001',
+        description: 'ID de la prescription source',
+    }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ReceivePrescriptionDto.prototype, "idPrescriptionSource", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'PATIENT-001', description: 'ID patient dans le service Prescription' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'PATIENT-001',
+        description: 'ID patient dans le service Prescription',
+    }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ReceivePrescriptionDto.prototype, "patientIdSource", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'patient-uuid-block', description: 'ID patient dans le Bloc Opératoire' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'patient-uuid-block',
+        description: 'ID patient dans le Bloc Opératoire',
+    }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ReceivePrescriptionDto.prototype, "patientId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        enum: ['MEDICALE', 'BLOC', 'LABO', 'IMAGERIE', 'ANAPATH', 'EEG', 'KINE', 'DIALYSE', 'ENDOSCOPIE', 'NON_MEDICALE', 'SURVEILLANCE', 'TRANSFUSION'],
+        enum: [
+            'MEDICALE',
+            'BLOC',
+            'LABO',
+            'IMAGERIE',
+            'ANAPATH',
+            'EEG',
+            'KINE',
+            'DIALYSE',
+            'ENDOSCOPIE',
+            'NON_MEDICALE',
+            'SURVEILLANCE',
+            'TRANSFUSION',
+        ],
         example: 'BLOC',
         description: 'Type de prescription',
     }),

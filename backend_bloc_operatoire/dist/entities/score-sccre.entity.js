@@ -29,7 +29,12 @@ let ScoreSCCRE = class ScoreSCCRE {
     coloration;
     scoreTotal;
     calculerScoreTotal() {
-        this.scoreTotal = +this.motricite + +this.respiration + +this.pressionArterielle + +this.etatConscience + +this.coloration;
+        this.scoreTotal =
+            +this.motricite +
+                +this.respiration +
+                +this.pressionArterielle +
+                +this.etatConscience +
+                +this.coloration;
     }
     evs;
     eqa;
@@ -119,7 +124,11 @@ __decorate([
     __metadata("design:type", Boolean)
 ], ScoreSCCRE.prototype, "sortieAutorisee", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutScoreSCCRE, default: StatutScoreSCCRE.EN_COURS }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutScoreSCCRE,
+        default: StatutScoreSCCRE.EN_COURS,
+    }),
     __metadata("design:type", String)
 ], ScoreSCCRE.prototype, "statut", void 0);
 __decorate([

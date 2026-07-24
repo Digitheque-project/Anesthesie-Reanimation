@@ -25,16 +25,26 @@ let ChecklistPendantOpController = class ChecklistPendantOpController {
     constructor(service) {
         this.service = service;
     }
-    create(dto, req) { return this.service.create(dto, req.centralUser); }
-    findAll(patientId) { return this.service.findAll(patientId); }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, dto) { return this.service.update(id, dto); }
+    create(dto, req) {
+        return this.service.create(dto, req.centralUser);
+    }
+    findAll(patientId) {
+        return this.service.findAll(patientId);
+    }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, dto) {
+        return this.service.update(id, dto);
+    }
 };
 exports.ChecklistPendantOpController = ChecklistPendantOpController;
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste)',
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -60,7 +70,9 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une checklist pendant opération (Anesthésiste)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Modifier une checklist pendant opération (Anesthésiste)',
+    }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

@@ -117,7 +117,11 @@ __decorate([
     __metadata("design:type", String)
 ], ChecklistAvantOp.prototype, "notesIdeIbode", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutChecklist,
+        default: StatutChecklist.EN_COURS,
+    }),
     __metadata("design:type", String)
 ], ChecklistAvantOp.prototype, "statut", void 0);
 __decorate([

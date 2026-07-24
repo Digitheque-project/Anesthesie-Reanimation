@@ -23,11 +23,13 @@ let NotificationOutgoingService = NotificationOutgoingService_1 = class Notifica
     constructor(http, config) {
         this.http = http;
         this.config = config;
-        this.blocServiceId = this.config.get('externalServices.serviceId') ?? '';
+        this.blocServiceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     async notifyOriginService(params) {
-        const { patientId, type, serviceOrigineId, serviceOrigineName, payload, notificationUrl } = params;
-        const url = notificationUrl || this.config.get('externalServices.notificationOrigineUrl');
+        const { patientId, type, serviceOrigineId, serviceOrigineName, payload, notificationUrl, } = params;
+        const url = notificationUrl ||
+            this.config.get('externalServices.notificationOrigineUrl');
         if (!url) {
             this.logger.warn(`URL de notification origine non configurée, notification "${type}" pour patient ${patientId} ignorée`);
             return;

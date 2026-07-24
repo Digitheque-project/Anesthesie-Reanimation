@@ -41,11 +41,11 @@ __decorate([
     __metadata("design:type", String)
 ], ActivitePerOp.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "chirurgienId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "anesthesisteId", void 0);
 __decorate([

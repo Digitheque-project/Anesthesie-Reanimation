@@ -44,7 +44,13 @@ let PatientBlocController = class PatientBlocController {
         return this.patientBlocService.registerAndAdmit(dto, createdBy);
     }
     findAll(statut, niveauUrgence, recherche, page, limite) {
-        return this.patientBlocService.findAll({ statut, niveauUrgence, recherche, page, limite });
+        return this.patientBlocService.findAll({
+            statut,
+            niveauUrgence,
+            recherche,
+            page,
+            limite,
+        });
     }
     findOne(patientId) {
         return this.patientBlocService.findOne(patientId);
@@ -85,7 +91,9 @@ __decorate([
 ], PatientBlocController.prototype, "search", null);
 __decorate([
     (0, common_1.Get)('external/:externalId'),
-    (0, swagger_1.ApiOperation)({ summary: 'Obtenir un patient depuis le service Accueil (avant admission)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Obtenir un patient depuis le service Accueil (avant admission)',
+    }),
     __param(0, (0, common_1.Param)('externalId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -93,7 +101,9 @@ __decorate([
 ], PatientBlocController.prototype, "getExternal", null);
 __decorate([
     (0, common_1.Post)('admit'),
-    (0, swagger_1.ApiOperation)({ summary: 'Admettre au bloc un patient déjà enregistré dans Accueil' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Admettre au bloc un patient déjà enregistré dans Accueil',
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [admit_existing_patient_dto_1.AdmitExistingPatientDto]),
@@ -101,7 +111,9 @@ __decorate([
 ], PatientBlocController.prototype, "admitExisting", null);
 __decorate([
     (0, common_1.Post)('register-and-admit'),
-    (0, swagger_1.ApiOperation)({ summary: "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc" }),
+    (0, swagger_1.ApiOperation)({
+        summary: "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc",
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -110,10 +122,16 @@ __decorate([
 ], PatientBlocController.prototype, "registerAndAdmit", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Lister les fiches de suivi bloc (enrichies avec l\'identité Accueil)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: "Lister les fiches de suivi bloc (enrichies avec l'identité Accueil)",
+    }),
     (0, swagger_1.ApiQuery)({ name: 'statut', required: false }),
     (0, swagger_1.ApiQuery)({ name: 'niveauUrgence', required: false }),
-    (0, swagger_1.ApiQuery)({ name: 'recherche', required: false, description: 'Recherche locale par idDossier uniquement — utiliser /patients/search pour rechercher par nom' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'recherche',
+        required: false,
+        description: 'Recherche locale par idDossier uniquement — utiliser /patients/search pour rechercher par nom',
+    }),
     (0, swagger_1.ApiQuery)({ name: 'page', required: false }),
     (0, swagger_1.ApiQuery)({ name: 'limite', required: false }),
     __param(0, (0, common_1.Query)('statut')),
@@ -135,7 +153,9 @@ __decorate([
 ], PatientBlocController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Get)(':patientId/dossier-medical'),
-    (0, swagger_1.ApiOperation)({ summary: "Dossier médical partagé complet (antécédents, diagnostics, histoire de la maladie, alertes urgentes, dernier examen physique, examens complémentaires urgents, suivis)" }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Dossier médical partagé complet (antécédents, diagnostics, histoire de la maladie, alertes urgentes, dernier examen physique, examens complémentaires urgents, suivis)',
+    }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -144,7 +164,9 @@ __decorate([
 ], PatientBlocController.prototype, "getDossierMedical", null);
 __decorate([
     (0, common_1.Get)(':patientId/dossier-complet'),
-    (0, swagger_1.ApiOperation)({ summary: 'Dossier patient complet en lecture seule, organisé par onglets (observations, diagnostics, antécédents, histoire de la maladie, examens physiques, examens complémentaires, suivis, protocoles opératoires, sortie)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Dossier patient complet en lecture seule, organisé par onglets (observations, diagnostics, antécédents, histoire de la maladie, examens physiques, examens complémentaires, suivis, protocoles opératoires, sortie)',
+    }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -163,7 +185,9 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':patientId/apte-cpa'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: 'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)',
+    }),
     __param(0, (0, common_1.Param)('patientId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -172,7 +196,9 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':patientId/inapte-cpa'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire, Responsable CPA)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire, Responsable CPA)',
+    }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Body)('motifRefus')),
     __metadata("design:type", Function),
@@ -182,7 +208,9 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':patientId/date-intervention'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA)" }),
+    (0, swagger_1.ApiOperation)({
+        summary: "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA)",
+    }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

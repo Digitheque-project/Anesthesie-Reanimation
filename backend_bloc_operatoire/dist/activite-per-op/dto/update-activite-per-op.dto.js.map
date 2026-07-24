@@ -1,1 +1,1 @@
-{"version":3,"file":"update-activite-per-op.dto.js","sourceRoot":"","sources":["../../../src/activite-per-op/dto/update-activite-per-op.dto.ts"],"names":[],"mappings":";;;AAAA,uDAAmD;AACnD,6EAAsE;AACtE,MAAa,sBAAuB,SAAQ,IAAA,0BAAW,EAAC,mDAAsB,CAAC;CAAG;AAAlF,wDAAkF"}
+{"version":3,"file":"update-activite-per-op.dto.js","sourceRoot":"","sources":["../../../src/activite-per-op/dto/update-activite-per-op.dto.ts"],"names":[],"mappings":";;;AAAA,uDAAmD;AACnD,6EAAsE;AACtE,MAAa,sBAAuB,SAAQ,IAAA,0BAAW,EACrD,mDAAsB,CACvB;CAAG;AAFJ,wDAEI"}

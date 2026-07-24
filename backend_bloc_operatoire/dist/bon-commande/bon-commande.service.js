@@ -45,16 +45,26 @@ let BonCommandeService = class BonCommandeService {
         return this.findOne(saved.id);
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.bonRepo.findAndCount({ relations: ['verificationVeille', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const [data, total] = await this.bonRepo.findAndCount({
+            relations: ['verificationVeille', 'items'],
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
+        });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         const enriched = await this.medecinIdentiteService.enrichirPlusieurs(enrichedPatient, INTERVENANTS);
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const bon = await this.bonRepo.findOne({ where: { id }, relations: ['verificationVeille', 'items'] });
+        const bon = await this.bonRepo.findOne({
+            where: { id },
+            relations: ['verificationVeille', 'items'],
+        });
         if (!bon)
             throw new common_1.NotFoundException(`Bon ${id} non trouvé`);
-        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([bon]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([
+            bon,
+        ]);
         const [enriched] = await this.medecinIdentiteService.enrichirPlusieurs([enrichedPatient], INTERVENANTS);
         return enriched;
     }

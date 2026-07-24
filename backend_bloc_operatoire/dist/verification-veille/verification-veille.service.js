@@ -46,13 +46,17 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         this.patientBlocStatutService = patientBlocStatutService;
     }
     async create(dto) {
-        const cpa = await this.cpaRepo.findOne({ where: { id: dto.cpaId, patientId: dto.patientId } });
+        const cpa = await this.cpaRepo.findOne({
+            where: { id: dto.cpaId, patientId: dto.patientId },
+        });
         if (!cpa) {
             throw new common_1.BadRequestException("La CPA indiquée n'existe pas pour ce patient.");
         }
         const savedResult = await this.repo.save(this.repo.create(dto));
         const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
-        await this.patientBlocRepo.update(dto.patientId, { statut: patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE });
+        await this.patientBlocRepo.update(dto.patientId, {
+            statut: patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
+        });
         try {
             await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC);
         }
@@ -64,7 +68,9 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
             await this.demandeCpaExterneService.marquerVpaRealisee(demande, saved.id);
             await this.demandeCpaExterneService.notifierResultat(demande, 'VPA_REALISEE', { dateVpa: saved.dateVisite });
             if (!demande.sourceCallbackUrl) {
-                await this.endoscopieClient.notifyVpaRealisee(demande, { dateVpa: saved.dateVisite });
+                await this.endoscopieClient.notifyVpaRealisee(demande, {
+                    dateVpa: saved.dateVisite,
+                });
             }
         }
         return saved;
@@ -72,17 +78,24 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
     async findAll(page = 1, limite = 10) {
         const [data, total] = await this.repo.findAndCount({
             relations: ['cpa'],
-            skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' }
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
         });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'anesthesisteId', 'anesthesiste');
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const verif = await this.repo.findOne({ where: { id }, relations: ['cpa'] });
+        const verif = await this.repo.findOne({
+            where: { id },
+            relations: ['cpa'],
+        });
         if (!verif)
             throw new common_1.NotFoundException(`Vérification veille ${id} non trouvée`);
-        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([verif]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([
+            verif,
+        ]);
         const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'anesthesisteId', 'anesthesiste');
         return enriched;
     }

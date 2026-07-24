@@ -25,17 +25,29 @@ let CPAController = class CPAController {
     constructor(service) {
         this.service = service;
     }
-    create(d, req) { return this.service.create(d, req.centralUser); }
-    findAll(p, l, patientId) { return this.service.findAll(p, l, patientId); }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, d) { return this.service.update(id, d); }
-    remove(id) { return this.service.remove(id); }
+    create(d, req) {
+        return this.service.create(d, req.centralUser);
+    }
+    findAll(p, l, patientId) {
+        return this.service.findAll(p, l, patientId);
+    }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, d) {
+        return this.service.update(id, d);
+    }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.CPAController = CPAController;
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
-    (0, swagger_1.ApiOperation)({ summary: "Créer une CPA — décision Apte/Inapte/Report (Anesthésiste, Responsable CPA ou Major ; l'anesthésiste ayant réalisé la consultation est auto-attribué depuis la session si elle est ANESTHESISTE, sinon doit être sélectionné explicitement)" }),
+    (0, swagger_1.ApiOperation)({
+        summary: "Créer une CPA — décision Apte/Inapte/Report (Anesthésiste, Responsable CPA ou Major ; l'anesthésiste ayant réalisé la consultation est auto-attribué depuis la session si elle est ANESTHESISTE, sinon doit être sélectionné explicitement)",
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -63,7 +75,9 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une CPA (Anesthésiste, Responsable CPA ou Major)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Modifier une CPA (Anesthésiste, Responsable CPA ou Major)',
+    }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

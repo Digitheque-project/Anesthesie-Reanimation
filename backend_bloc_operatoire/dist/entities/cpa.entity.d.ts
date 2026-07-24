@@ -25,7 +25,7 @@ export declare enum StatutCPA {
 export declare class CPA {
     id: string;
     patientId: string;
-    anesthesisteId: string;
+    anesthesisteId: string | null;
     dateConsultation: Date;
     antecedentsAnesthesie: boolean;
     notesIncidents: string;

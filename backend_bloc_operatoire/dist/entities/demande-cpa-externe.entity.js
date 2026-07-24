@@ -95,7 +95,11 @@ __decorate([
     __metadata("design:type", Date)
 ], DemandeCpaExterne.prototype, "dateExamenSouhaitee", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutDemandeCpaExterne, default: StatutDemandeCpaExterne.EN_ATTENTE }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutDemandeCpaExterne,
+        default: StatutDemandeCpaExterne.EN_ATTENTE,
+    }),
     __metadata("design:type", String)
 ], DemandeCpaExterne.prototype, "statut", void 0);
 __decorate([

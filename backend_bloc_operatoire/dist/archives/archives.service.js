@@ -77,28 +77,55 @@ let ArchivesService = class ArchivesService {
     async getDossierComplet(patientId) {
         const patient = await this.getPatientEnrichi(patientId);
         const [notificationsRaw, demandesExternes, cpaRaw, verificationVeilleRaw, bonsRaw, checklistsAvant, checklistsPendant, checklistsApres, moments, activitesRaw, protocolesRaw, scoresRaw, sortiesRaw,] = await Promise.all([
-            this.notificationRepo.find({ where: { patientId }, order: { createdAt: 'ASC' } }),
-            this.demandeExterneRepo.find({ where: { patientId }, order: { createdAt: 'ASC' } }),
-            this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments'] }),
+            this.notificationRepo.find({
+                where: { patientId },
+                order: { createdAt: 'ASC' },
+            }),
+            this.demandeExterneRepo.find({
+                where: { patientId },
+                order: { createdAt: 'ASC' },
+            }),
+            this.cpaRepository.find({
+                where: { patientId },
+                relations: ['premedicaments'],
+            }),
             this.verificationVeilleRepository.find({ where: { patientId } }),
             this.bonRepo.find({ where: { patientId }, relations: ['items'] }),
             this.checklistAvantRepo.find({ where: { patientId } }),
             this.checklistPendantRepo.find({ where: { patientId } }),
             this.checklistApresRepo.find({ where: { patientId } }),
-            this.momentRepo.find({ where: { patientId }, order: { horodatage: 'ASC' } }),
-            this.activiteRepo.find({ where: { patientId }, relations: ['constantes'] }),
-            this.protocoleRepo.find({ where: { patientId }, relations: ['drainages'] }),
+            this.momentRepo.find({
+                where: { patientId },
+                order: { horodatage: 'ASC' },
+            }),
+            this.activiteRepo.find({
+                where: { patientId },
+                relations: ['constantes'],
+            }),
+            this.protocoleRepo.find({
+                where: { patientId },
+                relations: ['drainages'],
+            }),
             this.scoreRepo.find({ where: { patientId } }),
             this.sortieRepo.find({ where: { patientId }, relations: ['scoreSCCRE'] }),
         ]);
-        const [notifications, cpa, verificationVeille, bons, activites, protocoles, scores, sorties] = await Promise.all([
+        const [notifications, cpa, verificationVeille, bons, activites, protocoles, scores, sorties,] = await Promise.all([
             this.medecinIdentiteService.enrichir(notificationsRaw, 'chirurgienId', 'chirurgien'),
             this.medecinIdentiteService.enrichir(cpaRaw, 'anesthesisteId', 'anesthesiste'),
             this.medecinIdentiteService.enrichir(verificationVeilleRaw, 'anesthesisteId', 'anesthesiste'),
-            this.medecinIdentiteService.enrichirPlusieurs(bonsRaw, [['chirurgienId', 'chirurgien'], ['anesthesisteId', 'anesthesiste']]),
-            this.medecinIdentiteService.enrichirPlusieurs(activitesRaw, [['chirurgienId', 'chirurgien'], ['anesthesisteId', 'anesthesiste']]),
+            this.medecinIdentiteService.enrichirPlusieurs(bonsRaw, [
+                ['chirurgienId', 'chirurgien'],
+                ['anesthesisteId', 'anesthesiste'],
+            ]),
+            this.medecinIdentiteService.enrichirPlusieurs(activitesRaw, [
+                ['chirurgienId', 'chirurgien'],
+                ['anesthesisteId', 'anesthesiste'],
+            ]),
             this.medecinIdentiteService.enrichirPlusieurs(protocolesRaw, [
-                ['chirurgienId', 'chirurgien'], ['anesthesisteId', 'anesthesiste'], ['infirmiereId', 'infirmiere'], ['aideOperatoireId', 'aideOperatoire'],
+                ['chirurgienId', 'chirurgien'],
+                ['anesthesisteId', 'anesthesiste'],
+                ['infirmiereId', 'infirmiere'],
+                ['aideOperatoireId', 'aideOperatoire'],
             ]),
             this.medecinIdentiteService.enrichir(scoresRaw, 'anesthesisteId', 'anesthesiste'),
             this.medecinIdentiteService.enrichir(sortiesRaw, 'medecinId', 'medecin'),
@@ -123,9 +150,19 @@ let ArchivesService = class ArchivesService {
     }
     async getResumePatient(patientId) {
         const patient = await this.getPatientEnrichi(patientId);
-        const nbInterventions = await this.activiteRepo.count({ where: { patientId } });
-        const dernierScore = await this.scoreRepo.findOne({ where: { patientId }, order: { createdAt: 'DESC' } });
-        return { patient, nombreInterventions: nbInterventions, dernierScoreSCCRE: dernierScore?.scoreTotal || null, statutActuel: patient.statut };
+        const nbInterventions = await this.activiteRepo.count({
+            where: { patientId },
+        });
+        const dernierScore = await this.scoreRepo.findOne({
+            where: { patientId },
+            order: { createdAt: 'DESC' },
+        });
+        return {
+            patient,
+            nombreInterventions: nbInterventions,
+            dernierScoreSCCRE: dernierScore?.scoreTotal || null,
+            statutActuel: patient.statut,
+        };
     }
 };
 exports.ArchivesService = ArchivesService;

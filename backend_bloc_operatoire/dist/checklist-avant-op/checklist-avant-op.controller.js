@@ -33,12 +33,16 @@ let ChecklistAvantOpController = class ChecklistAvantOpController {
         return this.repo.save(this.repo.create({
             ...dto,
             validateurId: centralUser?.userId,
-            validateurNom: centralUser ? `${centralUser.prenom} ${centralUser.nom}`.trim() : undefined,
+            validateurNom: centralUser
+                ? `${centralUser.prenom} ${centralUser.nom}`.trim()
+                : undefined,
             validateurRole: centralUser?.role,
         }));
     }
     async findAll(patientId) {
-        const data = await this.repo.find({ where: patientId ? { patientId } : {} });
+        const data = await this.repo.find({
+            where: patientId ? { patientId } : {},
+        });
         return this.accueilClient.enrichWithIdentity(data);
     }
     async findOne(id) {
@@ -48,13 +52,17 @@ let ChecklistAvantOpController = class ChecklistAvantOpController {
         const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
         return enriched;
     }
-    update(id, dto) { return this.repo.update(id, dto); }
+    update(id, dto) {
+        return this.repo.update(id, dto);
+    }
 };
 exports.ChecklistAvantOpController = ChecklistAvantOpController;
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une checklist avant opération (Anesthésiste)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Créer une checklist avant opération (Anesthésiste)',
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -79,7 +87,9 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une checklist avant opération (Anesthésiste)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Modifier une checklist avant opération (Anesthésiste)',
+    }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

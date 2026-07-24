@@ -14,7 +14,10 @@ const DIACRITIQUES = new RegExp('[\\u0300-\\u036f]', 'g');
 function matchRoleClinique(roleName) {
     if (!roleName)
         return null;
-    const normalise = roleName.normalize('NFD').replace(DIACRITIQUES, '').toLowerCase();
+    const normalise = roleName
+        .normalize('NFD')
+        .replace(DIACRITIQUES, '')
+        .toLowerCase();
     if (normalise.includes('responsable') && normalise.includes('cpa'))
         return RoleClinique.RESPONSABLE_CPA;
     if (normalise.includes('anesthesist'))

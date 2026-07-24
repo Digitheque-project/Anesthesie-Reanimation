@@ -53,7 +53,9 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         const avecChirurgien = await this.medecinIdentiteService.enrichir(internalDataRaw, 'chirurgienId', 'chirurgien');
         const patientIds = Array.from(new Set(internalDataRaw.map((n) => n.patientId).filter(Boolean)));
         const patients = patientIds.length
-            ? await this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(patientIds) } })
+            ? await this.patientBlocRepo.find({
+                where: { patientId: (0, typeorm_2.In)(patientIds) },
+            })
             : [];
         const patientMap = new Map(patients.map((p) => [p.patientId, p]));
         const internalData = internalDataRaw.map((n, idx) => {
@@ -111,7 +113,9 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         n.statut = notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE;
         try {
-            const patient = await this.patientBlocRepo.findOne({ where: { patientId: n.patientId } });
+            const patient = await this.patientBlocRepo.findOne({
+                where: { patientId: n.patientId },
+            });
             if (patient?.serviceOrigineId && patient?.serviceOrigine) {
                 await this.notificationOutgoing.notifyOriginService({
                     patientId: n.patientId,

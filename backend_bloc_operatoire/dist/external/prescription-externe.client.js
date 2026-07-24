@@ -26,7 +26,8 @@ let PrescriptionExterneClient = PrescriptionExterneClient_1 = class Prescription
         this.http = http;
         this.config = config;
         this.serviceToken = serviceToken;
-        this.baseUrl = this.config.get('externalServices.prescriptionApiUrl') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.prescriptionApiUrl') ?? '';
     }
     authHeaders() {
         return { Authorization: `Bearer ${this.serviceToken.mint()}` };

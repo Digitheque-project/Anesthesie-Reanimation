@@ -40,12 +40,15 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         this.http = http;
         this.notificationBackClient = notificationBackClient;
         this.accueilClient = accueilClient;
-        this.blocServiceId = this.config.get('externalServices.serviceId') ?? '';
+        this.blocServiceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     async receive(dto) {
         const demande = this.repo.create({
             ...dto,
-            dateExamenSouhaitee: dto.dateExamenSouhaitee ? new Date(dto.dateExamenSouhaitee) : undefined,
+            dateExamenSouhaitee: dto.dateExamenSouhaitee
+                ? new Date(dto.dateExamenSouhaitee)
+                : undefined,
             chuId: this.config.get('externalServices.chuId'),
             statut: demande_cpa_externe_entity_1.StatutDemandeCpaExterne.EN_ATTENTE,
             payload: dto,
@@ -55,16 +58,25 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         const estUrgent = (dto.urgence ?? 0) >= 4;
         await this.notificationBackClient.notifyService({
             serviceId: this.blocServiceId,
-            title: estUrgent ? '🔴 Demande de CPA externe urgente' : '📋 Nouvelle demande de CPA externe',
+            title: estUrgent
+                ? '🔴 Demande de CPA externe urgente'
+                : '📋 Nouvelle demande de CPA externe',
             message: `${dto.motif || dto.typeAnesthesie} — patient ${dto.patientId} (${dto.sourceServiceName || dto.sourceServiceId})`,
             type: 'new_demande_cpa_externe',
             source: 'bloc-operatoire',
-            data: { patientId: dto.patientId, demandeId: saved.id, urgence: dto.urgence },
+            data: {
+                patientId: dto.patientId,
+                demandeId: saved.id,
+                urgence: dto.urgence,
+            },
         });
         return saved;
     }
     async findAll(statut) {
-        const demandes = await this.repo.find({ where: statut ? { statut } : {}, order: { createdAt: 'DESC' } });
+        const demandes = await this.repo.find({
+            where: statut ? { statut } : {},
+            order: { createdAt: 'DESC' },
+        });
         try {
             return await this.accueilClient.enrichWithIdentity(demandes);
         }
@@ -87,8 +99,12 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         const demande = await this.findOne(id);
         Object.assign(demande, {
             ...dto,
-            dateCpaPlanifiee: dto.dateCpaPlanifiee ? new Date(dto.dateCpaPlanifiee) : demande.dateCpaPlanifiee,
-            dateVpaPlanifiee: dto.dateVpaPlanifiee ? new Date(dto.dateVpaPlanifiee) : demande.dateVpaPlanifiee,
+            dateCpaPlanifiee: dto.dateCpaPlanifiee
+                ? new Date(dto.dateCpaPlanifiee)
+                : demande.dateCpaPlanifiee,
+            dateVpaPlanifiee: dto.dateVpaPlanifiee
+                ? new Date(dto.dateVpaPlanifiee)
+                : demande.dateVpaPlanifiee,
         });
         return this.repo.save(demande);
     }
@@ -121,14 +137,21 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         return this.repo.findOne({
             where: {
                 patientId,
-                statut: (0, typeorm_2.In)([demande_cpa_externe_entity_1.StatutDemandeCpaExterne.EN_ATTENTE, demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_PLANIFIEE, demande_cpa_externe_entity_1.StatutDemandeCpaExterne.VPA_PLANIFIEE, demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_REALISEE]),
+                statut: (0, typeorm_2.In)([
+                    demande_cpa_externe_entity_1.StatutDemandeCpaExterne.EN_ATTENTE,
+                    demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_PLANIFIEE,
+                    demande_cpa_externe_entity_1.StatutDemandeCpaExterne.VPA_PLANIFIEE,
+                    demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_REALISEE,
+                ]),
             },
             order: { createdAt: 'DESC' },
         });
     }
     async marquerCpaRealisee(demande, cpaId, apte) {
         demande.cpaId = cpaId;
-        demande.statut = apte ? demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_REALISEE : demande_cpa_externe_entity_1.StatutDemandeCpaExterne.REPORTEE;
+        demande.statut = apte
+            ? demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_REALISEE
+            : demande_cpa_externe_entity_1.StatutDemandeCpaExterne.REPORTEE;
         return this.repo.save(demande);
     }
     async marquerVpaRealisee(demande, vpaId) {
@@ -140,11 +163,21 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         try {
             await this.notificationBackClient.notifyService({
                 serviceId: demande.sourceServiceId,
-                title: type === 'CPA_RESULTAT' ? '✅ Résultat de votre demande de CPA disponible' : '✅ Vérification veille réalisée',
+                title: type === 'CPA_RESULTAT'
+                    ? '✅ Résultat de votre demande de CPA disponible'
+                    : '✅ Vérification veille réalisée',
                 message: `Résultat disponible pour le patient ${demande.patientId} (réf. ${demande.sourceReferenceId})`,
-                type: type === 'CPA_RESULTAT' ? 'demande_cpa_resultat' : 'demande_vpa_resultat',
+                type: type === 'CPA_RESULTAT'
+                    ? 'demande_cpa_resultat'
+                    : 'demande_vpa_resultat',
                 source: 'bloc-operatoire',
-                data: { patientId: demande.patientId, demandeId: demande.id, entiteRefType: demande.sourceReferenceType, entiteRefId: demande.sourceReferenceId, ...payload },
+                data: {
+                    patientId: demande.patientId,
+                    demandeId: demande.id,
+                    entiteRefType: demande.sourceReferenceType,
+                    entiteRefId: demande.sourceReferenceId,
+                    ...payload,
+                },
             });
         }
         catch (err) {

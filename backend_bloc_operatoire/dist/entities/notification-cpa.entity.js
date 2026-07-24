@@ -70,7 +70,11 @@ __decorate([
     __metadata("design:type", Boolean)
 ], NotificationCPA.prototype, "estUrgent", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutNotificationCPA, default: StatutNotificationCPA.EN_ATTENTE }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutNotificationCPA,
+        default: StatutNotificationCPA.EN_ATTENTE,
+    }),
     __metadata("design:type", String)
 ], NotificationCPA.prototype, "statut", void 0);
 __decorate([

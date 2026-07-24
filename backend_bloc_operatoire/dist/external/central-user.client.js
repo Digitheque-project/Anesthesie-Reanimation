@@ -26,7 +26,8 @@ let CentralUserClient = CentralUserClient_1 = class CentralUserClient {
         this.http = http;
         this.config = config;
         this.serviceToken = serviceToken;
-        this.baseUrl = this.config.get('externalServices.centralUserServiceUrl') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.centralUserServiceUrl') ?? '';
     }
     authHeaders() {
         return { Authorization: `Bearer ${this.serviceToken.mint()}` };
@@ -47,7 +48,9 @@ let CentralUserClient = CentralUserClient_1 = class CentralUserClient {
         if (!this.baseUrl || !id)
             return null;
         try {
-            const { data } = await (0, rxjs_1.firstValueFrom)(this.http.get(`${this.baseUrl}/users/${id}`, { headers: this.authHeaders() }));
+            const { data } = await (0, rxjs_1.firstValueFrom)(this.http.get(`${this.baseUrl}/users/${id}`, {
+                headers: this.authHeaders(),
+            }));
             return data ? this.normaliser(data) : null;
         }
         catch (err) {

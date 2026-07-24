@@ -25,9 +25,11 @@ let ServiceChuClient = ServiceChuClient_1 = class ServiceChuClient {
     constructor(http, config) {
         this.http = http;
         this.config = config;
-        this.baseUrl = this.config.get('externalServices.serviceChuApiUrl') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.serviceChuApiUrl') ?? '';
         this.chuId = this.config.get('externalServices.chuId') ?? '';
-        this.serviceId = this.config.get('externalServices.serviceId') ?? '';
+        this.serviceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     async getChu(id) {
         const { data } = await (0, rxjs_1.firstValueFrom)(this.http.get(`${this.baseUrl}/chu/${id ?? this.chuId}`));

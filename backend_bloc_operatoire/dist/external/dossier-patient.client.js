@@ -25,9 +25,11 @@ let DossierPatientClient = DossierPatientClient_1 = class DossierPatientClient {
     constructor(http, config) {
         this.http = http;
         this.config = config;
-        this.baseUrl = this.config.get('externalServices.dossierPatientApiUrl') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.dossierPatientApiUrl') ?? '';
         this.chuId = this.config.get('externalServices.chuId') ?? '';
-        this.serviceId = this.config.get('externalServices.serviceId') ?? '';
+        this.serviceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     async get(path, params, token) {
         if (!this.baseUrl) {
@@ -39,7 +41,12 @@ let DossierPatientClient = DossierPatientClient_1 = class DossierPatientClient {
                 params,
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             }));
-            const payload = data && typeof data === 'object' && !Array.isArray(data) && 'data' in data ? data.data : data;
+            const payload = data &&
+                typeof data === 'object' &&
+                !Array.isArray(data) &&
+                'data' in data
+                ? data.data
+                : data;
             if (Array.isArray(payload))
                 return payload;
             if (payload && typeof payload === 'object')

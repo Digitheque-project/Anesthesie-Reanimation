@@ -38,11 +38,13 @@ let ActivitePerOpService = class ActivitePerOpService {
         const { constantes, ...data } = dto;
         const activite = this.repo.create(data);
         const activiteSaved = await this.repo.save(activite);
-        const saved = Array.isArray(activiteSaved) ? activiteSaved[0] : activiteSaved;
+        const saved = Array.isArray(activiteSaved)
+            ? activiteSaved[0]
+            : activiteSaved;
         if (constantes && constantes.length > 0) {
-            const constantesEntities = constantes.map(c => this.constanteRepo.create({
+            const constantesEntities = constantes.map((c) => this.constanteRepo.create({
                 ...c,
-                activitePerOp: saved
+                activitePerOp: saved,
             }));
             await this.constanteRepo.save(constantesEntities);
             console.log(`✅ ${constantesEntities.length} mesures de constantes enregistrées`);
@@ -108,7 +110,10 @@ let ActivitePerOpService = class ActivitePerOpService {
             activitePerOp: activite,
         });
         const saved = await this.constanteRepo.save(constante);
-        this.gateway.emitToOperation(activite.patientId, 'constante:ajoutee', { patientId: activite.patientId, constante: saved });
+        this.gateway.emitToOperation(activite.patientId, 'constante:ajoutee', {
+            patientId: activite.patientId,
+            constante: saved,
+        });
         return saved;
     }
 };

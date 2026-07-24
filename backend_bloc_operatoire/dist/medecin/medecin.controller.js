@@ -23,11 +23,21 @@ let MedecinController = class MedecinController {
     constructor(service) {
         this.service = service;
     }
-    create(d) { return this.service.create(d); }
-    findAll(r, s) { return this.service.findAll({ role: r, recherche: s }); }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, d) { return this.service.update(id, d); }
-    remove(id) { return this.service.remove(id); }
+    create(d) {
+        return this.service.create(d);
+    }
+    findAll(r, s) {
+        return this.service.findAll({ role: r, recherche: s });
+    }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, d) {
+        return this.service.update(id, d);
+    }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.MedecinController = MedecinController;
 __decorate([

@@ -28,15 +28,26 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         this.notificationOutgoing = notificationOutgoing;
     }
     async changerStatut(patientId, nouveauStatut) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId },
+        });
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
         const transitionsValides = {
-            [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [patient_bloc_entity_1.PatientStatut.CPA_REALISE, patient_bloc_entity_1.PatientStatut.CPA_INAPTE],
-            [patient_bloc_entity_1.PatientStatut.CPA_REALISE]: [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE],
+            [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [
+                patient_bloc_entity_1.PatientStatut.CPA_REALISE,
+                patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
+            ],
+            [patient_bloc_entity_1.PatientStatut.CPA_REALISE]: [
+                patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+            ],
             [patient_bloc_entity_1.PatientStatut.CPA_INAPTE]: [],
-            [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE],
-            [patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE]: [patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC],
+            [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [
+                patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
+            ],
+            [patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE]: [
+                patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
+            ],
             [patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC]: [patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION],
             [patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION]: [patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL],
             [patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL]: [patient_bloc_entity_1.PatientStatut.SORTI],
@@ -49,7 +60,9 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         return this.patientBlocRepo.save(patient);
     }
     async avancerVersEnCoursOperation(patientId) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId },
+        });
         if (!patient)
             return;
         if (patient.statut === patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE) {
@@ -61,7 +74,9 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         }
     }
     async marquerApteCpa(patientId) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId },
+        });
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
         if (patient.statut === patient_bloc_entity_1.PatientStatut.CPA_INAPTE) {
@@ -95,7 +110,9 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         return patient;
     }
     async modifierDateIntervention(patientId, dateIntervention) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId },
+        });
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
         patient.dateIntervention = new Date(dateIntervention);

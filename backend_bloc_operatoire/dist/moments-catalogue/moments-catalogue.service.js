@@ -21,9 +21,31 @@ const moment_catalogue_entry_entity_1 = require("../entities/moment-catalogue-en
 const moment_operatoire_entity_1 = require("../entities/moment-operatoire.entity");
 const role_clinique_1 = require("../central-auth/role-clinique");
 const CATALOGUE_INITIAL = {
-    [moment_operatoire_entity_1.CategorieMoment.ANESTHESIE]: ['Pose voie veineuse', 'Induction anesthésique', 'Intubation', 'Extubation', 'Réveil anesthésique'],
-    [moment_operatoire_entity_1.CategorieMoment.CHIRURGIE]: ['Incision', 'Ouverture', 'Exploration', 'Début du geste principal', 'Fin du geste principal', 'Hémostase', 'Fermeture pariétale', 'Fermeture cutanée', 'Pansement'],
-    [moment_operatoire_entity_1.CategorieMoment.DIVERS]: ['Antibioprophylaxie administrée', 'Début transfusion', 'Fin transfusion', 'Incident / complication', 'Sortie de salle'],
+    [moment_operatoire_entity_1.CategorieMoment.ANESTHESIE]: [
+        'Pose voie veineuse',
+        'Induction anesthésique',
+        'Intubation',
+        'Extubation',
+        'Réveil anesthésique',
+    ],
+    [moment_operatoire_entity_1.CategorieMoment.CHIRURGIE]: [
+        'Incision',
+        'Ouverture',
+        'Exploration',
+        'Début du geste principal',
+        'Fin du geste principal',
+        'Hémostase',
+        'Fermeture pariétale',
+        'Fermeture cutanée',
+        'Pansement',
+    ],
+    [moment_operatoire_entity_1.CategorieMoment.DIVERS]: [
+        'Antibioprophylaxie administrée',
+        'Début transfusion',
+        'Fin transfusion',
+        'Incident / complication',
+        'Sortie de salle',
+    ],
 };
 const CATEGORIES_AUTORISEES = {
     [role_clinique_1.RoleClinique.ANESTHESISTE]: [moment_operatoire_entity_1.CategorieMoment.ANESTHESIE],

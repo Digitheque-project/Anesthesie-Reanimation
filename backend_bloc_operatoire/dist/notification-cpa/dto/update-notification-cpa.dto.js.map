@@ -1,1 +1,1 @@
-{"version":3,"file":"update-notification-cpa.dto.js","sourceRoot":"","sources":["../../../src/notification-cpa/dto/update-notification-cpa.dto.ts"],"names":[],"mappings":";;;AAAA,uDAAmD;AACnD,+EAAyE;AACzE,MAAa,wBAAyB,SAAQ,IAAA,0BAAW,EAAC,sDAAwB,CAAC;CAAG;AAAtF,4DAAsF"}
+{"version":3,"file":"update-notification-cpa.dto.js","sourceRoot":"","sources":["../../../src/notification-cpa/dto/update-notification-cpa.dto.ts"],"names":[],"mappings":";;;AAAA,uDAAmD;AACnD,+EAAyE;AACzE,MAAa,wBAAyB,SAAQ,IAAA,0BAAW,EACvD,sDAAwB,CACzB;CAAG;AAFJ,4DAEI"}

@@ -38,11 +38,15 @@ let PatientBlocService = class PatientBlocService {
         this.config = config;
     }
     async creerDepuisPrescription(demandeId) {
-        const demande = await this.demandeRepo.findOne({ where: { id: demandeId } });
+        const demande = await this.demandeRepo.findOne({
+            where: { id: demandeId },
+        });
         if (!demande)
             throw new Error('Demande non trouvée');
         const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
-        const niveauUrgence = estUrgence ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT : patient_bloc_entity_1.NiveauUrgence.NORMAL;
+        const niveauUrgence = estUrgence
+            ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT
+            : patient_bloc_entity_1.NiveauUrgence.NORMAL;
         const patient = new patient_bloc_entity_1.PatientBloc();
         patient.patientId = demande.patientId;
         patient.chuId = demande.chuId;
@@ -67,7 +71,9 @@ let PatientBlocService = class PatientBlocService {
         if (niveauUrgence)
             qb.andWhere('p.niveauUrgence = :niveauUrgence', { niveauUrgence });
         if (recherche)
-            qb.andWhere('p.idDossier ILIKE :recherche', { recherche: `%${recherche}%` });
+            qb.andWhere('p.idDossier ILIKE :recherche', {
+                recherche: `%${recherche}%`,
+            });
         qb.orderBy('p.createdAt', 'DESC');
         qb.skip((page - 1) * limite).take(limite);
         const [data, total] = await qb.getManyAndCount();
@@ -91,7 +97,7 @@ let PatientBlocService = class PatientBlocService {
         }
     }
     async getDossierMedical(patientId, token) {
-        const [antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis] = await Promise.all([
+        const [antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis,] = await Promise.all([
             this.dossierPatientClient.getAntecedentsActifs(patientId, token),
             this.dossierPatientClient.getDiagnostics(patientId, token),
             this.dossierPatientClient.getHistoriqueMaladieRecente(patientId, token),
@@ -100,7 +106,15 @@ let PatientBlocService = class PatientBlocService {
             this.dossierPatientClient.getExamensComplementairesUrgents(patientId, token),
             this.dossierPatientClient.getSuivis(patientId, token),
         ]);
-        return { antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis };
+        return {
+            antecedents,
+            diagnostics,
+            histoireMaladie,
+            alertesUrgentes,
+            dernierExamen,
+            examensComplementaires,
+            suivis,
+        };
     }
     async getDossierComplet(patientId, token) {
         const [observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques, examensComplementaires, suivis, protocolesOperatoires,] = await Promise.all([
@@ -111,13 +125,25 @@ let PatientBlocService = class PatientBlocService {
             this.dossierPatientClient.getExamensPhysiquesTous(patientId, token),
             this.dossierPatientClient.getExamensComplementairesTous(patientId, token),
             this.dossierPatientClient.getSuivis(patientId, token),
-            this.protocoleOperatoireService.findAll(1, 50, patientId).then(r => r.data).catch(() => []),
+            this.protocoleOperatoireService
+                .findAll(1, 50, patientId)
+                .then((r) => r.data)
+                .catch(() => []),
         ]);
         const episodeId = diagnostics.find((d) => d.episodeId)?.episodeId;
-        const sortie = episodeId ? await this.dossierPatientClient.getSortieMedicale(episodeId, token) : [];
+        const sortie = episodeId
+            ? await this.dossierPatientClient.getSortieMedicale(episodeId, token)
+            : [];
         return {
-            observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
-            examensComplementaires, suivis, protocolesOperatoires, sortie,
+            observations,
+            diagnostics,
+            antecedents,
+            histoiresMaladie,
+            examensPhysiques,
+            examensComplementaires,
+            suivis,
+            protocolesOperatoires,
+            sortie,
         };
     }
     async update(patientId, dto) {

@@ -23,13 +23,26 @@ let TracabiliteService = class TracabiliteService {
         this.repo = repo;
     }
     async log(entite, entiteId, action, details, utilisateurId) {
-        return this.repo.save(this.repo.create({ entite, entiteId, action, details: JSON.stringify(details), utilisateurId }));
+        return this.repo.save(this.repo.create({
+            entite,
+            entiteId,
+            action,
+            details: JSON.stringify(details),
+            utilisateurId,
+        }));
     }
     async getHistorique(entite, entiteId) {
-        return this.repo.find({ where: { entite, entiteId }, order: { createdAt: 'DESC' } });
+        return this.repo.find({
+            where: { entite, entiteId },
+            order: { createdAt: 'DESC' },
+        });
     }
     async getTousHistoriques(page = 1, limite = 20) {
-        const [data, total] = await this.repo.findAndCount({ skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const [data, total] = await this.repo.findAndCount({
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
+        });
         return { data, total, page, pages: Math.ceil(total / limite) };
     }
 };

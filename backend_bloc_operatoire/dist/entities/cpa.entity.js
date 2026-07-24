@@ -90,8 +90,8 @@ __decorate([
     __metadata("design:type", String)
 ], CPA.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], CPA.prototype, "anesthesisteId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'date' }),

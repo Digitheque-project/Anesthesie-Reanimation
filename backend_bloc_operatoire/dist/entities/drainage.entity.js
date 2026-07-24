@@ -55,7 +55,9 @@ __decorate([
     __metadata("design:type", String)
 ], Drainage.prototype, "cote", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => protocole_operatoire_entity_1.ProtocoleOperatoire, (protocole) => protocole.drainages, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.ManyToOne)(() => protocole_operatoire_entity_1.ProtocoleOperatoire, (protocole) => protocole.drainages, {
+        onDelete: 'CASCADE',
+    }),
     __metadata("design:type", protocole_operatoire_entity_1.ProtocoleOperatoire)
 ], Drainage.prototype, "protocole", void 0);
 exports.Drainage = Drainage = __decorate([

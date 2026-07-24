@@ -30,9 +30,15 @@ let PlanningController = class PlanningController {
     getSemaine(debut, fin, type) {
         return this.service.getPlanningSemaine(debut, fin, type);
     }
-    reserver(dto) { return this.service.reserverCreneau(dto); }
-    annuler(id) { return this.service.annulerCreneau(id); }
-    urgences() { return this.service.getUrgencesEnAttente(); }
+    reserver(dto) {
+        return this.service.reserverCreneau(dto);
+    }
+    annuler(id) {
+        return this.service.annulerCreneau(id);
+    }
+    urgences() {
+        return this.service.getUrgencesEnAttente();
+    }
     transfererCpaVersVerificationVeille(dto) {
         return this.service.transfererCpaVersVerificationVeille(dto);
     }
@@ -63,7 +69,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('reserver'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: 'Réserver un créneau (Major, ou Responsable CPA pour la planification CPA)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Réserver un créneau (Major, ou Responsable CPA pour la planification CPA)',
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -72,7 +80,9 @@ __decorate([
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: 'Annuler un créneau (Major, ou Responsable CPA pour la planification CPA)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Annuler un créneau (Major, ou Responsable CPA pour la planification CPA)',
+    }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -87,7 +97,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('transferer-cpa-vers-verification-veille'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: 'Transférer un patient de CPA vers Vérification veille (Responsable CPA)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Transférer un patient de CPA vers Vérification veille (Responsable CPA)',
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -96,7 +108,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('transferer-verification-veille-vers-patient-jour'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({ summary: 'Transférer un patient de Vérification veille vers Patient du jour (Responsable CPA)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Transférer un patient de Vérification veille vers Patient du jour (Responsable CPA)',
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

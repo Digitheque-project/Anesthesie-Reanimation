@@ -66,7 +66,9 @@ let ExportsService = class ExportsService {
         this.medecinIdentiteService = medecinIdentiteService;
     }
     async exportPatientsExcel() {
-        const patients = await this.patientBlocRepo.find({ order: { createdAt: 'DESC' } });
+        const patients = await this.patientBlocRepo.find({
+            order: { createdAt: 'DESC' },
+        });
         const enriched = await this.accueilClient.enrichWithIdentity(patients);
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Patients');
@@ -89,7 +91,9 @@ let ExportsService = class ExportsService {
         return workbook.xlsx.writeBuffer();
     }
     async exportPlanningExcel(date) {
-        const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) } });
+        const activites = await this.activiteRepo.find({
+            where: { dateOperation: new Date(date) },
+        });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(activites);
         const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'chirurgienId', 'chirurgien');
         const workbook = new ExcelJS.Workbook();
@@ -100,14 +104,20 @@ let ExportsService = class ExportsService {
             { header: 'Date', key: 'date', width: 15 },
         ];
         enriched.forEach((a) => sheet.addRow({
-            patient: a.patient ? `${a.patient.nom} ${a.patient.prenom}` : a.patientId,
-            chirurgien: a.chirurgien ? `${a.chirurgien.nom} ${a.chirurgien.prenom}` : '—',
+            patient: a.patient
+                ? `${a.patient.nom} ${a.patient.prenom}`
+                : a.patientId,
+            chirurgien: a.chirurgien
+                ? `${a.chirurgien.nom} ${a.chirurgien.prenom}`
+                : '—',
             date: a.dateOperation,
         }));
         return workbook.xlsx.writeBuffer();
     }
     async exportPatientJSON(patientId) {
-        const patient = await this.patientBlocRepo.findOne({ where: { patientId } });
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId },
+        });
         if (!patient)
             throw new common_1.NotFoundException('Patient non trouvé');
         const identite = await this.accueilClient.getPatient(patientId);

@@ -21,7 +21,11 @@ let CPAModule = class CPAModule {
 exports.CPAModule = CPAModule;
 exports.CPAModule = CPAModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc, premedicament_entity_1.Premedicament]), demande_cpa_externe_module_1.DemandeCpaExterneModule, medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc, premedicament_entity_1.Premedicament]),
+            demande_cpa_externe_module_1.DemandeCpaExterneModule,
+            medecin_module_1.MedecinModule,
+        ],
         controllers: [cpa_controller_1.CPAController],
         providers: [cpa_service_1.CPAService],
         exports: [cpa_service_1.CPAService],

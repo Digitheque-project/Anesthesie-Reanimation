@@ -64,7 +64,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreneauBloc.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], CreneauBloc.prototype, "chirurgienId", void 0);
 __decorate([
@@ -72,7 +72,11 @@ __decorate([
     __metadata("design:type", Object)
 ], CreneauBloc.prototype, "responsable", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutCreneau, default: StatutCreneau.PLANIFIE }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutCreneau,
+        default: StatutCreneau.PLANIFIE,
+    }),
     __metadata("design:type", String)
 ], CreneauBloc.prototype, "statut", void 0);
 __decorate([

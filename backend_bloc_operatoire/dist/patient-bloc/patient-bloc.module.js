@@ -20,7 +20,10 @@ let PatientBlocModule = class PatientBlocModule {
 exports.PatientBlocModule = PatientBlocModule;
 exports.PatientBlocModule = PatientBlocModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, demande_cpa_externe_entity_1.DemandeCpaExterne]), protocole_operatoire_module_1.ProtocoleOperatoireModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, demande_cpa_externe_entity_1.DemandeCpaExterne]),
+            protocole_operatoire_module_1.ProtocoleOperatoireModule,
+        ],
         controllers: [patient_bloc_controller_1.PatientBlocController],
         providers: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],
         exports: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],

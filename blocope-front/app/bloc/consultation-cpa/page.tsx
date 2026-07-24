@@ -275,7 +275,6 @@ function ConsultationCpaPageContent() {
         // Première étape : le Major/Responsable CPA (ou l'anesthésiste s'il réalise seul sa
         // propre CPA) remplit l'examen et pose la décision.
         if (!peutEditerExamenEtDecision) { alert('❌ Seul un anesthésiste, un responsable CPA ou un major peut remplir et valider la CPA'); setLoading(false); return; }
-        if (!estAnesthesisteConnecte && !anesthesisteId) { alert("❌ Sélectionnez l'anesthésiste ayant réalisé la consultation"); setLoading(false); return; }
         if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); setLoading(false); return; }
         if ((decision === 'INAPTE' || decision === 'REPORT') && !motifRefus.trim()) {
           alert(`❌ Le motif ${decision === 'INAPTE' ? 'du refus' : 'du report'} est obligatoire`); setLoading(false); return;
@@ -456,10 +455,12 @@ function ConsultationCpaPageContent() {
             </div>
           ) : (
             <div className="flex-1">
-              <label className="text-xs font-semibold text-on-surface-variant block mb-1">Anesthésiste ayant réalisé la consultation *</label>
+              <label className="text-xs font-semibold text-on-surface-variant block mb-1">Anesthésiste ayant réalisé la consultation (facultatif)</label>
               <select value={anesthesisteId} onChange={e => setAnesthesisteId(e.target.value)}
                 className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm font-bold">
-                <option value="">— Sélectionner —</option>
+                <option value="">
+                  {anesthesistes.length === 0 ? '— Aucun anesthésiste enregistré localement —' : '— Sélectionner —'}
+                </option>
                 {anesthesistes.map((m: any) => (
                   <option key={m.id} value={m.id}>{m.prenom} {m.nom}</option>
                 ))}

@@ -71,7 +71,11 @@ __decorate([
     __metadata("design:type", Array)
 ], BonCommandeAnesthesie.prototype, "consommables", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: StatutBonCommande, default: StatutBonCommande.EN_ATTENTE }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutBonCommande,
+        default: StatutBonCommande.EN_ATTENTE,
+    }),
     __metadata("design:type", String)
 ], BonCommandeAnesthesie.prototype, "statut", void 0);
 __decorate([

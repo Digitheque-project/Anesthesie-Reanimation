@@ -25,11 +25,21 @@ let ProtocoleOperatoireController = class ProtocoleOperatoireController {
     constructor(service) {
         this.service = service;
     }
-    create(dto) { return this.service.create(dto); }
-    findAll(p, l, patientId) { return this.service.findAll(p, l, patientId); }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, dto) { return this.service.update(id, dto); }
-    remove(id) { return this.service.remove(id); }
+    create(dto) {
+        return this.service.create(dto);
+    }
+    findAll(p, l, patientId) {
+        return this.service.findAll(p, l, patientId);
+    }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, dto) {
+        return this.service.update(id, dto);
+    }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.ProtocoleOperatoireController = ProtocoleOperatoireController;
 __decorate([

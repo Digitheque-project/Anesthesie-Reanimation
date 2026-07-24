@@ -30,14 +30,22 @@ let RapportsController = class RapportsController {
     activiteChirurgiens(dd, df) {
         return this.rapportsService.activiteParChirurgien(dd, df);
     }
-    cpaEnAttente() { return this.rapportsService.cpaEnAttente(); }
-    tauxOccupation() { return this.rapportsService.tauxOccupation(); }
-    exportStats() { return this.rapportsService.exportStatistiques('excel'); }
+    cpaEnAttente() {
+        return this.rapportsService.cpaEnAttente();
+    }
+    tauxOccupation() {
+        return this.rapportsService.tauxOccupation();
+    }
+    exportStats() {
+        return this.rapportsService.exportStatistiques('excel');
+    }
 };
 exports.RapportsController = RapportsController;
 __decorate([
     (0, common_1.Get)('tableau-de-bord'),
-    (0, swagger_1.ApiOperation)({ summary: 'Tableau de bord complet (statistiques, activité par personnel, détail des opérations)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Tableau de bord complet (statistiques, activité par personnel, détail des opérations)',
+    }),
     __param(0, (0, common_1.Query)('dateDebut')),
     __param(1, (0, common_1.Query)('dateFin')),
     __metadata("design:type", Function),
@@ -71,7 +79,7 @@ __decorate([
 ], RapportsController.prototype, "cpaEnAttente", null);
 __decorate([
     (0, common_1.Get)('taux-occupation'),
-    (0, swagger_1.ApiOperation)({ summary: 'Taux d\'occupation' }),
+    (0, swagger_1.ApiOperation)({ summary: "Taux d'occupation" }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)

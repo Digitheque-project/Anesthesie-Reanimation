@@ -19,7 +19,10 @@ let DemandeCpaExterneModule = class DemandeCpaExterneModule {
 exports.DemandeCpaExterneModule = DemandeCpaExterneModule;
 exports.DemandeCpaExterneModule = DemandeCpaExterneModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([demande_cpa_externe_entity_1.DemandeCpaExterne, creneau_bloc_entity_1.CreneauBloc]), axios_1.HttpModule.register({ timeout: 45000 })],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([demande_cpa_externe_entity_1.DemandeCpaExterne, creneau_bloc_entity_1.CreneauBloc]),
+            axios_1.HttpModule.register({ timeout: 45000 }),
+        ],
         controllers: [demande_cpa_externe_controller_1.DemandeCpaExterneController],
         providers: [demande_cpa_externe_service_1.DemandeCpaExterneService],
         exports: [demande_cpa_externe_service_1.DemandeCpaExterneService],

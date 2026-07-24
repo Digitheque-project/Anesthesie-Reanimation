@@ -52,10 +52,7 @@ let CentralAuthGuard = CentralAuthGuard_1 = class CentralAuthGuard {
             throw new common_1.UnauthorizedException('Session expirée ou invalide, veuillez vous reconnecter');
         }
         request.centralUser = centralUser;
-        const rolesRequis = this.reflector.getAllAndOverride(require_role_decorator_1.REQUIRE_ROLE_CLINIQUE_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+        const rolesRequis = this.reflector.getAllAndOverride(require_role_decorator_1.REQUIRE_ROLE_CLINIQUE_KEY, [context.getHandler(), context.getClass()]);
         if (rolesRequis && rolesRequis.length > 0) {
             const roleUtilisateur = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
             if (!roleUtilisateur || !rolesRequis.includes(roleUtilisateur)) {

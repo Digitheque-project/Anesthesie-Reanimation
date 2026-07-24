@@ -19,7 +19,11 @@ let ChecklistApresOpModule = class ChecklistApresOpModule {
 exports.ChecklistApresOpModule = ChecklistApresOpModule;
 exports.ChecklistApresOpModule = ChecklistApresOpModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([checklist_apres_op_entity_1.ChecklistApresOp]), operation_gateway_module_1.OperationGatewayModule, patient_bloc_module_1.PatientBlocModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([checklist_apres_op_entity_1.ChecklistApresOp]),
+            operation_gateway_module_1.OperationGatewayModule,
+            patient_bloc_module_1.PatientBlocModule,
+        ],
         controllers: [checklist_apres_op_controller_1.ChecklistApresOpController],
         providers: [checklist_apres_op_service_1.ChecklistApresOpService],
     })

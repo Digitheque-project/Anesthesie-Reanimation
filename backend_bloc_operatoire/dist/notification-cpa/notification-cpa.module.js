@@ -23,7 +23,15 @@ let NotificationCPAModule = class NotificationCPAModule {
 exports.NotificationCPAModule = NotificationCPAModule;
 exports.NotificationCPAModule = NotificationCPAModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([notification_cpa_entity_1.NotificationCPA, webhook_notification_entity_1.WebhookNotification, patient_bloc_entity_1.PatientBloc, creneau_bloc_entity_1.CreneauBloc]), medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                notification_cpa_entity_1.NotificationCPA,
+                webhook_notification_entity_1.WebhookNotification,
+                patient_bloc_entity_1.PatientBloc,
+                creneau_bloc_entity_1.CreneauBloc,
+            ]),
+            medecin_module_1.MedecinModule,
+        ],
         controllers: [notification_cpa_controller_1.NotificationCPAController, notification_alerte_controller_1.NotificationAlerteController],
         providers: [notification_cpa_service_1.NotificationCPAService, notification_alerte_service_1.NotificationAlerteService],
         exports: [notification_cpa_service_1.NotificationCPAService, notification_alerte_service_1.NotificationAlerteService],

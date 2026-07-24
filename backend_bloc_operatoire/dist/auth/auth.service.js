@@ -60,7 +60,9 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     async register(dto) {
-        const existingUser = await this.userRepo.findOne({ where: { email: dto.email } });
+        const existingUser = await this.userRepo.findOne({
+            where: { email: dto.email },
+        });
         if (existingUser)
             throw new common_1.ConflictException('Cet email est déjà utilisé');
         const user = this.userRepo.create(dto);

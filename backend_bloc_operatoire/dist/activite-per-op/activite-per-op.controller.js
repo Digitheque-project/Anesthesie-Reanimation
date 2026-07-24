@@ -26,16 +26,24 @@ let ActivitePerOpController = class ActivitePerOpController {
     constructor(service) {
         this.service = service;
     }
-    create(dto) { return this.service.create(dto); }
+    create(dto) {
+        return this.service.create(dto);
+    }
     findAll(p, l, patientId) {
         return this.service.findAll(p, l, patientId);
     }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, dto) { return this.service.update(id, dto); }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, dto) {
+        return this.service.update(id, dto);
+    }
     ajouterConstante(id, dto) {
         return this.service.ajouterConstante(id, dto);
     }
-    remove(id) { return this.service.remove(id); }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.ActivitePerOpController = ActivitePerOpController;
 __decorate([
@@ -79,7 +87,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/constantes'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.IBODE),
-    (0, swagger_1.ApiOperation)({ summary: 'Ajouter une mesure de constantes en temps réel (Anesthésiste, IBODE)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Ajouter une mesure de constantes en temps réel (Anesthésiste, IBODE)',
+    }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

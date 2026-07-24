@@ -19,7 +19,10 @@ let BonCommandeModule = class BonCommandeModule {
 exports.BonCommandeModule = BonCommandeModule;
 exports.BonCommandeModule = BonCommandeModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([bon_commande_anesthesie_entity_1.BonCommandeAnesthesie, item_commande_entity_1.ItemCommande]), medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([bon_commande_anesthesie_entity_1.BonCommandeAnesthesie, item_commande_entity_1.ItemCommande]),
+            medecin_module_1.MedecinModule,
+        ],
         controllers: [bon_commande_controller_1.BonCommandeController],
         providers: [bon_commande_service_1.BonCommandeService],
         exports: [bon_commande_service_1.BonCommandeService],

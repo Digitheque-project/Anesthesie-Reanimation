@@ -51,26 +51,27 @@ let CPAService = CPAService_1 = class CPAService {
         this.medecinIdentiteService = medecinIdentiteService;
     }
     async create(dto, centralUser) {
-        if ((dto.decision === cpa_entity_1.DecisionCPA.INAPTE || dto.decision === cpa_entity_1.DecisionCPA.REPORT) &&
+        if ((dto.decision === cpa_entity_1.DecisionCPA.INAPTE ||
+            dto.decision === cpa_entity_1.DecisionCPA.REPORT) &&
             (!dto.motifRefus || dto.motifRefus.trim() === '')) {
             throw new common_1.BadRequestException(dto.decision === cpa_entity_1.DecisionCPA.INAPTE
                 ? 'Le motif du refus est obligatoire lorsque la décision est INAPTE.'
-                : "Le motif du report est obligatoire lorsque la décision est REPORT.");
+                : 'Le motif du report est obligatoire lorsque la décision est REPORT.');
         }
         const roleUtilisateur = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
         let anesthesisteId;
         if (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE) {
             anesthesisteId = centralUser.userId;
         }
-        else {
-            if (!dto.anesthesisteId) {
-                throw new common_1.BadRequestException("L'anesthésiste ayant réalisé la consultation doit être sélectionné.");
-            }
+        else if (dto.anesthesisteId) {
             const anesthesiste = await this.medecinService.findOne(dto.anesthesisteId);
             if (anesthesiste.role !== medecin_entity_1.RoleMedecin.ANESTHESISTE) {
                 throw new common_1.BadRequestException(`${anesthesiste.prenom} ${anesthesiste.nom} n'est pas enregistré(e) comme anesthésiste.`);
             }
             anesthesisteId = anesthesiste.id;
+        }
+        else {
+            anesthesisteId = null;
         }
         const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto;
         const cpa = this.cpaRepository.create({ ...cpaData, anesthesisteId });
@@ -86,7 +87,9 @@ let CPAService = CPAService_1 = class CPAService {
                 : dto.decision === cpa_entity_1.DecisionCPA.REPORT
                     ? patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA
                     : patient_bloc_entity_1.PatientStatut.CPA_REALISE;
-            await this.patientBlocRepo.update(dto.patientId, { statut: nouveauStatut });
+            await this.patientBlocRepo.update(dto.patientId, {
+                statut: nouveauStatut,
+            });
             if (dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
                 const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
                 if (demande) {
@@ -111,11 +114,17 @@ let CPAService = CPAService_1 = class CPAService {
                 }
             }
             try {
-                const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+                const patient = await this.patientBlocRepo.findOne({
+                    where: { patientId: dto.patientId },
+                });
                 if (patient?.serviceOrigineId && patient?.serviceOrigine) {
                     await this.notificationOutgoing.notifyOriginService({
                         patientId: dto.patientId,
-                        type: dto.decision === cpa_entity_1.DecisionCPA.INAPTE ? 'CPA_INAPTE' : dto.decision === cpa_entity_1.DecisionCPA.REPORT ? 'CPA_REPORT' : 'CPA_APTE',
+                        type: dto.decision === cpa_entity_1.DecisionCPA.INAPTE
+                            ? 'CPA_INAPTE'
+                            : dto.decision === cpa_entity_1.DecisionCPA.REPORT
+                                ? 'CPA_REPORT'
+                                : 'CPA_APTE',
                         serviceOrigineId: patient.serviceOrigineId,
                         serviceOrigineName: patient.serviceOrigine,
                         payload: {
@@ -137,17 +146,24 @@ let CPAService = CPAService_1 = class CPAService {
         const [data, total] = await this.cpaRepository.findAndCount({
             where: patientId ? { patientId } : {},
             relations: ['premedicaments'],
-            skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' }
+            skip: (page - 1) * limite,
+            take: limite,
+            order: { createdAt: 'DESC' },
         });
         const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
         const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'anesthesisteId', 'anesthesiste');
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const cpa = await this.cpaRepository.findOne({ where: { id }, relations: ['premedicaments'] });
+        const cpa = await this.cpaRepository.findOne({
+            where: { id },
+            relations: ['premedicaments'],
+        });
         if (!cpa)
             throw new common_1.NotFoundException(`CPA ${id} non trouvée`);
-        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([cpa]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([
+            cpa,
+        ]);
         const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'anesthesisteId', 'anesthesiste');
         return enriched;
     }

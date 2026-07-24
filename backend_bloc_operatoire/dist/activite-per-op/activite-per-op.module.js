@@ -20,7 +20,11 @@ let ActivitePerOpModule = class ActivitePerOpModule {
 exports.ActivitePerOpModule = ActivitePerOpModule;
 exports.ActivitePerOpModule = ActivitePerOpModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([activite_per_op_entity_1.ActivitePerOp, constante_per_op_entity_1.ConstantePerOp]), operation_gateway_module_1.OperationGatewayModule, medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([activite_per_op_entity_1.ActivitePerOp, constante_per_op_entity_1.ConstantePerOp]),
+            operation_gateway_module_1.OperationGatewayModule,
+            medecin_module_1.MedecinModule,
+        ],
         controllers: [activite_per_op_controller_1.ActivitePerOpController],
         providers: [activite_per_op_service_1.ActivitePerOpService],
         exports: [activite_per_op_service_1.ActivitePerOpService],

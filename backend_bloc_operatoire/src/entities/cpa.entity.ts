@@ -52,9 +52,10 @@ export class CPA {
   // Référence l'identité de l'anesthésiste — soit un userId du service central SSO (médecin
   // interne, cas normal), soit un id de la table locale `medecins` (médecin externe, ou
   // donnée historique). Plus de FK/relation TypeORM : voir CentralUserClient pour
-  // l'enrichissement en lecture.
-  @Column()
-  anesthesisteId: string;
+  // l'enrichissement en lecture. Nullable : quand le Responsable CPA/Major réalise la CPA,
+  // désigner l'anesthésiste n'est pas obligatoire (aucune fiche locale n'existe forcément).
+  @Column({ type: 'varchar', nullable: true })
+  anesthesisteId: string | null;
 
   @Column({ type: 'date' })
   dateConsultation: Date;

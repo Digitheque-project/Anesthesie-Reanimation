@@ -25,17 +25,29 @@ let VerificationVeilleController = class VerificationVeilleController {
     constructor(service) {
         this.service = service;
     }
-    create(d) { return this.service.create(d); }
-    findAll(p, l) { return this.service.findAll(p, l); }
-    findOne(id) { return this.service.findOne(id); }
-    update(id, d) { return this.service.update(id, d); }
-    remove(id) { return this.service.remove(id); }
+    create(d) {
+        return this.service.create(d);
+    }
+    findAll(p, l) {
+        return this.service.findAll(p, l);
+    }
+    findOne(id) {
+        return this.service.findOne(id);
+    }
+    update(id, d) {
+        return this.service.update(id, d);
+    }
+    remove(id) {
+        return this.service.remove(id);
+    }
 };
 exports.VerificationVeilleController = VerificationVeilleController;
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: "Créer une vérification à la veille de l'intervention (Anesthésiste)" }),
+    (0, swagger_1.ApiOperation)({
+        summary: "Créer une vérification à la veille de l'intervention (Anesthésiste)",
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_verification_veille_dto_1.CreateVerificationVeilleDto]),

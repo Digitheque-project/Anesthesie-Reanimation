@@ -23,7 +23,9 @@ let PrescriptionImagerieClient = PrescriptionImagerieClient_1 = class Prescripti
     constructor(http, config) {
         this.http = http;
         this.config = config;
-        this.baseUrl = this.config.get('externalServices.prescriptionImagerieApiUrl') ?? '';
+        this.baseUrl =
+            this.config.get('externalServices.prescriptionImagerieApiUrl') ??
+                '';
     }
     async getParPatient(patientId) {
         if (!this.baseUrl) {

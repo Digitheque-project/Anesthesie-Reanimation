@@ -18,7 +18,10 @@ let MomentsOperatoireModule = class MomentsOperatoireModule {
 exports.MomentsOperatoireModule = MomentsOperatoireModule;
 exports.MomentsOperatoireModule = MomentsOperatoireModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([moment_operatoire_entity_1.MomentOperatoire]), operation_gateway_module_1.OperationGatewayModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([moment_operatoire_entity_1.MomentOperatoire]),
+            operation_gateway_module_1.OperationGatewayModule,
+        ],
         controllers: [moments_operatoire_controller_1.MomentsOperatoireController],
         providers: [moments_operatoire_service_1.MomentsOperatoireService],
     })
