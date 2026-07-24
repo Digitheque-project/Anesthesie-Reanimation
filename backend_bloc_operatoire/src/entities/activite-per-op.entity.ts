@@ -23,10 +23,10 @@ export class ActivitePerOp {
   // renseignés plus tard via PATCH, pas nécessairement connus à la création. Référencent
   // l'identité (userId central ou id local `medecins`), plus de FK/relation TypeORM — voir
   // CentralUserClient/MedecinIdentiteService pour l'enrichissement en lecture.
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   chirurgienId: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   anesthesisteId: string | null;
 
   @Column({ type: 'date' })

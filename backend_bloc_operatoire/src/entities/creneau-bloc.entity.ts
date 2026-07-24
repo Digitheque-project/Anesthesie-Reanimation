@@ -44,7 +44,7 @@ export class CreneauBloc {
 
   // Référence l'identité du chirurgien — userId central (interne) ou id local `medecins`
   // (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   chirurgienId: string | null;
 
   // Nom libre du responsable saisi au moment de la planification (ex: professeur CPA), quand aucun Medecin n'est sélectionné.
