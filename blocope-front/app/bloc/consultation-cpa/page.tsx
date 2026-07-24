@@ -888,20 +888,17 @@ function ConsultationCpaPageContent() {
             </div>
           )}
 
-          {/* Planification de la vérification à la veille — réservée à l'anesthésiste, sans objet
-              pour un patient urgent (chirurgie immédiate, pas de "veille") */}
-          {!estUrgent && decision !== 'INAPTE' && decision !== '' && (
+          {/* Planification de la vérification à la veille — réservée à l'anesthésiste (qui rouvre
+              sa propre CPA), sans objet pour un patient urgent (chirurgie immédiate, pas de
+              "veille"). Le Respo CPA/Major ne doit même pas voir cette section : ils valident la
+              CPA elle-même, la planification de la veille n'est pas leur rôle. */}
+          {estAnesthesisteConnecte && !estUrgent && decision !== 'INAPTE' && decision !== '' && (
             <div className="mt-4 p-4 bg-surface-container-low rounded-xl border space-y-2">
               <label className="text-sm font-bold block">Planification de la vérification à la veille de l'opération</label>
-              <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc — planifié par l'anesthésiste.</p>
-              {!peutEditerMedicamentsEtVpa && (
-                <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                  Réservé à l'anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}.
-                </div>
-              )}
+              <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
               <div className="flex flex-col md:flex-row md:items-center gap-2">
-                <input disabled={!peutEditerMedicamentsEtVpa} className="flex-1 bg-white border-none rounded-lg p-2 text-sm disabled:opacity-60" type="date" value={dateVPA} onChange={e => setDateVPA(e.target.value)} />
-                <input disabled={!peutEditerMedicamentsEtVpa} className="flex-none w-32 bg-white border-none rounded-lg p-2 text-sm disabled:opacity-60" type="time" value={heureVPA} onChange={e => setHeureVPA(e.target.value)} />
+                <input className="flex-1 bg-white border-none rounded-lg p-2 text-sm" type="date" value={dateVPA} onChange={e => setDateVPA(e.target.value)} />
+                <input className="flex-none w-32 bg-white border-none rounded-lg p-2 text-sm" type="time" value={heureVPA} onChange={e => setHeureVPA(e.target.value)} />
               </div>
             </div>
           )}
@@ -916,7 +913,7 @@ function ConsultationCpaPageContent() {
                   ? 'Accès non autorisé'
                   : cpaDejaRemplie
                     ? 'Enregistrer les médicaments et la vérification veille'
-                    : 'Valider';
+                    : 'Valider la CPA';
               return (
                 <button onClick={handleValider} disabled={loading || chargementCpa || !peutSoumettre}
                   className="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 shadow-sm transition-all disabled:opacity-50">
