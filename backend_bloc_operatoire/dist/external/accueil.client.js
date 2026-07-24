@@ -70,7 +70,7 @@ class AccueilClient {
         const enriched = records.map((r) => {
             const id = r?.patientId;
             const identity = id ? identities[id] || null : null;
-            return { ...r, ...(identity || {}) };
+            return { ...(identity || {}), ...r };
         });
         return isArray ? enriched : enriched[0];
     }

@@ -87,7 +87,12 @@ export class AccueilClient {
     const enriched = records.map((r) => {
       const id = r?.patientId;
       const identity = id ? identities[id] || null : null;
-      return { ...r, ...(identity || {}) };
+      // L'identité Accueil ne doit qu'ajouter des champs (nom, prénom, idDossier...), jamais
+      // écraser un champ déjà présent sur l'enregistrement local — notamment `id`, qui pour la
+      // plupart des entités (CPA, ActivitePerOp, NotificationCPA...) est leur propre clé
+      // primaire, distincte de l'id du patient côté Accueil. Priorité au record local en cas de
+      // collision de nom de champ.
+      return { ...(identity || {}), ...r };
     });
 
     return isArray ? enriched : enriched[0];
