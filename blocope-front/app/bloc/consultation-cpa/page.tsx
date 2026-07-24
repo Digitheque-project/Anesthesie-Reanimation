@@ -95,6 +95,12 @@ function ConsultationCpaPageContent() {
   // qui concerne la CPA elle-même (à refaire), pas l'opération.
   const [decisionOperation, setDecisionOperation] = useState<'RETENUE' | 'REPORTEE' | 'REFUSEE' | ''>('');
   const [motifRefus, setMotifRefus] = useState('');
+  // Date à laquelle la CPA sera refaite (decision === REPORT) — distincte de dateVPA
+  // (vérification veille, uniquement pour un patient déjà déclaré APTE) : posée par qui décide
+  // le report (Respo CPA/Major, ou l'anesthésiste s'il réalise seul sa CPA), pas réservée à
+  // l'anesthésiste rouvrant une CPA déjà validée.
+  const [dateReportCpa, setDateReportCpa] = useState('');
+  const [heureReportCpa, setHeureReportCpa] = useState('09:00');
   const [validationProfInformelle, setValidationProfInformelle] = useState('');
   const [dateVPA, setDateVPA] = useState('');
   const [heureVPA, setHeureVPA] = useState('08:00');
@@ -254,7 +260,9 @@ function ConsultationCpaPageContent() {
   const medicamentsSelectionnes = medicamentsAnesthesieRows.filter(r => r.selected);
 
   const planifierVerificationVeille = async (patientIdFinal: string) => {
-    if (estUrgent || decision === 'INAPTE' || !dateVPA) return;
+    // Uniquement pour un patient déclaré APTE — sans objet pour INAPTE et pour REPORT (la CPA
+    // elle-même reste à refaire, voir planifierReportCpa).
+    if (estUrgent || decision !== 'APTE' || !dateVPA) return;
     const [h, m] = heureVPA.split(':').map(Number);
     const fin = new Date(); fin.setHours(h, m + 30);
     await planningService.reserverCreneau({
@@ -265,6 +273,23 @@ function ConsultationCpaPageContent() {
       salle: 'Vérification veille-1',
       estUrgence: false,
       type: 'VERIFICATION_VEILLE',
+    });
+  };
+
+  // Réserve un nouveau créneau CPA à la date de report choisie — distinct de la vérification
+  // veille (réservée aux patients APTE), pour un patient dont la décision est REPORT.
+  const planifierReportCpa = async (patientIdFinal: string) => {
+    if (decision !== 'REPORT' || !dateReportCpa) return;
+    const [h, m] = heureReportCpa.split(':').map(Number);
+    const fin = new Date(); fin.setHours(h, m + 30);
+    await planningService.reserverCreneau({
+      patientId: patientIdFinal,
+      date: dateReportCpa,
+      heureDebut: heureReportCpa,
+      heureFin: fin.toTimeString().split(' ')[0].substring(0, 5),
+      salle: 'CPA (report)',
+      estUrgence: false,
+      type: 'CPA',
     });
   };
 
@@ -339,11 +364,14 @@ function ConsultationCpaPageContent() {
           jeune: form.jeune || `Solides : ${form.jeuneSolides || 'À partir de minuit'} — Liquide : ${form.jeuneLiquides || "Jusqu'à H-2"}`,
           preparationPhysique: form.preparationPhysique || 'RAS',
           tachesInfirmieres: form.tachesInfirmieres || 'RAS',
-          dateVerificationVeille: (peutEditerMedicamentsEtVpa && !estUrgent && decision !== 'INAPTE' && dateVPA) ? dateVPA : undefined,
+          dateVerificationVeille: (peutEditerMedicamentsEtVpa && !estUrgent && decision === 'APTE' && dateVPA) ? dateVPA : undefined,
         };
 
         await apiClient.post('/cpa', payload);
         if (peutEditerMedicamentsEtVpa) await planifierVerificationVeille(patientIdFinal);
+        // Date de report : posée par qui décide le REPORT (Respo CPA/Major ou l'anesthésiste
+        // solo), pas réservée à l'anesthésiste — contrairement à la vérification veille.
+        await planifierReportCpa(patientIdFinal);
 
         alert(estUrgent ? '✅ VPA validée avec succès !' : '✅ CPA validée avec succès !');
         router.push('/bloc/rendez-vous');
@@ -362,7 +390,7 @@ function ConsultationCpaPageContent() {
                 nombre: r.nombre !== '' ? Number(r.nombre) : undefined,
               }))
             : undefined,
-          dateVerificationVeille: (!estUrgent && decision !== 'INAPTE' && dateVPA) ? dateVPA : undefined,
+          dateVerificationVeille: (!estUrgent && decision === 'APTE' && dateVPA) ? dateVPA : undefined,
         });
         await planifierVerificationVeille(patientIdFinal);
 
@@ -854,6 +882,11 @@ function ConsultationCpaPageContent() {
                     <label className="text-xs font-bold text-orange-700 block mb-1">Motif du report *</label>
                     <textarea disabled={!peutEditerExamenEtDecision} value={motifRefus} onChange={e => setMotifRefus(e.target.value)}
                       className="w-full h-20 bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-300 outline-none disabled:opacity-60" placeholder="Ex : bilan biologique complémentaire nécessaire avant de statuer sur l'aptitude..." />
+                    <label className="text-xs font-bold text-orange-700 block mt-3 mb-1">Date de report (facultatif — pour refaire la CPA)</label>
+                    <div className="flex flex-col md:flex-row md:items-center gap-2">
+                      <input disabled={!peutEditerExamenEtDecision} className="flex-1 bg-orange-50 border border-orange-200 rounded-lg p-2 text-sm disabled:opacity-60" type="date" value={dateReportCpa} onChange={e => setDateReportCpa(e.target.value)} />
+                      <input disabled={!peutEditerExamenEtDecision} className="flex-none w-32 bg-orange-50 border border-orange-200 rounded-lg p-2 text-sm disabled:opacity-60" type="time" value={heureReportCpa} onChange={e => setHeureReportCpa(e.target.value)} />
+                    </div>
                   </div>
                 )}
                 {/* Mention informelle : pas un vrai workflow d'approbation, juste un aperçu si le
@@ -899,9 +932,11 @@ function ConsultationCpaPageContent() {
 
           {/* Planification de la vérification à la veille — réservée à l'anesthésiste (qui rouvre
               sa propre CPA), sans objet pour un patient urgent (chirurgie immédiate, pas de
-              "veille"). Le Respo CPA/Major ne doit même pas voir cette section : ils valident la
-              CPA elle-même, la planification de la veille n'est pas leur rôle. */}
-          {estAnesthesisteConnecte && !estUrgent && decision !== 'INAPTE' && decision !== '' && (
+              "veille") ni pour une décision REPORT (la CPA elle-même reste à refaire, voir la
+              date de report ci-dessus) ou INAPTE. Le Respo CPA/Major ne doit même pas voir cette
+              section : ils valident la CPA elle-même, la planification de la veille n'est pas
+              leur rôle. */}
+          {estAnesthesisteConnecte && !estUrgent && decision === 'APTE' && (
             <div className="mt-4 p-4 bg-surface-container-low rounded-xl border space-y-2">
               <label className="text-sm font-bold block">Planification de la vérification à la veille de l'opération</label>
               <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
