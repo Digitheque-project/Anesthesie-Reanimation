@@ -1,13 +1,19 @@
 import type { MedicamentTableAccent } from '@/components/bloc/medicaments-anesthesie/MedicamentTable'
 
-// Source : liste fournie par le service (remplace l'ancien catalogue à 7 catégories/77
-// articles, reconstitué depuis une fiche papier scannée — celui-ci est la version officielle).
+// Source : fiche papier « USFR Anesthésie Réanimation — CHU Fianarantsoa » + mockup HTML
+// « Liste des médicaments nécessaires pour l'Anesthésie et la Réanimation ». Les en-têtes de
+// section du mockup annoncent des comptes qui ne correspondent pas toujours au nombre réel de
+// lignes, et son bandeau annonce « 72 articles » alors que la somme réelle des lignes
+// ci-dessous est 77. On transcrit les lignes réelles (source de vérité), sans forcer
+// artificiellement le total à 72.
 
 export type CategorieMedicament =
-  | 'SERUM'
+  | 'SERUMS'
   | 'PRODUITS_ANESTHESIQUES'
   | 'ANTALGIQUES'
+  | 'KIT_ASEPSIE'
   | 'ANTIBIOTIQUES_AUTRES'
+  | 'DISPOSITIFS_MEDICAUX'
   | 'CONSOMMABLES'
 
 export type CategorieMedicamentDef = {
@@ -18,18 +24,18 @@ export type CategorieMedicamentDef = {
 }
 
 export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicamentDef> = {
-  SERUM: {
-    titre: 'Sérum',
+  SERUMS: {
+    titre: 'Sérums',
     accent: 'primary',
     icon: 'water_drop',
     items: [
-      'SGH 5% (500 ml – 1000 ml)',
-      'SSI 9% (500 ml – 1000 ml)',
-      'RL (500 ml – 1000 ml)',
-      'Hestar (500 ml)',
-      'DNS (500 ml)',
-      'Mannitol 20% (100 ml à 500 ml)',
-      'Sérum composé (500 ml)',
+      'SGH 5% (disponible en 5% et 10%)',
+      'SSI 9%',
+      'Ringer Lactate (RL)',
+      'Hestar',
+      'DNS',
+      'Mannitol 20%',
+      'Sérum composé',
     ],
   }, // 7
   PRODUITS_ANESTHESIQUES: {
@@ -37,57 +43,115 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
     accent: 'secondary',
     icon: 'vaccines',
     items: [
-      'Fentanyl (100 – 500)',
-      'Propofol Lipuro 1% (20 ml)',
-      'Atropine (0,5 mg – 0,25 mg)',
-      'Aratax 100 mg inj',
-      'Sévoflurane (50 ml, 100 ml, 150 ml…)',
+      'Nesdonal 1g',
+      'Pancuronium 4mg / Vécuronium 4mg',
+      'Fentanyl',
+      'Kétamine 500mg',
+      'Provive 1% / Propofol Lipuro 1%',
+      'Diazépam 10mg inj / Midazolam inj',
+      'Atropine',
+      'Atarax 100mg inj',
+      'Bupivacaïne Rachi 0,50%',
+      'Bupivacaïne ALR 0,50% sans Adré',
+      'Bupivacaïne ALR 0,50% avec Adré',
+      'Lidocaïne 1%–2% (avec/sans Adré)',
+      'Stimuplex',
+      "Sévoflurane (remplace l'Halothane)",
     ],
-  }, // 5
+  }, // 14
   ANTALGIQUES: {
     titre: 'Antalgiques',
     accent: 'tertiary',
     icon: 'medication',
     items: [
-      'Perfalgan (500 mg – 1000 mg)',
-      'Doliprane suppo (100 mg, 150 mg, 200 mg, 300 mg, 1000 mg)',
-      'Profénid (100 mg inj – suppo)',
-      'Nifluril (400 mg inj – suppo)',
-      'Tramadol (100 mg inj)',
-      'Acupan (20 mg inj)',
+      'Perfalgan',
+      'Doliprane suppo',
+      'Profénid',
+      'Lamaline suppo',
+      'Nifluril',
+      'Tramadol',
+      'Acupan',
     ],
-  }, // 6
+  }, // 7
+  KIT_ASEPSIE: {
+    titre: 'Kit pour asepsie',
+    accent: 'primary-container',
+    icon: 'sanitizer',
+    items: [
+      'Blouse stérile',
+      'Calot',
+      'Champ stérile',
+      'Set pour voie centrale',
+      'Set pour voie périphérique',
+      'Set pour sondage urinaire',
+      'Gants stériles',
+      'Gants non stériles',
+      'Kit bloc',
+    ],
+  }, // 9
   ANTIBIOTIQUES_AUTRES: {
     titre: 'Antibiotiques & autres',
     accent: 'error',
     icon: 'biotech',
     items: [
-      'Flagyl 500 mg perf',
-      'Céfuroxime 1,5 g',
-      'Héparine (Lovenox 0,2 – 0,4 – 0,6)',
-      'Méthylprednisolone (40 mg – 120 mg)',
-      'Loxen 10 mg inj',
-      'Calcium 1 g inj',
-      'Nitriderm 10 mg',
-      'Cathéter veineux (24G – 22G – 20G – 18G – 16G)',
-      'Aiguille PL (22, 25…)',
-      'Sonde d\'intubation (CH3, CH3.5… CH8)',
+      'Flagyl',
+      'Céfuroxime',
+      'Métronidazole',
+      'Héparine (Lovenox)',
+      'Méthylprednisolone',
+      'Loxen',
+      'Calcium',
+      'Nitriderm',
+    ],
+  }, // 8
+  DISPOSITIFS_MEDICAUX: {
+    titre: 'Dispositifs médicaux',
+    accent: 'inverse-primary',
+    icon: 'medical_services',
+    items: [
+      'Perfuseur',
+      'Perfuseur pédiatrique',
+      'Transfuseur',
+      'Cathéter veineux (24G-16G)',
+      'Kit pour voie centrale',
+      'Kit pour APD (péridurale)',
+      'Aiguille PL',
+      'Robinet à 3 voies',
+      'Électrode',
+      "Sonde d'intubation (CH3-8)",
+      'Filtre antibactérien avec connecteur',
       'Canule de Guedel (N°00-3)',
-      'Sonde d\'aspiration (CH14-6)',
+      "Sonde d'aspiration (CH14-6)",
+      'Sonde nasogastrique',
       'Drain de Redon (CH12-16)',
       'Sonde vésicale (CH8-22)',
+      'Poche à urine',
     ],
-  }, // 14
+  }, // 17
   CONSOMMABLES: {
     titre: 'Consommables',
-    accent: 'inverse-primary',
+    accent: 'secondary',
     icon: 'inventory_2',
     items: [
-      'Dakin Cooper stabilisé (250 cc – 500 cc)',
+      'Coton',
+      'Alcool',
+      'Sparadrap standard 70cm',
+      'Dakin Cooper stabilisé',
+      'Bétadine jaune',
+      'Bétadine rouge',
+      'Seringue 50cc',
+      'Seringue 20cc',
+      'Seringue 10cc',
+      'Seringue 5cc',
+      'Sécurefix PM/GM',
+      'Lunettes nasales',
+      'Lunettes nasales enfant',
+      'Kit AG',
+      'Kit ALR',
     ],
-  }, // 1
+  }, // 15
 }
-// Total : 7+5+6+14+1 = 33
+// Total réel : 7+14+7+9+8+17+15 = 77
 
 export const TOTAL_MEDICAMENTS = Object.values(CATALOGUE_MEDICAMENTS).reduce(
   (total, categorie) => total + categorie.items.length,

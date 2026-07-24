@@ -160,10 +160,11 @@ export default function MedicamentTable({
                 row.dosagePlaceholder ?? (mode === "QUANTITE" ? "ex: 3 ampoules" : "ex: 500mg");
               const prixUnitaire = prixParId?.[row.id];
               const nombreValeur = Number(row.nombre);
+              // N'affiche le prix total qu'une fois la ligne vraiment renseignée (dosage/quantité
+              // ET nombre) — pas dès la simple sélection de l'article.
+              const ligneRenseignee = row.dosage.trim() !== "" && !Number.isNaN(nombreValeur) && nombreValeur > 0;
               const prixTotal =
-                prixUnitaire != null && !Number.isNaN(nombreValeur) && nombreValeur > 0
-                  ? prixUnitaire * nombreValeur
-                  : null;
+                prixUnitaire != null && ligneRenseignee ? prixUnitaire * nombreValeur : null;
 
               return (
                 <tr
@@ -221,8 +222,8 @@ export default function MedicamentTable({
                   <td className="px-4 py-3 text-xs font-bold text-on-surface-variant">
                     {prixTotal != null ? (
                       <span className="text-emerald-700">{formatAr(prixTotal)}</span>
-                    ) : prixUnitaire === null ? (
-                      <span className="text-on-surface-variant/50">Non disponible</span>
+                    ) : ligneRenseignee && prixUnitaire === null ? (
+                      <span className="text-on-surface-variant/50">Non disponible à la pharmacie</span>
                     ) : (
                       "—"
                     )}
