@@ -55,8 +55,9 @@ __decorate([
 class MedicamentAnesthesieReanimationDto {
     categorie;
     nom;
+    mode;
     dosage;
-    observation;
+    nombre;
 }
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -68,14 +69,19 @@ __decorate([
 ], MedicamentAnesthesieReanimationDto.prototype, "nom", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(['DOSAGE', 'QUANTITE']),
+    __metadata("design:type", String)
+], MedicamentAnesthesieReanimationDto.prototype, "mode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], MedicamentAnesthesieReanimationDto.prototype, "dosage", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], MedicamentAnesthesieReanimationDto.prototype, "observation", void 0);
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], MedicamentAnesthesieReanimationDto.prototype, "nombre", void 0);
 class CreateCPADto {
     patientId;
     anesthesisteId;

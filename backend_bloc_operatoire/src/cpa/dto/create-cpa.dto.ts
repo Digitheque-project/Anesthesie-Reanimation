@@ -30,8 +30,9 @@ class PremedicamentDto {
 class MedicamentAnesthesieReanimationDto {
   @IsString() categorie: string;
   @IsString() nom: string;
+  @IsOptional() @IsEnum(['DOSAGE', 'QUANTITE']) mode?: 'DOSAGE' | 'QUANTITE';
   @IsOptional() @IsString() dosage?: string;
-  @IsOptional() @IsString() observation?: string;
+  @IsOptional() @IsNumber() nombre?: number;
 }
 
 export class CreateCPADto {

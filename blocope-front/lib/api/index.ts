@@ -7,3 +7,4 @@ export { notificationService } from './notification.service';
 export { planningService } from './planning.service';
 export { cpaService } from './cpa.service';
 export { rapportsService } from './rapports.service';
+export { pharmacieService } from './pharmacie.service';

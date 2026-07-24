@@ -2,16 +2,23 @@
 
 import Checkbox from "@/components/ui/Checkbox";
 
+export type ModeSaisieMedicament = "DOSAGE" | "QUANTITE";
+
 export type MedicamentRow = {
   id: string;
   label: string;
   selected: boolean;
+  /** Mode choisi pour le champ ci-dessous : description du dosage (ex. "500mg") ou quantité
+   * (ex. "3 ampoules"). */
+  mode: ModeSaisieMedicament;
   dosage: string;
-  observation: string;
+  /** Nombre d'unités à prévoir — sert au calcul du prix total (rapprochement Pharmacie), distinct
+   * du champ dosage/quantité ci-dessus qui reste une description clinique libre. */
+  nombre: string;
   /** Par défaut : champ texte. `number` pour les quantités entières (ex. blouse). */
   dosageInputType?: "text" | "number";
   dosagePlaceholder?: string;
-  /** Catégorie d'origine (ex. "SERUMS") — non utilisée par ce composant, sert au parent à
+  /** Catégorie d'origine (ex. "SERUM") — non utilisée par ce composant, sert au parent à
    * regrouper/filtrer les lignes d'un tableau à plat (ex. catalogue CPA). */
   categorie?: string;
 };
@@ -67,8 +74,11 @@ const rowSelectedClass: Record<MedicamentTableAccent, string> = {
 const dosageInputClassName =
   "h-9 w-full rounded border border-outline-variant/20 bg-surface-container-low px-3 outline-none focus:ring-2 focus:ring-primary/20";
 
-const observationInputClassName =
-  "h-9 w-full border-none bg-transparent px-3 text-xs text-on-surface-variant outline-none focus:ring-0";
+const nombreInputClassName =
+  "h-9 w-20 rounded border border-outline-variant/20 bg-surface-container-low px-2 text-center outline-none focus:ring-2 focus:ring-primary/20";
+
+const formatAr = (valeur: number) =>
+  `${valeur.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} Ar`;
 
 type MedicamentTableProps = {
   title: string;
@@ -76,6 +86,9 @@ type MedicamentTableProps = {
   icon?: string;
   rows: MedicamentRow[];
   onRowsChange: (rows: MedicamentRow[]) => void;
+  /** Prix unitaire (Ar) par id de ligne, trouvé dans le catalogue Pharmacie par rapprochement de
+   * nom — null si aucun article correspondant, absent si le catalogue n'a pas encore chargé. */
+  prixParId?: Record<string, number | null>;
 };
 
 export default function MedicamentTable({
@@ -84,6 +97,7 @@ export default function MedicamentTable({
   icon,
   rows,
   onRowsChange,
+  prixParId,
 }: MedicamentTableProps) {
   const patchRow = (
     id: string,
@@ -128,20 +142,28 @@ export default function MedicamentTable({
               <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
                 Médicament / Matériel
               </th>
-              <th className="w-64 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                Quantité / Dosage
+              <th className="w-72 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                Dosage ou Quantité
               </th>
-              <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                Observation
+              <th className="w-24 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                Nombre
+              </th>
+              <th className="w-32 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                Prix total
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-outline-variant/10 text-sm">
             {rows.map((row) => {
-              const dosageType = row.dosageInputType ?? "text";
+              const mode = row.mode ?? "DOSAGE";
               const dosagePlaceholder =
-                row.dosagePlaceholder ??
-                (dosageType === "number" ? "Qté" : "ex: 500ml");
+                row.dosagePlaceholder ?? (mode === "QUANTITE" ? "ex: 3 ampoules" : "ex: 500mg");
+              const prixUnitaire = prixParId?.[row.id];
+              const nombreValeur = Number(row.nombre);
+              const prixTotal =
+                prixUnitaire != null && !Number.isNaN(nombreValeur) && nombreValeur > 0
+                  ? prixUnitaire * nombreValeur
+                  : null;
 
               return (
                 <tr
@@ -167,28 +189,43 @@ export default function MedicamentTable({
                     {row.label}
                   </td>
                   <td className="px-4 py-3">
-                    <input
-                      type={dosageType}
-                      value={row.dosage}
-                      onChange={(e) =>
-                        patchRow(row.id, "dosage", e.target.value)
-                      }
-                      placeholder={dosagePlaceholder}
-                      className={dosageInputClassName}
-                      min={dosageType === "number" ? 0 : undefined}
-                      step={dosageType === "number" ? 1 : undefined}
-                    />
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={mode}
+                        onChange={(e) => patchRow(row.id, "mode", e.target.value)}
+                        className="h-9 shrink-0 rounded border border-outline-variant/20 bg-surface-container-low px-1.5 text-[11px] font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="DOSAGE">Dosage</option>
+                        <option value="QUANTITE">Quantité</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={row.dosage}
+                        onChange={(e) => patchRow(row.id, "dosage", e.target.value)}
+                        placeholder={dosagePlaceholder}
+                        className={dosageInputClassName}
+                      />
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <input
-                      type="text"
-                      value={row.observation}
-                      onChange={(e) =>
-                        patchRow(row.id, "observation", e.target.value)
-                      }
-                      placeholder="Note…"
-                      className={observationInputClassName}
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={row.nombre}
+                      onChange={(e) => patchRow(row.id, "nombre", e.target.value)}
+                      placeholder="0"
+                      className={nombreInputClassName}
                     />
+                  </td>
+                  <td className="px-4 py-3 text-xs font-bold text-on-surface-variant">
+                    {prixTotal != null ? (
+                      <span className="text-emerald-700">{formatAr(prixTotal)}</span>
+                    ) : prixUnitaire === null ? (
+                      <span className="text-on-surface-variant/50">Non disponible</span>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               );
@@ -196,14 +233,6 @@ export default function MedicamentTable({
           </tbody>
         </table>
       </div>
-
-      <button
-        type="button"
-        className="mt-4 flex items-center gap-2 text-xs font-bold uppercase text-navy-blue"
-      >
-        Voir plus
-        <span className="material-symbols-outlined text-base">expand_more</span>
-      </button>
     </section>
   );
 }

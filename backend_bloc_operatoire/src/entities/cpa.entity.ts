@@ -149,15 +149,17 @@ export class CPA {
 
   // Médicaments/matériel à prévoir pendant l'anesthésie et la réanimation (distinct de la
   // prémédication, donnée avant le passage au bloc) — consultable dès la CPA. Sélection dans le
-  // catalogue des 7 catégories (Sérums, Produits anesthésiques, Antalgiques, Kit asepsie,
-  // Antibiotiques & autres, Dispositifs médicaux, Consommables) ; seuls les articles cochés sont
-  // persistés, pas le catalogue entier.
+  // catalogue des 5 catégories (Sérum, Produits anesthésiques, Antalgiques, Antibiotiques &
+  // autres, Consommables) ; seuls les articles cochés sont persistés, pas le catalogue entier.
+  // `mode` indique si `dosage` contient une description de dosage ou une quantité ; `nombre` est
+  // le nombre d'unités à prévoir, utilisé pour le rapprochement de prix avec le service Pharmacie.
   @Column({ type: 'simple-json', nullable: true })
   medicamentsAnesthesieReanimation: {
     categorie: string;
     nom: string;
+    mode?: 'DOSAGE' | 'QUANTITE';
     dosage?: string;
-    observation?: string;
+    nombre?: number;
   }[];
 
   @Column()

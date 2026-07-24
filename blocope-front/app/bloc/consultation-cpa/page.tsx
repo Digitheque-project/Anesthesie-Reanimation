@@ -8,6 +8,7 @@ import { useRole } from '@/lib/hooks/useRole';
 import { obtenirSessionValide } from '@/lib/auth/central-session';
 import MedicamentsAnesthesieModal, { construireLignesInitiales } from '@/components/bloc/medicaments-anesthesie/MedicamentsAnesthesieModal';
 import type { MedicamentRow } from '@/components/bloc/medicaments-anesthesie/MedicamentTable';
+import { TOTAL_MEDICAMENTS } from '@/lib/data/catalogue-medicaments-anesthesie';
 import RoleGate from '@/components/bloc/auth/RoleGate';
 import { RoleClinique } from '@/lib/auth/role-clinique';
 import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
@@ -53,15 +54,21 @@ const DEFAULT_FORM = {
   tachesInfirmieres: '',
 }
 
-// Reconstitue l'état des 77 lignes du catalogue à partir des médicaments d'anesthésie/
-// réanimation déjà enregistrés sur une CPA existante (cochés + dosage/observation restaurés).
+// Reconstitue l'état des lignes du catalogue à partir des médicaments d'anesthésie/réanimation
+// déjà enregistrés sur une CPA existante (cochés + mode/dosage/nombre restaurés).
 function restaurerMedicamentsAnesthesieRows(items: any[] | undefined | null): MedicamentRow[] {
   const lignes = construireLignesInitiales();
   if (!items?.length) return lignes;
   return lignes.map(ligne => {
     const trouve = items.find((i: any) => i.categorie === ligne.categorie && i.nom === ligne.label);
     if (!trouve) return ligne;
-    return { ...ligne, selected: true, dosage: trouve.dosage || '', observation: trouve.observation || '' };
+    return {
+      ...ligne,
+      selected: true,
+      mode: trouve.mode === 'QUANTITE' ? 'QUANTITE' : 'DOSAGE',
+      dosage: trouve.dosage || '',
+      nombre: trouve.nombre != null ? String(trouve.nombre) : '',
+    };
   });
 }
 
@@ -324,8 +331,9 @@ function ConsultationCpaPageContent() {
             ? medicamentsSelectionnes.map(r => ({
                 categorie: r.categorie,
                 nom: r.label,
+                mode: r.mode,
                 dosage: r.dosage || undefined,
-                observation: r.observation || undefined,
+                nombre: r.nombre !== '' ? Number(r.nombre) : undefined,
               }))
             : undefined,
           jeune: form.jeune || `Solides : ${form.jeuneSolides || 'À partir de minuit'} — Liquide : ${form.jeuneLiquides || "Jusqu'à H-2"}`,
@@ -349,8 +357,9 @@ function ConsultationCpaPageContent() {
             ? medicamentsSelectionnes.map(r => ({
                 categorie: r.categorie,
                 nom: r.label,
+                mode: r.mode,
                 dosage: r.dosage || undefined,
-                observation: r.observation || undefined,
+                nombre: r.nombre !== '' ? Number(r.nombre) : undefined,
               }))
             : undefined,
           dateVerificationVeille: (!estUrgent && decision !== 'INAPTE' && dateVPA) ? dateVPA : undefined,
@@ -713,7 +722,7 @@ function ConsultationCpaPageContent() {
                 className="w-full flex items-center justify-between p-4 border border-surface-container rounded-xl hover:bg-primary-fixed/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                 <span className="flex items-center gap-2 text-sm font-bold text-primary">
                   <span className="material-symbols-outlined">checklist</span>
-                  Liste des médicaments ({medicamentsSelectionnes.length}/77 sélectionnés)
+                  Liste des médicaments ({medicamentsSelectionnes.length}/{TOTAL_MEDICAMENTS} sélectionnés)
                 </span>
                 <span className="text-xs font-bold text-primary underline">{peutEditerMedicamentsEtVpa ? 'Ouvrir la liste complète' : 'Voir la liste'}</span>
               </button>

@@ -59,8 +59,9 @@ export declare class CPA {
     medicamentsAnesthesieReanimation: {
         categorie: string;
         nom: string;
+        mode?: 'DOSAGE' | 'QUANTITE';
         dosage?: string;
-        observation?: string;
+        nombre?: number;
     }[];
     jeune: string;
     preparationPhysique: string;

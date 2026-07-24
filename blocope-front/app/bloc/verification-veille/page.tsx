@@ -60,7 +60,7 @@ function VerificationVeillePageContent() {
   }, [patientId])
 
   const cpaId = cpa?.id || ''
-  const medicamentsAnesthesie: { categorie: string; nom: string; dosage?: string; observation?: string }[] =
+  const medicamentsAnesthesie: { categorie: string; nom: string; mode?: string; dosage?: string; nombre?: number }[] =
     cpa?.medicamentsAnesthesieReanimation || []
 
   const toggleMedicamentVerifie = (nom: string) => {

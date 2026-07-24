@@ -19,6 +19,7 @@ const prescription_imagerie_client_1 = require("./prescription-imagerie.client")
 const notification_back_client_1 = require("./notification-back.client");
 const dossier_patient_client_1 = require("./dossier-patient.client");
 const central_user_client_1 = require("./central-user.client");
+const pharmacie_client_1 = require("./pharmacie.client");
 let ExternalModule = class ExternalModule {
 };
 exports.ExternalModule = ExternalModule;
@@ -40,6 +41,7 @@ exports.ExternalModule = ExternalModule = __decorate([
             notification_back_client_1.NotificationBackClient,
             dossier_patient_client_1.DossierPatientClient,
             central_user_client_1.CentralUserClient,
+            pharmacie_client_1.PharmacieClient,
         ],
         exports: [
             accueil_client_1.AccueilClient,
@@ -51,6 +53,7 @@ exports.ExternalModule = ExternalModule = __decorate([
             notification_back_client_1.NotificationBackClient,
             dossier_patient_client_1.DossierPatientClient,
             central_user_client_1.CentralUserClient,
+            pharmacie_client_1.PharmacieClient,
         ],
     })
 ], ExternalModule);

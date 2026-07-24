@@ -11,6 +11,7 @@ declare const _default: (() => {
     notificationApiUrl: string | undefined;
     dossierPatientApiUrl: string | undefined;
     centralUserServiceUrl: string | undefined;
+    pharmacieApiUrl: string | undefined;
 }) & import("@nestjs/config").ConfigFactoryKeyHost<{
     chuId: string;
     serviceId: string | undefined;
@@ -24,5 +25,6 @@ declare const _default: (() => {
     notificationApiUrl: string | undefined;
     dossierPatientApiUrl: string | undefined;
     centralUserServiceUrl: string | undefined;
+    pharmacieApiUrl: string | undefined;
 }>;
 export default _default;

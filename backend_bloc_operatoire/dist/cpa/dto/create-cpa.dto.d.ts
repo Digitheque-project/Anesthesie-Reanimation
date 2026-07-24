@@ -9,8 +9,9 @@ declare class PremedicamentDto {
 declare class MedicamentAnesthesieReanimationDto {
     categorie: string;
     nom: string;
+    mode?: 'DOSAGE' | 'QUANTITE';
     dosage?: string;
-    observation?: string;
+    nombre?: number;
 }
 export declare class CreateCPADto {
     patientId: string;

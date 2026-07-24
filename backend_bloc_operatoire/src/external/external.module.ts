@@ -10,6 +10,7 @@ import { PrescriptionImagerieClient } from './prescription-imagerie.client';
 import { NotificationBackClient } from './notification-back.client';
 import { DossierPatientClient } from './dossier-patient.client';
 import { CentralUserClient } from './central-user.client';
+import { PharmacieClient } from './pharmacie.client';
 
 @Global()
 @Module({
@@ -31,6 +32,7 @@ import { CentralUserClient } from './central-user.client';
     NotificationBackClient,
     DossierPatientClient,
     CentralUserClient,
+    PharmacieClient,
   ],
   exports: [
     AccueilClient,
@@ -42,6 +44,7 @@ import { CentralUserClient } from './central-user.client';
     NotificationBackClient,
     DossierPatientClient,
     CentralUserClient,
+    PharmacieClient,
   ],
 })
 export class ExternalModule {}

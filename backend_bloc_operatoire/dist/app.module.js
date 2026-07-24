@@ -46,6 +46,7 @@ const central_auth_guard_1 = require("./central-auth/central-auth.guard");
 const operation_gateway_module_1 = require("./operation-gateway/operation-gateway.module");
 const moments_operatoire_module_1 = require("./moments-operatoire/moments-operatoire.module");
 const moments_catalogue_module_1 = require("./moments-catalogue/moments-catalogue.module");
+const pharmacie_module_1 = require("./pharmacie/pharmacie.module");
 const external_services_config_1 = __importDefault(require("./config/external-services.config"));
 const central_auth_config_1 = __importDefault(require("./config/central-auth.config"));
 let AppModule = class AppModule {
@@ -94,6 +95,7 @@ exports.AppModule = AppModule = __decorate([
             checklist_apres_op_module_1.ChecklistApresOpModule,
             moments_operatoire_module_1.MomentsOperatoireModule,
             moments_catalogue_module_1.MomentsCatalogueModule,
+            pharmacie_module_1.PharmacieModule,
             webhook_notification_module_1.WebhookNotificationModule,
             prescription_module_1.PrescriptionModule,
             prescription_imagerie_module_1.PrescriptionImagerieModule,

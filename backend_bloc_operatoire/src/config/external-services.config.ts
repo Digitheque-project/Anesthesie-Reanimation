@@ -24,5 +24,6 @@ export default registerAs('externalServices', () => {
     notificationApiUrl: process.env.NOTIFICATION_API_URL,
     dossierPatientApiUrl: process.env.DOSSIER_PATIENT_API_URL,
     centralUserServiceUrl: process.env.CENTRAL_USER_SERVICE_URL,
+    pharmacieApiUrl: process.env.PHARMACIE_API_URL,
   };
 });

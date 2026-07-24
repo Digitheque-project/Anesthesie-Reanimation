@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MedicamentTable, { MedicamentRow } from "./MedicamentTable";
 import { CATALOGUE_MEDICAMENTS, CategorieMedicament } from "@/lib/data/catalogue-medicaments-anesthesie";
+import { trouverArticlePharmacie } from "@/lib/data/rapprochement-pharmacie";
+import { pharmacieService, type ArticlePharmacie } from "@/lib/api/pharmacie.service";
 
 // Construit l'état initial (tout décoché) du catalogue complet, à plat, un id stable par
 // article (`categorie::libellé`) pour que la sélection survive aux re-rendus.
@@ -12,8 +14,9 @@ export function construireLignesInitiales(): MedicamentRow[] {
       id: `${categorie}::${label}`,
       label,
       selected: false,
+      mode: "DOSAGE" as const,
       dosage: "",
-      observation: "",
+      nombre: "",
       categorie,
     }))
   );
@@ -35,6 +38,25 @@ export default function MedicamentsAnesthesieModal({
   const total = rows.length;
   const selectionnes = useMemo(() => rows.filter((r) => r.selected).length, [rows]);
   const progression = total > 0 ? Math.round((selectionnes / total) * 100) : 0;
+
+  // Catalogue de prix Pharmacie, chargé une fois à l'ouverture de la modale (mis en cache
+  // côté backend, pas besoin de le refetch à chaque réouverture dans la même session).
+  const [articlesPharmacie, setArticlesPharmacie] = useState<ArticlePharmacie[]>([]);
+  useEffect(() => {
+    if (open && articlesPharmacie.length === 0) {
+      pharmacieService.getPrix().then(setArticlesPharmacie).catch(() => {});
+    }
+  }, [open, articlesPharmacie.length]);
+
+  const prixParId = useMemo(() => {
+    const table: Record<string, number | null> = {};
+    for (const row of rows) {
+      if (!articlesPharmacie.length) continue;
+      const article = trouverArticlePharmacie(row.label, articlesPharmacie);
+      table[row.id] = article ? article.sale_price : null;
+    }
+    return table;
+  }, [rows, articlesPharmacie]);
 
   if (!open) return null;
 
@@ -79,6 +101,7 @@ export default function MedicamentsAnesthesieModal({
                 icon={def.icon}
                 rows={sousLignes}
                 onRowsChange={(nouvelles) => patchCategorie(categorie, nouvelles)}
+                prixParId={prixParId}
               />
             );
           })}
