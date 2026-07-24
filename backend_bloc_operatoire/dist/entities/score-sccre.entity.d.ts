@@ -1,4 +1,3 @@
-import { Medecin } from './medecin.entity';
 export declare enum StatutScoreSCCRE {
     EN_COURS = "EN_COURS",
     VALIDE = "VALIDE"
@@ -6,7 +5,6 @@ export declare enum StatutScoreSCCRE {
 export declare class ScoreSCCRE {
     id: string;
     patientId: string;
-    anesthesiste: Medecin;
     anesthesisteId: string;
     heureArrivee: string;
     dateEvaluation: Date;

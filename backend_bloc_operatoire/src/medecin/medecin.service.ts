@@ -65,7 +65,10 @@ export class MedecinService {
     return medecin;
   }
 
-  async update(id: string, updateMedecinDto: UpdateMedecinDto): Promise<Medecin> {
+  async update(
+    id: string,
+    updateMedecinDto: UpdateMedecinDto,
+  ): Promise<Medecin> {
     const medecin = await this.findOne(id);
     Object.assign(medecin, updateMedecinDto);
     return this.medecinRepository.save(medecin);

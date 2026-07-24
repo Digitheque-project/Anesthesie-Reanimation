@@ -5,11 +5,17 @@ import { CPA } from '../entities/cpa.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { DemandeCpaExterneModule } from '../demande-cpa-externe/demande-cpa-externe.module';
 import { PatientBlocModule } from '../patient-bloc/patient-bloc.module';
+import { MedecinModule } from '../medecin/medecin.module';
 import { VerificationVeilleService } from './verification-veille.service';
 import { VerificationVeilleController } from './verification-veille.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([VerificationVeille, CPA, PatientBloc]), DemandeCpaExterneModule, PatientBlocModule],
+  imports: [
+    TypeOrmModule.forFeature([VerificationVeille, CPA, PatientBloc]),
+    DemandeCpaExterneModule,
+    PatientBlocModule,
+    MedecinModule,
+  ],
   controllers: [VerificationVeilleController],
   providers: [VerificationVeilleService],
   exports: [VerificationVeilleService],

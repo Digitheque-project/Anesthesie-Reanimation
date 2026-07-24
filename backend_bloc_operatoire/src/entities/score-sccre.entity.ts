@@ -1,5 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate, Index } from 'typeorm';
-import { Medecin } from './medecin.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  BeforeInsert,
+  BeforeUpdate,
+  Index,
+} from 'typeorm';
 
 export enum StatutScoreSCCRE {
   EN_COURS = 'EN_COURS',
@@ -13,8 +21,8 @@ export class ScoreSCCRE {
 
   @Index() @Column() patientId: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  anesthesiste: Medecin;
+  // Référence l'identité de l'anesthésiste — userId central (interne) ou id local `medecins`
+  // (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column() anesthesisteId: string;
 
   @Column() heureArrivee: string;
@@ -27,20 +35,37 @@ export class ScoreSCCRE {
   @Column('int') coloration: number;
   @Column('int') scoreTotal: number;
 
-  @BeforeInsert() @BeforeUpdate()
+  @BeforeInsert()
+  @BeforeUpdate()
   calculerScoreTotal() {
-    this.scoreTotal = +this.motricite + +this.respiration + +this.pressionArterielle + +this.etatConscience + +this.coloration;
+    this.scoreTotal =
+      +this.motricite +
+      +this.respiration +
+      +this.pressionArterielle +
+      +this.etatConscience +
+      +this.coloration;
   }
 
   @Column('int') evs: number;
   @Column('int') eqa: number;
   @Column('int') eva: number;
 
-  @Column('simple-json') etatInitial: { intubation: boolean; curarisation: boolean };
-  @Column('simple-json') reponse: { intubation: boolean; curarisation: boolean };
+  @Column('simple-json') etatInitial: {
+    intubation: boolean;
+    curarisation: boolean;
+  };
+  @Column('simple-json') reponse: {
+    intubation: boolean;
+    curarisation: boolean;
+  };
 
   @Column({ default: false }) sortieAutorisee: boolean;
-  @Column({ type: 'enum', enum: StatutScoreSCCRE, default: StatutScoreSCCRE.EN_COURS }) statut: StatutScoreSCCRE;
+  @Column({
+    type: 'enum',
+    enum: StatutScoreSCCRE,
+    default: StatutScoreSCCRE.EN_COURS,
+  })
+  statut: StatutScoreSCCRE;
 
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;

@@ -45,7 +45,7 @@ export declare class PatientBlocService {
         examensPhysiques: any[];
         examensComplementaires: any[];
         suivis: any[];
-        protocolesOperatoires: any;
+        protocolesOperatoires: never[] | Record<string, any>[];
         sortie: any[];
     }>;
     update(patientId: string, dto: any): Promise<PatientBloc>;

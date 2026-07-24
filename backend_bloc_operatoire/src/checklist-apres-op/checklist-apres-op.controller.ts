@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, Request, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+  Request,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ChecklistApresOpService } from './checklist-apres-op.service';
 import { CreateChecklistApresOpDto } from './dto/create-checklist-apres-op.dto';
@@ -13,19 +23,34 @@ export class ChecklistApresOpController {
 
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Créer une checklist après opération (Anesthésiste)' })
-  create(@Body() dto: CreateChecklistApresOpDto, @Request() req: any) { return this.service.create(dto, req.centralUser); }
+  @ApiOperation({
+    summary: 'Créer une checklist après opération (Anesthésiste)',
+  })
+  create(@Body() dto: CreateChecklistApresOpDto, @Request() req: any) {
+    return this.service.create(dto, req.centralUser);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Lister les checklists après opération' })
-  findAll(@Query('patientId') patientId?: string) { return this.service.findAll(patientId); }
+  findAll(@Query('patientId') patientId?: string) {
+    return this.service.findAll(patientId);
+  }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtenir une checklist après opération' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.findOne(id);
+  }
 
   @Patch(':id')
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Modifier une checklist après opération (Anesthésiste)' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateChecklistApresOpDto) { return this.service.update(id, dto); }
+  @ApiOperation({
+    summary: 'Modifier une checklist après opération (Anesthésiste)',
+  })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateChecklistApresOpDto,
+  ) {
+    return this.service.update(id, dto);
+  }
 }

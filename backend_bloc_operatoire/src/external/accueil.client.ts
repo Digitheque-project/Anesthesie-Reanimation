@@ -61,12 +61,16 @@ export class AccueilClient {
 
   // Enrich one or many local records with identity data fetched from the external service.
   // Accepts an array of records or a single record. Looks for `patientId` property on each record.
-  async enrichWithIdentity<T extends { patientId?: string } | Array<{ patientId?: string }>>(data: T): Promise<any> {
+  async enrichWithIdentity<
+    T extends { patientId?: string } | Array<{ patientId?: string }>,
+  >(data: T): Promise<any> {
     const isArray = Array.isArray(data);
     const records: Array<any> = isArray ? (data as any) : [data as any];
 
     // gather unique ids
-    const ids = Array.from(new Set(records.map((r) => r?.patientId).filter(Boolean)));
+    const ids = Array.from(
+      new Set(records.map((r) => r?.patientId).filter(Boolean)),
+    );
     const identities: Record<string, any> = {};
     await Promise.all(
       ids.map(async (id) => {

@@ -9,6 +9,7 @@ import { PrescriptionExterneClient } from './prescription-externe.client';
 import { PrescriptionImagerieClient } from './prescription-imagerie.client';
 import { NotificationBackClient } from './notification-back.client';
 import { DossierPatientClient } from './dossier-patient.client';
+import { CentralUserClient } from './central-user.client';
 
 @Global()
 @Module({
@@ -16,7 +17,10 @@ import { DossierPatientClient } from './dossier-patient.client';
   providers: [
     {
       provide: AccueilClient,
-      useFactory: (config: ConfigService) => new AccueilClient(config.getOrThrow<string>('externalServices.accueilApiUrl')),
+      useFactory: (config: ConfigService) =>
+        new AccueilClient(
+          config.getOrThrow<string>('externalServices.accueilApiUrl'),
+        ),
       inject: [ConfigService],
     },
     ServiceChuClient,
@@ -26,6 +30,7 @@ import { DossierPatientClient } from './dossier-patient.client';
     PrescriptionImagerieClient,
     NotificationBackClient,
     DossierPatientClient,
+    CentralUserClient,
   ],
   exports: [
     AccueilClient,
@@ -36,6 +41,7 @@ import { DossierPatientClient } from './dossier-patient.client';
     PrescriptionImagerieClient,
     NotificationBackClient,
     DossierPatientClient,
+    CentralUserClient,
   ],
 })
 export class ExternalModule {}

@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BonCommandeAnesthesie = exports.StatutBonCommande = void 0;
 const typeorm_1 = require("typeorm");
 const verification_veille_entity_1 = require("./verification-veille.entity");
-const medecin_entity_1 = require("./medecin.entity");
 const item_commande_entity_1 = require("./item-commande.entity");
 var StatutBonCommande;
 (function (StatutBonCommande) {
@@ -24,9 +23,7 @@ let BonCommandeAnesthesie = class BonCommandeAnesthesie {
     patientId;
     verificationVeille;
     verificationVeilleId;
-    chirurgien;
     chirurgienId;
-    anesthesiste;
     anesthesisteId;
     dateCreation;
     items;
@@ -54,17 +51,9 @@ __decorate([
     __metadata("design:type", String)
 ], BonCommandeAnesthesie.prototype, "verificationVeilleId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
-], BonCommandeAnesthesie.prototype, "chirurgien", void 0);
-__decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], BonCommandeAnesthesie.prototype, "chirurgienId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
-], BonCommandeAnesthesie.prototype, "anesthesiste", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)

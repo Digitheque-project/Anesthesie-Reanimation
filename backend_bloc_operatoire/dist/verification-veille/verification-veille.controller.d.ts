@@ -6,7 +6,7 @@ export declare class VerificationVeilleController {
     constructor(service: VerificationVeilleService);
     create(d: CreateVerificationVeilleDto): Promise<import("../entities").VerificationVeille>;
     findAll(p?: number, l?: number): Promise<{
-        data: any;
+        data: Record<string, any>[];
         total: number;
         page: number;
         pages: number;

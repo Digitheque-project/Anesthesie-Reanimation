@@ -8,8 +8,14 @@ export class RapportsController {
   constructor(private readonly rapportsService: RapportsService) {}
 
   @Get('tableau-de-bord')
-  @ApiOperation({ summary: 'Tableau de bord complet (statistiques, activité par personnel, détail des opérations)' })
-  tableauDeBord(@Query('dateDebut') dd?: string, @Query('dateFin') df?: string) {
+  @ApiOperation({
+    summary:
+      'Tableau de bord complet (statistiques, activité par personnel, détail des opérations)',
+  })
+  tableauDeBord(
+    @Query('dateDebut') dd?: string,
+    @Query('dateFin') df?: string,
+  ) {
     return this.rapportsService.tableauDeBord(dd, df);
   }
 
@@ -21,19 +27,28 @@ export class RapportsController {
 
   @Get('activite-chirurgiens')
   @ApiOperation({ summary: 'Activité par chirurgien' })
-  activiteChirurgiens(@Query('dateDebut') dd?: string, @Query('dateFin') df?: string) {
+  activiteChirurgiens(
+    @Query('dateDebut') dd?: string,
+    @Query('dateFin') df?: string,
+  ) {
     return this.rapportsService.activiteParChirurgien(dd, df);
   }
 
   @Get('cpa-en-attente')
   @ApiOperation({ summary: 'CPA en attente' })
-  cpaEnAttente() { return this.rapportsService.cpaEnAttente(); }
+  cpaEnAttente() {
+    return this.rapportsService.cpaEnAttente();
+  }
 
   @Get('taux-occupation')
-  @ApiOperation({ summary: 'Taux d\'occupation' })
-  tauxOccupation() { return this.rapportsService.tauxOccupation(); }
+  @ApiOperation({ summary: "Taux d'occupation" })
+  tauxOccupation() {
+    return this.rapportsService.tauxOccupation();
+  }
 
   @Get('export')
   @ApiOperation({ summary: 'Export statistiques' })
-  exportStats() { return this.rapportsService.exportStatistiques('excel'); }
+  exportStats() {
+    return this.rapportsService.exportStatistiques('excel');
+  }
 }

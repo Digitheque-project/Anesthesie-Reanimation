@@ -8,9 +8,18 @@ import { NotificationCPAService } from './notification-cpa.service';
 import { NotificationCPAController } from './notification-cpa.controller';
 import { NotificationAlerteService } from './notification-alerte.service';
 import { NotificationAlerteController } from './notification-alerte.controller';
+import { MedecinModule } from '../medecin/medecin.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NotificationCPA, WebhookNotification, PatientBloc, CreneauBloc])],
+  imports: [
+    TypeOrmModule.forFeature([
+      NotificationCPA,
+      WebhookNotification,
+      PatientBloc,
+      CreneauBloc,
+    ]),
+    MedecinModule,
+  ],
   controllers: [NotificationCPAController, NotificationAlerteController],
   providers: [NotificationCPAService, NotificationAlerteService],
   exports: [NotificationCPAService, NotificationAlerteService],

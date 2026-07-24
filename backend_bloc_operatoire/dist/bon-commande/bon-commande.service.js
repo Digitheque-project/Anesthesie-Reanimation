@@ -19,14 +19,21 @@ const typeorm_2 = require("typeorm");
 const bon_commande_anesthesie_entity_1 = require("../entities/bon-commande-anesthesie.entity");
 const item_commande_entity_1 = require("../entities/item-commande.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
+const INTERVENANTS = [
+    ['chirurgienId', 'chirurgien'],
+    ['anesthesisteId', 'anesthesiste'],
+];
 let BonCommandeService = class BonCommandeService {
     bonRepo;
     itemRepo;
     accueilClient;
-    constructor(bonRepo, itemRepo, accueilClient) {
+    medecinIdentiteService;
+    constructor(bonRepo, itemRepo, accueilClient, medecinIdentiteService) {
         this.bonRepo = bonRepo;
         this.itemRepo = itemRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
     }
     async create(dto) {
         const { items, ...data } = dto;
@@ -38,15 +45,17 @@ let BonCommandeService = class BonCommandeService {
         return this.findOne(saved.id);
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.bonRepo.findAndCount({ relations: ['verificationVeille', 'chirurgien', 'anesthesiste', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        const [data, total] = await this.bonRepo.findAndCount({ relations: ['verificationVeille', 'items'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
+        const enriched = await this.medecinIdentiteService.enrichirPlusieurs(enrichedPatient, INTERVENANTS);
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const bon = await this.bonRepo.findOne({ where: { id }, relations: ['verificationVeille', 'chirurgien', 'anesthesiste', 'items'] });
+        const bon = await this.bonRepo.findOne({ where: { id }, relations: ['verificationVeille', 'items'] });
         if (!bon)
             throw new common_1.NotFoundException(`Bon ${id} non trouvé`);
-        const [enriched] = await this.accueilClient.enrichWithIdentity([bon]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([bon]);
+        const [enriched] = await this.medecinIdentiteService.enrichirPlusieurs([enrichedPatient], INTERVENANTS);
         return enriched;
     }
     async update(id, dto) {
@@ -70,6 +79,7 @@ exports.BonCommandeService = BonCommandeService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(item_commande_entity_1.ItemCommande)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService])
 ], BonCommandeService);
 //# sourceMappingURL=bon-commande.service.js.map

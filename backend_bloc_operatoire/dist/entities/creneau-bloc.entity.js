@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreneauBloc = exports.TypeRDV = exports.StatutCreneau = void 0;
 const typeorm_1 = require("typeorm");
-const medecin_entity_1 = require("./medecin.entity");
 var StatutCreneau;
 (function (StatutCreneau) {
     StatutCreneau["PLANIFIE"] = "PLANIFIE";
@@ -31,7 +30,6 @@ let CreneauBloc = class CreneauBloc {
     heureFin;
     salle;
     patientId;
-    chirurgien;
     chirurgienId;
     responsable;
     statut;
@@ -65,10 +63,6 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], CreneauBloc.prototype, "patientId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], CreneauBloc.prototype, "chirurgien", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Object)

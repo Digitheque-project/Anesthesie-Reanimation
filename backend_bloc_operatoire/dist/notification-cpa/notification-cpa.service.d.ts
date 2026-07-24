@@ -3,6 +3,7 @@ import { NotificationCPA, StatutNotificationCPA } from '../entities/notification
 import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
 import { CreateNotificationCPADto } from './dto/create-notification-cpa.dto';
 import { UpdateNotificationCPADto } from './dto/update-notification-cpa.dto';
@@ -11,12 +12,14 @@ export declare class NotificationCPAService {
     private readonly webhookRepo;
     private readonly patientBlocRepo;
     private accueilClient;
+    private medecinIdentiteService;
     private notificationOutgoing;
     private readonly logger;
-    constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, notificationOutgoing: NotificationOutgoingService);
+    constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService);
     create(dto: CreateNotificationCPADto): Promise<NotificationCPA>;
     findAll(page?: number, limite?: number): Promise<{
         data: (WebhookNotification | {
+            chirurgien: any;
             patient: {
                 id: string;
                 nom: any;
@@ -30,7 +33,6 @@ export declare class NotificationCPAService {
             dateIntervention: Date | null;
             patientId: string;
             intervention: string;
-            chirurgien: import("../entities").Medecin | null;
             chirurgienId: string | null;
             chirurgienNom: string | null;
             professeurCPA: string | null;

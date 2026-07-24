@@ -1,6 +1,18 @@
-import { IsString, IsDateString, IsBoolean, IsArray, IsOptional, ValidateNested, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsBoolean,
+  IsArray,
+  IsOptional,
+  ValidateNested,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { TypeDrainage, ModeDrainage, CoteDrainage } from '../../entities/drainage.entity';
+import {
+  TypeDrainage,
+  ModeDrainage,
+  CoteDrainage,
+} from '../../entities/drainage.entity';
 
 class DrainageDto {
   @IsEnum(TypeDrainage) type: TypeDrainage;
@@ -17,7 +29,11 @@ export class CreateProtocoleOperatoireDto {
   @IsOptional() @IsString() aideOperatoireId?: string;
   @IsString() compteRenduIntervention: string;
   @IsOptional() surveillance?: any;
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => DrainageDto) drainages?: DrainageDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DrainageDto)
+  drainages?: DrainageDto[];
   @IsOptional() prescriptions?: any;
   @IsBoolean() prescriptionsConjointes: boolean;
 }

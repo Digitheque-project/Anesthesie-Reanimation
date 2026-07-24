@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum StatutDemandeCpaExterne {
   EN_ATTENTE = 'EN_ATTENTE',
@@ -56,7 +63,11 @@ export class DemandeCpaExterne {
   @Column({ type: 'timestamp', nullable: true })
   dateExamenSouhaitee: Date;
 
-  @Column({ type: 'enum', enum: StatutDemandeCpaExterne, default: StatutDemandeCpaExterne.EN_ATTENTE })
+  @Column({
+    type: 'enum',
+    enum: StatutDemandeCpaExterne,
+    default: StatutDemandeCpaExterne.EN_ATTENTE,
+  })
   statut: StatutDemandeCpaExterne;
 
   @Column({ type: 'timestamp', nullable: true })

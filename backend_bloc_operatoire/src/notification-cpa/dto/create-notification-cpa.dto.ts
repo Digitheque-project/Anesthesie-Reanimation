@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsBoolean, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 import { StatutNotificationCPA } from '../../entities/notification-cpa.entity';
 
 export class CreateNotificationCPADto {

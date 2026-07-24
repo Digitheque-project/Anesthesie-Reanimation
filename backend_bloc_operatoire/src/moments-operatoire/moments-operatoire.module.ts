@@ -6,7 +6,10 @@ import { MomentsOperatoireService } from './moments-operatoire.service';
 import { OperationGatewayModule } from '../operation-gateway/operation-gateway.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MomentOperatoire]), OperationGatewayModule],
+  imports: [
+    TypeOrmModule.forFeature([MomentOperatoire]),
+    OperationGatewayModule,
+  ],
   controllers: [MomentsOperatoireController],
   providers: [MomentsOperatoireService],
 })

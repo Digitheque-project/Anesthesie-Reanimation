@@ -2,12 +2,10 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { Medecin } from './medecin.entity';
 
 export enum StatutNotificationCPA {
   EN_ATTENTE = 'EN_ATTENTE',
@@ -35,9 +33,8 @@ export class NotificationCPA {
   @Column()
   intervention: string;
 
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  chirurgien: Medecin | null; // médecin qui opère, s'il est enregistré localement
-
+  // Référence l'identité du chirurgien qui opère — userId central (interne) ou id local
+  // `medecins` (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column({ type: 'varchar', nullable: true })
   chirurgienId: string | null;
 
@@ -51,7 +48,11 @@ export class NotificationCPA {
   @Column({ default: false })
   estUrgent: boolean;
 
-  @Column({ type: 'enum', enum: StatutNotificationCPA, default: StatutNotificationCPA.EN_ATTENTE })
+  @Column({
+    type: 'enum',
+    enum: StatutNotificationCPA,
+    default: StatutNotificationCPA.EN_ATTENTE,
+  })
   statut: StatutNotificationCPA;
 
   @CreateDateColumn()

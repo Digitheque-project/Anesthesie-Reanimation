@@ -1,4 +1,3 @@
-import { Medecin } from './medecin.entity';
 import { Premedicament } from './premedicament.entity';
 export declare enum ScoreASA {
     ASA_1 = 1,
@@ -26,7 +25,6 @@ export declare enum StatutCPA {
 export declare class CPA {
     id: string;
     patientId: string;
-    anesthesiste: Medecin;
     anesthesisteId: string;
     dateConsultation: Date;
     antecedentsAnesthesie: boolean;

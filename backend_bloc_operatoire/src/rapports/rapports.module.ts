@@ -14,13 +14,26 @@ import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { RapportsService } from './rapports.service';
 import { RapportsController } from './rapports.controller';
+import { MedecinModule } from '../medecin/medecin.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    PatientBloc, ActivitePerOp, ScoreSCCRE, Medecin, CPA, NotificationCPA,
-    SortieReveil, ChecklistAvantOp, ChecklistPendantOp, ChecklistApresOp, MomentOperatoire,
-    ProtocoleOperatoire,
-  ])],
+  imports: [
+    TypeOrmModule.forFeature([
+      PatientBloc,
+      ActivitePerOp,
+      ScoreSCCRE,
+      Medecin,
+      CPA,
+      NotificationCPA,
+      SortieReveil,
+      ChecklistAvantOp,
+      ChecklistPendantOp,
+      ChecklistApresOp,
+      MomentOperatoire,
+      ProtocoleOperatoire,
+    ]),
+    MedecinModule,
+  ],
   controllers: [RapportsController],
   providers: [RapportsService],
   exports: [RapportsService],

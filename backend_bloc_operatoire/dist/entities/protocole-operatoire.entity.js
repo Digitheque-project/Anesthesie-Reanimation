@@ -11,19 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProtocoleOperatoire = void 0;
 const typeorm_1 = require("typeorm");
-const medecin_entity_1 = require("./medecin.entity");
 const drainage_entity_1 = require("./drainage.entity");
 let ProtocoleOperatoire = class ProtocoleOperatoire {
     id;
     patientId;
     dateOperation;
-    chirurgien;
     chirurgienId;
-    anesthesiste;
     anesthesisteId;
-    infirmiere;
     infirmiereId;
-    aideOperatoire;
     aideOperatoireId;
     compteRenduIntervention;
     surveillance;
@@ -48,33 +43,17 @@ __decorate([
     __metadata("design:type", Date)
 ], ProtocoleOperatoire.prototype, "dateOperation", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], ProtocoleOperatoire.prototype, "chirurgien", void 0);
-__decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "chirurgienId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], ProtocoleOperatoire.prototype, "anesthesiste", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "anesthesisteId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], ProtocoleOperatoire.prototype, "infirmiere", void 0);
-__decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "infirmiereId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], ProtocoleOperatoire.prototype, "aideOperatoire", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)

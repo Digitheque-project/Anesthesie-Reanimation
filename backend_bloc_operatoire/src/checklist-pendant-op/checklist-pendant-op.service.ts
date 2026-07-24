@@ -12,41 +12,64 @@ import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.d
 @Injectable()
 export class ChecklistPendantOpService {
   constructor(
-    @InjectRepository(ChecklistPendantOp) private repo: Repository<ChecklistPendantOp>,
+    @InjectRepository(ChecklistPendantOp)
+    private repo: Repository<ChecklistPendantOp>,
     private accueilClient: AccueilClient,
     private gateway: OperationGateway,
     private patientBlocStatutService: PatientBlocStatutService,
   ) {}
 
-  async create(dto: CreateChecklistPendantOpDto, centralUser: CentralUser): Promise<ChecklistPendantOp> {
-    const saved = await this.repo.save(this.repo.create({
-      ...dto,
-      validateurId: centralUser.userId,
-      validateurNom: `${centralUser.prenom} ${centralUser.nom}`.trim(),
-      validateurRole: centralUser.role,
-    }));
+  async create(
+    dto: CreateChecklistPendantOpDto,
+    centralUser: CentralUser,
+  ): Promise<ChecklistPendantOp> {
+    const saved = await this.repo.save(
+      this.repo.create({
+        ...dto,
+        validateurId: centralUser.userId,
+        validateurNom: `${centralUser.prenom} ${centralUser.nom}`.trim(),
+        validateurRole: centralUser.role,
+      }),
+    );
     // Le Time Out marque dans les faits le vrai début de l'opération.
-    await this.patientBlocStatutService.avancerVersEnCoursOperation(saved.patientId);
+    await this.patientBlocStatutService.avancerVersEnCoursOperation(
+      saved.patientId,
+    );
     return saved;
   }
 
   async findAll(patientId?: string) {
-    const data = await this.repo.find({ where: patientId ? { patientId } : {} });
+    const data = await this.repo.find({
+      where: patientId ? { patientId } : {},
+    });
     return this.accueilClient.enrichWithIdentity(data);
   }
 
   async findOne(id: string) {
     const checklist = await this.repo.findOne({ where: { id } });
-    if (!checklist) throw new NotFoundException(`Checklist pendant opération ${id} non trouvée`);
+    if (!checklist)
+      throw new NotFoundException(
+        `Checklist pendant opération ${id} non trouvée`,
+      );
     const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
     return enriched;
   }
 
-  async update(id: string, dto: UpdateChecklistPendantOpDto): Promise<ChecklistPendantOp> {
+  async update(
+    id: string,
+    dto: UpdateChecklistPendantOpDto,
+  ): Promise<ChecklistPendantOp> {
     const checklist = await this.repo.findOne({ where: { id } });
-    if (!checklist) throw new NotFoundException(`Checklist pendant opération ${id} non trouvée`);
+    if (!checklist)
+      throw new NotFoundException(
+        `Checklist pendant opération ${id} non trouvée`,
+      );
     const updated = await this.repo.save(Object.assign(checklist, dto));
-    this.gateway.emitToOperation(updated.patientId, 'checklist-pendant-op:maj', { patientId: updated.patientId, checklist: updated });
+    this.gateway.emitToOperation(
+      updated.patientId,
+      'checklist-pendant-op:maj',
+      { patientId: updated.patientId, checklist: updated },
+    );
     return updated;
   }
 }

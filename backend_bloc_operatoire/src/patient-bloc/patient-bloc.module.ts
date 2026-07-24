@@ -8,7 +8,10 @@ import { PatientBlocStatutService } from './patient-bloc-statut.service';
 import { ProtocoleOperatoireModule } from '../protocole-operatoire/protocole-operatoire.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PatientBloc, DemandeCpaExterne]), ProtocoleOperatoireModule],
+  imports: [
+    TypeOrmModule.forFeature([PatientBloc, DemandeCpaExterne]),
+    ProtocoleOperatoireModule,
+  ],
   controllers: [PatientBlocController],
   providers: [PatientBlocService, PatientBlocStatutService],
   exports: [PatientBlocService, PatientBlocStatutService],

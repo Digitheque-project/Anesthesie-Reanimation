@@ -6,7 +6,7 @@ export declare class ProtocoleOperatoireController {
     constructor(service: ProtocoleOperatoireService);
     create(dto: CreateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
     findAll(p?: number, l?: number, patientId?: string): Promise<{
-        data: any;
+        data: Record<string, any>[];
         total: number;
         page: number;
         pages: number;

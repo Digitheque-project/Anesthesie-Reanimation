@@ -14,11 +14,19 @@ export class PrescriptionController {
   @Public()
   @Post('receive')
   @HttpCode(200)
-  @ApiOperation({ summary: '📋 Recevoir une prescription du service Prescription' })
+  @ApiOperation({
+    summary: '📋 Recevoir une prescription du service Prescription',
+  })
   @ApiResponse({ status: 200, description: 'Prescription reçue avec succès' })
   async receivePrescription(@Body() dto: ReceivePrescriptionDto) {
-    this.logger.log(`📋 Prescription reçue du service Prescription pour patient ${dto.patientId}`);
+    this.logger.log(
+      `📋 Prescription reçue du service Prescription pour patient ${dto.patientId}`,
+    );
     const result = await this.service.processPrescription(dto);
-    return { received: true, processed: result, timestamp: new Date().toISOString() };
+    return {
+      received: true,
+      processed: result,
+      timestamp: new Date().toISOString(),
+    };
   }
 }

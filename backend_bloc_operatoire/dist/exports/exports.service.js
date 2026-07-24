@@ -52,15 +52,18 @@ const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const ExcelJS = __importStar(require("exceljs"));
 let ExportsService = class ExportsService {
     patientBlocRepo;
     activiteRepo;
     accueilClient;
-    constructor(patientBlocRepo, activiteRepo, accueilClient) {
+    medecinIdentiteService;
+    constructor(patientBlocRepo, activiteRepo, accueilClient, medecinIdentiteService) {
         this.patientBlocRepo = patientBlocRepo;
         this.activiteRepo = activiteRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
     }
     async exportPatientsExcel() {
         const patients = await this.patientBlocRepo.find({ order: { createdAt: 'DESC' } });
@@ -86,8 +89,9 @@ let ExportsService = class ExportsService {
         return workbook.xlsx.writeBuffer();
     }
     async exportPlanningExcel(date) {
-        const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) }, relations: ['chirurgien'] });
-        const enriched = await this.accueilClient.enrichWithIdentity(activites);
+        const activites = await this.activiteRepo.find({ where: { dateOperation: new Date(date) } });
+        const enrichedPatient = await this.accueilClient.enrichWithIdentity(activites);
+        const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'chirurgienId', 'chirurgien');
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Planning');
         sheet.columns = [
@@ -97,7 +101,7 @@ let ExportsService = class ExportsService {
         ];
         enriched.forEach((a) => sheet.addRow({
             patient: a.patient ? `${a.patient.nom} ${a.patient.prenom}` : a.patientId,
-            chirurgien: `${a.chirurgien.nom} ${a.chirurgien.prenom}`,
+            chirurgien: a.chirurgien ? `${a.chirurgien.nom} ${a.chirurgien.prenom}` : '—',
             date: a.dateOperation,
         }));
         return workbook.xlsx.writeBuffer();
@@ -117,6 +121,7 @@ exports.ExportsService = ExportsService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(activite_per_op_entity_1.ActivitePerOp)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService])
 ], ExportsService);
 //# sourceMappingURL=exports.service.js.map

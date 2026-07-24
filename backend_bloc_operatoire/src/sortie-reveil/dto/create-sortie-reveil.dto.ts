@@ -1,4 +1,11 @@
-import { IsString, IsEnum, IsDateString, IsBoolean, IsArray, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsBoolean,
+  IsArray,
+  IsOptional,
+} from 'class-validator';
 import { StatutSortieReveil } from '../../entities/sortie-reveil.entity';
 
 export class CreateSortieReveilDto {
@@ -7,7 +14,10 @@ export class CreateSortieReveilDto {
   @IsOptional() @IsString() medecinId?: string;
   @IsDateString() dateHeureSortie: string;
   @IsBoolean() versServiceOrigine: boolean;
-  @IsOptional() @IsArray() @IsString({ each: true }) autresServicesDestination?: string[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  autresServicesDestination?: string[];
   checklistSortie: {
     signesVitauxStables: boolean;
     douleurControlee: boolean;

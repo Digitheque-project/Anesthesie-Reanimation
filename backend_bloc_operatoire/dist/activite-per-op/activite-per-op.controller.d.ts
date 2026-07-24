@@ -7,7 +7,7 @@ export declare class ActivitePerOpController {
     constructor(service: ActivitePerOpService);
     create(dto: CreateActivitePerOpDto): Promise<import("../entities").ActivitePerOp>;
     findAll(p?: number, l?: number, patientId?: string): Promise<{
-        data: any;
+        data: Record<string, any>[];
         total: number;
         page: number;
         pages: number;

@@ -21,19 +21,22 @@ const notification_cpa_entity_1 = require("../entities/notification-cpa.entity")
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
 let NotificationCPAService = NotificationCPAService_1 = class NotificationCPAService {
     notificationRepo;
     webhookRepo;
     patientBlocRepo;
     accueilClient;
+    medecinIdentiteService;
     notificationOutgoing;
     logger = new common_1.Logger(NotificationCPAService_1.name);
-    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, notificationOutgoing) {
+    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, medecinIdentiteService, notificationOutgoing) {
         this.notificationRepo = notificationRepo;
         this.webhookRepo = webhookRepo;
         this.patientBlocRepo = patientBlocRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
         this.notificationOutgoing = notificationOutgoing;
     }
     async create(dto) {
@@ -42,12 +45,12 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     }
     async findAll(page = 1, limite = 10) {
         const [internalDataRaw, internalTotal] = await this.notificationRepo.findAndCount({
-            relations: ['chirurgien'],
             skip: (page - 1) * limite,
             take: limite,
             order: { createdAt: 'DESC' },
         });
         const identities = await this.accueilClient.enrichWithIdentity(internalDataRaw);
+        const avecChirurgien = await this.medecinIdentiteService.enrichir(internalDataRaw, 'chirurgienId', 'chirurgien');
         const patientIds = Array.from(new Set(internalDataRaw.map((n) => n.patientId).filter(Boolean)));
         const patients = patientIds.length
             ? await this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(patientIds) } })
@@ -58,6 +61,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             const pb = patientMap.get(n.patientId);
             return {
                 ...n,
+                chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
                 patient: {
                     id: n.patientId,
                     nom: identity.nom,
@@ -94,10 +98,11 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         };
     }
     async findOne(id) {
-        const n = await this.notificationRepo.findOne({ where: { id }, relations: ['chirurgien'] });
+        const n = await this.notificationRepo.findOne({ where: { id } });
         if (!n)
             throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
-        const [enriched] = await this.accueilClient.enrichWithIdentity([n]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([n]);
+        const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'chirurgienId', 'chirurgien');
         return enriched;
     }
     async planifierRDV(id, dto) {
@@ -160,6 +165,7 @@ exports.NotificationCPAService = NotificationCPAService = NotificationCPAService
         typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService,
         notification_outgoing_service_1.NotificationOutgoingService])
 ], NotificationCPAService);
 //# sourceMappingURL=notification-cpa.service.js.map

@@ -1,4 +1,13 @@
-import { IsString, IsEnum, IsDateString, IsNumber, IsBoolean, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { StatutScoreSCCRE } from '../../entities/score-sccre.entity';
 
 export class CreateScoreSCCREDto {

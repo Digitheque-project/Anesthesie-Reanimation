@@ -15,14 +15,23 @@ export class EndoscopieClient {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl = this.config.get<string>('externalServices.endoscopieApiUrl') ?? '';
-    this.serviceId = this.config.get<string>('externalServices.endoscopieServiceId') ?? '';
-    this.blocServiceId = this.config.get<string>('externalServices.serviceId') ?? '';
+    this.baseUrl =
+      this.config.get<string>('externalServices.endoscopieApiUrl') ?? '';
+    this.serviceId =
+      this.config.get<string>('externalServices.endoscopieServiceId') ?? '';
+    this.blocServiceId =
+      this.config.get<string>('externalServices.serviceId') ?? '';
   }
 
-  private async notify(demande: DemandeCpaExterne, type: string, payload: any): Promise<void> {
+  private async notify(
+    demande: DemandeCpaExterne,
+    type: string,
+    payload: any,
+  ): Promise<void> {
     if (!this.baseUrl) {
-      this.logger.warn('ENDOSCOPIE_API_URL non configuré, notification sortante ignorée');
+      this.logger.warn(
+        'ENDOSCOPIE_API_URL non configuré, notification sortante ignorée',
+      );
       return;
     }
     try {
@@ -41,17 +50,28 @@ export class EndoscopieClient {
           createdAt: new Date().toISOString(),
         }),
       );
-      this.logger.log(`✅ Notification "${type}" envoyée à Endoscopie pour patient ${demande.patientId}`);
+      this.logger.log(
+        `✅ Notification "${type}" envoyée à Endoscopie pour patient ${demande.patientId}`,
+      );
     } catch (err) {
-      this.logger.error(`❌ Échec envoi notification "${type}" à Endoscopie: ${(err as Error).message}`);
+      this.logger.error(
+        `❌ Échec envoi notification "${type}" à Endoscopie: ${(err as Error).message}`,
+      );
     }
   }
 
-  async notifyCpaResultat(demande: DemandeCpaExterne, decision: string, details: { dateCpa?: Date; observations?: string }): Promise<void> {
+  async notifyCpaResultat(
+    demande: DemandeCpaExterne,
+    decision: string,
+    details: { dateCpa?: Date; observations?: string },
+  ): Promise<void> {
     await this.notify(demande, 'CPA_RESULTAT', { decision, ...details });
   }
 
-  async notifyVpaRealisee(demande: DemandeCpaExterne, details: { dateVpa?: Date }): Promise<void> {
+  async notifyVpaRealisee(
+    demande: DemandeCpaExterne,
+    details: { dateVpa?: Date },
+  ): Promise<void> {
     await this.notify(demande, 'VPA_REALISEE', details);
   }
 }

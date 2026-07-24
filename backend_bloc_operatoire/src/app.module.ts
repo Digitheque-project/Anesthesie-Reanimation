@@ -39,7 +39,10 @@ import centralAuthConfig from './config/central-auth.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: [externalServicesConfig, centralAuthConfig] }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [externalServicesConfig, centralAuthConfig],
+    }),
     ScheduleModule.forRoot(),
     ExternalModule,
     CentralAuthModule,

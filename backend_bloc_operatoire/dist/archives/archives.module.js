@@ -25,6 +25,7 @@ const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.en
 const moment_operatoire_entity_1 = require("../entities/moment-operatoire.entity");
 const archives_service_1 = require("./archives.service");
 const archives_controller_1 = require("./archives.controller");
+const medecin_module_1 = require("../medecin/medecin.module");
 let ArchivesModule = class ArchivesModule {
 };
 exports.ArchivesModule = ArchivesModule;
@@ -38,6 +39,7 @@ exports.ArchivesModule = ArchivesModule = __decorate([
                 checklist_avant_op_entity_1.ChecklistAvantOp, checklist_pendant_op_entity_1.ChecklistPendantOp, checklist_apres_op_entity_1.ChecklistApresOp,
                 notification_cpa_entity_1.NotificationCPA, demande_cpa_externe_entity_1.DemandeCpaExterne, moment_operatoire_entity_1.MomentOperatoire,
             ]),
+            medecin_module_1.MedecinModule,
         ],
         controllers: [archives_controller_1.ArchivesController],
         providers: [archives_service_1.ArchivesService],

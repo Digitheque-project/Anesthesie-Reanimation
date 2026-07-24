@@ -1,4 +1,13 @@
-import { IsString, IsDateString, IsBoolean, IsArray, IsOptional, ValidateNested, IsUUID, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsBoolean,
+  IsArray,
+  IsOptional,
+  ValidateNested,
+  IsUUID,
+  IsNumber,
+} from 'class-validator';
 // Note : patientId provient du service externe Accueil et n'est pas garanti au format UUID
 // (ex: "CHU-2026-00099") — contrairement à chirurgienId/anesthesisteId qui référencent notre
 // propre table Medecin (clé UUID). D'où l'usage de @IsString() plutôt que @IsUUID() ci-dessous.
@@ -64,7 +73,7 @@ export class CreateActivitePerOpDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ConstanteDto)
-  constantes?: ConstanteDto[];  // ✅ Tableau de constantes
+  constantes?: ConstanteDto[]; // ✅ Tableau de constantes
 
   @IsBoolean()
   intubationOT: boolean;

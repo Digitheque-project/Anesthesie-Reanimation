@@ -9,7 +9,10 @@ export class ExportsController {
   @Get('patients/excel')
   async exportPatientsExcel(@Res() res: Response) {
     const buffer = await this.exportsService.exportPatientsExcel();
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
     res.setHeader('Content-Disposition', 'attachment; filename=patients.xlsx');
     res.send(buffer);
   }
@@ -17,8 +20,14 @@ export class ExportsController {
   @Get('planning/excel')
   async exportPlanningExcel(@Query('date') date: string, @Res() res: Response) {
     const buffer = await this.exportsService.exportPlanningExcel(date);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=planning_${date}.xlsx`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=planning_${date}.xlsx`,
+    );
     res.send(buffer);
   }
 
@@ -26,7 +35,10 @@ export class ExportsController {
   async exportPatientJSON(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.exportsService.exportPatientJSON(id);
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename=dossier_json_${id}.pdf`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=dossier_json_${id}.pdf`,
+    );
     res.send(buffer);
   }
 }

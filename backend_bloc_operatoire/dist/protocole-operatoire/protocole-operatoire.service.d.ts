@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { Drainage } from '../entities/drainage.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { CreateProtocoleOperatoireDto } from './dto/create-protocole-operatoire.dto';
 import { UpdateProtocoleOperatoireDto } from './dto/update-protocole-operatoire.dto';
@@ -9,11 +10,12 @@ export declare class ProtocoleOperatoireService {
     private repo;
     private drainageRepo;
     private accueilClient;
+    private medecinIdentiteService;
     private gateway;
-    constructor(repo: Repository<ProtocoleOperatoire>, drainageRepo: Repository<Drainage>, accueilClient: AccueilClient, gateway: OperationGateway);
+    constructor(repo: Repository<ProtocoleOperatoire>, drainageRepo: Repository<Drainage>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, gateway: OperationGateway);
     create(dto: CreateProtocoleOperatoireDto): Promise<ProtocoleOperatoire>;
     findAll(page?: number, limite?: number, patientId?: string): Promise<{
-        data: any;
+        data: Record<string, any>[];
         total: number;
         page: number;
         pages: number;

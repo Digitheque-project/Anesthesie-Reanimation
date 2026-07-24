@@ -25,6 +25,7 @@ class CreateVerificationVeilleDto {
     examensComplementaires;
     commandeSang;
     heureDepart;
+    medicamentsVerifies;
     statut;
 }
 exports.CreateVerificationVeilleDto = CreateVerificationVeilleDto;
@@ -77,6 +78,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateVerificationVeilleDto.prototype, "heureDepart", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], CreateVerificationVeilleDto.prototype, "medicamentsVerifies", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(verification_veille_entity_1.StatutVerificationVeille),

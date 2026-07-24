@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationCPA = exports.StatutNotificationCPA = void 0;
 const typeorm_1 = require("typeorm");
-const medecin_entity_1 = require("./medecin.entity");
 var StatutNotificationCPA;
 (function (StatutNotificationCPA) {
     StatutNotificationCPA["EN_ATTENTE"] = "EN_ATTENTE";
@@ -24,7 +23,6 @@ let NotificationCPA = class NotificationCPA {
     dateIntervention;
     patientId;
     intervention;
-    chirurgien;
     chirurgienId;
     chirurgienNom;
     professeurCPA;
@@ -55,10 +53,6 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], NotificationCPA.prototype, "intervention", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], NotificationCPA.prototype, "chirurgien", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)

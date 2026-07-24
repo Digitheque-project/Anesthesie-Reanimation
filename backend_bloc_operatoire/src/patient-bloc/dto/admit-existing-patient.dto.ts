@@ -1,5 +1,14 @@
-import { IsString, IsEnum, IsDateString, IsOptional, Length } from 'class-validator';
-import { PatientStatut, NiveauUrgence } from '../../entities/patient-bloc.entity';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsOptional,
+  Length,
+} from 'class-validator';
+import {
+  PatientStatut,
+  NiveauUrgence,
+} from '../../entities/patient-bloc.entity';
 
 export class AdmitExistingPatientDto {
   @IsString() patientId: string;

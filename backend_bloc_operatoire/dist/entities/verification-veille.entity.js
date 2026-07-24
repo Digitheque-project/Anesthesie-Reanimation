@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VerificationVeille = exports.StatutVerificationVeille = void 0;
 const typeorm_1 = require("typeorm");
 const cpa_entity_1 = require("./cpa.entity");
-const medecin_entity_1 = require("./medecin.entity");
 var StatutVerificationVeille;
 (function (StatutVerificationVeille) {
     StatutVerificationVeille["EN_ATTENTE"] = "EN_ATTENTE";
@@ -23,7 +22,6 @@ let VerificationVeille = class VerificationVeille {
     patientId;
     cpa;
     cpaId;
-    anesthesiste;
     anesthesisteId;
     dateVisite;
     identiteConfirmee;
@@ -33,6 +31,7 @@ let VerificationVeille = class VerificationVeille {
     jeune;
     examensComplementaires;
     commandeSang;
+    medicamentsVerifies;
     heureDepart;
     statut;
     createdAt;
@@ -56,10 +55,6 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], VerificationVeille.prototype, "cpaId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
-], VerificationVeille.prototype, "anesthesiste", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
@@ -96,6 +91,10 @@ __decorate([
     (0, typeorm_1.Column)('simple-json', { nullable: true }),
     __metadata("design:type", Object)
 ], VerificationVeille.prototype, "commandeSang", void 0);
+__decorate([
+    (0, typeorm_1.Column)('simple-json', { nullable: true }),
+    __metadata("design:type", Object)
+], VerificationVeille.prototype, "medicamentsVerifies", void 0);
 __decorate([
     (0, typeorm_1.Column)({ length: 20 }),
     __metadata("design:type", String)

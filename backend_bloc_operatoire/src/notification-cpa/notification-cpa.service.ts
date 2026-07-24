@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
+import {
+  NotificationCPA,
+  StatutNotificationCPA,
+} from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
 import { CreateNotificationCPADto } from './dto/create-notification-cpa.dto';
 import { UpdateNotificationCPADto } from './dto/update-notification-cpa.dto';
@@ -21,25 +25,38 @@ export class NotificationCPAService {
     @InjectRepository(PatientBloc)
     private readonly patientBlocRepo: Repository<PatientBloc>,
     private accueilClient: AccueilClient,
+    private medecinIdentiteService: MedecinIdentiteService,
     private notificationOutgoing: NotificationOutgoingService,
   ) {}
 
   async create(dto: CreateNotificationCPADto): Promise<NotificationCPA> {
-    const saved = await this.notificationRepo.save(this.notificationRepo.create(dto));
+    const saved = await this.notificationRepo.save(
+      this.notificationRepo.create(dto),
+    );
     return Array.isArray(saved) ? saved[0] : saved;
   }
 
   async findAll(page = 1, limite = 10) {
-    const [internalDataRaw, internalTotal] = await this.notificationRepo.findAndCount({
-      relations: ['chirurgien'],
-      skip: (page - 1) * limite,
-      take: limite,
-      order: { createdAt: 'DESC' },
-    });
-    const identities = await this.accueilClient.enrichWithIdentity(internalDataRaw);
-    const patientIds = Array.from(new Set(internalDataRaw.map((n) => n.patientId).filter(Boolean)));
+    const [internalDataRaw, internalTotal] =
+      await this.notificationRepo.findAndCount({
+        skip: (page - 1) * limite,
+        take: limite,
+        order: { createdAt: 'DESC' },
+      });
+    const identities =
+      await this.accueilClient.enrichWithIdentity(internalDataRaw);
+    const avecChirurgien = await this.medecinIdentiteService.enrichir(
+      internalDataRaw,
+      'chirurgienId',
+      'chirurgien',
+    );
+    const patientIds = Array.from(
+      new Set(internalDataRaw.map((n) => n.patientId).filter(Boolean)),
+    );
     const patients = patientIds.length
-      ? await this.patientBlocRepo.find({ where: { patientId: In(patientIds) } })
+      ? await this.patientBlocRepo.find({
+          where: { patientId: In(patientIds) },
+        })
       : [];
     const patientMap = new Map(patients.map((p) => [p.patientId, p]));
     const internalData = internalDataRaw.map((n, idx) => {
@@ -47,6 +64,7 @@ export class NotificationCPAService {
       const pb = patientMap.get(n.patientId);
       return {
         ...n,
+        chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
         patient: {
           id: n.patientId,
           nom: identity.nom,
@@ -86,9 +104,14 @@ export class NotificationCPAService {
   }
 
   async findOne(id: string): Promise<any> {
-    const n = await this.notificationRepo.findOne({ where: { id }, relations: ['chirurgien'] });
+    const n = await this.notificationRepo.findOne({ where: { id } });
     if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
-    const [enriched] = await this.accueilClient.enrichWithIdentity([n]);
+    const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([n]);
+    const [enriched] = await this.medecinIdentiteService.enrichir(
+      [enrichedPatient],
+      'chirurgienId',
+      'chirurgien',
+    );
     return enriched;
   }
 
@@ -98,7 +121,9 @@ export class NotificationCPAService {
     n.statut = StatutNotificationCPA.RDV_PLANIFIE;
 
     try {
-      const patient = await this.patientBlocRepo.findOne({ where: { patientId: n.patientId } });
+      const patient = await this.patientBlocRepo.findOne({
+        where: { patientId: n.patientId },
+      });
       if (patient?.serviceOrigineId && patient?.serviceOrigine) {
         await this.notificationOutgoing.notifyOriginService({
           patientId: n.patientId,
@@ -114,13 +139,18 @@ export class NotificationCPAService {
         });
       }
     } catch (err) {
-      this.logger.error(`Erreur notification service origine après planification RDV CPA: ${(err as Error).message}`);
+      this.logger.error(
+        `Erreur notification service origine après planification RDV CPA: ${(err as Error).message}`,
+      );
     }
 
     return this.notificationRepo.save(n);
   }
 
-  async update(id: string, dto: UpdateNotificationCPADto): Promise<NotificationCPA> {
+  async update(
+    id: string,
+    dto: UpdateNotificationCPADto,
+  ): Promise<NotificationCPA> {
     const n = await this.notificationRepo.findOne({ where: { id } });
     if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
     return this.notificationRepo.save(Object.assign(n, dto));

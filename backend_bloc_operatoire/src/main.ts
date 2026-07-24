@@ -24,7 +24,10 @@ async function bootstrap() {
     .setTitle('CHU Bloc Opératoire API')
     .setDescription('API de gestion du Bloc Opératoire')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -36,4 +39,3 @@ async function bootstrap() {
   console.log(`🚀 Backend démarré sur le port ${port}`);
 }
 bootstrap();
- 

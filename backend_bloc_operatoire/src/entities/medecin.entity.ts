@@ -16,10 +16,10 @@ export enum RoleMedecin {
 }
 
 export enum OrdreProfessionnel {
-  ONM = 'ONM',         // Ordre National des Médecins
-  ONIM = 'ONIM',       // Ordre National des Infirmières
-  ONSFM = 'ONSFM',     // Ordre National des Sages-Femmes
-  ONPM = 'ONPM',       // Ordre National des Pharmaciens
+  ONM = 'ONM', // Ordre National des Médecins
+  ONIM = 'ONIM', // Ordre National des Infirmières
+  ONSFM = 'ONSFM', // Ordre National des Sages-Femmes
+  ONPM = 'ONPM', // Ordre National des Pharmaciens
   AUTRE = 'AUTRE',
 }
 

@@ -1,5 +1,4 @@
 import { CPA } from './cpa.entity';
-import { Medecin } from './medecin.entity';
 export declare enum StatutVerificationVeille {
     EN_ATTENTE = "EN_ATTENTE",
     VALIDE = "VALIDE"
@@ -9,7 +8,6 @@ export declare class VerificationVeille {
     patientId: string;
     cpa: CPA;
     cpaId: string;
-    anesthesiste: Medecin;
     anesthesisteId: string;
     dateVisite: Date;
     identiteConfirmee: boolean;
@@ -19,6 +17,7 @@ export declare class VerificationVeille {
     jeune: string;
     examensComplementaires: string;
     commandeSang: any;
+    medicamentsVerifies: string[] | null;
     heureDepart: string;
     statut: StatutVerificationVeille;
     createdAt: Date;

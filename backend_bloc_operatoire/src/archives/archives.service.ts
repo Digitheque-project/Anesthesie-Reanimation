@@ -16,25 +16,39 @@ import { NotificationCPA } from '../entities/notification-cpa.entity';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 
 @Injectable()
 export class ArchivesService {
   constructor(
-    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
+    @InjectRepository(PatientBloc)
+    private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(CPA) private cpaRepository: Repository<CPA>,
-    @InjectRepository(VerificationVeille) private verificationVeilleRepository: Repository<VerificationVeille>,
-    @InjectRepository(BonCommandeAnesthesie) private bonRepo: Repository<BonCommandeAnesthesie>,
-    @InjectRepository(ActivitePerOp) private activiteRepo: Repository<ActivitePerOp>,
-    @InjectRepository(ProtocoleOperatoire) private protocoleRepo: Repository<ProtocoleOperatoire>,
+    @InjectRepository(VerificationVeille)
+    private verificationVeilleRepository: Repository<VerificationVeille>,
+    @InjectRepository(BonCommandeAnesthesie)
+    private bonRepo: Repository<BonCommandeAnesthesie>,
+    @InjectRepository(ActivitePerOp)
+    private activiteRepo: Repository<ActivitePerOp>,
+    @InjectRepository(ProtocoleOperatoire)
+    private protocoleRepo: Repository<ProtocoleOperatoire>,
     @InjectRepository(ScoreSCCRE) private scoreRepo: Repository<ScoreSCCRE>,
-    @InjectRepository(SortieReveil) private sortieRepo: Repository<SortieReveil>,
-    @InjectRepository(ChecklistAvantOp) private checklistAvantRepo: Repository<ChecklistAvantOp>,
-    @InjectRepository(ChecklistPendantOp) private checklistPendantRepo: Repository<ChecklistPendantOp>,
-    @InjectRepository(ChecklistApresOp) private checklistApresRepo: Repository<ChecklistApresOp>,
-    @InjectRepository(NotificationCPA) private notificationRepo: Repository<NotificationCPA>,
-    @InjectRepository(DemandeCpaExterne) private demandeExterneRepo: Repository<DemandeCpaExterne>,
-    @InjectRepository(MomentOperatoire) private momentRepo: Repository<MomentOperatoire>,
+    @InjectRepository(SortieReveil)
+    private sortieRepo: Repository<SortieReveil>,
+    @InjectRepository(ChecklistAvantOp)
+    private checklistAvantRepo: Repository<ChecklistAvantOp>,
+    @InjectRepository(ChecklistPendantOp)
+    private checklistPendantRepo: Repository<ChecklistPendantOp>,
+    @InjectRepository(ChecklistApresOp)
+    private checklistApresRepo: Repository<ChecklistApresOp>,
+    @InjectRepository(NotificationCPA)
+    private notificationRepo: Repository<NotificationCPA>,
+    @InjectRepository(DemandeCpaExterne)
+    private demandeExterneRepo: Repository<DemandeCpaExterne>,
+    @InjectRepository(MomentOperatoire)
+    private momentRepo: Repository<MomentOperatoire>,
     private accueilClient: AccueilClient,
+    private medecinIdentiteService: MedecinIdentiteService,
   ) {}
 
   private async getPatientEnrichi(patientId: string) {
@@ -48,23 +62,101 @@ export class ArchivesService {
     const patient = await this.getPatientEnrichi(patientId);
 
     const [
-      notifications, demandesExternes, cpa, verificationVeille, bons,
-      checklistsAvant, checklistsPendant, checklistsApres,
-      moments, activites, protocoles, scores, sorties,
+      notificationsRaw,
+      demandesExternes,
+      cpaRaw,
+      verificationVeilleRaw,
+      bonsRaw,
+      checklistsAvant,
+      checklistsPendant,
+      checklistsApres,
+      moments,
+      activitesRaw,
+      protocolesRaw,
+      scoresRaw,
+      sortiesRaw,
     ] = await Promise.all([
-      this.notificationRepo.find({ where: { patientId }, relations: ['chirurgien'], order: { createdAt: 'ASC' } }),
-      this.demandeExterneRepo.find({ where: { patientId }, order: { createdAt: 'ASC' } }),
-      this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments', 'anesthesiste'] }),
-      this.verificationVeilleRepository.find({ where: { patientId }, relations: ['anesthesiste'] }),
-      this.bonRepo.find({ where: { patientId }, relations: ['items', 'chirurgien', 'anesthesiste'] }),
+      this.notificationRepo.find({
+        where: { patientId },
+        order: { createdAt: 'ASC' },
+      }),
+      this.demandeExterneRepo.find({
+        where: { patientId },
+        order: { createdAt: 'ASC' },
+      }),
+      this.cpaRepository.find({
+        where: { patientId },
+        relations: ['premedicaments'],
+      }),
+      this.verificationVeilleRepository.find({ where: { patientId } }),
+      this.bonRepo.find({ where: { patientId }, relations: ['items'] }),
       this.checklistAvantRepo.find({ where: { patientId } }),
       this.checklistPendantRepo.find({ where: { patientId } }),
       this.checklistApresRepo.find({ where: { patientId } }),
-      this.momentRepo.find({ where: { patientId }, order: { horodatage: 'ASC' } }),
-      this.activiteRepo.find({ where: { patientId }, relations: ['constantes', 'chirurgien', 'anesthesiste'] }),
-      this.protocoleRepo.find({ where: { patientId }, relations: ['drainages', 'chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire'] }),
-      this.scoreRepo.find({ where: { patientId }, relations: ['anesthesiste'] }),
-      this.sortieRepo.find({ where: { patientId }, relations: ['scoreSCCRE', 'medecin'] }),
+      this.momentRepo.find({
+        where: { patientId },
+        order: { horodatage: 'ASC' },
+      }),
+      this.activiteRepo.find({
+        where: { patientId },
+        relations: ['constantes'],
+      }),
+      this.protocoleRepo.find({
+        where: { patientId },
+        relations: ['drainages'],
+      }),
+      this.scoreRepo.find({ where: { patientId } }),
+      this.sortieRepo.find({ where: { patientId }, relations: ['scoreSCCRE'] }),
+    ]);
+
+    // Résolution des identités médecin (userId central ou id local `medecins`) attachées sous
+    // les mêmes clés que les anciennes relations TypeORM, pour que le frontend n'ait rien à
+    // changer.
+    const [
+      notifications,
+      cpa,
+      verificationVeille,
+      bons,
+      activites,
+      protocoles,
+      scores,
+      sorties,
+    ] = await Promise.all([
+      this.medecinIdentiteService.enrichir(
+        notificationsRaw,
+        'chirurgienId',
+        'chirurgien',
+      ),
+      this.medecinIdentiteService.enrichir(
+        cpaRaw,
+        'anesthesisteId',
+        'anesthesiste',
+      ),
+      this.medecinIdentiteService.enrichir(
+        verificationVeilleRaw,
+        'anesthesisteId',
+        'anesthesiste',
+      ),
+      this.medecinIdentiteService.enrichirPlusieurs(bonsRaw, [
+        ['chirurgienId', 'chirurgien'],
+        ['anesthesisteId', 'anesthesiste'],
+      ]),
+      this.medecinIdentiteService.enrichirPlusieurs(activitesRaw, [
+        ['chirurgienId', 'chirurgien'],
+        ['anesthesisteId', 'anesthesiste'],
+      ]),
+      this.medecinIdentiteService.enrichirPlusieurs(protocolesRaw, [
+        ['chirurgienId', 'chirurgien'],
+        ['anesthesisteId', 'anesthesiste'],
+        ['infirmiereId', 'infirmiere'],
+        ['aideOperatoireId', 'aideOperatoire'],
+      ]),
+      this.medecinIdentiteService.enrichir(
+        scoresRaw,
+        'anesthesisteId',
+        'anesthesiste',
+      ),
+      this.medecinIdentiteService.enrichir(sortiesRaw, 'medecinId', 'medecin'),
     ]);
 
     return {
@@ -91,8 +183,18 @@ export class ArchivesService {
 
   async getResumePatient(patientId: string): Promise<any> {
     const patient = await this.getPatientEnrichi(patientId);
-    const nbInterventions = await this.activiteRepo.count({ where: { patientId } });
-    const dernierScore = await this.scoreRepo.findOne({ where: { patientId }, order: { createdAt: 'DESC' } });
-    return { patient, nombreInterventions: nbInterventions, dernierScoreSCCRE: dernierScore?.scoreTotal || null, statutActuel: patient.statut };
+    const nbInterventions = await this.activiteRepo.count({
+      where: { patientId },
+    });
+    const dernierScore = await this.scoreRepo.findOne({
+      where: { patientId },
+      order: { createdAt: 'DESC' },
+    });
+    return {
+      patient,
+      nombreInterventions: nbInterventions,
+      dernierScoreSCCRE: dernierScore?.scoreTotal || null,
+      statutActuel: patient.statut,
+    };
   }
 }

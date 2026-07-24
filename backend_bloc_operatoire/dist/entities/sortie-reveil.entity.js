@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SortieReveil = exports.StatutSortieReveil = void 0;
 const typeorm_1 = require("typeorm");
 const score_sccre_entity_1 = require("./score-sccre.entity");
-const medecin_entity_1 = require("./medecin.entity");
 var StatutSortieReveil;
 (function (StatutSortieReveil) {
     StatutSortieReveil["EN_ATTENTE"] = "EN_ATTENTE";
@@ -23,7 +22,6 @@ let SortieReveil = class SortieReveil {
     patientId;
     scoreSCCRE;
     scoreSCCREId;
-    medecin;
     medecinId;
     dateHeureSortie;
     versServiceOrigine;
@@ -51,10 +49,6 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], SortieReveil.prototype, "scoreSCCREId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true }),
-    __metadata("design:type", medecin_entity_1.Medecin)
-], SortieReveil.prototype, "medecin", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)

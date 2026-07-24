@@ -6,7 +6,7 @@ export declare class SortieReveilController {
     constructor(service: SortieReveilService);
     create(dto: CreateSortieReveilDto, req: any): Promise<import("../entities").SortieReveil>;
     findAll(p?: number, l?: number): Promise<{
-        data: any;
+        data: Record<string, any>[];
         total: number;
         page: number;
         pages: number;

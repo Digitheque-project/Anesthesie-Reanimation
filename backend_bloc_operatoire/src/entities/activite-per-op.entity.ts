@@ -2,13 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { Medecin } from './medecin.entity';
 import { ConstantePerOp } from './constante-per-op.entity';
 
 @Entity('activites_per_op')
@@ -22,15 +20,11 @@ export class ActivitePerOp {
 
   // Nullable : l'activité per-op est créée dès le début de l'opération (pour permettre le
   // rattachement des constantes en temps réel) — le chirurgien/anesthésiste peuvent être
-  // renseignés plus tard via PATCH, pas nécessairement connus à la création.
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  chirurgien: Medecin | null;
-
+  // renseignés plus tard via PATCH, pas nécessairement connus à la création. Référencent
+  // l'identité (userId central ou id local `medecins`), plus de FK/relation TypeORM — voir
+  // CentralUserClient/MedecinIdentiteService pour l'enrichissement en lecture.
   @Column({ nullable: true })
   chirurgienId: string | null;
-
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  anesthesiste: Medecin | null;
 
   @Column({ nullable: true })
   anesthesisteId: string | null;

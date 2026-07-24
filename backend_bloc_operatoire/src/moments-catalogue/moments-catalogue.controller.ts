@@ -11,14 +11,19 @@ export class MomentsCatalogueController {
   constructor(private readonly service: MomentsCatalogueService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lister le catalogue des boutons de la chronologie opératoire' })
+  @ApiOperation({
+    summary: 'Lister le catalogue des boutons de la chronologie opératoire',
+  })
   findAll() {
     return this.service.findAll();
   }
 
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
-  @ApiOperation({ summary: "Ajouter un bouton réutilisable au catalogue (à sa propre catégorie)" })
+  @ApiOperation({
+    summary:
+      'Ajouter un bouton réutilisable au catalogue (à sa propre catégorie)',
+  })
   create(@Body() dto: CreateMomentCatalogueEntryDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
   }

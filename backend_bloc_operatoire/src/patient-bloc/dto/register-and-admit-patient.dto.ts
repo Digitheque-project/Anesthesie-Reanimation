@@ -1,6 +1,16 @@
-import { IsString, IsEnum, IsDateString, IsOptional, Length, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsOptional,
+  Length,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { PatientStatut, NiveauUrgence } from '../../entities/patient-bloc.entity';
+import {
+  PatientStatut,
+  NiveauUrgence,
+} from '../../entities/patient-bloc.entity';
 import { RegisterPatientDto } from '../../external/dto/register-patient.dto';
 
 export class RegisterAndAdmitPatientDto {

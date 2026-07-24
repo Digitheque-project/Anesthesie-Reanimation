@@ -1,5 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Index } from 'typeorm';
-import { Medecin } from './medecin.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum StatutCreneau {
   PLANIFIE = 'PLANIFIE',
@@ -37,9 +42,8 @@ export class CreneauBloc {
   @Column()
   patientId: string;
 
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  chirurgien: Medecin | null;
-
+  // Référence l'identité du chirurgien — userId central (interne) ou id local `medecins`
+  // (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column({ nullable: true })
   chirurgienId: string | null;
 
@@ -47,7 +51,11 @@ export class CreneauBloc {
   @Column({ type: 'varchar', length: 100, nullable: true })
   responsable: string | null;
 
-  @Column({ type: 'enum', enum: StatutCreneau, default: StatutCreneau.PLANIFIE })
+  @Column({
+    type: 'enum',
+    enum: StatutCreneau,
+    default: StatutCreneau.PLANIFIE,
+  })
   statut: StatutCreneau;
 
   @Column({ default: false })

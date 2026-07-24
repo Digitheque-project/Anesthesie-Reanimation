@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+  IsDateString,
+} from 'class-validator';
 import { CategorieMoment } from '../../entities/moment-operatoire.entity';
 
 export class CreateMomentOperatoireDto {

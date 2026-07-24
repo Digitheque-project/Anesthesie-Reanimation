@@ -10,7 +10,9 @@ import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
+import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 export declare class RapportsService {
     private patientBlocRepo;
     private activiteRepo;
@@ -23,8 +25,10 @@ export declare class RapportsService {
     private checklistPendantRepo;
     private checklistApresRepo;
     private momentRepo;
+    private protocoleRepo;
     private accueilClient;
-    constructor(patientBlocRepo: Repository<PatientBloc>, activiteRepo: Repository<ActivitePerOp>, scoreRepo: Repository<ScoreSCCRE>, medecinRepo: Repository<Medecin>, cpaRepository: Repository<CPA>, notifRepo: Repository<NotificationCPA>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, momentRepo: Repository<MomentOperatoire>, accueilClient: AccueilClient);
+    private medecinIdentiteService;
+    constructor(patientBlocRepo: Repository<PatientBloc>, activiteRepo: Repository<ActivitePerOp>, scoreRepo: Repository<ScoreSCCRE>, medecinRepo: Repository<Medecin>, cpaRepository: Repository<CPA>, notifRepo: Repository<NotificationCPA>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, momentRepo: Repository<MomentOperatoire>, protocoleRepo: Repository<ProtocoleOperatoire>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService);
     statistiquesGenerales(dateDebut?: string, dateFin?: string): Promise<{
         totalPatients: number;
         totalPatientsActifs: number;
@@ -50,8 +54,9 @@ export declare class RapportsService {
         checklistsPendantOp: number;
         checklistsApresOp: number;
         momentsOperatoires: number;
+        comptesRendusOperatoires: number;
     }>;
-    cpaEnAttente(): Promise<any>;
+    cpaEnAttente(): Promise<Record<string, any>[]>;
     tauxOccupation(dateDebut?: string, dateFin?: string): Promise<any[]>;
     operationsDetail(dateDebut?: string, dateFin?: string, limite?: number): Promise<{
         patientNom: string;
@@ -62,6 +67,7 @@ export declare class RapportsService {
         dateOperation: Date;
         chirurgien: string;
         anesthesiste: string;
+        compteRenduDisponible: boolean;
     }[]>;
     tableauDeBord(dateDebut?: string, dateFin?: string): Promise<{
         periode: {
@@ -95,6 +101,7 @@ export declare class RapportsService {
             checklistsPendantOp: number;
             checklistsApresOp: number;
             momentsOperatoires: number;
+            comptesRendusOperatoires: number;
         };
         evolutionQuotidienne: any[];
         operationsDetail: {
@@ -106,6 +113,7 @@ export declare class RapportsService {
             dateOperation: Date;
             chirurgien: string;
             anesthesiste: string;
+            compteRenduDisponible: boolean;
         }[];
     }>;
     exportStatistiques(type: string, dateDebut?: string, dateFin?: string): Promise<{
@@ -140,6 +148,7 @@ export declare class RapportsService {
             checklistsPendantOp: number;
             checklistsApresOp: number;
             momentsOperatoires: number;
+            comptesRendusOperatoires: number;
         };
         evolutionQuotidienne: any[];
         operationsDetail: {
@@ -151,6 +160,7 @@ export declare class RapportsService {
             dateOperation: Date;
             chirurgien: string;
             anesthesiste: string;
+            compteRenduDisponible: boolean;
         }[];
     }>;
 }

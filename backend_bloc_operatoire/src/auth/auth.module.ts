@@ -17,18 +17,18 @@ import { RolesGuard } from './roles.guard';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'chuchu_secret_key_change_me_in_production_2025',
-        signOptions: { expiresIn: Number(configService.get('JWT_EXPIRATION')) || 86400 },
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'chuchu_secret_key_change_me_in_production_2025',
+        signOptions: {
+          expiresIn: Number(configService.get('JWT_EXPIRATION')) || 86400,
+        },
       }),
     }),
     TypeOrmModule.forFeature([User]),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    RolesGuard,
-  ],
+  providers: [AuthService, JwtStrategy, RolesGuard],
   exports: [AuthService, RolesGuard, JwtModule],
 })
 export class AuthModule {}

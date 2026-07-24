@@ -19,16 +19,19 @@ const typeorm_2 = require("typeorm");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const constante_per_op_entity_1 = require("../entities/constante-per-op.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 let ActivitePerOpService = class ActivitePerOpService {
     repo;
     constanteRepo;
     accueilClient;
+    medecinIdentiteService;
     gateway;
-    constructor(repo, constanteRepo, accueilClient, gateway) {
+    constructor(repo, constanteRepo, accueilClient, medecinIdentiteService, gateway) {
         this.repo = repo;
         this.constanteRepo = constanteRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
         this.gateway = gateway;
     }
     async create(dto) {
@@ -49,22 +52,30 @@ let ActivitePerOpService = class ActivitePerOpService {
     async findAll(page = 1, limite = 10, patientId) {
         const [data, total] = await this.repo.findAndCount({
             where: patientId ? { patientId } : {},
-            relations: ['chirurgien', 'anesthesiste', 'constantes'],
+            relations: ['constantes'],
             skip: (page - 1) * limite,
             take: limite,
             order: { createdAt: 'DESC' },
         });
-        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
+        const enriched = await this.medecinIdentiteService.enrichirPlusieurs(enrichedPatient, [
+            ['chirurgienId', 'chirurgien'],
+            ['anesthesisteId', 'anesthesiste'],
+        ]);
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
         const a = await this.repo.findOne({
             where: { id },
-            relations: ['chirurgien', 'anesthesiste', 'constantes'],
+            relations: ['constantes'],
         });
         if (!a)
             throw new common_1.NotFoundException(`Activité ${id} non trouvée`);
-        const [enriched] = await this.accueilClient.enrichWithIdentity([a]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([a]);
+        const [enriched] = await this.medecinIdentiteService.enrichirPlusieurs([enrichedPatient], [
+            ['chirurgienId', 'chirurgien'],
+            ['anesthesisteId', 'anesthesiste'],
+        ]);
         return enriched;
     }
     async update(id, dto) {
@@ -109,6 +120,7 @@ exports.ActivitePerOpService = ActivitePerOpService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService,
         operation_gateway_1.OperationGateway])
 ], ActivitePerOpService);
 //# sourceMappingURL=activite-per-op.service.js.map

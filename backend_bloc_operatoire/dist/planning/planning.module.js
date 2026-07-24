@@ -13,12 +13,13 @@ const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const planning_service_1 = require("./planning.service");
 const planning_controller_1 = require("./planning.controller");
+const medecin_module_1 = require("../medecin/medecin.module");
 let PlanningModule = class PlanningModule {
 };
 exports.PlanningModule = PlanningModule;
 exports.PlanningModule = PlanningModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([creneau_bloc_entity_1.CreneauBloc, patient_bloc_entity_1.PatientBloc])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([creneau_bloc_entity_1.CreneauBloc, patient_bloc_entity_1.PatientBloc]), medecin_module_1.MedecinModule],
         controllers: [planning_controller_1.PlanningController],
         providers: [planning_service_1.PlanningService],
         exports: [planning_service_1.PlanningService],

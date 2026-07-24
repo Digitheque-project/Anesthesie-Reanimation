@@ -33,6 +33,8 @@ export class Drainage {
   @Column({ type: 'enum', enum: CoteDrainage, nullable: true })
   cote: CoteDrainage;
 
-  @ManyToOne(() => ProtocoleOperatoire, (protocole) => protocole.drainages, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ProtocoleOperatoire, (protocole) => protocole.drainages, {
+    onDelete: 'CASCADE',
+  })
   protocole: ProtocoleOperatoire;
 }

@@ -1,6 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { VerificationVeille } from './verification-veille.entity';
-import { Medecin } from './medecin.entity';
 import { ItemCommande } from './item-commande.entity';
 
 export enum StatutBonCommande {
@@ -23,14 +31,10 @@ export class BonCommandeAnesthesie {
   @Column()
   verificationVeilleId: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  chirurgien: Medecin;
-
+  // Référencent l'identité — userId central (interne) ou id local `medecins`
+  // (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column()
   chirurgienId: string;
-
-  @ManyToOne(() => Medecin, { eager: true })
-  anesthesiste: Medecin;
 
   @Column()
   anesthesisteId: string;
@@ -44,7 +48,11 @@ export class BonCommandeAnesthesie {
   @Column('simple-array')
   consommables: string[];
 
-  @Column({ type: 'enum', enum: StatutBonCommande, default: StatutBonCommande.EN_ATTENTE })
+  @Column({
+    type: 'enum',
+    enum: StatutBonCommande,
+    default: StatutBonCommande.EN_ATTENTE,
+  })
   statut: StatutBonCommande;
 
   @CreateDateColumn()

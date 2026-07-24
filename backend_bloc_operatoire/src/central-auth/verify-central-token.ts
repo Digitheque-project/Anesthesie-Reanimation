@@ -19,9 +19,13 @@ export async function verifyCentralToken(
   const payload: any = await jwtService.verifyAsync(token, { secret });
 
   const serviceId = config.get<string>('externalServices.serviceId');
-  const serviceEntry = (payload.services || []).find((s: any) => s.serviceId === serviceId);
+  const serviceEntry = (payload.services || []).find(
+    (s: any) => s.serviceId === serviceId,
+  );
   if (!serviceEntry) {
-    throw new NoServiceAccessError("Vous n'avez pas accès au service Bloc Opératoire");
+    throw new NoServiceAccessError(
+      "Vous n'avez pas accès au service Bloc Opératoire",
+    );
   }
 
   return {

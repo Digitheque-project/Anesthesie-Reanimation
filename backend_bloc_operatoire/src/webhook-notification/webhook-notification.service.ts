@@ -12,7 +12,10 @@ export class WebhookNotificationService {
     private readonly webhookRepo: Repository<WebhookNotification>,
   ) {}
 
-  async processIncomingNotification(payload: any, sourceService?: string): Promise<boolean> {
+  async processIncomingNotification(
+    payload: any,
+    sourceService?: string,
+  ): Promise<boolean> {
     this.logger.log(`📦 Webhook reçu: ${JSON.stringify(payload)}`);
 
     try {

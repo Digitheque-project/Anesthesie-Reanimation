@@ -11,14 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActivitePerOp = void 0;
 const typeorm_1 = require("typeorm");
-const medecin_entity_1 = require("./medecin.entity");
 const constante_per_op_entity_1 = require("./constante-per-op.entity");
 let ActivitePerOp = class ActivitePerOp {
     id;
     patientId;
-    chirurgien;
     chirurgienId;
-    anesthesiste;
     anesthesisteId;
     dateOperation;
     perfusions;
@@ -44,17 +41,9 @@ __decorate([
     __metadata("design:type", String)
 ], ActivitePerOp.prototype, "patientId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], ActivitePerOp.prototype, "chirurgien", void 0);
-__decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Object)
 ], ActivitePerOp.prototype, "chirurgienId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => medecin_entity_1.Medecin, { eager: true, nullable: true }),
-    __metadata("design:type", Object)
-], ActivitePerOp.prototype, "anesthesiste", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Object)

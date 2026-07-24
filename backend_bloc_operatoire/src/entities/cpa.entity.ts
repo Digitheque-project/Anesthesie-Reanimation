@@ -4,11 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
   Index,
 } from 'typeorm';
-import { Medecin } from './medecin.entity';
 import { Premedicament } from './premedicament.entity';
 
 export enum ScoreASA {
@@ -51,9 +49,10 @@ export class CPA {
   @Column()
   patientId: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  anesthesiste: Medecin;
-
+  // Référence l'identité de l'anesthésiste — soit un userId du service central SSO (médecin
+  // interne, cas normal), soit un id de la table locale `medecins` (médecin externe, ou
+  // donnée historique). Plus de FK/relation TypeORM : voir CentralUserClient pour
+  // l'enrichissement en lecture.
   @Column()
   anesthesisteId: string;
 
@@ -153,7 +152,12 @@ export class CPA {
   // Antibiotiques & autres, Dispositifs médicaux, Consommables) ; seuls les articles cochés sont
   // persistés, pas le catalogue entier.
   @Column({ type: 'simple-json', nullable: true })
-  medicamentsAnesthesieReanimation: { categorie: string; nom: string; dosage?: string; observation?: string }[];
+  medicamentsAnesthesieReanimation: {
+    categorie: string;
+    nom: string;
+    dosage?: string;
+    observation?: string;
+  }[];
 
   @Column()
   jeune: string;

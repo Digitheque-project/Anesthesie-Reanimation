@@ -1,4 +1,11 @@
-import { IsString, IsEnum, IsDateString, IsBoolean, IsOptional, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsBoolean,
+  IsOptional,
+  IsArray,
+} from 'class-validator';
 import { StatutVerificationVeille } from '../../entities/verification-veille.entity';
 
 export class CreateVerificationVeilleDto {
@@ -14,6 +21,11 @@ export class CreateVerificationVeilleDto {
   @IsString() examensComplementaires: string;
   @IsOptional() commandeSang?: any;
   @IsString() heureDepart: string;
-  @IsOptional() @IsArray() @IsString({ each: true }) medicamentsVerifies?: string[];
-  @IsOptional() @IsEnum(StatutVerificationVeille) statut?: StatutVerificationVeille;
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  medicamentsVerifies?: string[];
+  @IsOptional()
+  @IsEnum(StatutVerificationVeille)
+  statut?: StatutVerificationVeille;
 }

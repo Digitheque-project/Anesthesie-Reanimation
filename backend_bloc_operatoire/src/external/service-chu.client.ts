@@ -14,19 +14,25 @@ export class ServiceChuClient {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl = this.config.get<string>('externalServices.serviceChuApiUrl') ?? '';
+    this.baseUrl =
+      this.config.get<string>('externalServices.serviceChuApiUrl') ?? '';
     this.chuId = this.config.get<string>('externalServices.chuId') ?? '';
-    this.serviceId = this.config.get<string>('externalServices.serviceId') ?? '';
+    this.serviceId =
+      this.config.get<string>('externalServices.serviceId') ?? '';
   }
 
   async getChu(id?: string): Promise<any> {
-    const { data } = await firstValueFrom(this.http.get(`${this.baseUrl}/chu/${id ?? this.chuId}`));
+    const { data } = await firstValueFrom(
+      this.http.get(`${this.baseUrl}/chu/${id ?? this.chuId}`),
+    );
     return data;
   }
 
   async getService(id?: string): Promise<any> {
     const { data } = await firstValueFrom(
-      this.http.get(`${this.baseUrl}/service/chu/${this.chuId}/service/${id ?? this.serviceId}`),
+      this.http.get(
+        `${this.baseUrl}/service/chu/${this.chuId}/service/${id ?? this.serviceId}`,
+      ),
     );
     return data;
   }

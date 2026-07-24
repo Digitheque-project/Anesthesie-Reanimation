@@ -34,6 +34,7 @@ export declare class RapportsController {
             checklistsPendantOp: number;
             checklistsApresOp: number;
             momentsOperatoires: number;
+            comptesRendusOperatoires: number;
         };
         evolutionQuotidienne: any[];
         operationsDetail: {
@@ -45,6 +46,7 @@ export declare class RapportsController {
             dateOperation: Date;
             chirurgien: string;
             anesthesiste: string;
+            compteRenduDisponible: boolean;
         }[];
     }>;
     statistiques(dd?: string, df?: string): Promise<{
@@ -58,7 +60,7 @@ export declare class RapportsController {
         urgencesParNiveau: any[];
     }>;
     activiteChirurgiens(dd?: string, df?: string): Promise<any[]>;
-    cpaEnAttente(): Promise<any>;
+    cpaEnAttente(): Promise<Record<string, any>[]>;
     tauxOccupation(): Promise<any[]>;
     exportStats(): Promise<{
         periode: {
@@ -92,6 +94,7 @@ export declare class RapportsController {
             checklistsPendantOp: number;
             checklistsApresOp: number;
             momentsOperatoires: number;
+            comptesRendusOperatoires: number;
         };
         evolutionQuotidienne: any[];
         operationsDetail: {
@@ -103,6 +106,7 @@ export declare class RapportsController {
             dateOperation: Date;
             chirurgien: string;
             anesthesiste: string;
+            compteRenduDisponible: boolean;
         }[];
     }>;
 }

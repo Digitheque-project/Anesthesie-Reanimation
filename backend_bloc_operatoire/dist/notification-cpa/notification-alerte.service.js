@@ -44,7 +44,7 @@ let NotificationAlerteService = class NotificationAlerteService {
         }
         const dateLimite = new Date();
         dateLimite.setHours(dateLimite.getHours() - 48);
-        const notifsEnRetardRaw = await this.notifRepo.find({ where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, createdAt: (0, typeorm_2.LessThanOrEqual)(dateLimite) }, relations: ['chirurgien'] });
+        const notifsEnRetardRaw = await this.notifRepo.find({ where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, createdAt: (0, typeorm_2.LessThanOrEqual)(dateLimite) } });
         const notifsEnRetard = await this.accueilClient.enrichWithIdentity(notifsEnRetardRaw);
         for (const notif of notifsEnRetard) {
             const nomComplet = notif.patient ? `${notif.patient.nom} ${notif.patient.prenom}` : notif.patientId;
@@ -55,7 +55,7 @@ let NotificationAlerteService = class NotificationAlerteService {
     async getResumeJour() {
         const aujourdhui = new Date().toISOString().split('T')[0];
         const [creneauxJourRaw, urgences, notifsEnAttente] = await Promise.all([
-            this.creneauRepo.find({ where: { date: new Date(aujourdhui) }, relations: ['chirurgien'] }),
+            this.creneauRepo.find({ where: { date: new Date(aujourdhui) } }),
             this.patientBlocRepo.count({ where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT } }),
             this.notifRepo.count({ where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE } }),
         ]);

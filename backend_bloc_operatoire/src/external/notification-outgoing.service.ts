@@ -12,7 +12,8 @@ export class NotificationOutgoingService {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.blocServiceId = this.config.get<string>('externalServices.serviceId') ?? '';
+    this.blocServiceId =
+      this.config.get<string>('externalServices.serviceId') ?? '';
   }
 
   async notifyOriginService(params: {
@@ -23,11 +24,22 @@ export class NotificationOutgoingService {
     payload: any;
     notificationUrl?: string;
   }): Promise<void> {
-    const { patientId, type, serviceOrigineId, serviceOrigineName, payload, notificationUrl } = params;
+    const {
+      patientId,
+      type,
+      serviceOrigineId,
+      serviceOrigineName,
+      payload,
+      notificationUrl,
+    } = params;
 
-    const url = notificationUrl || this.config.get<string>('externalServices.notificationOrigineUrl');
+    const url =
+      notificationUrl ||
+      this.config.get<string>('externalServices.notificationOrigineUrl');
     if (!url) {
-      this.logger.warn(`URL de notification origine non configurée, notification "${type}" pour patient ${patientId} ignorée`);
+      this.logger.warn(
+        `URL de notification origine non configurée, notification "${type}" pour patient ${patientId} ignorée`,
+      );
       return;
     }
 
@@ -45,9 +57,13 @@ export class NotificationOutgoingService {
           createdAt: new Date().toISOString(),
         }),
       );
-      this.logger.log(`Notification "${type}" envoyée au service ${serviceOrigineName} pour patient ${patientId}`);
+      this.logger.log(
+        `Notification "${type}" envoyée au service ${serviceOrigineName} pour patient ${patientId}`,
+      );
     } catch (err) {
-      this.logger.error(`Échec envoi notification "${type}" au service ${serviceOrigineName}: ${(err as Error).message}`);
+      this.logger.error(
+        `Échec envoi notification "${type}" au service ${serviceOrigineName}: ${(err as Error).message}`,
+      );
     }
   }
 }

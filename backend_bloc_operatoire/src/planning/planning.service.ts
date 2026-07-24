@@ -1,25 +1,46 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { CreneauBloc, StatutCreneau, TypeRDV } from '../entities/creneau-bloc.entity';
+import {
+  CreneauBloc,
+  StatutCreneau,
+  TypeRDV,
+} from '../entities/creneau-bloc.entity';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 
 @Injectable()
 export class PlanningService {
   constructor(
     @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
-    @InjectRepository(PatientBloc) private patientBlocRepo: Repository<PatientBloc>,
+    @InjectRepository(PatientBloc)
+    private patientBlocRepo: Repository<PatientBloc>,
     private accueilClient: AccueilClient,
+    private medecinIdentiteService: MedecinIdentiteService,
   ) {}
 
-  // Attache une clé `.patient` (identité Accueil + statut/niveauUrgence locaux) à chaque créneau.
+  // Attache une clé `.patient` (identité Accueil + statut/niveauUrgence locaux) et `.chirurgien`
+  // (identité résolue via CentralUserClient/table locale) à chaque créneau.
   private async enrichCreneaux(data: CreneauBloc[]): Promise<any[]> {
     if (data.length === 0) return [];
     const identities = await this.accueilClient.enrichWithIdentity(data);
-    const patientIds = Array.from(new Set(data.map((c) => c.patientId).filter(Boolean)));
+    const avecChirurgien = await this.medecinIdentiteService.enrichir(
+      data,
+      'chirurgienId',
+      'chirurgien',
+    );
+    const patientIds = Array.from(
+      new Set(data.map((c) => c.patientId).filter(Boolean)),
+    );
     const patients = patientIds.length
-      ? await this.patientBlocRepo.find({ where: { patientId: In(patientIds) } })
+      ? await this.patientBlocRepo.find({
+          where: { patientId: In(patientIds) },
+        })
       : [];
     const patientMap = new Map(patients.map((p) => [p.patientId, p]));
     return data.map((c, idx) => {
@@ -27,6 +48,7 @@ export class PlanningService {
       const pb = patientMap.get(c.patientId);
       return {
         ...c,
+        chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
         patient: {
           id: c.patientId,
           nom: identity.nom,
@@ -40,8 +62,8 @@ export class PlanningService {
   }
 
   async getPlanningJour(jour: string, type?: TypeRDV) {
-    const qb = this.creneauRepo.createQueryBuilder('c')
-      .leftJoinAndSelect('c.chirurgien', 'm')
+    const qb = this.creneauRepo
+      .createQueryBuilder('c')
       .where('c.date = :date', { date: jour })
       .orderBy('c.heureDebut', 'ASC');
     if (type) qb.andWhere('c.type = :type', { type });
@@ -50,18 +72,22 @@ export class PlanningService {
   }
 
   async getPlanningSemaine(debut: string, fin: string, type?: TypeRDV) {
-    const qb = this.creneauRepo.createQueryBuilder('c')
-      .leftJoinAndSelect('c.chirurgien', 'm')
+    const qb = this.creneauRepo
+      .createQueryBuilder('c')
       .where('c.date >= :debut', { debut })
       .andWhere('c.date <= :fin', { fin })
-      .orderBy('c.date', 'ASC').addOrderBy('c.heureDebut', 'ASC');
+      .orderBy('c.date', 'ASC')
+      .addOrderBy('c.heureDebut', 'ASC');
     if (type) qb.andWhere('c.type = :type', { type });
     const data = await qb.getMany();
     return this.enrichCreneaux(data);
   }
 
   async reserverCreneau(dto: any) {
-    const creneau = this.creneauRepo.create({ ...dto, type: dto.type || TypeRDV.CPA });
+    const creneau = this.creneauRepo.create({
+      ...dto,
+      type: dto.type || TypeRDV.CPA,
+    });
     return this.creneauRepo.save(creneau);
   }
 
@@ -73,13 +99,21 @@ export class PlanningService {
   }
 
   async getUrgencesEnAttente() {
-    const data = await this.creneauRepo.find({ where: { estUrgence: true }, relations: ['chirurgien'] });
+    const data = await this.creneauRepo.find({ where: { estUrgence: true } });
     return this.enrichCreneaux(data);
   }
 
   // Transférer CPA vers Vérification veille
-  async transfererCpaVersVerificationVeille(dto: { patientId: string; chirurgienId: string; dateVerificationVeille: string; heureDebut: string; salle: string }) {
-    const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+  async transfererCpaVersVerificationVeille(dto: {
+    patientId: string;
+    chirurgienId: string;
+    dateVerificationVeille: string;
+    heureDebut: string;
+    salle: string;
+  }) {
+    const patient = await this.patientBlocRepo.findOne({
+      where: { patientId: dto.patientId },
+    });
     if (!patient) throw new NotFoundException('Patient non trouvé');
 
     patient.statut = PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE;
@@ -98,8 +132,16 @@ export class PlanningService {
   }
 
   // Transférer Vérification veille vers Patient du jour
-  async transfererVerificationVeilleVersPatientJour(dto: { patientId: string; chirurgienId: string; date: string; heureDebut: string; salle: string }) {
-    const patient = await this.patientBlocRepo.findOne({ where: { patientId: dto.patientId } });
+  async transfererVerificationVeilleVersPatientJour(dto: {
+    patientId: string;
+    chirurgienId: string;
+    date: string;
+    heureDebut: string;
+    salle: string;
+  }) {
+    const patient = await this.patientBlocRepo.findOne({
+      where: { patientId: dto.patientId },
+    });
     if (!patient) throw new NotFoundException('Patient non trouvé');
 
     patient.statut = PatientStatut.PRET_POUR_BLOC;

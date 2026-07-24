@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
-import { PatientBloc, NiveauUrgence, PatientStatut } from '../entities/patient-bloc.entity';
+import {
+  PatientBloc,
+  NiveauUrgence,
+  PatientStatut,
+} from '../entities/patient-bloc.entity';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { DossierPatientClient } from '../external/dossier-patient.client';
@@ -22,11 +26,15 @@ export class PatientBlocService {
   ) {}
 
   async creerDepuisPrescription(demandeId: string): Promise<PatientBloc> {
-    const demande = await this.demandeRepo.findOne({ where: { id: demandeId } });
+    const demande = await this.demandeRepo.findOne({
+      where: { id: demandeId },
+    });
     if (!demande) throw new Error('Demande non trouvée');
 
     const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
-    const niveauUrgence = estUrgence ? NiveauUrgence.TRES_URGENT : NiveauUrgence.NORMAL;
+    const niveauUrgence = estUrgence
+      ? NiveauUrgence.TRES_URGENT
+      : NiveauUrgence.NORMAL;
     // Un patient urgent n'a pas de "vérification à la veille" (chirurgie immédiate) : il passe
     // par la même consultation que la CPA, juste étiquetée VPA côté interface. Le statut initial
     // est donc toujours EN_ATTENTE_CPA, urgent ou non.
@@ -50,13 +58,23 @@ export class PatientBlocService {
     return false;
   }
 
-  async findAll(filters: { statut?: string; niveauUrgence?: string; recherche?: string; page?: number; limite?: number }) {
+  async findAll(filters: {
+    statut?: string;
+    niveauUrgence?: string;
+    recherche?: string;
+    page?: number;
+    limite?: number;
+  }) {
     const { statut, niveauUrgence, recherche, page = 1, limite = 10 } = filters;
     const qb = this.patientRepo.createQueryBuilder('p');
 
     if (statut) qb.andWhere('p.statut = :statut', { statut });
-    if (niveauUrgence) qb.andWhere('p.niveauUrgence = :niveauUrgence', { niveauUrgence });
-    if (recherche) qb.andWhere('p.idDossier ILIKE :recherche', { recherche: `%${recherche}%` });
+    if (niveauUrgence)
+      qb.andWhere('p.niveauUrgence = :niveauUrgence', { niveauUrgence });
+    if (recherche)
+      qb.andWhere('p.idDossier ILIKE :recherche', {
+        recherche: `%${recherche}%`,
+      });
 
     qb.orderBy('p.createdAt', 'DESC');
     qb.skip((page - 1) * limite).take(limite);
@@ -91,17 +109,35 @@ export class PatientBlocService {
   // complémentaires urgents, suivi/évolution. Tolérant aux pannes : une catégorie indisponible
   // n'empêche pas les autres de s'afficher (chaque appel du client échoue en silence vers []).
   async getDossierMedical(patientId: string, token: string) {
-    const [antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis] =
-      await Promise.all([
-        this.dossierPatientClient.getAntecedentsActifs(patientId, token),
-        this.dossierPatientClient.getDiagnostics(patientId, token),
-        this.dossierPatientClient.getHistoriqueMaladieRecente(patientId, token),
-        this.dossierPatientClient.getHistoriquesUrgents(patientId, token),
-        this.dossierPatientClient.getDernierExamenPhysique(patientId, token),
-        this.dossierPatientClient.getExamensComplementairesUrgents(patientId, token),
-        this.dossierPatientClient.getSuivis(patientId, token),
-      ]);
-    return { antecedents, diagnostics, histoireMaladie, alertesUrgentes, dernierExamen, examensComplementaires, suivis };
+    const [
+      antecedents,
+      diagnostics,
+      histoireMaladie,
+      alertesUrgentes,
+      dernierExamen,
+      examensComplementaires,
+      suivis,
+    ] = await Promise.all([
+      this.dossierPatientClient.getAntecedentsActifs(patientId, token),
+      this.dossierPatientClient.getDiagnostics(patientId, token),
+      this.dossierPatientClient.getHistoriqueMaladieRecente(patientId, token),
+      this.dossierPatientClient.getHistoriquesUrgents(patientId, token),
+      this.dossierPatientClient.getDernierExamenPhysique(patientId, token),
+      this.dossierPatientClient.getExamensComplementairesUrgents(
+        patientId,
+        token,
+      ),
+      this.dossierPatientClient.getSuivis(patientId, token),
+    ]);
+    return {
+      antecedents,
+      diagnostics,
+      histoireMaladie,
+      alertesUrgentes,
+      dernierExamen,
+      examensComplementaires,
+      suivis,
+    };
   }
 
   // Vue complète et en lecture seule du dossier patient, organisée par onglets côté frontend
@@ -111,8 +147,14 @@ export class PatientBlocService {
   // Dossier Patient externe expose, plus nos propres protocoles opératoires.
   async getDossierComplet(patientId: string, token: string) {
     const [
-      observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
-      examensComplementaires, suivis, protocolesOperatoires,
+      observations,
+      diagnostics,
+      antecedents,
+      histoiresMaladie,
+      examensPhysiques,
+      examensComplementaires,
+      suivis,
+      protocolesOperatoires,
     ] = await Promise.all([
       this.dossierPatientClient.getObservations(patientId, token),
       this.dossierPatientClient.getDiagnosticsTous(patientId, token),
@@ -121,18 +163,30 @@ export class PatientBlocService {
       this.dossierPatientClient.getExamensPhysiquesTous(patientId, token),
       this.dossierPatientClient.getExamensComplementairesTous(patientId, token),
       this.dossierPatientClient.getSuivis(patientId, token),
-      this.protocoleOperatoireService.findAll(1, 50, patientId).then(r => r.data).catch(() => []),
+      this.protocoleOperatoireService
+        .findAll(1, 50, patientId)
+        .then((r) => r.data)
+        .catch(() => []),
     ]);
 
     // La sortie médicale se consulte par épisode d'hospitalisation, pas par patient — on prend
     // le plus récent episodeId connu (diagnostic ou histoire de la maladie) à défaut d'un suivi
     // d'admission dédié dans ce service.
     const episodeId = diagnostics.find((d: any) => d.episodeId)?.episodeId;
-    const sortie = episodeId ? await this.dossierPatientClient.getSortieMedicale(episodeId, token) : [];
+    const sortie = episodeId
+      ? await this.dossierPatientClient.getSortieMedicale(episodeId, token)
+      : [];
 
     return {
-      observations, diagnostics, antecedents, histoiresMaladie, examensPhysiques,
-      examensComplementaires, suivis, protocolesOperatoires, sortie,
+      observations,
+      diagnostics,
+      antecedents,
+      histoiresMaladie,
+      examensPhysiques,
+      examensComplementaires,
+      suivis,
+      protocolesOperatoires,
+      sortie,
     };
   }
 

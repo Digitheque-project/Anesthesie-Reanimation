@@ -9,7 +9,11 @@ import { CPAService } from './cpa.service';
 import { CPAController } from './cpa.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CPA, PatientBloc, Premedicament]), DemandeCpaExterneModule, MedecinModule],
+  imports: [
+    TypeOrmModule.forFeature([CPA, PatientBloc, Premedicament]),
+    DemandeCpaExterneModule,
+    MedecinModule,
+  ],
   controllers: [CPAController],
   providers: [CPAService],
   exports: [CPAService],

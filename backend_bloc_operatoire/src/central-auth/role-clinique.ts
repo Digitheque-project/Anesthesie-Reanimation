@@ -12,11 +12,17 @@ const DIACRITIQUES = new RegExp('[\\u0300-\\u036f]', 'g');
 // dans son panneau d'admin) à l'un des 5 rôles cliniques du bloc opératoire. Correspondance par
 // mot-clé (insensible à la casse/accents) plutôt qu'égalité stricte, car on ne maîtrise pas
 // l'orthographe exacte saisie côté admin central.
-export function matchRoleClinique(roleName: string | undefined | null): RoleClinique | null {
+export function matchRoleClinique(
+  roleName: string | undefined | null,
+): RoleClinique | null {
   if (!roleName) return null;
-  const normalise = roleName.normalize('NFD').replace(DIACRITIQUES, '').toLowerCase();
+  const normalise = roleName
+    .normalize('NFD')
+    .replace(DIACRITIQUES, '')
+    .toLowerCase();
 
-  if (normalise.includes('responsable') && normalise.includes('cpa')) return RoleClinique.RESPONSABLE_CPA;
+  if (normalise.includes('responsable') && normalise.includes('cpa'))
+    return RoleClinique.RESPONSABLE_CPA;
   if (normalise.includes('anesthesist')) return RoleClinique.ANESTHESISTE;
   if (normalise.includes('chirurgien')) return RoleClinique.CHIRURGIEN;
   if (normalise.includes('ibode')) return RoleClinique.IBODE;

@@ -13,12 +13,13 @@ const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const activite_per_op_entity_1 = require("../entities/activite-per-op.entity");
 const exports_service_1 = require("./exports.service");
 const exports_controller_1 = require("./exports.controller");
+const medecin_module_1 = require("../medecin/medecin.module");
 let ExportsModule = class ExportsModule {
 };
 exports.ExportsModule = ExportsModule;
 exports.ExportsModule = ExportsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, activite_per_op_entity_1.ActivitePerOp])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, activite_per_op_entity_1.ActivitePerOp]), medecin_module_1.MedecinModule],
         controllers: [exports_controller_1.ExportsController],
         providers: [exports_service_1.ExportsService],
         exports: [exports_service_1.ExportsService],

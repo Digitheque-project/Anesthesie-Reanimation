@@ -2,13 +2,11 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { Medecin } from './medecin.entity';
 import { Drainage } from './drainage.entity';
 
 @Entity('protocoles_operatoires')
@@ -23,29 +21,18 @@ export class ProtocoleOperatoire {
   @Column({ type: 'date' })
   dateOperation: Date;
 
-  // Les intervenants (chirurgien, anesthésiste, infirmière, aide opératoire) ne sont pas
-  // toujours enregistrés comme Medecin local — le formulaire ne propose d'ailleurs aucun
-  // sélecteur pour ces champs — donc nullable, comme NotificationCPA.chirurgienId.
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  chirurgien: Medecin | null;
-
+  // Les intervenants (chirurgien, anesthésiste, infirmière, aide opératoire) référencent une
+  // identité — userId central (interne) ou id local `medecins` (externe/historique) — pas
+  // toujours renseignée, le formulaire ne proposant d'ailleurs aucun sélecteur pour ces champs,
+  // donc nullable. Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column({ type: 'varchar', nullable: true })
   chirurgienId: string | null;
-
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  anesthesiste: Medecin | null;
 
   @Column({ type: 'varchar', nullable: true })
   anesthesisteId: string | null;
 
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  infirmiere: Medecin | null;
-
   @Column({ type: 'varchar', nullable: true })
   infirmiereId: string | null;
-
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  aideOperatoire: Medecin | null;
 
   @Column({ type: 'varchar', nullable: true })
   aideOperatoireId: string | null;

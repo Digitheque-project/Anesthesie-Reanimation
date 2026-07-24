@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
 import { PatientBlocService } from './patient-bloc.service';
@@ -26,29 +41,48 @@ export class PatientBlocController {
   }
 
   @Get('external/:externalId')
-  @ApiOperation({ summary: 'Obtenir un patient depuis le service Accueil (avant admission)' })
+  @ApiOperation({
+    summary: 'Obtenir un patient depuis le service Accueil (avant admission)',
+  })
   getExternal(@Param('externalId') externalId: string) {
     return this.patientBlocService.getExternal(externalId);
   }
 
   @Post('admit')
-  @ApiOperation({ summary: 'Admettre au bloc un patient déjà enregistré dans Accueil' })
+  @ApiOperation({
+    summary: 'Admettre au bloc un patient déjà enregistré dans Accueil',
+  })
   admitExisting(@Body() dto: AdmitExistingPatientDto) {
     return this.patientBlocService.admitExisting(dto);
   }
 
   @Post('register-and-admit')
-  @ApiOperation({ summary: "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc" })
-  registerAndAdmit(@Body() dto: RegisterAndAdmitPatientDto, @Request() req: any) {
-    const createdBy = req.centralUser?.userId ?? req.centralUser?.email ?? 'unknown';
+  @ApiOperation({
+    summary:
+      "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc",
+  })
+  registerAndAdmit(
+    @Body() dto: RegisterAndAdmitPatientDto,
+    @Request() req: any,
+  ) {
+    const createdBy =
+      req.centralUser?.userId ?? req.centralUser?.email ?? 'unknown';
     return this.patientBlocService.registerAndAdmit(dto, createdBy);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lister les fiches de suivi bloc (enrichies avec l\'identité Accueil)' })
+  @ApiOperation({
+    summary:
+      "Lister les fiches de suivi bloc (enrichies avec l'identité Accueil)",
+  })
   @ApiQuery({ name: 'statut', required: false })
   @ApiQuery({ name: 'niveauUrgence', required: false })
-  @ApiQuery({ name: 'recherche', required: false, description: 'Recherche locale par idDossier uniquement — utiliser /patients/search pour rechercher par nom' })
+  @ApiQuery({
+    name: 'recherche',
+    required: false,
+    description:
+      'Recherche locale par idDossier uniquement — utiliser /patients/search pour rechercher par nom',
+  })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limite', required: false })
   findAll(
@@ -58,7 +92,13 @@ export class PatientBlocController {
     @Query('page') page?: number,
     @Query('limite') limite?: number,
   ) {
-    return this.patientBlocService.findAll({ statut, niveauUrgence, recherche, page, limite });
+    return this.patientBlocService.findAll({
+      statut,
+      niveauUrgence,
+      recherche,
+      page,
+      limite,
+    });
   }
 
   @Get(':patientId')
@@ -68,44 +108,80 @@ export class PatientBlocController {
   }
 
   @Get(':patientId/dossier-medical')
-  @ApiOperation({ summary: "Dossier médical partagé complet (antécédents, diagnostics, histoire de la maladie, alertes urgentes, dernier examen physique, examens complémentaires urgents, suivis)" })
-  getDossierMedical(@Param('patientId') patientId: string, @Request() req: any) {
+  @ApiOperation({
+    summary:
+      'Dossier médical partagé complet (antécédents, diagnostics, histoire de la maladie, alertes urgentes, dernier examen physique, examens complémentaires urgents, suivis)',
+  })
+  getDossierMedical(
+    @Param('patientId') patientId: string,
+    @Request() req: any,
+  ) {
     const token = (req.headers?.authorization || '').replace(/^Bearer\s+/i, '');
     return this.patientBlocService.getDossierMedical(patientId, token);
   }
 
   @Get(':patientId/dossier-complet')
-  @ApiOperation({ summary: 'Dossier patient complet en lecture seule, organisé par onglets (observations, diagnostics, antécédents, histoire de la maladie, examens physiques, examens complémentaires, suivis, protocoles opératoires, sortie)' })
-  getDossierComplet(@Param('patientId') patientId: string, @Request() req: any) {
+  @ApiOperation({
+    summary:
+      'Dossier patient complet en lecture seule, organisé par onglets (observations, diagnostics, antécédents, histoire de la maladie, examens physiques, examens complémentaires, suivis, protocoles opératoires, sortie)',
+  })
+  getDossierComplet(
+    @Param('patientId') patientId: string,
+    @Request() req: any,
+  ) {
     const token = (req.headers?.authorization || '').replace(/^Bearer\s+/i, '');
     return this.patientBlocService.getDossierComplet(patientId, token);
   }
 
   @Patch(':patientId')
   @ApiOperation({ summary: 'Modifier une fiche de suivi bloc' })
-  update(@Param('patientId') patientId: string, @Body() dto: UpdatePatientBlocDto) {
+  update(
+    @Param('patientId') patientId: string,
+    @Body() dto: UpdatePatientBlocDto,
+  ) {
     return this.patientBlocService.update(patientId, dto);
   }
 
   @Patch(':patientId/apte-cpa')
   @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
-  @ApiOperation({ summary: 'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)' })
+  @ApiOperation({
+    summary:
+      'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)',
+  })
   marquerApteCpa(@Param('patientId') patientId: string) {
     return this.patientBlocStatutService.marquerApteCpa(patientId);
   }
 
   @Patch(':patientId/inapte-cpa')
   @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
-  @ApiOperation({ summary: 'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire, Responsable CPA)' })
-  marquerInapteCpa(@Param('patientId') patientId: string, @Body('motifRefus') motifRefus: string) {
-    return this.patientBlocStatutService.marquerInapteCpa(patientId, motifRefus);
+  @ApiOperation({
+    summary:
+      'Fil de prescription : marquer le patient inapte au circuit CPA (motif obligatoire, Responsable CPA)',
+  })
+  marquerInapteCpa(
+    @Param('patientId') patientId: string,
+    @Body('motifRefus') motifRefus: string,
+  ) {
+    return this.patientBlocStatutService.marquerInapteCpa(
+      patientId,
+      motifRefus,
+    );
   }
 
   @Patch(':patientId/date-intervention')
   @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
-  @ApiOperation({ summary: "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA)" })
-  modifierDateIntervention(@Param('patientId') patientId: string, @Body() dto: UpdateDateInterventionDto) {
-    return this.patientBlocStatutService.modifierDateIntervention(patientId, dto.dateIntervention);
+  @ApiOperation({
+    summary:
+      "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA)",
+  })
+  modifierDateIntervention(
+    @Param('patientId') patientId: string,
+    @Body() dto: UpdateDateInterventionDto,
+  ) {
+    return this.patientBlocStatutService.modifierDateIntervention(
+      patientId,
+      dto.dateIntervention,
+    );
   }
 
   @Delete(':patientId')

@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 import { CategorieMoment } from './moment-operatoire.entity';
 
 // Catalogue des boutons de la chronologie opératoire (MomentsTimeline). Historiquement codé en

@@ -22,6 +22,7 @@ const cpa_entity_1 = require("../entities/cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const endoscopie_client_1 = require("../external/endoscopie.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cpa-externe.service");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
 let VerificationVeilleService = VerificationVeilleService_1 = class VerificationVeilleService {
@@ -30,15 +31,17 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
     cpaRepo;
     accueilClient;
     endoscopieClient;
+    medecinIdentiteService;
     demandeCpaExterneService;
     patientBlocStatutService;
     logger = new common_1.Logger(VerificationVeilleService_1.name);
-    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, demandeCpaExterneService, patientBlocStatutService) {
+    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, medecinIdentiteService, demandeCpaExterneService, patientBlocStatutService) {
         this.repo = repo;
         this.patientBlocRepo = patientBlocRepo;
         this.cpaRepo = cpaRepo;
         this.accueilClient = accueilClient;
         this.endoscopieClient = endoscopieClient;
+        this.medecinIdentiteService = medecinIdentiteService;
         this.demandeCpaExterneService = demandeCpaExterneService;
         this.patientBlocStatutService = patientBlocStatutService;
     }
@@ -68,17 +71,19 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
     }
     async findAll(page = 1, limite = 10) {
         const [data, total] = await this.repo.findAndCount({
-            relations: ['cpa', 'anesthesiste'],
+            relations: ['cpa'],
             skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' }
         });
-        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
+        const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'anesthesisteId', 'anesthesiste');
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const verif = await this.repo.findOne({ where: { id }, relations: ['cpa', 'anesthesiste'] });
+        const verif = await this.repo.findOne({ where: { id }, relations: ['cpa'] });
         if (!verif)
             throw new common_1.NotFoundException(`Vérification veille ${id} non trouvée`);
-        const [enriched] = await this.accueilClient.enrichWithIdentity([verif]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([verif]);
+        const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'anesthesisteId', 'anesthesiste');
         return enriched;
     }
     async update(id, dto) {
@@ -106,6 +111,7 @@ exports.VerificationVeilleService = VerificationVeilleService = VerificationVeil
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         endoscopie_client_1.EndoscopieClient,
+        medecin_identite_service_1.MedecinIdentiteService,
         demande_cpa_externe_service_1.DemandeCpaExterneService,
         patient_bloc_statut_service_1.PatientBlocStatutService])
 ], VerificationVeilleService);

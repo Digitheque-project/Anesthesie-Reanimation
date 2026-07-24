@@ -41,12 +41,16 @@ export class PrescriptionImagerieClient {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl = this.config.get<string>('externalServices.prescriptionImagerieApiUrl') ?? '';
+    this.baseUrl =
+      this.config.get<string>('externalServices.prescriptionImagerieApiUrl') ??
+      '';
   }
 
   // Toutes les réponses du service Prescription imagerie sont enveloppées dans
   // { data, timestamp } (confirmé sur le service réel — pas documenté dans le Swagger).
-  async getParPatient(patientId: string): Promise<PrescriptionImagerieExterne[]> {
+  async getParPatient(
+    patientId: string,
+  ): Promise<PrescriptionImagerieExterne[]> {
     if (!this.baseUrl) {
       this.logger.warn('PRESCRIPTION_IMAGERIE_API_URL non configuré');
       return [];
@@ -59,7 +63,9 @@ export class PrescriptionImagerieClient {
       );
       return Array.isArray(data?.data) ? data.data : [];
     } catch (err) {
-      this.logger.error(`Erreur récupération prescriptions imagerie du patient ${patientId}: ${(err as Error).message}`);
+      this.logger.error(
+        `Erreur récupération prescriptions imagerie du patient ${patientId}: ${(err as Error).message}`,
+      );
       return [];
     }
   }
@@ -71,11 +77,15 @@ export class PrescriptionImagerieClient {
     }
     try {
       const { data } = await firstValueFrom(
-        this.http.get<{ data: PrescriptionImagerieExterne }>(`${this.baseUrl}/api/prescriptions/imagerie/${encodeURIComponent(id)}`),
+        this.http.get<{ data: PrescriptionImagerieExterne }>(
+          `${this.baseUrl}/api/prescriptions/imagerie/${encodeURIComponent(id)}`,
+        ),
       );
       return data?.data ?? null;
     } catch (err) {
-      this.logger.error(`Erreur récupération prescription imagerie ${id}: ${(err as Error).message}`);
+      this.logger.error(
+        `Erreur récupération prescription imagerie ${id}: ${(err as Error).message}`,
+      );
       return null;
     }
   }

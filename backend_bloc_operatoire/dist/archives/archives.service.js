@@ -31,6 +31,7 @@ const notification_cpa_entity_1 = require("../entities/notification-cpa.entity")
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
 const moment_operatoire_entity_1 = require("../entities/moment-operatoire.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 let ArchivesService = class ArchivesService {
     patientBlocRepo;
     cpaRepository;
@@ -47,7 +48,8 @@ let ArchivesService = class ArchivesService {
     demandeExterneRepo;
     momentRepo;
     accueilClient;
-    constructor(patientBlocRepo, cpaRepository, verificationVeilleRepository, bonRepo, activiteRepo, protocoleRepo, scoreRepo, sortieRepo, checklistAvantRepo, checklistPendantRepo, checklistApresRepo, notificationRepo, demandeExterneRepo, momentRepo, accueilClient) {
+    medecinIdentiteService;
+    constructor(patientBlocRepo, cpaRepository, verificationVeilleRepository, bonRepo, activiteRepo, protocoleRepo, scoreRepo, sortieRepo, checklistAvantRepo, checklistPendantRepo, checklistApresRepo, notificationRepo, demandeExterneRepo, momentRepo, accueilClient, medecinIdentiteService) {
         this.patientBlocRepo = patientBlocRepo;
         this.cpaRepository = cpaRepository;
         this.verificationVeilleRepository = verificationVeilleRepository;
@@ -63,6 +65,7 @@ let ArchivesService = class ArchivesService {
         this.demandeExterneRepo = demandeExterneRepo;
         this.momentRepo = momentRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
     }
     async getPatientEnrichi(patientId) {
         const suivi = await this.patientBlocRepo.findOne({ where: { patientId } });
@@ -73,20 +76,32 @@ let ArchivesService = class ArchivesService {
     }
     async getDossierComplet(patientId) {
         const patient = await this.getPatientEnrichi(patientId);
-        const [notifications, demandesExternes, cpa, verificationVeille, bons, checklistsAvant, checklistsPendant, checklistsApres, moments, activites, protocoles, scores, sorties,] = await Promise.all([
-            this.notificationRepo.find({ where: { patientId }, relations: ['chirurgien'], order: { createdAt: 'ASC' } }),
+        const [notificationsRaw, demandesExternes, cpaRaw, verificationVeilleRaw, bonsRaw, checklistsAvant, checklistsPendant, checklistsApres, moments, activitesRaw, protocolesRaw, scoresRaw, sortiesRaw,] = await Promise.all([
+            this.notificationRepo.find({ where: { patientId }, order: { createdAt: 'ASC' } }),
             this.demandeExterneRepo.find({ where: { patientId }, order: { createdAt: 'ASC' } }),
-            this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments', 'anesthesiste'] }),
-            this.verificationVeilleRepository.find({ where: { patientId }, relations: ['anesthesiste'] }),
-            this.bonRepo.find({ where: { patientId }, relations: ['items', 'chirurgien', 'anesthesiste'] }),
+            this.cpaRepository.find({ where: { patientId }, relations: ['premedicaments'] }),
+            this.verificationVeilleRepository.find({ where: { patientId } }),
+            this.bonRepo.find({ where: { patientId }, relations: ['items'] }),
             this.checklistAvantRepo.find({ where: { patientId } }),
             this.checklistPendantRepo.find({ where: { patientId } }),
             this.checklistApresRepo.find({ where: { patientId } }),
             this.momentRepo.find({ where: { patientId }, order: { horodatage: 'ASC' } }),
-            this.activiteRepo.find({ where: { patientId }, relations: ['constantes', 'chirurgien', 'anesthesiste'] }),
-            this.protocoleRepo.find({ where: { patientId }, relations: ['drainages', 'chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire'] }),
-            this.scoreRepo.find({ where: { patientId }, relations: ['anesthesiste'] }),
-            this.sortieRepo.find({ where: { patientId }, relations: ['scoreSCCRE', 'medecin'] }),
+            this.activiteRepo.find({ where: { patientId }, relations: ['constantes'] }),
+            this.protocoleRepo.find({ where: { patientId }, relations: ['drainages'] }),
+            this.scoreRepo.find({ where: { patientId } }),
+            this.sortieRepo.find({ where: { patientId }, relations: ['scoreSCCRE'] }),
+        ]);
+        const [notifications, cpa, verificationVeille, bons, activites, protocoles, scores, sorties] = await Promise.all([
+            this.medecinIdentiteService.enrichir(notificationsRaw, 'chirurgienId', 'chirurgien'),
+            this.medecinIdentiteService.enrichir(cpaRaw, 'anesthesisteId', 'anesthesiste'),
+            this.medecinIdentiteService.enrichir(verificationVeilleRaw, 'anesthesisteId', 'anesthesiste'),
+            this.medecinIdentiteService.enrichirPlusieurs(bonsRaw, [['chirurgienId', 'chirurgien'], ['anesthesisteId', 'anesthesiste']]),
+            this.medecinIdentiteService.enrichirPlusieurs(activitesRaw, [['chirurgienId', 'chirurgien'], ['anesthesisteId', 'anesthesiste']]),
+            this.medecinIdentiteService.enrichirPlusieurs(protocolesRaw, [
+                ['chirurgienId', 'chirurgien'], ['anesthesisteId', 'anesthesiste'], ['infirmiereId', 'infirmiere'], ['aideOperatoireId', 'aideOperatoire'],
+            ]),
+            this.medecinIdentiteService.enrichir(scoresRaw, 'anesthesisteId', 'anesthesiste'),
+            this.medecinIdentiteService.enrichir(sortiesRaw, 'medecinId', 'medecin'),
         ]);
         return {
             patient,
@@ -144,6 +159,7 @@ exports.ArchivesService = ArchivesService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService])
 ], ArchivesService);
 //# sourceMappingURL=archives.service.js.map

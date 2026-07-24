@@ -24,7 +24,9 @@ import { CORS_ORIGINS } from '../config/cors-origins';
   namespace: '/bloc/ws/operation',
   cors: { origin: CORS_ORIGINS, credentials: true },
 })
-export class OperationGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class OperationGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(OperationGateway.name);
 
@@ -37,10 +39,18 @@ export class OperationGateway implements OnGatewayConnection, OnGatewayDisconnec
     try {
       const token = client.handshake.auth?.token as string | undefined;
       if (!token) throw new Error('Token manquant');
-      client.data.centralUser = await verifyCentralToken(token, this.jwtService, this.config);
+      client.data.centralUser = await verifyCentralToken(
+        token,
+        this.jwtService,
+        this.config,
+      );
     } catch (err) {
-      this.logger.warn(`Connexion WebSocket refusée: ${(err as Error).message}`);
-      client.emit('erreur-auth', { message: 'Authentification WebSocket invalide' });
+      this.logger.warn(
+        `Connexion WebSocket refusée: ${(err as Error).message}`,
+      );
+      client.emit('erreur-auth', {
+        message: 'Authentification WebSocket invalide',
+      });
       client.disconnect(true);
     }
   }
@@ -48,14 +58,20 @@ export class OperationGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleDisconnect(_client: Socket) {}
 
   @SubscribeMessage('rejoindre-operation')
-  rejoindre(@ConnectedSocket() client: Socket, @MessageBody() data: { patientId: string }) {
+  rejoindre(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { patientId: string },
+  ) {
     if (!client.data.centralUser || !data?.patientId) return;
     client.join(`operation:${data.patientId}`);
     client.emit('operation-rejointe', { patientId: data.patientId });
   }
 
   @SubscribeMessage('quitter-operation')
-  quitter(@ConnectedSocket() client: Socket, @MessageBody() data: { patientId: string }) {
+  quitter(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { patientId: string },
+  ) {
     if (!data?.patientId) return;
     client.leave(`operation:${data.patientId}`);
   }

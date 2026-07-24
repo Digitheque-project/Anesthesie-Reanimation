@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsDateString, IsOptional, Length } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsOptional,
+  Length,
+} from 'class-validator';
 
 export enum SexeAccueil {
   MALE = 'MALE',

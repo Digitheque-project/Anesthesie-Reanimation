@@ -19,19 +19,23 @@ const typeorm_2 = require("typeorm");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 let PlanningService = class PlanningService {
     creneauRepo;
     patientBlocRepo;
     accueilClient;
-    constructor(creneauRepo, patientBlocRepo, accueilClient) {
+    medecinIdentiteService;
+    constructor(creneauRepo, patientBlocRepo, accueilClient, medecinIdentiteService) {
         this.creneauRepo = creneauRepo;
         this.patientBlocRepo = patientBlocRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
     }
     async enrichCreneaux(data) {
         if (data.length === 0)
             return [];
         const identities = await this.accueilClient.enrichWithIdentity(data);
+        const avecChirurgien = await this.medecinIdentiteService.enrichir(data, 'chirurgienId', 'chirurgien');
         const patientIds = Array.from(new Set(data.map((c) => c.patientId).filter(Boolean)));
         const patients = patientIds.length
             ? await this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(patientIds) } })
@@ -42,6 +46,7 @@ let PlanningService = class PlanningService {
             const pb = patientMap.get(c.patientId);
             return {
                 ...c,
+                chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
                 patient: {
                     id: c.patientId,
                     nom: identity.nom,
@@ -55,7 +60,6 @@ let PlanningService = class PlanningService {
     }
     async getPlanningJour(jour, type) {
         const qb = this.creneauRepo.createQueryBuilder('c')
-            .leftJoinAndSelect('c.chirurgien', 'm')
             .where('c.date = :date', { date: jour })
             .orderBy('c.heureDebut', 'ASC');
         if (type)
@@ -65,7 +69,6 @@ let PlanningService = class PlanningService {
     }
     async getPlanningSemaine(debut, fin, type) {
         const qb = this.creneauRepo.createQueryBuilder('c')
-            .leftJoinAndSelect('c.chirurgien', 'm')
             .where('c.date >= :debut', { debut })
             .andWhere('c.date <= :fin', { fin })
             .orderBy('c.date', 'ASC').addOrderBy('c.heureDebut', 'ASC');
@@ -86,7 +89,7 @@ let PlanningService = class PlanningService {
         return this.creneauRepo.save(creneau);
     }
     async getUrgencesEnAttente() {
-        const data = await this.creneauRepo.find({ where: { estUrgence: true }, relations: ['chirurgien'] });
+        const data = await this.creneauRepo.find({ where: { estUrgence: true } });
         return this.enrichCreneaux(data);
     }
     async transfererCpaVersVerificationVeille(dto) {
@@ -132,6 +135,7 @@ exports.PlanningService = PlanningService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService])
 ], PlanningService);
 //# sourceMappingURL=planning.service.js.map

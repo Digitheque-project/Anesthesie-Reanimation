@@ -1,4 +1,3 @@
-import { Medecin } from './medecin.entity';
 export declare enum StatutNotificationCPA {
     EN_ATTENTE = "EN_ATTENTE",
     RDV_PLANIFIE = "RDV_PLANIFIE",
@@ -10,7 +9,6 @@ export declare class NotificationCPA {
     dateIntervention: Date | null;
     patientId: string;
     intervention: string;
-    chirurgien: Medecin | null;
     chirurgienId: string | null;
     chirurgienNom: string | null;
     professeurCPA: string | null;

@@ -1,4 +1,11 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -6,7 +13,10 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { CentralUser } from './central-user.interface';
 import { REQUIRE_ROLE_CLINIQUE_KEY } from './require-role.decorator';
 import { matchRoleClinique } from './role-clinique';
-import { verifyCentralToken, NoServiceAccessError } from './verify-central-token';
+import {
+  verifyCentralToken,
+  NoServiceAccessError,
+} from './verify-central-token';
 
 // Vérifie le token émis par le SSO central (auth-service) au login. Aucun accès à l'API
 // n'est autorisé sans ce token, sauf sur les routes explicitement marquées @Public()
@@ -30,25 +40,32 @@ export class CentralAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = this.extractToken(request);
-    if (!token) throw new UnauthorizedException('Connexion requise (SSO central)');
+    if (!token)
+      throw new UnauthorizedException('Connexion requise (SSO central)');
 
     let centralUser: CentralUser;
     try {
-      centralUser = await verifyCentralToken(token, this.jwtService, this.config);
+      centralUser = await verifyCentralToken(
+        token,
+        this.jwtService,
+        this.config,
+      );
     } catch (err) {
       if (err instanceof NoServiceAccessError) {
         throw new ForbiddenException(err.message);
       }
       this.logger.warn(`Token SSO invalide: ${(err as Error).message}`);
-      throw new UnauthorizedException('Session expirée ou invalide, veuillez vous reconnecter');
+      throw new UnauthorizedException(
+        'Session expirée ou invalide, veuillez vous reconnecter',
+      );
     }
 
     request.centralUser = centralUser;
 
-    const rolesRequis = this.reflector.getAllAndOverride<string[]>(REQUIRE_ROLE_CLINIQUE_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const rolesRequis = this.reflector.getAllAndOverride<string[]>(
+      REQUIRE_ROLE_CLINIQUE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (rolesRequis && rolesRequis.length > 0) {
       const roleUtilisateur = matchRoleClinique(centralUser.role);
       if (!roleUtilisateur || !rolesRequis.includes(roleUtilisateur)) {
@@ -63,7 +80,8 @@ export class CentralAuthGuard implements CanActivate {
 
   private extractToken(request: any): string | undefined {
     const auth = request.headers?.authorization;
-    if (typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice(7);
+    if (typeof auth === 'string' && auth.startsWith('Bearer '))
+      return auth.slice(7);
     return undefined;
   }
 }

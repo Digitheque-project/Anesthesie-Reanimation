@@ -18,34 +18,32 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const score_sccre_entity_1 = require("../entities/score-sccre.entity");
 const accueil_client_1 = require("../external/accueil.client");
-const medecin_service_1 = require("../medecin/medecin.service");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 let ScoreSCCREService = class ScoreSCCREService {
     repo;
     accueilClient;
-    medecinService;
-    constructor(repo, accueilClient, medecinService) {
+    medecinIdentiteService;
+    constructor(repo, accueilClient, medecinIdentiteService) {
         this.repo = repo;
         this.accueilClient = accueilClient;
-        this.medecinService = medecinService;
+        this.medecinIdentiteService = medecinIdentiteService;
     }
     async create(dto, centralUser) {
-        const anesthesiste = await this.medecinService.findByEmail(centralUser.email);
-        if (!anesthesiste) {
-            throw new common_1.BadRequestException(`Aucune fiche Médecin ne correspond à votre compte (${centralUser.email}). Contactez un administrateur pour la créer.`);
-        }
-        const saved = await this.repo.save(this.repo.create({ ...dto, anesthesisteId: anesthesiste.id }));
+        const saved = await this.repo.save(this.repo.create({ ...dto, anesthesisteId: centralUser.userId }));
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async findAll(page = 1, limite = 10) {
-        const [data, total] = await this.repo.findAndCount({ relations: ['anesthesiste'], skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
-        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        const [data, total] = await this.repo.findAndCount({ skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' } });
+        const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
+        const enriched = await this.medecinIdentiteService.enrichir(enrichedPatient, 'anesthesisteId', 'anesthesiste');
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const s = await this.repo.findOne({ where: { id }, relations: ['anesthesiste'] });
+        const s = await this.repo.findOne({ where: { id } });
         if (!s)
             throw new common_1.NotFoundException(`Score ${id} non trouvé`);
-        const [enriched] = await this.accueilClient.enrichWithIdentity([s]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([s]);
+        const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'anesthesisteId', 'anesthesiste');
         return enriched;
     }
     async update(id, dto) {
@@ -68,6 +66,6 @@ exports.ScoreSCCREService = ScoreSCCREService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(score_sccre_entity_1.ScoreSCCRE)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         accueil_client_1.AccueilClient,
-        medecin_service_1.MedecinService])
+        medecin_identite_service_1.MedecinIdentiteService])
 ], ScoreSCCREService);
 //# sourceMappingURL=score-sccre.service.js.map

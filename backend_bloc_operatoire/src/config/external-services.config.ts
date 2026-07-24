@@ -4,8 +4,12 @@ export default registerAs('externalServices', () => {
   const chuId = process.env.CHU_ID;
   const accueilApiUrl = process.env.ACCUEIL_API_URL;
 
-  if (!chuId) throw new Error('CHU_ID manquant dans les variables d\'environnement');
-  if (!accueilApiUrl) throw new Error('ACCUEIL_API_URL manquant dans les variables d\'environnement');
+  if (!chuId)
+    throw new Error("CHU_ID manquant dans les variables d'environnement");
+  if (!accueilApiUrl)
+    throw new Error(
+      "ACCUEIL_API_URL manquant dans les variables d'environnement",
+    );
 
   return {
     chuId,
@@ -19,5 +23,6 @@ export default registerAs('externalServices', () => {
     prescriptionImagerieApiUrl: process.env.PRESCRIPTION_IMAGERIE_API_URL,
     notificationApiUrl: process.env.NOTIFICATION_API_URL,
     dossierPatientApiUrl: process.env.DOSSIER_PATIENT_API_URL,
+    centralUserServiceUrl: process.env.CENTRAL_USER_SERVICE_URL,
   };
 });

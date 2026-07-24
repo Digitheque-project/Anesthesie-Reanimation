@@ -1,6 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { CPA } from './cpa.entity';
-import { Medecin } from './medecin.entity';
 
 // Contrôle final réalisé la veille de l'intervention, pour un patient ayant déjà eu une CPA
 // (programmée à l'avance). À ne pas confondre avec le sigle "VPA" utilisé ailleurs dans
@@ -26,9 +33,8 @@ export class VerificationVeille {
   @Column({ nullable: true })
   cpaId: string;
 
-  @ManyToOne(() => Medecin, { eager: true, nullable: true })
-  anesthesiste: Medecin;
-
+  // Référence l'identité de l'anesthésiste — userId central (interne) ou id local `medecins`
+  // (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column({ nullable: true })
   anesthesisteId: string;
 
@@ -65,7 +71,11 @@ export class VerificationVeille {
   @Column({ length: 20 })
   heureDepart: string;
 
-  @Column({ type: 'enum', enum: StatutVerificationVeille, default: StatutVerificationVeille.EN_ATTENTE })
+  @Column({
+    type: 'enum',
+    enum: StatutVerificationVeille,
+    default: StatutVerificationVeille.EN_ATTENTE,
+  })
   statut: StatutVerificationVeille;
 
   @CreateDateColumn()

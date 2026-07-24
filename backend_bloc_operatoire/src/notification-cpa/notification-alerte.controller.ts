@@ -6,8 +6,12 @@ export class NotificationAlerteController {
   constructor(private readonly service: NotificationAlerteService) {}
 
   @Get()
-  getAlertes() { return this.service.getAlertesUrgentes(); }
+  getAlertes() {
+    return this.service.getAlertesUrgentes();
+  }
 
   @Get('resume-jour')
-  getResumeJour() { return this.service.getResumeJour(); }
+  getResumeJour() {
+    return this.service.getResumeJour();
+  }
 }

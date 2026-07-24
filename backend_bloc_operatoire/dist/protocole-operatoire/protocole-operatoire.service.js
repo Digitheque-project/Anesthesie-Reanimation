@@ -19,16 +19,25 @@ const typeorm_2 = require("typeorm");
 const protocole_operatoire_entity_1 = require("../entities/protocole-operatoire.entity");
 const drainage_entity_1 = require("../entities/drainage.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
+const INTERVENANTS = [
+    ['chirurgienId', 'chirurgien'],
+    ['anesthesisteId', 'anesthesiste'],
+    ['infirmiereId', 'infirmiere'],
+    ['aideOperatoireId', 'aideOperatoire'],
+];
 let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     repo;
     drainageRepo;
     accueilClient;
+    medecinIdentiteService;
     gateway;
-    constructor(repo, drainageRepo, accueilClient, gateway) {
+    constructor(repo, drainageRepo, accueilClient, medecinIdentiteService, gateway) {
         this.repo = repo;
         this.drainageRepo = drainageRepo;
         this.accueilClient = accueilClient;
+        this.medecinIdentiteService = medecinIdentiteService;
         this.gateway = gateway;
     }
     async create(dto) {
@@ -45,17 +54,19 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     async findAll(page = 1, limite = 10, patientId) {
         const [data, total] = await this.repo.findAndCount({
             where: patientId ? { patientId } : {},
-            relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'],
+            relations: ['drainages'],
             skip: (page - 1) * limite, take: limite, order: { createdAt: 'DESC' },
         });
-        const enriched = await this.accueilClient.enrichWithIdentity(data);
+        const enrichedPatient = await this.accueilClient.enrichWithIdentity(data);
+        const enriched = await this.medecinIdentiteService.enrichirPlusieurs(enrichedPatient, INTERVENANTS);
         return { data: enriched, total, page, pages: Math.ceil(total / limite) };
     }
     async findOne(id) {
-        const p = await this.repo.findOne({ where: { id }, relations: ['chirurgien', 'anesthesiste', 'infirmiere', 'aideOperatoire', 'drainages'] });
+        const p = await this.repo.findOne({ where: { id }, relations: ['drainages'] });
         if (!p)
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
-        const [enriched] = await this.accueilClient.enrichWithIdentity([p]);
+        const [enrichedPatient] = await this.accueilClient.enrichWithIdentity([p]);
+        const [enriched] = await this.medecinIdentiteService.enrichirPlusieurs([enrichedPatient], INTERVENANTS);
         return enriched;
     }
     async update(id, dto) {
@@ -82,6 +93,7 @@ exports.ProtocoleOperatoireService = ProtocoleOperatoireService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
+        medecin_identite_service_1.MedecinIdentiteService,
         operation_gateway_1.OperationGateway])
 ], ProtocoleOperatoireService);
 //# sourceMappingURL=protocole-operatoire.service.js.map

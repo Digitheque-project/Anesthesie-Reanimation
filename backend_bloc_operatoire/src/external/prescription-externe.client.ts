@@ -40,7 +40,8 @@ export class PrescriptionExterneClient {
     private readonly config: ConfigService,
     private readonly serviceToken: ServiceTokenService,
   ) {
-    this.baseUrl = this.config.get<string>('externalServices.prescriptionApiUrl') ?? '';
+    this.baseUrl =
+      this.config.get<string>('externalServices.prescriptionApiUrl') ?? '';
   }
 
   // Appelé depuis un job de fond (@Interval), sans utilisateur connecté dont on pourrait
@@ -51,21 +52,28 @@ export class PrescriptionExterneClient {
     return { Authorization: `Bearer ${this.serviceToken.mint()}` };
   }
 
-  async getPrescriptionsBloc(serviceIdDest: string): Promise<PrescriptionBlocExterne[]> {
+  async getPrescriptionsBloc(
+    serviceIdDest: string,
+  ): Promise<PrescriptionBlocExterne[]> {
     if (!this.baseUrl) {
       this.logger.warn('PRESCRIPTION_API_URL non configuré');
       return [];
     }
     try {
       const { data } = await firstValueFrom(
-        this.http.get<PrescriptionBlocExterne[]>(`${this.baseUrl}/prescriptions/bloc`, {
-          params: { serviceIdDest },
-          headers: this.authHeaders(),
-        }),
+        this.http.get<PrescriptionBlocExterne[]>(
+          `${this.baseUrl}/prescriptions/bloc`,
+          {
+            params: { serviceIdDest },
+            headers: this.authHeaders(),
+          },
+        ),
       );
       return Array.isArray(data) ? data : [];
     } catch (err) {
-      this.logger.error(`Erreur récupération prescriptions bloc: ${(err as Error).message}`);
+      this.logger.error(
+        `Erreur récupération prescriptions bloc: ${(err as Error).message}`,
+      );
       return [];
     }
   }
@@ -74,10 +82,16 @@ export class PrescriptionExterneClient {
     if (!this.baseUrl) return;
     try {
       await firstValueFrom(
-        this.http.put(`${this.baseUrl}/prescriptions/bloc/${id}/statut`, { statut }, { headers: this.authHeaders() }),
+        this.http.put(
+          `${this.baseUrl}/prescriptions/bloc/${id}/statut`,
+          { statut },
+          { headers: this.authHeaders() },
+        ),
       );
     } catch (err) {
-      this.logger.error(`Erreur mise à jour statut prescription ${id}: ${(err as Error).message}`);
+      this.logger.error(
+        `Erreur mise à jour statut prescription ${id}: ${(err as Error).message}`,
+      );
     }
   }
 }

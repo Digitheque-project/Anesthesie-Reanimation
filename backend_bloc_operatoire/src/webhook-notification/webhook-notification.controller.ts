@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Headers, HttpCode, Logger, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Headers,
+  HttpCode,
+  Logger,
+  Param,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { WebhookNotificationService } from './webhook-notification.service';
 import { Public } from '../central-auth/public.decorator';
@@ -21,8 +31,16 @@ export class WebhookNotificationController {
   ) {
     const sourceName = source || payload.sourceServiceName || 'service externe';
     this.logger.log(`📨 POST notification reçue de ${sourceName}`);
-    const result = await this.service.processIncomingNotification(payload, sourceName);
-    return { received: true, processed: result, method: 'POST', timestamp: new Date().toISOString() };
+    const result = await this.service.processIncomingNotification(
+      payload,
+      sourceName,
+    );
+    return {
+      received: true,
+      processed: result,
+      method: 'POST',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get('unread/count')

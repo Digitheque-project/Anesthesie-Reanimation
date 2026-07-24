@@ -7,7 +7,11 @@ import { OperationGatewayModule } from '../operation-gateway/operation-gateway.m
 import { PatientBlocModule } from '../patient-bloc/patient-bloc.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ChecklistPendantOp]), OperationGatewayModule, PatientBlocModule],
+  imports: [
+    TypeOrmModule.forFeature([ChecklistPendantOp]),
+    OperationGatewayModule,
+    PatientBlocModule,
+  ],
   controllers: [ChecklistPendantOpController],
   providers: [ChecklistPendantOpService],
 })

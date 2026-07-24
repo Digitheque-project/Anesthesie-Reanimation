@@ -5,9 +5,14 @@ import { Drainage } from '../entities/drainage.entity';
 import { ProtocoleOperatoireService } from './protocole-operatoire.service';
 import { ProtocoleOperatoireController } from './protocole-operatoire.controller';
 import { OperationGatewayModule } from '../operation-gateway/operation-gateway.module';
+import { MedecinModule } from '../medecin/medecin.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProtocoleOperatoire, Drainage]), OperationGatewayModule],
+  imports: [
+    TypeOrmModule.forFeature([ProtocoleOperatoire, Drainage]),
+    OperationGatewayModule,
+    MedecinModule,
+  ],
   controllers: [ProtocoleOperatoireController],
   providers: [ProtocoleOperatoireService],
   exports: [ProtocoleOperatoireService],

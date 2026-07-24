@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { VerificationVeilleService } from './verification-veille.service';
 import { CreateVerificationVeilleDto } from './dto/create-verification-veille.dto';
@@ -13,19 +23,40 @@ export class VerificationVeilleController {
 
   @Post()
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: "Créer une vérification à la veille de l'intervention (Anesthésiste)" })
-  create(@Body() d: CreateVerificationVeilleDto) { return this.service.create(d); }
+  @ApiOperation({
+    summary:
+      "Créer une vérification à la veille de l'intervention (Anesthésiste)",
+  })
+  create(@Body() d: CreateVerificationVeilleDto) {
+    return this.service.create(d);
+  }
 
-  @Get() @ApiOperation({ summary: 'Lister les vérifications veille' }) findAll(@Query('page') p?: number, @Query('limite') l?: number) { return this.service.findAll(p, l); }
-  @Get(':id') @ApiOperation({ summary: 'Obtenir une vérification veille' }) findOne(@Param('id', ParseUUIDPipe) id: string) { return this.service.findOne(id); }
+  @Get() @ApiOperation({ summary: 'Lister les vérifications veille' }) findAll(
+    @Query('page') p?: number,
+    @Query('limite') l?: number,
+  ) {
+    return this.service.findAll(p, l);
+  }
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtenir une vérification veille' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.findOne(id);
+  }
 
   @Patch(':id')
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
   @ApiOperation({ summary: 'Modifier une vérification veille (Anesthésiste)' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() d: UpdateVerificationVeilleDto) { return this.service.update(id, d); }
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() d: UpdateVerificationVeilleDto,
+  ) {
+    return this.service.update(id, d);
+  }
 
   @Delete(':id')
   @RequireRoleClinique(RoleClinique.ANESTHESISTE)
   @ApiOperation({ summary: 'Supprimer une vérification veille (Anesthésiste)' })
-  remove(@Param('id', ParseUUIDPipe) id: string) { return this.service.remove(id); }
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.remove(id);
+  }
 }

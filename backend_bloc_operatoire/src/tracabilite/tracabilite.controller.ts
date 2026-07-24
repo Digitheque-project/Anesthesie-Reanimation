@@ -6,7 +6,10 @@ export class TracabiliteController {
   constructor(private readonly service: TracabiliteService) {}
 
   @Get(':entite/:entiteId')
-  getHistorique(@Param('entite') entite: string, @Param('entiteId') entiteId: string) {
+  getHistorique(
+    @Param('entite') entite: string,
+    @Param('entiteId') entiteId: string,
+  ) {
     return this.service.getHistorique(entite, entiteId);
   }
 

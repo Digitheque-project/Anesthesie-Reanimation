@@ -20,6 +20,7 @@ exports.default = (0, config_1.registerAs)('externalServices', () => {
         prescriptionImagerieApiUrl: process.env.PRESCRIPTION_IMAGERIE_API_URL,
         notificationApiUrl: process.env.NOTIFICATION_API_URL,
         dossierPatientApiUrl: process.env.DOSSIER_PATIENT_API_URL,
+        centralUserServiceUrl: process.env.CENTRAL_USER_SERVICE_URL,
     };
 });
 //# sourceMappingURL=external-services.config.js.map

@@ -8,7 +8,6 @@ import {
   Index,
 } from 'typeorm';
 import { ScoreSCCRE } from './score-sccre.entity';
-import { Medecin } from './medecin.entity';
 
 export enum StatutSortieReveil {
   EN_ATTENTE = 'EN_ATTENTE',
@@ -30,9 +29,8 @@ export class SortieReveil {
   @Column()
   scoreSCCREId: string;
 
-  @ManyToOne(() => Medecin, { eager: true })
-  medecin: Medecin; // médecin qui autorise la sortie
-
+  // Référence l'identité du médecin qui autorise la sortie — userId central (interne) ou id
+  // local `medecins` (externe/historique). Plus de FK/relation TypeORM, voir CentralUserClient.
   @Column()
   medecinId: string;
 
@@ -54,7 +52,11 @@ export class SortieReveil {
     familleInformee: boolean;
   };
 
-  @Column({ type: 'enum', enum: StatutSortieReveil, default: StatutSortieReveil.EN_ATTENTE })
+  @Column({
+    type: 'enum',
+    enum: StatutSortieReveil,
+    default: StatutSortieReveil.EN_ATTENTE,
+  })
   statut: StatutSortieReveil;
 
   @CreateDateColumn()

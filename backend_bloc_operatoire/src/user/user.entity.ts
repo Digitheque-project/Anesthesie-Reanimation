@@ -1,4 +1,11 @@
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { hash } from 'bcryptjs';
 import { Role } from '../auth/roles.enum';
 
@@ -26,7 +33,8 @@ export class User {
   @BeforeUpdate()
   async hashPassword() {
     if (!this.motDePasse) return;
-    const isHashed = this.motDePasse.startsWith('$2a$') || this.motDePasse.startsWith('$2b$');
+    const isHashed =
+      this.motDePasse.startsWith('$2a$') || this.motDePasse.startsWith('$2b$');
     if (!isHashed) this.motDePasse = await hash(this.motDePasse, 10);
   }
 }

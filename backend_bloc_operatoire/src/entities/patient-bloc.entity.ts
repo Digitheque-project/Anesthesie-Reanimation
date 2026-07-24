@@ -1,4 +1,10 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum PatientStatut {
   EN_ATTENTE_CPA = 'EN_ATTENTE_CPA',
@@ -59,7 +65,11 @@ export class PatientBloc {
   @Column({ length: 100, nullable: true })
   chirurgien_nom: string;
 
-  @Column({ type: 'enum', enum: PatientStatut, default: PatientStatut.EN_ATTENTE_CPA })
+  @Column({
+    type: 'enum',
+    enum: PatientStatut,
+    default: PatientStatut.EN_ATTENTE_CPA,
+  })
   statut: PatientStatut;
 
   @Column({ type: 'enum', enum: NiveauUrgence, default: NiveauUrgence.NORMAL })

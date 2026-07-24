@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum StatutChecklist {
   EN_COURS = 'EN_COURS',
@@ -19,7 +26,12 @@ export class ChecklistApresOp {
   @Column({ default: false }) signalementsEffectues: boolean;
   @Column({ default: false }) transfertSalleReveil: boolean;
   @Column({ type: 'text', nullable: true }) observationsParticulieres: string;
-  @Column({ type: 'enum', enum: StatutChecklist, default: StatutChecklist.EN_COURS }) statut: StatutChecklist;
+  @Column({
+    type: 'enum',
+    enum: StatutChecklist,
+    default: StatutChecklist.EN_COURS,
+  })
+  statut: StatutChecklist;
   // Anesthésiste ayant validé la check-list — pour la traçabilité du personnel responsable
   // (visible notamment dans le dossier archivé du patient).
   @Column({ type: 'varchar', nullable: true }) validateurId: string | null;

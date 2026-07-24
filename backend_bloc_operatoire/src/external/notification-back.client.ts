@@ -15,7 +15,8 @@ export class NotificationBackClient {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl = this.config.get<string>('externalServices.notificationApiUrl') ?? '';
+    this.baseUrl =
+      this.config.get<string>('externalServices.notificationApiUrl') ?? '';
   }
 
   async notifyService(params: {
@@ -27,13 +28,19 @@ export class NotificationBackClient {
     data?: Record<string, unknown>;
   }): Promise<void> {
     if (!this.baseUrl) {
-      this.logger.warn('NOTIFICATION_API_URL non configuré, notification temps réel ignorée');
+      this.logger.warn(
+        'NOTIFICATION_API_URL non configuré, notification temps réel ignorée',
+      );
       return;
     }
     try {
-      await firstValueFrom(this.http.post(`${this.baseUrl}/notifications/service`, params));
+      await firstValueFrom(
+        this.http.post(`${this.baseUrl}/notifications/service`, params),
+      );
     } catch (err) {
-      this.logger.error(`Erreur envoi notification temps réel: ${(err as Error).message}`);
+      this.logger.error(
+        `Erreur envoi notification temps réel: ${(err as Error).message}`,
+      );
     }
   }
 }

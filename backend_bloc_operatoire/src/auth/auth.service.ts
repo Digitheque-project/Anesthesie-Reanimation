@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,8 +18,12 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<{ token: string; user: Partial<User> }> {
-    const existingUser = await this.userRepo.findOne({ where: { email: dto.email } });
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ token: string; user: Partial<User> }> {
+    const existingUser = await this.userRepo.findOne({
+      where: { email: dto.email },
+    });
     if (existingUser) throw new ConflictException('Cet email est déjà utilisé');
 
     const user = this.userRepo.create(dto);
@@ -29,10 +37,15 @@ export class AuthService {
       where: { email: dto.email },
       select: ['id', 'nom', 'email', 'role', 'motDePasse', 'createdAt'],
     });
-    if (!user) throw new UnauthorizedException('Email ou mot de passe incorrect');
+    if (!user)
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
 
-    const isPasswordValid = await bcrypt.compare(dto.motDePasse, user.motDePasse);
-    if (!isPasswordValid) throw new UnauthorizedException('Email ou mot de passe incorrect');
+    const isPasswordValid = await bcrypt.compare(
+      dto.motDePasse,
+      user.motDePasse,
+    );
+    if (!isPasswordValid)
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
 
     return this.generateToken(user);
   }
@@ -44,7 +57,10 @@ export class AuthService {
   }
 
   async validateUser(id: string): Promise<User | null> {
-    try { return await this.userRepo.findOne({ where: { id } }); }
-    catch { return null; }
+    try {
+      return await this.userRepo.findOne({ where: { id } });
+    } catch {
+      return null;
+    }
   }
 }

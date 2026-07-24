@@ -1,4 +1,10 @@
-import { IsString, IsDateString, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsBoolean,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 import { StatutChecklist } from '../../entities/checklist-pendant-op.entity';
 
 export class CreateChecklistPendantOpDto {

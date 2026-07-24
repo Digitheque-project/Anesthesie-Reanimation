@@ -14,6 +14,7 @@ import { NotificationCPA } from '../entities/notification-cpa.entity';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 export declare class ArchivesService {
     private patientBlocRepo;
     private cpaRepository;
@@ -30,7 +31,8 @@ export declare class ArchivesService {
     private demandeExterneRepo;
     private momentRepo;
     private accueilClient;
-    constructor(patientBlocRepo: Repository<PatientBloc>, cpaRepository: Repository<CPA>, verificationVeilleRepository: Repository<VerificationVeille>, bonRepo: Repository<BonCommandeAnesthesie>, activiteRepo: Repository<ActivitePerOp>, protocoleRepo: Repository<ProtocoleOperatoire>, scoreRepo: Repository<ScoreSCCRE>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, notificationRepo: Repository<NotificationCPA>, demandeExterneRepo: Repository<DemandeCpaExterne>, momentRepo: Repository<MomentOperatoire>, accueilClient: AccueilClient);
+    private medecinIdentiteService;
+    constructor(patientBlocRepo: Repository<PatientBloc>, cpaRepository: Repository<CPA>, verificationVeilleRepository: Repository<VerificationVeille>, bonRepo: Repository<BonCommandeAnesthesie>, activiteRepo: Repository<ActivitePerOp>, protocoleRepo: Repository<ProtocoleOperatoire>, scoreRepo: Repository<ScoreSCCRE>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, notificationRepo: Repository<NotificationCPA>, demandeExterneRepo: Repository<DemandeCpaExterne>, momentRepo: Repository<MomentOperatoire>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService);
     private getPatientEnrichi;
     getDossierComplet(patientId: string): Promise<any>;
     getResumePatient(patientId: string): Promise<any>;

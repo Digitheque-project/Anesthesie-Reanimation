@@ -16,16 +16,27 @@ import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { ArchivesService } from './archives.service';
 import { ArchivesController } from './archives.controller';
+import { MedecinModule } from '../medecin/medecin.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      PatientBloc, CPA, VerificationVeille, BonCommandeAnesthesie,
-      ActivitePerOp, ProtocoleOperatoire,
-      ScoreSCCRE, SortieReveil,
-      ChecklistAvantOp, ChecklistPendantOp, ChecklistApresOp,
-      NotificationCPA, DemandeCpaExterne, MomentOperatoire,
+      PatientBloc,
+      CPA,
+      VerificationVeille,
+      BonCommandeAnesthesie,
+      ActivitePerOp,
+      ProtocoleOperatoire,
+      ScoreSCCRE,
+      SortieReveil,
+      ChecklistAvantOp,
+      ChecklistPendantOp,
+      ChecklistApresOp,
+      NotificationCPA,
+      DemandeCpaExterne,
+      MomentOperatoire,
     ]),
+    MedecinModule,
   ],
   controllers: [ArchivesController],
   providers: [ArchivesService],

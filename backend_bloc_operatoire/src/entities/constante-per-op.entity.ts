@@ -16,10 +16,10 @@ export class ConstantePerOp {
   horodatage: Date | null;
 
   @Column('int')
-  fc: number;                     // Fréquence cardiaque
+  fc: number; // Fréquence cardiaque
 
   @Column()
-  ta: string;                     // Tension artérielle
+  ta: string; // Tension artérielle
 
   @Column('float')
   spo2: number;
@@ -33,6 +33,8 @@ export class ConstantePerOp {
   @Column('int')
   score: number;
 
-  @ManyToOne(() => ActivitePerOp, (activite) => activite.constantes, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ActivitePerOp, (activite) => activite.constantes, {
+    onDelete: 'CASCADE',
+  })
   activitePerOp: ActivitePerOp;
 }

@@ -6,7 +6,7 @@ export declare class CPAController {
     constructor(service: CPAService);
     create(d: CreateCPADto, req: any): Promise<import("../entities").CPA>;
     findAll(p?: number, l?: number, patientId?: string): Promise<{
-        data: any;
+        data: Record<string, any>[];
         total: number;
         page: number;
         pages: number;

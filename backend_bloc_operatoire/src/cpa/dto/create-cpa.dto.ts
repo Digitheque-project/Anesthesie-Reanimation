@@ -1,6 +1,20 @@
-import { IsString, IsEnum, IsDateString, IsBoolean, IsNumber, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ScoreASA, DecisionCPA, StatutCPA, DecisionOperation } from '../../entities/cpa.entity';
+import {
+  ScoreASA,
+  DecisionCPA,
+  StatutCPA,
+  DecisionOperation,
+} from '../../entities/cpa.entity';
 
 class TensionArterielleDto {
   @IsNumber() systolique: number;
@@ -31,7 +45,10 @@ export class CreateCPADto {
   @IsOptional() @IsString() notesIncidents?: string;
   // Mesures cliniques non bloquantes : seule la décision finale est obligatoire à la validation.
   @IsOptional() @IsNumber() frequenceCardiaque?: number;
-  @IsOptional() @ValidateNested() @Type(() => TensionArterielleDto) tensionArterielle?: { systolique: number; diastolique: number };
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TensionArterielleDto)
+  tensionArterielle?: { systolique: number; diastolique: number };
   @IsOptional() @IsNumber() taille?: number;
   @IsOptional() @IsNumber() poids?: number;
   @IsString() examenCardiovasculaire: string;
@@ -50,14 +67,24 @@ export class CreateCPADto {
   @IsEnum(DecisionCPA) decision: DecisionCPA;
   @IsString() typeAnesthesie: string;
   @IsString() techniqueIntubation: string;
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => PremedicamentDto) premedicaments?: PremedicamentDto[];
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => MedicamentAnesthesieReanimationDto) medicamentsAnesthesieReanimation?: MedicamentAnesthesieReanimationDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PremedicamentDto)
+  premedicaments?: PremedicamentDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MedicamentAnesthesieReanimationDto)
+  medicamentsAnesthesieReanimation?: MedicamentAnesthesieReanimationDto[];
   @IsString() jeune: string;
   @IsString() preparationPhysique: string;
   @IsString() tachesInfirmieres: string;
   @IsOptional() @IsDateString() dateVerificationVeille?: string;
   @IsOptional() @IsEnum(StatutCPA) statut?: StatutCPA;
   @IsOptional() @IsString() motifRefus?: string;
-  @IsOptional() @IsEnum(DecisionOperation) decisionOperation?: DecisionOperation;
+  @IsOptional()
+  @IsEnum(DecisionOperation)
+  decisionOperation?: DecisionOperation;
   @IsOptional() @IsString() validationProfInformelle?: string;
 }

@@ -37,8 +37,8 @@ let MomentsOperatoireController = class MomentsOperatoireController {
 exports.MomentsOperatoireController = MomentsOperatoireController;
 __decorate([
     (0, common_1.Post)(),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.CHIRURGIEN, role_clinique_1.RoleClinique.IBODE),
-    (0, swagger_1.ApiOperation)({ summary: 'Horodater un moment opératoire (Anesthésiste, Chirurgien ou IBODE)' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.IBODE),
+    (0, swagger_1.ApiOperation)({ summary: 'Horodater un moment opératoire (Anesthésiste ou IBODE)' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -58,7 +58,7 @@ __decorate([
 ], MomentsOperatoireController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Patch)(':id/annuler'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.CHIRURGIEN, role_clinique_1.RoleClinique.IBODE),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.IBODE),
     (0, swagger_1.ApiOperation)({ summary: 'Annuler (suppression douce) un moment opératoire horodaté par erreur' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Request)()),

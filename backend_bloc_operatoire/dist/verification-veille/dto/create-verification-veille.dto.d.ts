@@ -12,5 +12,6 @@ export declare class CreateVerificationVeilleDto {
     examensComplementaires: string;
     commandeSang?: any;
     heureDepart: string;
+    medicamentsVerifies?: string[];
     statut?: StatutVerificationVeille;
 }
