@@ -25,7 +25,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 border-r border-surface-variant/30 bg-sky-50">
+    <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 bg-[#0000FF]">
       {/* Logo and Brand */}
       <div className="px-6 py-4 flex flex-col items-center shrink-0">
         <div className="relative w-14 h-14 mb-2">
@@ -34,12 +34,12 @@ export default function Sidebar() {
           alt="CHU"
           width={56}
           height={56}
-          className="rounded-full object-cover border-2 border-blue-500 shadow-md bg-white" />
+          className="rounded-full object-cover border-2 border-white shadow-md bg-white" />
         </div>
-        <h1 className="font-headline font-extrabold text-primary text-center text-sm tracking-tight leading-tight">
+        <h1 className="font-headline font-extrabold text-white text-center text-sm tracking-tight leading-tight">
           Service Anesthésie-Réanimation
         </h1>
-        <p className="text-[9px] font-bold tracking-[0.15em] text-[#424752] opacity-70 uppercase mt-0.5">
+        <p className="text-[9px] font-bold tracking-[0.15em] text-white/70 uppercase mt-0.5">
           PLATEFORME MÉDICALE
         </p>
       </div>
@@ -57,7 +57,7 @@ export default function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
                 isActive
                   ? "bg-white text-primary font-bold shadow-sm"
-                  : "text-[#424752] hover:bg-white/60 font-medium"
+                  : "text-white/90 hover:bg-white/15 font-medium"
               }`}
             >
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.couleur.bg} ${item.couleur.texte} group-hover:scale-110 transition-transform`}>
@@ -72,9 +72,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="mt-auto p-3 border-t border-surface-container/20 space-y-1 shrink-0">
+      <div className="mt-auto p-3 border-t border-white/20 space-y-1 shrink-0">
         <button
-          className="w-full flex items-center gap-3 px-4 py-2 text-[#424752] hover:text-error transition-all group"
+          className="w-full flex items-center gap-3 px-4 py-2 text-white/90 hover:text-red-200 transition-all group"
           onClick={() => { effacerSession(); redirigerVersLogin(); }}
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>
