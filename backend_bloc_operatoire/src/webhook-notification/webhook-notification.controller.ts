@@ -1,18 +1,12 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Headers,
-  HttpCode,
-  Logger,
-  Param,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { WebhookNotificationService } from './webhook-notification.service';
 import { Public } from '../central-auth/public.decorator';
 
+// La lecture (compteur non lu, détail par id) est volontairement absente ici : elle serait
+// redondante avec /notifications-cpa, qui fusionne déjà le contenu de WebhookNotification dans
+// sa propre liste et son propre compteur (voir NotificationCPAService). Seul le point d'entrée
+// webhook lui-même reste, au cas où un service externe l'utilise encore pour écrire.
 @ApiTags('WebhookNotification')
 @Controller('webhook-notification')
 export class WebhookNotificationController {
@@ -41,18 +35,5 @@ export class WebhookNotificationController {
       method: 'POST',
       timestamp: new Date().toISOString(),
     };
-  }
-
-  @Get('unread/count')
-  @ApiOperation({ summary: 'Nombre de notifications non lues' })
-  async getUnreadCount() {
-    const count = await this.service.getUnreadCount();
-    return { unread: count };
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtenir les détails d’une notification par ID' })
-  async getNotification(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.findOne(id);
   }
 }

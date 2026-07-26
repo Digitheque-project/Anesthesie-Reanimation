@@ -41,16 +41,4 @@ export class WebhookNotificationService {
       return true;
     }
   }
-
-  async getUnreadCount(): Promise<number> {
-    return this.webhookRepo.count({ where: { processed: false } });
-  }
-
-  async findOne(id: string): Promise<WebhookNotification> {
-    const notification = await this.webhookRepo.findOne({ where: { id } });
-    if (!notification) {
-      throw new Error('Notification non trouvée');
-    }
-    return notification;
-  }
 }
