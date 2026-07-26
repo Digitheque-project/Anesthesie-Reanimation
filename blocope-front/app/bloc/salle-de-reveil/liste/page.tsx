@@ -171,15 +171,6 @@ export default function ListeSalleReveil() {
                         >
                           📋 Surveiller
                         </button>
-                        {/* Point d'entrée indépendant pour le chirurgien : il ne suit pas les mêmes
-                            écrans que l'anesthésiste, il doit pouvoir retrouver le patient ici pour
-                            remplir le protocole opératoire, quel que soit qui a fait le reste. */}
-                        <button
-                          onClick={() => router.push(`/bloc/protocole-operatoire?patientId=${patient.id}&patientNom=${encodeURIComponent(formaterNomPatient(patient))}&intervention=${encodeURIComponent(patient.intervention)}`)}
-                          className="px-4 py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 text-sm font-bold rounded-lg transition"
-                        >
-                          🖋️ Protocole opératoire
-                        </button>
                       </div>
                     </td>
                   </tr>
