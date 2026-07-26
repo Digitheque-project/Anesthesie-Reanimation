@@ -364,11 +364,15 @@ function ConsultationCpaPageContent() {
           jeune: form.jeune || `Solides : ${form.jeuneSolides || 'À partir de minuit'} — Liquide : ${form.jeuneLiquides || "Jusqu'à H-2"}`,
           preparationPhysique: form.preparationPhysique || 'RAS',
           tachesInfirmieres: form.tachesInfirmieres || 'RAS',
-          dateVerificationVeille: (peutEditerMedicamentsEtVpa && !estUrgent && decision === 'APTE' && dateVPA) ? dateVPA : undefined,
+          // Contrairement aux médicaments (réservés à l'anesthésiste), la date de vérification
+          // veille peut être posée par quiconque valide la CPA (Respo CPA/Major ou anesthésiste
+          // solo) — sinon le patient restait bloqué à CPA_REALISE, sans créneau, invisible du
+          // Fil de travail tant qu'un anesthésiste ne rouvrait pas manuellement sa fiche.
+          dateVerificationVeille: (!estUrgent && decision === 'APTE' && dateVPA) ? dateVPA : undefined,
         };
 
         await apiClient.post('/cpa', payload);
-        if (peutEditerMedicamentsEtVpa) await planifierVerificationVeille(patientIdFinal);
+        await planifierVerificationVeille(patientIdFinal);
         // Date de report : posée par qui décide le REPORT (Respo CPA/Major ou l'anesthésiste
         // solo), pas réservée à l'anesthésiste — contrairement à la vérification veille.
         await planifierReportCpa(patientIdFinal);
@@ -930,13 +934,13 @@ function ConsultationCpaPageContent() {
             </div>
           )}
 
-          {/* Planification de la vérification à la veille — réservée à l'anesthésiste (qui rouvre
-              sa propre CPA), sans objet pour un patient urgent (chirurgie immédiate, pas de
-              "veille") ni pour une décision REPORT (la CPA elle-même reste à refaire, voir la
-              date de report ci-dessus) ou INAPTE. Le Respo CPA/Major ne doit même pas voir cette
-              section : ils valident la CPA elle-même, la planification de la veille n'est pas
-              leur rôle. */}
-          {estAnesthesisteConnecte && !estUrgent && decision === 'APTE' && (
+          {/* Planification de la vérification à la veille — dès la décision APTE, posée par qui
+              valide la CPA (Respo CPA/Major en étape 1, ou l'anesthésiste solo/en réouverture) :
+              sans cette date, le patient restait bloqué à CPA_REALISE, invisible du Fil de
+              travail tant qu'un anesthésiste ne rouvrait pas manuellement la fiche. Sans objet
+              pour un patient urgent (chirurgie immédiate, pas de "veille"), ni pour REPORT (voir
+              la date de report ci-dessus) ou INAPTE. */}
+          {(peutEditerExamenEtDecision || peutEditerMedicamentsEtVpa) && !estUrgent && decision === 'APTE' && (
             <div className="mt-4 p-4 bg-surface-container-low rounded-xl border space-y-2">
               <label className="text-sm font-bold block">Planification de la vérification à la veille de l'opération</label>
               <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>

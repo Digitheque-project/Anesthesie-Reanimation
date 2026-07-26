@@ -68,9 +68,9 @@ __decorate([
 ], PlanningController.prototype, "getSemaine", null);
 __decorate([
     (0, common_1.Post)('reserver'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.ANESTHESISTE),
     (0, swagger_1.ApiOperation)({
-        summary: 'Réserver un créneau (Major, ou Responsable CPA pour la planification CPA)',
+        summary: 'Réserver un créneau (Major, Responsable CPA, ou Anesthésiste pour poser la date de vérification veille / de report de CPA depuis sa propre consultation)',
     }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),

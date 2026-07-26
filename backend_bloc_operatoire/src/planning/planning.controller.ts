@@ -36,10 +36,14 @@ export class PlanningController {
   }
 
   @Post('reserver')
-  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
+  @RequireRoleClinique(
+    RoleClinique.MAJOR,
+    RoleClinique.RESPONSABLE_CPA,
+    RoleClinique.ANESTHESISTE,
+  )
   @ApiOperation({
     summary:
-      'Réserver un créneau (Major, ou Responsable CPA pour la planification CPA)',
+      'Réserver un créneau (Major, Responsable CPA, ou Anesthésiste pour poser la date de vérification veille / de report de CPA depuis sa propre consultation)',
   })
   reserver(@Body() dto: any) {
     return this.service.reserverCreneau(dto);
