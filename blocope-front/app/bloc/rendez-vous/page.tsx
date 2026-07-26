@@ -20,6 +20,11 @@ export default function RendezVousPage() {
   const [creneaux, setCreneaux] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [recherche, setRecherche] = useState('');
+  // Filtre optionnel par date d'intervention prévue, pour l'onglet Vérification veille
+  // uniquement — cette liste n'est plus liée à un créneau à date fixe (voir plus bas), mais on
+  // veut pouvoir se limiter aux patients opérés tel jour, sans devoir chercher parmi tous les
+  // patients CPA validée en attente de vérification.
+  const [filtreDateVerif, setFiltreDateVerif] = useState('');
 
   useEffect(() => { charger(); }, [selectedDate, onglet]);
 
@@ -35,6 +40,7 @@ export default function RendezVousPage() {
         const rows = (Array.isArray(data) ? data : []).map((p: any) => ({
           id: p.patientId,
           heureDebut: null,
+          dateIntervention: p.dateIntervention || null,
           patient: { id: p.patientId, nom: p.nom, prenom: p.prenom, niveauUrgence: p.niveauUrgence, statut: p.statut },
           type: 'VERIFICATION_VEILLE',
           chirurgien: p.chirurgien_nom ? { nom: p.chirurgien_nom } : null,
@@ -57,12 +63,16 @@ export default function RendezVousPage() {
   // Recherche multi-champs côté client (nom patient, type, chirurgien) — même pattern que
   // app/bloc/rapports/page.tsx.
   const creneauxFiltres = useMemo(() => {
+    let filtres = creneaux;
+    if (onglet === 'VERIFICATION_VEILLE' && filtreDateVerif) {
+      filtres = filtres.filter((c: any) => c.dateIntervention && new Date(c.dateIntervention).toISOString().split('T')[0] === filtreDateVerif);
+    }
     const q = recherche.trim().toLowerCase();
-    if (!q) return creneaux;
-    return creneaux.filter((c: any) =>
+    if (!q) return filtres;
+    return filtres.filter((c: any) =>
       [formaterNomPatient(c.patient), c.type, c.chirurgien?.nom].some((v) => String(v || '').toLowerCase().includes(q))
     );
-  }, [creneaux, recherche]);
+  }, [creneaux, recherche, onglet, filtreDateVerif]);
 
   const formaterDate = (d: string) => {
     return new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -81,9 +91,23 @@ export default function RendezVousPage() {
             {onglet === 'VERIFICATION_VEILLE' ? 'Tous les patients CPA validée, en attente de vérification' : formaterDate(selectedDate)}
           </p>
         </div>
-        {onglet === 'CPA' && (
+        {onglet === 'CPA' ? (
           <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
             className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit" />
+        ) : (
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-lg">filter_alt</span>
+              Filtrer par date d'intervention
+            </label>
+            <input type="date" value={filtreDateVerif} onChange={(e) => setFiltreDateVerif(e.target.value)}
+              className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit" />
+            {filtreDateVerif && (
+              <button onClick={() => setFiltreDateVerif('')} className="text-xs font-bold text-primary hover:underline">
+                Effacer
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -153,7 +177,9 @@ export default function RendezVousPage() {
                 const nom = formaterNomPatient(c.patient);
                 return (
                   <tr key={c.id || i} className={`hover:bg-surface-container/30 transition-colors border-l-4 ${style.bordure}`}>
-                    <td className="px-6 py-4 font-extrabold text-primary text-sm whitespace-nowrap">{c.heureDebut || '—'}</td>
+                    <td className="px-6 py-4 font-extrabold text-primary text-sm whitespace-nowrap">
+                      {c.heureDebut || (c.dateIntervention ? new Date(c.dateIntervention).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—')}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[11px] shrink-0">
