@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var RapportsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RapportsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -30,7 +31,7 @@ const moment_operatoire_entity_1 = require("../entities/moment-operatoire.entity
 const protocole_operatoire_entity_1 = require("../entities/protocole-operatoire.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
-let RapportsService = class RapportsService {
+let RapportsService = RapportsService_1 = class RapportsService {
     patientBlocRepo;
     activiteRepo;
     scoreRepo;
@@ -45,6 +46,7 @@ let RapportsService = class RapportsService {
     protocoleRepo;
     accueilClient;
     medecinIdentiteService;
+    logger = new common_1.Logger(RapportsService_1.name);
     constructor(patientBlocRepo, activiteRepo, scoreRepo, medecinRepo, cpaRepository, notifRepo, sortieRepo, checklistAvantRepo, checklistPendantRepo, checklistApresRepo, momentRepo, protocoleRepo, accueilClient, medecinIdentiteService) {
         this.patientBlocRepo = patientBlocRepo;
         this.activiteRepo = activiteRepo;
@@ -308,7 +310,7 @@ let RapportsService = class RapportsService {
         });
     }
     async tableauDeBord(dateDebut, dateFin) {
-        const [statistiques, activiteParChirurgien, activiteParAnesthesiste, decisionsCPA, typesChirurgie, tachesAccomplies, evolutionQuotidienne, operationsDetail, sortiesReveil,] = await Promise.all([
+        const sections = await Promise.allSettled([
             this.statistiquesGenerales(dateDebut, dateFin),
             this.activiteParChirurgien(dateDebut, dateFin),
             this.activiteParAnesthesiste(dateDebut, dateFin),
@@ -319,6 +321,25 @@ let RapportsService = class RapportsService {
             this.operationsDetail(dateDebut, dateFin),
             this.sortieRepo.count(),
         ]);
+        const noms = [
+            'statistiquesGenerales',
+            'activiteParChirurgien',
+            'activiteParAnesthesiste',
+            'decisionsCPA',
+            'typesChirurgie',
+            'tachesAccomplies',
+            'tauxOccupation',
+            'operationsDetail',
+            'sortiesReveil',
+        ];
+        const valeursParDefaut = [{}, [], [], [], [], {}, [], [], 0];
+        const resultats = sections.map((s, i) => {
+            if (s.status === 'fulfilled')
+                return s.value;
+            this.logger.error(`Section "${noms[i]}" du tableau de bord en échec, dégradée à vide: ${s.reason?.message ?? s.reason}`);
+            return valeursParDefaut[i];
+        });
+        const [statistiques, activiteParChirurgien, activiteParAnesthesiste, decisionsCPA, typesChirurgie, tachesAccomplies, evolutionQuotidienne, operationsDetail, sortiesReveil,] = resultats;
         return {
             periode: { dateDebut: dateDebut || null, dateFin: dateFin || null },
             genereLe: new Date().toISOString(),
@@ -337,7 +358,7 @@ let RapportsService = class RapportsService {
     }
 };
 exports.RapportsService = RapportsService;
-exports.RapportsService = RapportsService = __decorate([
+exports.RapportsService = RapportsService = RapportsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(activite_per_op_entity_1.ActivitePerOp)),

@@ -49,16 +49,6 @@ let WebhookNotificationService = WebhookNotificationService_1 = class WebhookNot
             return true;
         }
     }
-    async getUnreadCount() {
-        return this.webhookRepo.count({ where: { processed: false } });
-    }
-    async findOne(id) {
-        const notification = await this.webhookRepo.findOne({ where: { id } });
-        if (!notification) {
-            throw new Error('Notification non trouvée');
-        }
-        return notification;
-    }
 };
 exports.WebhookNotificationService = WebhookNotificationService;
 exports.WebhookNotificationService = WebhookNotificationService = WebhookNotificationService_1 = __decorate([

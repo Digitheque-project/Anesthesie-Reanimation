@@ -8,6 +8,7 @@ const axios_1 = __importDefault(require("axios"));
 function isAxiosError(error) {
     return error && error.isAxiosError === true;
 }
+const TIMEOUT_MS = 8000;
 class AccueilClient {
     baseUrl;
     constructor(baseUrl) {
@@ -15,7 +16,7 @@ class AccueilClient {
     }
     async getAccueilData() {
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}/accueil`);
+            const response = await axios_1.default.get(`${this.baseUrl}/accueil`, { timeout: TIMEOUT_MS });
             return response.data;
         }
         catch (err) {
@@ -28,7 +29,7 @@ class AccueilClient {
     }
     async getPatientData(patientId) {
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}/patients/${patientId}`);
+            const response = await axios_1.default.get(`${this.baseUrl}/patients/${patientId}`, { timeout: TIMEOUT_MS });
             return response.data;
         }
         catch (err) {
@@ -76,7 +77,7 @@ class AccueilClient {
     }
     async get(endpoint) {
         try {
-            const response = await axios_1.default.get(`${this.baseUrl}${endpoint}`);
+            const response = await axios_1.default.get(`${this.baseUrl}${endpoint}`, { timeout: TIMEOUT_MS });
             return response.data;
         }
         catch (err) {
@@ -89,7 +90,7 @@ class AccueilClient {
     }
     async post(endpoint, data) {
         try {
-            const response = await axios_1.default.post(`${this.baseUrl}${endpoint}`, data);
+            const response = await axios_1.default.post(`${this.baseUrl}${endpoint}`, data, { timeout: TIMEOUT_MS });
             return response.data;
         }
         catch (err) {

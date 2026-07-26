@@ -27,7 +27,6 @@ const protocole_operatoire_module_1 = require("./protocole-operatoire/protocole-
 const score_sccre_module_1 = require("./score-sccre/score-sccre.module");
 const sortie_reveil_module_1 = require("./sortie-reveil/sortie-reveil.module");
 const notification_cpa_module_1 = require("./notification-cpa/notification-cpa.module");
-const auth_module_1 = require("./auth/auth.module");
 const archives_module_1 = require("./archives/archives.module");
 const rapports_module_1 = require("./rapports/rapports.module");
 const planning_module_1 = require("./planning/planning.module");
@@ -84,7 +83,6 @@ exports.AppModule = AppModule = __decorate([
             score_sccre_module_1.ScoreSCCREModule,
             sortie_reveil_module_1.SortieReveilModule,
             notification_cpa_module_1.NotificationCPAModule,
-            auth_module_1.AuthModule,
             archives_module_1.ArchivesModule,
             rapports_module_1.RapportsModule,
             planning_module_1.PlanningModule,

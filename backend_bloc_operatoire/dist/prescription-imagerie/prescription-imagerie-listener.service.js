@@ -22,18 +22,21 @@ const socket_io_client_1 = require("socket.io-client");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const prescription_imagerie_client_1 = require("../external/prescription-imagerie.client");
 const prescription_service_1 = require("../prescription/prescription.service");
+const service_registry_client_1 = require("../external/service-registry.client");
 let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 = class PrescriptionImagerieListenerService {
     config;
     prescriptionImagerieClient;
     prescriptionService;
+    serviceRegistryClient;
     notificationRepo;
     logger = new common_1.Logger(PrescriptionImagerieListenerService_1.name);
     socket = null;
     serviceId;
-    constructor(config, prescriptionImagerieClient, prescriptionService, notificationRepo) {
+    constructor(config, prescriptionImagerieClient, prescriptionService, serviceRegistryClient, notificationRepo) {
         this.config = config;
         this.prescriptionImagerieClient = prescriptionImagerieClient;
         this.prescriptionService = prescriptionService;
+        this.serviceRegistryClient = serviceRegistryClient;
         this.notificationRepo = notificationRepo;
         this.serviceId =
             this.config.get('externalServices.serviceId') ?? '';
@@ -108,11 +111,14 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
             .filter(Boolean)
             .join(' ')
             .trim();
+        const serviceSourceNom = await this.serviceRegistryClient.getServiceName(prescription.serviceIdSource);
         await this.notificationRepo.save(this.notificationRepo.create({
             heurePrescription: new Date().toTimeString().substring(0, 5),
             patientId: prescription.patientId,
             intervention: prescription.type || 'Prescription imagerie',
             chirurgienNom: prescripteurNom || undefined,
+            serviceSourceId: prescription.serviceIdSource || undefined,
+            serviceSourceNom: serviceSourceNom || undefined,
             estUrgent,
             statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
         }));
@@ -122,10 +128,11 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
 exports.PrescriptionImagerieListenerService = PrescriptionImagerieListenerService;
 exports.PrescriptionImagerieListenerService = PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(3, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
+    __param(4, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __metadata("design:paramtypes", [config_1.ConfigService,
         prescription_imagerie_client_1.PrescriptionImagerieClient,
         prescription_service_1.PrescriptionService,
+        service_registry_client_1.ServiceRegistryClient,
         typeorm_2.Repository])
 ], PrescriptionImagerieListenerService);
 //# sourceMappingURL=prescription-imagerie-listener.service.js.map

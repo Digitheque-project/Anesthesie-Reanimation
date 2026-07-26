@@ -142,6 +142,14 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         return this.notificationRepo.save(Object.assign(n, dto));
     }
+    async marquerLu(id) {
+        const n = await this.notificationRepo.findOne({ where: { id } });
+        if (!n)
+            throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
+        n.lu = true;
+        n.luLe = new Date();
+        return this.notificationRepo.save(n);
+    }
     async remove(id) {
         const n = await this.notificationRepo.findOne({ where: { id } });
         if (!n)
@@ -151,7 +159,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     }
     async getUnreadCount() {
         const internalUnread = await this.notificationRepo.count({
-            where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE },
+            where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, lu: false },
         });
         const externalUnread = await this.webhookRepo.count({
             where: { processed: false },

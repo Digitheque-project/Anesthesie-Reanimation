@@ -12,8 +12,12 @@ export declare class NotificationCPA {
     chirurgienId: string | null;
     chirurgienNom: string | null;
     professeurCPA: string | null;
+    serviceSourceId: string | null;
+    serviceSourceNom: string | null;
     estUrgent: boolean;
     statut: StatutNotificationCPA;
+    lu: boolean;
+    luLe: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }

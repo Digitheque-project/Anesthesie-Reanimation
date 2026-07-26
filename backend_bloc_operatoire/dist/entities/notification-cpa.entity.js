@@ -26,8 +26,12 @@ let NotificationCPA = class NotificationCPA {
     chirurgienId;
     chirurgienNom;
     professeurCPA;
+    serviceSourceId;
+    serviceSourceNom;
     estUrgent;
     statut;
+    lu;
+    luLe;
     createdAt;
     updatedAt;
 };
@@ -66,6 +70,14 @@ __decorate([
     __metadata("design:type", Object)
 ], NotificationCPA.prototype, "professeurCPA", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], NotificationCPA.prototype, "serviceSourceId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 150, nullable: true }),
+    __metadata("design:type", Object)
+], NotificationCPA.prototype, "serviceSourceNom", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], NotificationCPA.prototype, "estUrgent", void 0);
@@ -77,6 +89,14 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], NotificationCPA.prototype, "statut", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], NotificationCPA.prototype, "lu", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], NotificationCPA.prototype, "luLe", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

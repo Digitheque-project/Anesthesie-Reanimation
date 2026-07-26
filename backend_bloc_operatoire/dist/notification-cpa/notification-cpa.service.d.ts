@@ -36,8 +36,12 @@ export declare class NotificationCPAService {
             chirurgienId: string | null;
             chirurgienNom: string | null;
             professeurCPA: string | null;
+            serviceSourceId: string | null;
+            serviceSourceNom: string | null;
             estUrgent: boolean;
             statut: StatutNotificationCPA;
+            lu: boolean;
+            luLe: Date | null;
             createdAt: Date;
             updatedAt: Date;
         })[];
@@ -48,6 +52,7 @@ export declare class NotificationCPAService {
     findOne(id: string): Promise<any>;
     planifierRDV(id: string, dto: any): Promise<NotificationCPA>;
     update(id: string, dto: UpdateNotificationCPADto): Promise<NotificationCPA>;
+    marquerLu(id: string): Promise<NotificationCPA>;
     remove(id: string): Promise<{
         message: string;
     }>;

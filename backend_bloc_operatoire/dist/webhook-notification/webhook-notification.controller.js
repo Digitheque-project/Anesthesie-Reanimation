@@ -35,13 +35,6 @@ let WebhookNotificationController = WebhookNotificationController_1 = class Webh
             timestamp: new Date().toISOString(),
         };
     }
-    async getUnreadCount() {
-        const count = await this.service.getUnreadCount();
-        return { unread: count };
-    }
-    async getNotification(id) {
-        return this.service.findOne(id);
-    }
 };
 exports.WebhookNotificationController = WebhookNotificationController;
 __decorate([
@@ -56,21 +49,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], WebhookNotificationController.prototype, "receivePost", null);
-__decorate([
-    (0, common_1.Get)('unread/count'),
-    (0, swagger_1.ApiOperation)({ summary: 'Nombre de notifications non lues' }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], WebhookNotificationController.prototype, "getUnreadCount", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Obtenir les détails d’une notification par ID' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], WebhookNotificationController.prototype, "getNotification", null);
 exports.WebhookNotificationController = WebhookNotificationController = WebhookNotificationController_1 = __decorate([
     (0, swagger_1.ApiTags)('WebhookNotification'),
     (0, common_1.Controller)('webhook-notification'),

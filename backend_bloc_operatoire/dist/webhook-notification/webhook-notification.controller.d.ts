@@ -9,8 +9,4 @@ export declare class WebhookNotificationController {
         method: string;
         timestamp: string;
     }>;
-    getUnreadCount(): Promise<{
-        unread: number;
-    }>;
-    getNotification(id: string): Promise<import("../entities").WebhookNotification>;
 }

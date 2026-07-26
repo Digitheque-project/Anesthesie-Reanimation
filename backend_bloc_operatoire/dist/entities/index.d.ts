@@ -17,7 +17,6 @@ export { SortieReveil, StatutSortieReveil } from './sortie-reveil.entity';
 export { NotificationCPA, StatutNotificationCPA, } from './notification-cpa.entity';
 export { CreneauBloc, StatutCreneau, TypeRDV } from './creneau-bloc.entity';
 export { HistoriqueModification } from './historique-modification.entity';
-export { User } from '../user/user.entity';
 export { WebhookNotification } from './webhook-notification.entity';
 export { DemandeCpaExterne, StatutDemandeCpaExterne, } from './demande-cpa-externe.entity';
 export { MomentOperatoire, CategorieMoment } from './moment-operatoire.entity';

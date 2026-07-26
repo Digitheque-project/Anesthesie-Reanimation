@@ -28,6 +28,7 @@ export declare class RapportsService {
     private protocoleRepo;
     private accueilClient;
     private medecinIdentiteService;
+    private readonly logger;
     constructor(patientBlocRepo: Repository<PatientBloc>, activiteRepo: Repository<ActivitePerOp>, scoreRepo: Repository<ScoreSCCRE>, medecinRepo: Repository<Medecin>, cpaRepository: Repository<CPA>, notifRepo: Repository<NotificationCPA>, sortieRepo: Repository<SortieReveil>, checklistAvantRepo: Repository<ChecklistAvantOp>, checklistPendantRepo: Repository<ChecklistPendantOp>, checklistApresRepo: Repository<ChecklistApresOp>, momentRepo: Repository<MomentOperatoire>, protocoleRepo: Repository<ProtocoleOperatoire>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService);
     statistiquesGenerales(dateDebut?: string, dateFin?: string): Promise<{
         totalPatients: number;
@@ -75,46 +76,14 @@ export declare class RapportsService {
             dateFin: string | null;
         };
         genereLe: string;
-        statistiques: {
-            totalSortiesReveil: number;
-            totalPatients: number;
-            totalPatientsActifs: number;
-            totalOperations: number;
-            totalUrgences: number;
-            totalScores: number;
-            totalMedecins: number;
-            patientsParStatut: any[];
-            urgencesParNiveau: any[];
-        };
-        activiteParChirurgien: any[];
-        activiteParAnesthesiste: {
-            medecinId: string;
-            nomComplet: string;
-            nbCPA: number;
-            nbOperations: number;
-            nbScoresSCCRE: number;
-        }[];
-        decisionsCPA: any[];
-        typesChirurgie: any[];
-        tachesAccomplies: {
-            checklistsAvantOp: number;
-            checklistsPendantOp: number;
-            checklistsApresOp: number;
-            momentsOperatoires: number;
-            comptesRendusOperatoires: number;
-        };
-        evolutionQuotidienne: any[];
-        operationsDetail: {
-            patientNom: string;
-            libelle: any;
-            typeChirurgie: any;
-            niveauUrgence: any;
-            statut: any;
-            dateOperation: Date;
-            chirurgien: string;
-            anesthesiste: string;
-            compteRenduDisponible: boolean;
-        }[];
+        statistiques: any;
+        activiteParChirurgien: any;
+        activiteParAnesthesiste: any;
+        decisionsCPA: any;
+        typesChirurgie: any;
+        tachesAccomplies: any;
+        evolutionQuotidienne: any;
+        operationsDetail: any;
     }>;
     exportStatistiques(type: string, dateDebut?: string, dateFin?: string): Promise<{
         periode: {
@@ -122,45 +91,13 @@ export declare class RapportsService {
             dateFin: string | null;
         };
         genereLe: string;
-        statistiques: {
-            totalSortiesReveil: number;
-            totalPatients: number;
-            totalPatientsActifs: number;
-            totalOperations: number;
-            totalUrgences: number;
-            totalScores: number;
-            totalMedecins: number;
-            patientsParStatut: any[];
-            urgencesParNiveau: any[];
-        };
-        activiteParChirurgien: any[];
-        activiteParAnesthesiste: {
-            medecinId: string;
-            nomComplet: string;
-            nbCPA: number;
-            nbOperations: number;
-            nbScoresSCCRE: number;
-        }[];
-        decisionsCPA: any[];
-        typesChirurgie: any[];
-        tachesAccomplies: {
-            checklistsAvantOp: number;
-            checklistsPendantOp: number;
-            checklistsApresOp: number;
-            momentsOperatoires: number;
-            comptesRendusOperatoires: number;
-        };
-        evolutionQuotidienne: any[];
-        operationsDetail: {
-            patientNom: string;
-            libelle: any;
-            typeChirurgie: any;
-            niveauUrgence: any;
-            statut: any;
-            dateOperation: Date;
-            chirurgien: string;
-            anesthesiste: string;
-            compteRenduDisponible: boolean;
-        }[];
+        statistiques: any;
+        activiteParChirurgien: any;
+        activiteParAnesthesiste: any;
+        decisionsCPA: any;
+        typesChirurgie: any;
+        tachesAccomplies: any;
+        evolutionQuotidienne: any;
+        operationsDetail: any;
     }>;
 }

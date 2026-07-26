@@ -20,7 +20,7 @@ exports.CentralAuthModule = CentralAuthModule = __decorate([
     (0, common_1.Module)({
         imports: [jwt_1.JwtModule.register({}), config_1.ConfigModule],
         providers: [central_auth_guard_1.CentralAuthGuard, service_token_service_1.ServiceTokenService],
-        exports: [central_auth_guard_1.CentralAuthGuard, service_token_service_1.ServiceTokenService],
+        exports: [central_auth_guard_1.CentralAuthGuard, service_token_service_1.ServiceTokenService, jwt_1.JwtModule],
     })
 ], CentralAuthModule);
 //# sourceMappingURL=central-auth.module.js.map

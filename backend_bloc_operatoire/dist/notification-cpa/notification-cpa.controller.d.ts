@@ -24,8 +24,12 @@ export declare class NotificationCPAController {
             chirurgienId: string | null;
             chirurgienNom: string | null;
             professeurCPA: string | null;
+            serviceSourceId: string | null;
+            serviceSourceNom: string | null;
             estUrgent: boolean;
             statut: import("../entities").StatutNotificationCPA;
+            lu: boolean;
+            luLe: Date | null;
             createdAt: Date;
             updatedAt: Date;
         })[];
@@ -39,6 +43,7 @@ export declare class NotificationCPAController {
     findOne(id: string): Promise<any>;
     update(id: string, d: UpdateNotificationCPADto): Promise<import("../entities").NotificationCPA>;
     planifier(id: string, dto: any): Promise<import("../entities").NotificationCPA>;
+    marquerLu(id: string): Promise<import("../entities").NotificationCPA>;
     remove(id: string): Promise<{
         message: string;
     }>;

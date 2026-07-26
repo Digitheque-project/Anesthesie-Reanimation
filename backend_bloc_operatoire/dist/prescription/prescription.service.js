@@ -23,19 +23,22 @@ const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const prescription_externe_client_1 = require("../external/prescription-externe.client");
 const notification_back_client_1 = require("../external/notification-back.client");
+const service_registry_client_1 = require("../external/service-registry.client");
 let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
     patientBlocRepo;
     notificationRepo;
     prescriptionClient;
     notificationBackClient;
+    serviceRegistryClient;
     config;
     logger = new common_1.Logger(PrescriptionService_1.name);
     polling = false;
-    constructor(patientBlocRepo, notificationRepo, prescriptionClient, notificationBackClient, config) {
+    constructor(patientBlocRepo, notificationRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, config) {
         this.patientBlocRepo = patientBlocRepo;
         this.notificationRepo = notificationRepo;
         this.prescriptionClient = prescriptionClient;
         this.notificationBackClient = notificationBackClient;
+        this.serviceRegistryClient = serviceRegistryClient;
         this.config = config;
     }
     async processPrescription(dto) {
@@ -89,6 +92,7 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             return;
         const acte = p.actes?.[0];
         const niveauUrgence = this.mapUrgence(p.urgence);
+        const serviceSourceNom = await this.serviceRegistryClient.getServiceName(p.serviceIdSource);
         let patient = await this.patientBlocRepo.findOne({
             where: { patientId: p.patientId },
         });
@@ -110,6 +114,7 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             statut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA,
             niveauUrgence,
             serviceOrigineId: p.serviceIdSource || undefined,
+            serviceOrigine: serviceSourceNom || undefined,
             prescriptionExterneId: p.id,
         };
         if (patient) {
@@ -129,6 +134,8 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             chirurgienId: undefined,
             chirurgienNom: p.chirurgien || undefined,
             professeurCPA: undefined,
+            serviceSourceId: p.serviceIdSource || undefined,
+            serviceSourceNom: serviceSourceNom || undefined,
             estUrgent: niveauUrgence !== patient_bloc_entity_1.NiveauUrgence.NORMAL,
             statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
         }));
@@ -165,6 +172,7 @@ exports.PrescriptionService = PrescriptionService = PrescriptionService_1 = __de
         typeorm_2.Repository,
         prescription_externe_client_1.PrescriptionExterneClient,
         notification_back_client_1.NotificationBackClient,
+        service_registry_client_1.ServiceRegistryClient,
         config_1.ConfigService])
 ], PrescriptionService);
 //# sourceMappingURL=prescription.service.js.map

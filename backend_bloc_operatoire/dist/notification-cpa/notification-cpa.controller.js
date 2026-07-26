@@ -42,6 +42,9 @@ let NotificationCPAController = class NotificationCPAController {
     planifier(id, dto) {
         return this.service.planifierRDV(id, dto);
     }
+    marquerLu(id) {
+        return this.service.marquerLu(id);
+    }
     remove(id) {
         return this.service.remove(id);
     }
@@ -99,6 +102,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], NotificationCPAController.prototype, "planifier", null);
+__decorate([
+    (0, common_1.Patch)(':id/lu'),
+    (0, swagger_1.ApiOperation)({ summary: 'Marquer une notification comme lue' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], NotificationCPAController.prototype, "marquerLu", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Supprimer une notification' }),

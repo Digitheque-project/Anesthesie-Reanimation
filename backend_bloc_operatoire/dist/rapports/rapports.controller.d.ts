@@ -8,46 +8,14 @@ export declare class RapportsController {
             dateFin: string | null;
         };
         genereLe: string;
-        statistiques: {
-            totalSortiesReveil: number;
-            totalPatients: number;
-            totalPatientsActifs: number;
-            totalOperations: number;
-            totalUrgences: number;
-            totalScores: number;
-            totalMedecins: number;
-            patientsParStatut: any[];
-            urgencesParNiveau: any[];
-        };
-        activiteParChirurgien: any[];
-        activiteParAnesthesiste: {
-            medecinId: string;
-            nomComplet: string;
-            nbCPA: number;
-            nbOperations: number;
-            nbScoresSCCRE: number;
-        }[];
-        decisionsCPA: any[];
-        typesChirurgie: any[];
-        tachesAccomplies: {
-            checklistsAvantOp: number;
-            checklistsPendantOp: number;
-            checklistsApresOp: number;
-            momentsOperatoires: number;
-            comptesRendusOperatoires: number;
-        };
-        evolutionQuotidienne: any[];
-        operationsDetail: {
-            patientNom: string;
-            libelle: any;
-            typeChirurgie: any;
-            niveauUrgence: any;
-            statut: any;
-            dateOperation: Date;
-            chirurgien: string;
-            anesthesiste: string;
-            compteRenduDisponible: boolean;
-        }[];
+        statistiques: any;
+        activiteParChirurgien: any;
+        activiteParAnesthesiste: any;
+        decisionsCPA: any;
+        typesChirurgie: any;
+        tachesAccomplies: any;
+        evolutionQuotidienne: any;
+        operationsDetail: any;
     }>;
     statistiques(dd?: string, df?: string): Promise<{
         totalPatients: number;
@@ -68,45 +36,13 @@ export declare class RapportsController {
             dateFin: string | null;
         };
         genereLe: string;
-        statistiques: {
-            totalSortiesReveil: number;
-            totalPatients: number;
-            totalPatientsActifs: number;
-            totalOperations: number;
-            totalUrgences: number;
-            totalScores: number;
-            totalMedecins: number;
-            patientsParStatut: any[];
-            urgencesParNiveau: any[];
-        };
-        activiteParChirurgien: any[];
-        activiteParAnesthesiste: {
-            medecinId: string;
-            nomComplet: string;
-            nbCPA: number;
-            nbOperations: number;
-            nbScoresSCCRE: number;
-        }[];
-        decisionsCPA: any[];
-        typesChirurgie: any[];
-        tachesAccomplies: {
-            checklistsAvantOp: number;
-            checklistsPendantOp: number;
-            checklistsApresOp: number;
-            momentsOperatoires: number;
-            comptesRendusOperatoires: number;
-        };
-        evolutionQuotidienne: any[];
-        operationsDetail: {
-            patientNom: string;
-            libelle: any;
-            typeChirurgie: any;
-            niveauUrgence: any;
-            statut: any;
-            dateOperation: Date;
-            chirurgien: string;
-            anesthesiste: string;
-            compteRenduDisponible: boolean;
-        }[];
+        statistiques: any;
+        activiteParChirurgien: any;
+        activiteParAnesthesiste: any;
+        decisionsCPA: any;
+        typesChirurgie: any;
+        tachesAccomplies: any;
+        evolutionQuotidienne: any;
+        operationsDetail: any;
     }>;
 }
