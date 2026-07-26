@@ -224,7 +224,7 @@ function SalleDeReveilPageContent() {
 
       {/* Score SCCRE */}
       <section className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
-        <div className="bg-gradient-to-r from-tertiary to-tertiary/80 px-6 py-3 flex items-center justify-between gap-3">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-white text-xl">monitor_heart</span>
             <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">Score de réveil (SCCRE)</h3>
@@ -248,7 +248,7 @@ function SalleDeReveilPageContent() {
                 <div className="col-span-8 flex gap-2">
                   {[0,1,2].map(val => (
                     <button key={val} onClick={() => setScores({...scores, [item.key]: val})}
-                      className={`flex-1 py-3 rounded-lg text-[10px] font-bold transition-all ${scores[item.key as keyof typeof scores] === val ? 'bg-tertiary text-white shadow-md' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+                      className={`flex-1 py-3 rounded-lg text-[10px] font-bold transition-all ${scores[item.key as keyof typeof scores] === val ? 'bg-indigo-600 text-white shadow-md' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                       {val}
                     </button>
                   ))}
@@ -258,7 +258,7 @@ function SalleDeReveilPageContent() {
           </div>
           <button onClick={handleEnregistrerScore} disabled={!estAnesthesiste}
             title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
-            className="mt-6 w-full py-3 bg-tertiary text-white font-bold rounded-xl shadow-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            className="mt-6 w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
             {!estAnesthesiste ? 'Réservé à l\'anesthésiste' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
           </button>
         </div>
