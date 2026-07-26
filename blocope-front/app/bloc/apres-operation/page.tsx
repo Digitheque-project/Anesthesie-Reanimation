@@ -11,6 +11,7 @@ import { useRole } from '@/lib/hooks/useRole'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function ApresOperationPage() {
   return (
@@ -71,9 +72,7 @@ function ApresOperationPageContent() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto w-full">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline mb-4">
-        <span className="material-symbols-outlined">arrow_back</span> Retour
-      </button>
+      <BackButton className="mb-4" />
 
       <h1 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight mb-4">Check-list après intervention – Check de sortie du bloc</h1>
 

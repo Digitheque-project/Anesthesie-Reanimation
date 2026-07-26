@@ -8,6 +8,7 @@ import { patientService } from '@/lib/api'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function ArriveeBlocPage() {
   return (
@@ -38,11 +39,34 @@ function ArriveeBlocPageContent() {
   const [activiteId, setActiviteId] = useState<string | null>(null)
   const [etatArrivee, setEtatArrivee] = useState('')
   const [momentsConfirmes, setMomentsConfirmes] = useState<Set<string>>(new Set())
+  // Heure réelle (horodatage backend) de chaque moment confirmé — affichée à côté du bouton, pas
+  // juste une coche muette, et permet aussi de retrouver l'état après un rechargement de page.
+  const [momentsHoraires, setMomentsHoraires] = useState<Record<string, string>>({})
   const [enCours, setEnCours] = useState<string | null>(null)
 
   useEffect(() => {
     if (!patientId) return
     patientService.getById(patientId).then(setPatient).catch(console.error)
+  }, [patientId])
+
+  useEffect(() => {
+    if (!patientId) return
+    apiClient.get('/moments-operatoires', { params: { patientId } })
+      .then(({ data }) => {
+        const moments = (Array.isArray(data) ? data : []).filter((m: any) => !m.annule)
+        const confirmes = new Set<string>()
+        const horaires: Record<string, string> = {}
+        for (const label of ['Arrivée en salle', 'Installation du patient']) {
+          const moment = moments.find((m: any) => m.label === label)
+          if (moment) {
+            confirmes.add(label)
+            horaires[label] = new Date(moment.horodatage).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false })
+          }
+        }
+        setMomentsConfirmes(confirmes)
+        setMomentsHoraires(horaires)
+      })
+      .catch(console.error)
   }, [patientId])
 
   // Même logique que l'ancienne Section 0 de l'activité per-opératoire : on crée l'enregistrement
@@ -86,10 +110,12 @@ function ArriveeBlocPageContent() {
   const declencherMoment = async (label: string) => {
     setEnCours(label)
     try {
+      const horodatage = new Date().toISOString()
       await apiClient.post('/moments-operatoires', {
-        patientId, label, categorie: 'ANESTHESIE', estPersonnalise: false, horodatage: new Date().toISOString(),
+        patientId, label, categorie: 'ANESTHESIE', estPersonnalise: false, horodatage,
       })
       setMomentsConfirmes(prev => new Set(prev).add(label))
+      setMomentsHoraires(prev => ({ ...prev, [label]: new Date(horodatage).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }) }))
     } catch (err) {
       console.error(err)
       alert("❌ Erreur lors de l'enregistrement du moment")
@@ -104,6 +130,7 @@ function ArriveeBlocPageContent() {
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
+      <BackButton className="mb-3" />
       <PatientIdentityHeader patient={patient || { nom: patientNom }} intervention={intervention} />
 
       <div className="mt-4 space-y-6">
@@ -130,7 +157,14 @@ function ArriveeBlocPageContent() {
                   } disabled:cursor-default`}
                 >
                   <span className="material-symbols-outlined text-2xl">{confirme ? 'check_circle' : 'radio_button_unchecked'}</span>
-                  {label}
+                  <span>
+                    {label}
+                    {confirme && momentsHoraires[label] && (
+                      <span className="block text-[10px] font-bold normal-case tracking-normal text-emerald-600/80 mt-0.5">
+                        {momentsHoraires[label]}
+                      </span>
+                    )}
+                  </span>
                   {enCours === label && '…'}
                 </button>
               )

@@ -10,6 +10,7 @@ import { useRole } from '@/lib/hooks/useRole'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function VerificationPostOpPage() {
   return (
@@ -77,10 +78,7 @@ function VerificationPostOpPageContent() {
     <main className="p-6">
       {/* Header */}
       <header className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
-        <button onClick={() => router.back()} className="flex items-center space-x-2 px-6 py-2.5 border border-outline-variant/30 rounded-lg hover:bg-surface-container transition-all font-semibold shrink-0 order-first">
-          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-          <span className="text-sm">Retour</span>
-        </button>
+        <BackButton className="order-first" />
         <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant incision</h1>
       </header>
 

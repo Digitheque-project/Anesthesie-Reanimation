@@ -9,6 +9,7 @@ import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { libelleUrgence, styleUrgence } from '@/lib/urgence'
 import { formaterNomPatient } from '@/lib/patient'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function DossierPatientPage() {
   return (
@@ -88,9 +89,7 @@ function DossierPatientPageContent() {
 
   return (
     <main className="p-4">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline mb-3">
-        <span className="material-symbols-outlined">arrow_back</span> Retour
-      </button>
+      <BackButton className="mb-3" />
 
       <h1 className="text-3xl font-extrabold text-on-surface mb-2">📁 Dossier Patient</h1>
       <p className="text-sm text-on-surface-variant mb-4">Dossier médical complet et suivi de la prise en charge</p>

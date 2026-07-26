@@ -10,6 +10,7 @@ import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function VerificationVeillePage() {
   return (
@@ -103,6 +104,7 @@ function VerificationVeillePageContent() {
 
   return (
     <main className="p-6">
+      <BackButton className="mb-3" />
       <PatientIdentityHeader patient={patient || { nom: patientNom }} />
       <div className="flex justify-end -mt-2 mb-3">
         {cpaId ? (

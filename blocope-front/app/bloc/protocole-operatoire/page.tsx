@@ -10,6 +10,7 @@ import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
 import { patientService } from '@/lib/api'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function ProtocoleOperatoirePage() {
   return (
@@ -74,6 +75,7 @@ function ProtocoleOperatoirePageContent() {
 
   return (
     <main className="p-6 h-full overflow-y-auto">
+      <BackButton className="mb-3" />
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole opératoire" />
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
       {!estChirurgien && (

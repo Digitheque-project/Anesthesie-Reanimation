@@ -10,6 +10,8 @@ import { obtenirSessionValide } from '@/lib/auth/central-session'
 import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
+import BackButton from '@/components/bloc/layout/BackButton'
+import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -37,7 +39,10 @@ function SalleDeReveilPageContent() {
   const { estAnesthesiste, roleName } = useRole()
   const [nomAnesthesiste, setNomAnesthesiste] = useState('')
   const [patient, setPatient] = useState<any>(null)
-  const [heureArrivee, setHeureArrivee] = useState('14:25')
+  const [activiteId, setActiviteId] = useState<string | null>(null)
+  // Pré-rempli depuis le vrai horodatage du moment "Arrivée en salle" (posé sur l'écran Arrivée
+  // au bloc) — pas une valeur figée : reste modifiable si l'anesthésiste doit la corriger.
+  const [heureArrivee, setHeureArrivee] = useState('')
   const [scores, setScores] = useState({ motricite: 2, respiration: 2, pressionArterielle: 2, etatConscience: 2, coloration: 2 })
   const [evs, setEvs] = useState(2)
   const [eqa, setEqa] = useState(2)
@@ -59,6 +64,24 @@ function SalleDeReveilPageContent() {
     const session = obtenirSessionValide()
     if (session) setNomAnesthesiste(`${session.payload.firstname} ${session.payload.name}`.trim())
   }, [])
+
+  // Récupère la véritable heure d'arrivée au bloc (moment "Arrivée en salle" horodaté lors de
+  // l'étape Arrivée au bloc) et l'ActivitePerOp du patient — dont les constantes déjà mesurées
+  // pendant l'opération se poursuivent ici, sans repartir d'un nouvel enregistrement.
+  useEffect(() => {
+    if (!patientId) return
+    apiClient.get('/moments-operatoires', { params: { patientId } })
+      .then(({ data }) => {
+        const arrivee = (Array.isArray(data) ? data : []).find((m: any) => m.label === 'Arrivée en salle' && !m.annule)
+        if (arrivee?.horodatage) {
+          setHeureArrivee(new Date(arrivee.horodatage).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }))
+        }
+      })
+      .catch(console.error)
+    apiClient.get('/activites-per-op', { params: { patientId, limite: 1 } })
+      .then(({ data }) => setActiviteId(data?.data?.[0]?.id ?? null))
+      .catch(console.error)
+  }, [patientId])
 
   const scoreTotal = scores.motricite + scores.respiration + scores.pressionArterielle + scores.etatConscience + scores.coloration
   const checklistComplete = Object.values(checklistSortie).every(Boolean)
@@ -100,196 +123,217 @@ function SalleDeReveilPageContent() {
   }
 
   return (
-    <main className="p-6">
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl flex justify-between items-center w-full px-8 py-4 border-b border-[#c7dde9]">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-primary font-bold hover:underline">
-          <span className="material-symbols-outlined">arrow_back</span> Retour
-        </button>
-        <h2 className="font-headline font-extrabold tracking-tight text-[#00478d] text-3xl">Salle de réveil</h2>
-        <div className="w-20"></div>
-      </header>
+    <main className="p-6 max-w-6xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <BackButton />
+        <h1 className="font-headline font-extrabold tracking-tight text-on-surface text-2xl">🛏️ Salle de réveil — Surveillance</h1>
+        <div className="w-24" />
+      </div>
 
-      <div className="bg-[#d5ecf8] px-8 py-3 flex items-center border-b border-[#c7dde9] justify-between">
-        <div className="flex items-center space-x-6">
-          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Patient</p><p className="text-sm font-bold text-[#00478d]">{patient?.nom ? `${patient.nom} ${patient.prenom || ''}`.trim() : patientNom}</p></div>
-          <div className="w-px h-6 bg-[#c7dde9]"></div>
-          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Âge / Sexe</p><p className="text-sm font-semibold">{patient?.dateNaissance ? `${Math.max(0, Math.floor((Date.now() - new Date(patient.dateNaissance).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))} ans` : '—'} / {patient?.sexe || '—'}</p></div>
-          <div className="w-px h-6 bg-[#c7dde9]"></div>
-          <div><p className="text-[10px] text-[#424752] font-bold uppercase">Intervention</p><p className="text-sm font-semibold">{intervention || patient?.libelle || '—'}</p></div>
-          <div className="w-px h-6 bg-[#c7dde9]"></div>
+      {/* Contexte patient */}
+      <div className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 px-6 py-4 flex flex-wrap items-center gap-x-8 gap-y-3 justify-between">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          <div><p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Patient</p><p className="text-sm font-bold text-primary">{patient?.nom ? `${patient.nom} ${patient.prenom || ''}`.trim() : patientNom}</p></div>
+          <div className="w-px h-8 bg-outline-variant/20" />
+          <div><p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Âge / Sexe</p><p className="text-sm font-semibold text-on-surface">{patient?.dateNaissance ? `${Math.max(0, Math.floor((Date.now() - new Date(patient.dateNaissance).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))} ans` : '—'} / {patient?.sexe || '—'}</p></div>
+          <div className="w-px h-8 bg-outline-variant/20" />
+          <div><p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Intervention</p><p className="text-sm font-semibold text-on-surface">{intervention || patient?.libelle || '—'}</p></div>
+          <div className="w-px h-8 bg-outline-variant/20" />
           <div>
-            <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5 block">Anesthésiste</label>
-            <p className="text-xs font-bold text-[#00478d]">{estAnesthesiste ? (nomAnesthesiste || '—') : `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}`}</p>
+            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Anesthésiste</p>
+            <p className="text-sm font-bold text-primary">{estAnesthesiste ? (nomAnesthesiste || '—') : `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}`}</p>
           </div>
         </div>
         <div className="flex flex-col items-end">
-          <label className="text-[10px] text-[#424752] font-bold uppercase mb-0.5">Heure d'arrivée</label>
-          <div className="flex items-center bg-white/50 px-3 py-1.5 rounded-lg border border-white/40">
-            <span className="material-symbols-outlined text-xs text-[#00478d] mr-1.5">schedule</span>
-            <input className="bg-transparent border-none p-0 text-xs font-bold focus:ring-0 w-16" type="time" value={heureArrivee} onChange={e => setHeureArrivee(e.target.value)} />
+          <label className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mb-1">Heure d'arrivée au bloc</label>
+          <div className="flex items-center bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
+            <span className="material-symbols-outlined text-sm text-primary mr-1.5">schedule</span>
+            <input className="bg-transparent border-none p-0 text-sm font-bold text-primary focus:ring-0 w-20" type="time" value={heureArrivee} onChange={e => setHeureArrivee(e.target.value)} />
           </div>
         </div>
       </div>
 
-      <div className="p-8 h-[calc(100vh-148px)] overflow-y-auto">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* État respiratoire */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border">
-              <h3 className="font-bold text-lg text-[#00478d] mb-4">État respiratoire / Neuromusculaire</h3>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#727783] mb-2">À l'arrivée en salle</p>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <Checkbox size="sm" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} />
-                  <span className="ml-3 text-sm">Intubation (initial)</span>
-                </label>
-                <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <Checkbox size="sm" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} />
-                  <span className="ml-3 text-sm">Curarisation (initial)</span>
-                </label>
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#727783] mb-2">Réponse observée</p>
-              <div className="grid grid-cols-2 gap-4">
-                <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <Checkbox size="sm" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} />
-                  <span className="ml-3 text-sm">Extubation obtenue</span>
-                </label>
-                <label className="flex items-center p-3 rounded-lg bg-[#e6f6ff] cursor-pointer">
-                  <Checkbox size="sm" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} />
-                  <span className="ml-3 text-sm">Décurarisation obtenue</span>
-                </label>
-              </div>
-            </div>
+      {/* Surveillance des constantes — même fonctionnalité qu'en per-opératoire (alerte périodique
+          incluse), rattachée à la même ActivitePerOp pour une chronologie continue opération +
+          réveil. */}
+      <SurveillancePanel patientId={patientId} activiteId={activiteId} />
 
-            {/* Douleur */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border">
-              <h3 className="font-bold text-lg text-[#00478d] mb-4">Évaluation de la Douleur</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] font-bold uppercase">EVS</label>
-                  <div className="flex space-x-2 mt-1">
-                    {[1,2,3].map(v => (
-                      <button key={v} onClick={() => setEvs(v)} className={`flex-1 py-2 rounded-lg border text-xs font-bold ${evs === v ? 'border-2 border-[#00478d] bg-[#00478d]/10' : 'border-[#c7dde9]/30 bg-[#e6f6ff]'}`}>{v}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold uppercase">EQA</label>
-                  <div className="flex space-x-2 mt-1">
-                    {[1,2,3].map(v => (
-                      <button key={v} onClick={() => setEqa(v)} className={`flex-1 py-2 rounded-lg border text-xs font-bold ${eqa === v ? 'border-2 border-[#00478d] bg-[#00478d]/10' : 'border-[#c7dde9]/30 bg-[#e6f6ff]'}`}>{v}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold uppercase">EVA (0-10) : {eva}</label>
-                  <input type="range" min="0" max="10" value={eva} onChange={e => setEva(Number(e.target.value))} className="w-full accent-[#00478d]" />
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* État respiratoire */}
+        <section className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary to-primary-container px-6 py-3 flex items-center gap-3">
+            <span className="material-symbols-outlined text-white text-xl">airline_seat_flat</span>
+            <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">État respiratoire / Neuromusculaire</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">À l'arrivée en salle</p>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
+                <Checkbox size="sm" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} />
+                <span className="ml-3 text-sm">Intubation (initial)</span>
+              </label>
+              <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
+                <Checkbox size="sm" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} />
+                <span className="ml-3 text-sm">Curarisation (initial)</span>
+              </label>
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">Réponse observée</p>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
+                <Checkbox size="sm" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} />
+                <span className="ml-3 text-sm">Extubation obtenue</span>
+              </label>
+              <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
+                <Checkbox size="sm" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} />
+                <span className="ml-3 text-sm">Décurarisation obtenue</span>
+              </label>
             </div>
           </div>
+        </section>
 
-          {/* Score SCCRE */}
-          <div className="bg-white p-8 rounded-xl shadow-sm border">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-lg text-[#00478d]">Score de réveil (SCCRE)</h3>
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold uppercase mb-1">Score Total</span>
-                <div className="text-3xl font-black text-[#006a6a]">{scoreTotal}<span className="text-sm font-medium text-[#727783]">/10</span></div>
+        {/* Douleur */}
+        <section className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-secondary to-secondary/80 px-6 py-3 flex items-center gap-3">
+            <span className="material-symbols-outlined text-white text-xl">sentiment_dissatisfied</span>
+            <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">Évaluation de la douleur</h3>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="text-[11px] font-bold uppercase text-on-surface-variant">EVS</label>
+              <div className="flex gap-2 mt-1">
+                {[1,2,3].map(v => (
+                  <button key={v} onClick={() => setEvs(v)} className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${evs === v ? 'border-2 border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant/20 bg-surface-container-low'}`}>{v}</button>
+                ))}
               </div>
             </div>
-            <div className="space-y-4">
-              {[
-                { label: 'Motricité', key: 'motricite' },
-                { label: 'Respiration', key: 'respiration' },
-                { label: 'Pression artérielle', key: 'pressionArterielle' },
-                { label: 'État de conscience', key: 'etatConscience' },
-                { label: 'Coloration', key: 'coloration' },
-              ].map(item => (
-                <div key={item.key} className="grid grid-cols-12 items-center py-3 border-b border-[#cfe6f2]">
-                  <div className="col-span-4"><p className="text-sm font-bold">{item.label}</p></div>
-                  <div className="col-span-8 flex space-x-2">
-                    {[0,1,2].map(val => (
-                      <button key={val} onClick={() => setScores({...scores, [item.key]: val})}
-                        className={`flex-1 py-3 rounded-lg text-[10px] font-bold transition-all ${scores[item.key as keyof typeof scores] === val ? 'bg-[#00478d] text-white shadow-md' : 'bg-[#e6f6ff] text-[#424752] hover:bg-[#d5ecf8]'}`}>
-                        {val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div>
+              <label className="text-[11px] font-bold uppercase text-on-surface-variant">EQA</label>
+              <div className="flex gap-2 mt-1">
+                {[1,2,3].map(v => (
+                  <button key={v} onClick={() => setEqa(v)} className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${eqa === v ? 'border-2 border-secondary bg-secondary/10 text-secondary' : 'border-outline-variant/20 bg-surface-container-low'}`}>{v}</button>
+                ))}
+              </div>
             </div>
-            <button onClick={handleEnregistrerScore} disabled={!estAnesthesiste}
-              title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
-              className="mt-6 w-full py-3 bg-[#00478d] text-white font-bold rounded-xl shadow-lg hover:bg-[#005eb8] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              {!estAnesthesiste ? 'Réservé à l\'anesthésiste' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
-            </button>
-          </div>
-
-          {/* Checklist de sortie */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h3 className="font-bold text-lg text-[#00478d] mb-4">Checklist de sortie</h3>
-            <div className="space-y-3">
-              {[
-                { key: 'signesVitauxStables', label: 'Signes vitaux stables' },
-                { key: 'douleurControlee', label: 'Douleur contrôlée' },
-                { key: 'prescriptionsFaites', label: 'Prescriptions post-opératoires faites' },
-                { key: 'familleInformee', label: 'Famille / service informé' },
-              ].map(item => (
-                <label key={item.key} className="flex items-center gap-3 p-3 bg-[#e6f6ff] rounded-lg cursor-pointer">
-                  <Checkbox
-                    checked={checklistSortie[item.key as keyof typeof checklistSortie]}
-                    onChange={e => setChecklistSortie({ ...checklistSortie, [item.key]: e.target.checked })} />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </label>
-              ))}
+            <div>
+              <label className="text-[11px] font-bold uppercase text-on-surface-variant">EVA (0-10) : {eva}</label>
+              <input type="range" min="0" max="10" value={eva} onChange={e => setEva(Number(e.target.value))} className="w-full accent-secondary" />
             </div>
           </div>
+        </section>
+      </div>
 
-          {/* Décision de sortie + Option de sortie */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h3 className="font-bold text-lg text-[#00478d] mb-4">Décision de sortie</h3>
-            <button onClick={() => setShowOptionSortie(true)}
-              className="px-6 py-2.5 bg-sky-400 text-white font-bold rounded-xl shadow-md hover:bg-sky-500 transition-all flex items-center gap-2">
-              <span className="material-symbols-outlined">settings</span> Option de sortie
-            </button>
-            {orientation === 'autres' && serviceChoisi && <p className="mt-2 text-sm font-bold text-[#00478d]">Service : {serviceChoisi}</p>}
-            {orientation === 'origine' && <p className="mt-2 text-sm font-bold text-[#006a6a]">Service d'origine</p>}
-
-            <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !estAnesthesiste}
-              className={`mt-4 w-full py-3 font-bold rounded-xl transition-all ${
-                scoreTotal >= 9 && scoreSCCREId && checklistComplete && estAnesthesiste ? 'bg-gradient-to-br from-[#00478d] to-[#005eb8] text-white shadow-xl hover:shadow-[#00478d]/40' : 'bg-gray-400 text-white cursor-not-allowed'
-              }`}>
-              {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !estAnesthesiste ? `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}` : 'Autoriser la sortie'}
-            </button>
+      {/* Score SCCRE */}
+      <section className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-tertiary to-tertiary/80 px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-white text-xl">monitor_heart</span>
+            <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">Score de réveil (SCCRE)</h3>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-bold uppercase text-white/80">Score total</span>
+            <div className="text-2xl font-black text-white">{scoreTotal}<span className="text-sm font-medium text-white/70">/10</span></div>
           </div>
         </div>
-      </div>
+        <div className="p-6">
+          <div className="space-y-3">
+            {[
+              { label: 'Motricité', key: 'motricite' },
+              { label: 'Respiration', key: 'respiration' },
+              { label: 'Pression artérielle', key: 'pressionArterielle' },
+              { label: 'État de conscience', key: 'etatConscience' },
+              { label: 'Coloration', key: 'coloration' },
+            ].map(item => (
+              <div key={item.key} className="grid grid-cols-12 items-center py-2 border-b border-outline-variant/10 last:border-0">
+                <div className="col-span-4"><p className="text-sm font-bold text-on-surface">{item.label}</p></div>
+                <div className="col-span-8 flex gap-2">
+                  {[0,1,2].map(val => (
+                    <button key={val} onClick={() => setScores({...scores, [item.key]: val})}
+                      className={`flex-1 py-3 rounded-lg text-[10px] font-bold transition-all ${scores[item.key as keyof typeof scores] === val ? 'bg-tertiary text-white shadow-md' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={handleEnregistrerScore} disabled={!estAnesthesiste}
+            title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
+            className="mt-6 w-full py-3 bg-tertiary text-white font-bold rounded-xl shadow-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            {!estAnesthesiste ? 'Réservé à l\'anesthésiste' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
+          </button>
+        </div>
+      </section>
+
+      {/* Checklist de sortie */}
+      <section className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-primary-container to-primary-container/70 px-6 py-3 flex items-center gap-3">
+          <span className="material-symbols-outlined text-on-primary-container text-xl">checklist</span>
+          <h3 className="font-headline font-extrabold text-on-primary-container uppercase tracking-wide text-sm">Checklist de sortie</h3>
+        </div>
+        <div className="p-6 space-y-2">
+          {[
+            { key: 'signesVitauxStables', label: 'Signes vitaux stables' },
+            { key: 'douleurControlee', label: 'Douleur contrôlée' },
+            { key: 'prescriptionsFaites', label: 'Prescriptions post-opératoires faites' },
+            { key: 'familleInformee', label: 'Famille / service informé' },
+          ].map(item => (
+            <label key={item.key} className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg cursor-pointer">
+              <Checkbox
+                checked={checklistSortie[item.key as keyof typeof checklistSortie]}
+                onChange={e => setChecklistSortie({ ...checklistSortie, [item.key]: e.target.checked })} />
+              <span className="text-sm font-medium text-on-surface">{item.label}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {/* Décision de sortie + Option de sortie */}
+      <section className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-3 flex items-center gap-3">
+          <span className="material-symbols-outlined text-white text-xl">door_open</span>
+          <h3 className="font-headline font-extrabold text-white uppercase tracking-wide text-sm">Décision de sortie</h3>
+        </div>
+        <div className="p-6">
+          <button onClick={() => setShowOptionSortie(true)}
+            className="px-6 py-2.5 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary/20 transition-all flex items-center gap-2">
+            <span className="material-symbols-outlined">settings</span> Option de sortie
+          </button>
+          {orientation === 'autres' && serviceChoisi && <p className="mt-2 text-sm font-bold text-primary">Service : {serviceChoisi}</p>}
+          {orientation === 'origine' && <p className="mt-2 text-sm font-bold text-emerald-700">Service d'origine</p>}
+
+          <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !estAnesthesiste}
+            className={`mt-4 w-full py-3 font-bold rounded-xl transition-all ${
+              scoreTotal >= 9 && scoreSCCREId && checklistComplete && estAnesthesiste ? 'bg-emerald-600 text-white shadow-lg hover:bg-emerald-700' : 'bg-surface-container text-on-surface-variant cursor-not-allowed'
+            }`}>
+            {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !estAnesthesiste ? `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}` : 'Autoriser la sortie'}
+          </button>
+        </div>
+      </section>
 
       {/* Modal Orientation */}
       {showOptionSortie && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
-            <h3 className="text-xl font-extrabold text-[#00478d] mb-6">Orientation du patient</h3>
+            <h3 className="text-xl font-extrabold text-primary mb-6">Orientation du patient</h3>
             <div className="space-y-4">
-              <label className="flex items-center space-x-3 p-4 rounded-xl border cursor-pointer hover:bg-[#f3faff]">
-                <input type="radio" name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-5 h-5 text-[#00478d]" />
+              <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
+                <input type="radio" name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-5 h-5 text-primary" />
                 <span className="font-bold">Service d'origine</span>
               </label>
-              <label className="flex items-center space-x-3 p-4 rounded-xl border cursor-pointer hover:bg-[#f3faff]">
-                <input type="radio" name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-5 h-5 text-[#00478d]" />
+              <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
+                <input type="radio" name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-5 h-5 text-primary" />
                 <span className="font-bold">Autres services</span>
               </label>
               {orientation === 'autres' && (
-                <select value={serviceChoisi} onChange={e => setServiceChoisi(e.target.value)} className="w-full mt-2 border rounded-xl p-3 text-sm">
+                <select value={serviceChoisi} onChange={e => setServiceChoisi(e.target.value)} className="w-full mt-2 border border-outline-variant/20 rounded-xl p-3 text-sm">
                   <option value="">Sélectionner un service...</option>
                   {SERVICES_CLINIQUES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               )}
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowOptionSortie(false)} className="px-6 py-2 border rounded-lg text-sm font-bold hover:bg-gray-100">Annuler</button>
-              <button onClick={() => setShowOptionSortie(false)} className="px-6 py-2 bg-[#00478d] text-white rounded-lg text-sm font-bold">Valider</button>
+              <button onClick={() => setShowOptionSortie(false)} className="px-6 py-2 border border-outline-variant/20 rounded-lg text-sm font-bold hover:bg-surface-container-low">Annuler</button>
+              <button onClick={() => setShowOptionSortie(false)} className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold">Valider</button>
             </div>
           </div>
         </div>

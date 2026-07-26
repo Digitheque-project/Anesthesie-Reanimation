@@ -9,6 +9,7 @@ import MomentsTimeline from '@/components/bloc/moments-operatoire/MomentsTimelin
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function ActivitePendantOperationPage() {
   return (
@@ -109,9 +110,7 @@ function ActivitePendantOperationPageContent() {
       {/* TopAppBar */}
       <header className="bg-white/80 backdrop-blur-xl z-50 shrink-0 border-b border-surface-container-highest shadow-sm flex justify-between items-center w-full px-6 py-2">
         <div className="flex items-center gap-6">
-          <button onClick={() => router.back()} className="text-sm text-primary font-bold hover:underline flex items-center gap-1 shrink-0">
-            <span className="material-symbols-outlined text-sm">arrow_back</span> Retour
-          </button>
+          <BackButton />
           <div className="h-10 w-px bg-surface-container-highest"></div>
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mb-0.5">Patient en cours</span>

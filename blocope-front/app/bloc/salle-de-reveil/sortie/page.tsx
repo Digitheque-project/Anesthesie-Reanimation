@@ -8,6 +8,7 @@ import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
+import BackButton from '@/components/bloc/layout/BackButton'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -86,7 +87,8 @@ function SortieSalleReveilPageContent() {
 
   return (
     <main className="flex-1 min-h-screen">
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl px-8 py-4 border-b border-[#c7dde9]">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl px-8 py-4 border-b border-[#c7dde9] flex items-center gap-4">
+        <BackButton />
         <h2 className="font-headline font-extrabold text-[#00478d] text-2xl">Sortie de Salle de Réveil</h2>
       </header>
 
