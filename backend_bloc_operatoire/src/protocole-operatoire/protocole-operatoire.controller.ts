@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Request,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import {
@@ -35,8 +36,8 @@ export class ProtocoleOperatoireController {
   @Post()
   @RequireRoleClinique(RoleClinique.CHIRURGIEN)
   @ApiOperation({ summary: 'Creer un protocole operatoire (Chirurgien)' })
-  create(@Body() dto: CreateProtocoleOperatoireDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateProtocoleOperatoireDto, @Request() req: any) {
+    return this.service.create(dto, req.centralUser?.userId);
   }
 
   @Get()
@@ -72,8 +73,9 @@ export class ProtocoleOperatoireController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProtocoleOperatoireDto,
+    @Request() req: any,
   ) {
-    return this.service.update(id, dto);
+    return this.service.update(id, dto, req.centralUser?.userId);
   }
 
   @Delete(':id')

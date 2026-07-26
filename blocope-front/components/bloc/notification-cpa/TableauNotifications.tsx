@@ -36,6 +36,7 @@ export default function TableauNotifications({
         <table className="w-full text-sm">
           <thead className="bg-gray-50/80 text-xs font-semibold uppercase text-on-surface-variant">
             <tr>
+              <th className="px-4 py-3 text-left">Type</th>
               <th className="px-4 py-3 text-left">Heure</th>
               <th className="px-4 py-3 text-left">Patient</th>
               <th className="px-4 py-3 text-left">Intervention</th>
@@ -55,13 +56,24 @@ export default function TableauNotifications({
                   onClick={() => onVoirDossier(n)}
                   className="hover:bg-primary/5 transition cursor-pointer"
                 >
+                  <td className="px-4 py-3">
+                    {n.origineExterne ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full whitespace-nowrap">
+                        🔗 Demande CPA externe
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-violet-100 text-violet-700 rounded-full whitespace-nowrap">
+                        💊 Prescription bloc
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-mono text-sm">{n.heure || 'N/A'}</td>
                   <td className="px-4 py-3">
                     <div className="font-semibold text-on-surface">
                       {n.patientNom || formaterNomPatient(n.patient)}
-                      {n.origineExterne && (
+                      {n.origineExterne && n.sourceServiceName && (
                         <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">
-                          🔗 {n.sourceServiceName || 'Externe'}
+                          {n.sourceServiceName}
                         </span>
                       )}
                       {estTresUrgent && (

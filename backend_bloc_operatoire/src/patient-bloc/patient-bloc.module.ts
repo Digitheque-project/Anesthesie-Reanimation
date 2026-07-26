@@ -6,11 +6,13 @@ import { PatientBlocService } from './patient-bloc.service';
 import { PatientBlocController } from './patient-bloc.controller';
 import { PatientBlocStatutService } from './patient-bloc-statut.service';
 import { ProtocoleOperatoireModule } from '../protocole-operatoire/protocole-operatoire.module';
+import { TracabiliteModule } from '../tracabilite/tracabilite.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PatientBloc, DemandeCpaExterne]),
     ProtocoleOperatoireModule,
+    TracabiliteModule,
   ],
   controllers: [PatientBlocController],
   providers: [PatientBlocService, PatientBlocStatutService],

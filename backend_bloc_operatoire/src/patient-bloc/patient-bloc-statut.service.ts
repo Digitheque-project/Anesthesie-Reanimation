@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 
 @Injectable()
 export class PatientBlocStatutService {
@@ -18,17 +19,24 @@ export class PatientBlocStatutService {
     @InjectRepository(PatientBloc)
     private patientBlocRepo: Repository<PatientBloc>,
     private notificationOutgoing: NotificationOutgoingService,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
+  // Point de passage unique de TOUTE transition de statut patient dans l'application (CPA,
+  // per-opératoire, réveil, sortie...) — y journaliser suffit à tracer l'ensemble du parcours
+  // sans avoir à dupliquer un appel de traçabilité dans chaque service appelant.
   async changerStatut(
     patientId: string,
     nouveauStatut: PatientStatut,
+    utilisateurId?: string,
   ): Promise<PatientBloc> {
     const patient = await this.patientBlocRepo.findOne({
       where: { patientId },
     });
     if (!patient)
       throw new NotFoundException(`Patient ${patientId} non trouvé`);
+
+    const ancienStatut = patient.statut;
 
     const transitionsValides: Record<PatientStatut, PatientStatut[]> = {
       [PatientStatut.EN_ATTENTE_CPA]: [
@@ -59,7 +67,15 @@ export class PatientBlocStatutService {
       );
 
     patient.statut = nouveauStatut;
-    return this.patientBlocRepo.save(patient);
+    const saved = await this.patientBlocRepo.save(patient);
+    await this.tracabiliteService.log(
+      'PatientBloc',
+      patientId,
+      'STATUT_CHANGE',
+      { ancienStatut, nouveauStatut },
+      utilisateurId,
+    );
+    return saved;
   }
 
   // Fait avancer le patient jusqu'à EN_COURS_OPERATION en franchissant les étapes
@@ -67,23 +83,41 @@ export class PatientBlocStatutService {
   // PRET_POUR_BLOC/EN_COURS_OPERATION avant la checklist pendant-op — Time Out — qui marque
   // dans les faits le vrai début de l'opération). Idempotent : ne fait rien si le patient est
   // déjà à EN_COURS_OPERATION ou au-delà.
-  async avancerVersEnCoursOperation(patientId: string): Promise<void> {
+  async avancerVersEnCoursOperation(
+    patientId: string,
+    utilisateurId?: string,
+  ): Promise<void> {
     const patient = await this.patientBlocRepo.findOne({
       where: { patientId },
     });
     if (!patient) return;
 
     if (patient.statut === PatientStatut.VERIFICATION_VEILLE_REALISEE) {
-      await this.changerStatut(patientId, PatientStatut.PRET_POUR_BLOC);
-      await this.changerStatut(patientId, PatientStatut.EN_COURS_OPERATION);
+      await this.changerStatut(
+        patientId,
+        PatientStatut.PRET_POUR_BLOC,
+        utilisateurId,
+      );
+      await this.changerStatut(
+        patientId,
+        PatientStatut.EN_COURS_OPERATION,
+        utilisateurId,
+      );
     } else if (patient.statut === PatientStatut.PRET_POUR_BLOC) {
-      await this.changerStatut(patientId, PatientStatut.EN_COURS_OPERATION);
+      await this.changerStatut(
+        patientId,
+        PatientStatut.EN_COURS_OPERATION,
+        utilisateurId,
+      );
     }
   }
 
   // Décision de triage sur le fil de prescription : le patient est apte à suivre le circuit CPA.
   // Bascule (ou remet) le patient en attente de planification CPA.
-  async marquerApteCpa(patientId: string): Promise<PatientBloc> {
+  async marquerApteCpa(
+    patientId: string,
+    utilisateurId?: string,
+  ): Promise<PatientBloc> {
     const patient = await this.patientBlocRepo.findOne({
       where: { patientId },
     });
@@ -94,6 +128,13 @@ export class PatientBlocStatutService {
       patient.statut = PatientStatut.EN_ATTENTE_CPA;
       patient.motifRefusCpa = null;
       await this.patientBlocRepo.save(patient);
+      await this.tracabiliteService.log(
+        'PatientBloc',
+        patientId,
+        'STATUT_CHANGE',
+        { ancienStatut: PatientStatut.CPA_INAPTE, nouveauStatut: PatientStatut.EN_ATTENTE_CPA },
+        utilisateurId,
+      );
     }
     return patient;
   }
@@ -103,6 +144,7 @@ export class PatientBlocStatutService {
   async marquerInapteCpa(
     patientId: string,
     motifRefus: string,
+    utilisateurId?: string,
   ): Promise<PatientBloc> {
     if (!motifRefus || !motifRefus.trim()) {
       throw new BadRequestException('Le motif du refus est obligatoire.');
@@ -111,6 +153,7 @@ export class PatientBlocStatutService {
     const patient = await this.changerStatut(
       patientId,
       PatientStatut.CPA_INAPTE,
+      utilisateurId,
     );
     patient.motifRefusCpa = motifRefus.trim();
     await this.patientBlocRepo.save(patient);
@@ -139,6 +182,7 @@ export class PatientBlocStatutService {
   async modifierDateIntervention(
     patientId: string,
     dateIntervention: string,
+    utilisateurId?: string,
   ): Promise<PatientBloc> {
     const patient = await this.patientBlocRepo.findOne({
       where: { patientId },
@@ -146,7 +190,16 @@ export class PatientBlocStatutService {
     if (!patient)
       throw new NotFoundException(`Patient ${patientId} non trouvé`);
 
+    const ancienneDate = patient.dateIntervention;
     patient.dateIntervention = new Date(dateIntervention);
-    return this.patientBlocRepo.save(patient);
+    const saved = await this.patientBlocRepo.save(patient);
+    await this.tracabiliteService.log(
+      'PatientBloc',
+      patientId,
+      'UPDATE',
+      { champ: 'dateIntervention', ancienneValeur: ancienneDate, nouvelleValeur: patient.dateIntervention },
+      utilisateurId,
+    );
+    return saved;
   }
 }

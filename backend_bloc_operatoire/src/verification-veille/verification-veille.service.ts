@@ -14,6 +14,7 @@ import { EndoscopieClient } from '../external/endoscopie.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-externe.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateVerificationVeilleDto } from './dto/create-verification-veille.dto';
 import { UpdateVerificationVeilleDto } from './dto/update-verification-veille.dto';
 
@@ -32,9 +33,13 @@ export class VerificationVeilleService {
     private medecinIdentiteService: MedecinIdentiteService,
     private demandeCpaExterneService: DemandeCpaExterneService,
     private patientBlocStatutService: PatientBlocStatutService,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
-  async create(dto: CreateVerificationVeilleDto): Promise<VerificationVeille> {
+  async create(
+    dto: CreateVerificationVeilleDto,
+    utilisateurId?: string,
+  ): Promise<VerificationVeille> {
     // La vérification à la veille suit toujours une CPA réelle : les patients urgents n'ont pas
     // de "veille" (chirurgie immédiate) et passent par l'interface de CPA elle-même, étiquetée
     // VPA pour eux — voir CPAModule.
@@ -53,6 +58,13 @@ export class VerificationVeilleService {
     await this.patientBlocRepo.update(dto.patientId, {
       statut: PatientStatut.VERIFICATION_VEILLE_REALISEE,
     });
+    await this.tracabiliteService.log(
+      'VerificationVeille',
+      saved.id,
+      'CREATE',
+      { patientId: dto.patientId },
+      utilisateurId,
+    );
 
     // Rien d'autre ne faisait jamais avancer le patient vers PRET_POUR_BLOC : il restait
     // invisible sur l'écran "Programme opératoire" le jour de l'intervention, sans aucun moyen
@@ -62,6 +74,7 @@ export class VerificationVeilleService {
       await this.patientBlocStatutService.changerStatut(
         dto.patientId,
         PatientStatut.PRET_POUR_BLOC,
+        utilisateurId,
       );
     } catch (err) {
       this.logger.warn(
@@ -128,11 +141,20 @@ export class VerificationVeilleService {
   async update(
     id: string,
     dto: UpdateVerificationVeilleDto,
+    utilisateurId?: string,
   ): Promise<VerificationVeille> {
     const verif = await this.repo.findOne({ where: { id } });
     if (!verif)
       throw new NotFoundException(`Vérification veille ${id} non trouvée`);
-    return this.repo.save(Object.assign(verif, dto));
+    const updated = await this.repo.save(Object.assign(verif, dto));
+    await this.tracabiliteService.log(
+      'VerificationVeille',
+      id,
+      'UPDATE',
+      { patientId: verif.patientId },
+      utilisateurId,
+    );
+    return updated;
   }
 
   async remove(id: string): Promise<{ message: string }> {

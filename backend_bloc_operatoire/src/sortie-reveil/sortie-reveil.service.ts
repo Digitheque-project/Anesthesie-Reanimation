@@ -7,6 +7,7 @@ import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
 import { PatientStatut } from '../entities/patient-bloc.entity';
 import { CentralUser } from '../central-auth/central-user.interface';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateSortieReveilDto } from './dto/create-sortie-reveil.dto';
 import { UpdateSortieReveilDto } from './dto/update-sortie-reveil.dto';
 
@@ -17,6 +18,7 @@ export class SortieReveilService {
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
     private patientBlocStatutService: PatientBlocStatutService,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
   // Le médecin autorisant la sortie est toujours l'anesthésiste connecté (route réservée au
@@ -30,6 +32,13 @@ export class SortieReveilService {
       this.repo.create({ ...(dto as any), medecinId: centralUser.userId }),
     );
     const sortie = Array.isArray(saved) ? saved[0] : saved;
+    await this.tracabiliteService.log(
+      'SortieReveil',
+      sortie.id,
+      'CREATE',
+      { patientId: sortie.patientId },
+      centralUser.userId,
+    );
     // Sans ce passage à SORTI, le patient reste indéfiniment à EN_SALLE_REVEIL : jamais visible
     // aux Archives (filtrées sur statut=SORTI) ni dans le décompte de sorties des Rapports,
     // alors même que sa sortie vient d'être validée.
@@ -37,6 +46,7 @@ export class SortieReveilService {
       await this.patientBlocStatutService.changerStatut(
         sortie.patientId,
         PatientStatut.SORTI,
+        centralUser.userId,
       );
     }
     return sortie;

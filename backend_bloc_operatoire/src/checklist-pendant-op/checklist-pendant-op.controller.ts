@@ -53,7 +53,8 @@ export class ChecklistPendantOpController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateChecklistPendantOpDto,
+    @Request() req: any,
   ) {
-    return this.service.update(id, dto);
+    return this.service.update(id, dto, req.centralUser);
   }
 }

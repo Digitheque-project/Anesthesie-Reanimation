@@ -16,6 +16,7 @@ import { ChecklistAvantOp } from '../entities/checklist-avant-op.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 
 @ApiTags('Checklist Avant Op')
 @Controller('checklists-avant-op')
@@ -24,6 +25,7 @@ export class ChecklistAvantOpController {
     @InjectRepository(ChecklistAvantOp)
     private repo: Repository<ChecklistAvantOp>,
     private accueilClient: AccueilClient,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
   @Post()
@@ -31,9 +33,9 @@ export class ChecklistAvantOpController {
   @ApiOperation({
     summary: 'Créer une checklist avant opération (Anesthésiste)',
   })
-  create(@Body() dto: any, @Request() req: any) {
+  async create(@Body() dto: any, @Request() req: any) {
     const centralUser = req.centralUser;
-    return this.repo.save(
+    const savedResult = await this.repo.save(
       this.repo.create({
         ...dto,
         validateurId: centralUser?.userId,
@@ -43,6 +45,17 @@ export class ChecklistAvantOpController {
         validateurRole: centralUser?.role,
       }),
     );
+    const saved: ChecklistAvantOp = Array.isArray(savedResult)
+      ? savedResult[0]
+      : savedResult;
+    await this.tracabiliteService.log(
+      'ChecklistAvantOp',
+      saved.id,
+      'CREATE',
+      { patientId: saved.patientId },
+      centralUser?.userId,
+    );
+    return saved;
   }
 
   @Get()
@@ -67,7 +80,15 @@ export class ChecklistAvantOpController {
   @ApiOperation({
     summary: 'Modifier une checklist avant opération (Anesthésiste)',
   })
-  update(@Param('id') id: string, @Body() dto: any) {
-    return this.repo.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: any, @Request() req: any) {
+    const result = await this.repo.update(id, dto);
+    await this.tracabiliteService.log(
+      'ChecklistAvantOp',
+      id,
+      'UPDATE',
+      dto,
+      req.centralUser?.userId,
+    );
+    return result;
   }
 }

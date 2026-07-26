@@ -58,8 +58,8 @@ export class CPAController {
   @ApiOperation({
     summary: 'Modifier une CPA (Anesthésiste, Responsable CPA ou Major)',
   })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() d: UpdateCPADto) {
-    return this.service.update(id, d);
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() d: UpdateCPADto, @Request() req: any) {
+    return this.service.update(id, d, req.centralUser);
   }
 
   @Delete(':id')

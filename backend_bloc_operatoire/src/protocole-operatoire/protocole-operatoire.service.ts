@@ -6,6 +6,7 @@ import { Drainage } from '../entities/drainage.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateProtocoleOperatoireDto } from './dto/create-protocole-operatoire.dto';
 import { UpdateProtocoleOperatoireDto } from './dto/update-protocole-operatoire.dto';
 
@@ -25,9 +26,11 @@ export class ProtocoleOperatoireService {
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
     private gateway: OperationGateway,
+    private tracabiliteService: TracabiliteService,
   ) {}
   async create(
     dto: CreateProtocoleOperatoireDto,
+    utilisateurId?: string,
   ): Promise<ProtocoleOperatoire> {
     const { drainages, ...data } = dto as any;
     const proto = this.repo.create(data);
@@ -40,6 +43,13 @@ export class ProtocoleOperatoireService {
         ),
       );
     const complet = await this.findOne(saved.id);
+    await this.tracabiliteService.log(
+      'ProtocoleOperatoire',
+      saved.id,
+      'CREATE',
+      { patientId: complet.patientId },
+      utilisateurId,
+    );
     this.gateway.emitToOperation(
       complet.patientId,
       'protocole-operatoire:maj',
@@ -78,10 +88,18 @@ export class ProtocoleOperatoireService {
   async update(
     id: string,
     dto: UpdateProtocoleOperatoireDto,
+    utilisateurId?: string,
   ): Promise<ProtocoleOperatoire> {
     const p = await this.repo.findOne({ where: { id } });
     if (!p) throw new NotFoundException(`Protocole ${id} non trouvé`);
     const updated = await this.repo.save(Object.assign(p, dto));
+    await this.tracabiliteService.log(
+      'ProtocoleOperatoire',
+      id,
+      'UPDATE',
+      { patientId: updated.patientId },
+      utilisateurId,
+    );
     this.gateway.emitToOperation(
       updated.patientId,
       'protocole-operatoire:maj',

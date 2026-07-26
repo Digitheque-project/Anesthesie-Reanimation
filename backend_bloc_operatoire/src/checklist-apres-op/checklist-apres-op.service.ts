@@ -7,6 +7,7 @@ import { AccueilClient } from '../external/accueil.client';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
 import { CentralUser } from '../central-auth/central-user.interface';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateChecklistApresOpDto } from './dto/create-checklist-apres-op.dto';
 import { UpdateChecklistApresOpDto } from './dto/update-checklist-apres-op.dto';
 
@@ -18,6 +19,7 @@ export class ChecklistApresOpService {
     private accueilClient: AccueilClient,
     private gateway: OperationGateway,
     private patientBlocStatutService: PatientBlocStatutService,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
   // La check-list après intervention est enregistrée en un seul POST (formulaire unique côté
@@ -35,10 +37,18 @@ export class ChecklistApresOpService {
         validateurRole: centralUser.role,
       }),
     );
+    await this.tracabiliteService.log(
+      'ChecklistApresOp',
+      saved.id,
+      'CREATE',
+      { patientId: saved.patientId },
+      centralUser.userId,
+    );
     if (dto.transfertSalleReveil) {
       await this.patientBlocStatutService.changerStatut(
         saved.patientId,
         PatientStatut.EN_SALLE_REVEIL,
+        centralUser.userId,
       );
     }
     return saved;
@@ -64,6 +74,7 @@ export class ChecklistApresOpService {
   async update(
     id: string,
     dto: UpdateChecklistApresOpDto,
+    centralUser?: CentralUser,
   ): Promise<ChecklistApresOp> {
     const checklist = await this.repo.findOne({ where: { id } });
     if (!checklist)
@@ -74,6 +85,13 @@ export class ChecklistApresOpService {
     const transfertVientDEtreConfirme =
       dto.transfertSalleReveil === true && !checklist.transfertSalleReveil;
     const updated = await this.repo.save(Object.assign(checklist, dto));
+    await this.tracabiliteService.log(
+      'ChecklistApresOp',
+      updated.id,
+      'UPDATE',
+      { patientId: updated.patientId },
+      centralUser?.userId,
+    );
 
     // Le passage en salle de réveil est déclaré ici (checklist de sortie du bloc) — on
     // synchronise automatiquement le statut du patient plutôt que de laisser cette transition
@@ -82,6 +100,7 @@ export class ChecklistApresOpService {
       await this.patientBlocStatutService.changerStatut(
         updated.patientId,
         PatientStatut.EN_SALLE_REVEIL,
+        centralUser?.userId,
       );
     }
 

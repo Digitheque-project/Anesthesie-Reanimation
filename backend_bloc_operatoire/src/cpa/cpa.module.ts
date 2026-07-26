@@ -5,6 +5,7 @@ import { PatientBloc } from '../entities/patient-bloc.entity';
 import { Premedicament } from '../entities/premedicament.entity';
 import { DemandeCpaExterneModule } from '../demande-cpa-externe/demande-cpa-externe.module';
 import { MedecinModule } from '../medecin/medecin.module';
+import { TracabiliteModule } from '../tracabilite/tracabilite.module';
 import { CPAService } from './cpa.service';
 import { CPAController } from './cpa.controller';
 
@@ -13,6 +14,7 @@ import { CPAController } from './cpa.controller';
     TypeOrmModule.forFeature([CPA, PatientBloc, Premedicament]),
     DemandeCpaExterneModule,
     MedecinModule,
+    TracabiliteModule,
   ],
   controllers: [CPAController],
   providers: [CPAService],

@@ -18,6 +18,7 @@ import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { CentralUser } from '../central-auth/central-user.interface';
 import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 import { RoleMedecin } from '../entities/medecin.entity';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
 
@@ -37,6 +38,7 @@ export class CPAService {
     private demandeCpaExterneService: DemandeCpaExterneService,
     private medecinService: MedecinService,
     private medecinIdentiteService: MedecinIdentiteService,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
   async create(dto: CreateCPADto, centralUser: CentralUser): Promise<CPA> {
@@ -179,6 +181,14 @@ export class CPAService {
       }
     }
 
+    await this.tracabiliteService.log(
+      'CPA',
+      saved.id,
+      'CREATE',
+      { patientId: dto.patientId, decision: dto.decision },
+      centralUser.userId,
+    );
+
     return this.findOne(saved.id);
   }
 
@@ -216,11 +226,23 @@ export class CPAService {
     return enriched;
   }
 
-  async update(id: string, dto: UpdateCPADto): Promise<CPA> {
+  async update(
+    id: string,
+    dto: UpdateCPADto,
+    centralUser?: CentralUser,
+  ): Promise<CPA> {
     const cpa = await this.cpaRepository.findOne({ where: { id } });
     if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
     Object.assign(cpa, dto);
-    return this.cpaRepository.save(cpa);
+    const updated = await this.cpaRepository.save(cpa);
+    await this.tracabiliteService.log(
+      'CPA',
+      id,
+      'UPDATE',
+      { patientId: cpa.patientId },
+      centralUser?.userId,
+    );
+    return updated;
   }
 
   async remove(id: string): Promise<{ message: string }> {

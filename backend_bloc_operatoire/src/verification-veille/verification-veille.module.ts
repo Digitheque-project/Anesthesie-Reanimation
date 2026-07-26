@@ -6,6 +6,7 @@ import { PatientBloc } from '../entities/patient-bloc.entity';
 import { DemandeCpaExterneModule } from '../demande-cpa-externe/demande-cpa-externe.module';
 import { PatientBlocModule } from '../patient-bloc/patient-bloc.module';
 import { MedecinModule } from '../medecin/medecin.module';
+import { TracabiliteModule } from '../tracabilite/tracabilite.module';
 import { VerificationVeilleService } from './verification-veille.service';
 import { VerificationVeilleController } from './verification-veille.controller';
 
@@ -15,6 +16,7 @@ import { VerificationVeilleController } from './verification-veille.controller';
     DemandeCpaExterneModule,
     PatientBlocModule,
     MedecinModule,
+    TracabiliteModule,
   ],
   controllers: [VerificationVeilleController],
   providers: [VerificationVeilleService],

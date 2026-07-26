@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { getActiveSession } from '@/lib/clinical-auth/session';
+import { useRole } from '@/lib/hooks/useRole';
 import { cn } from '@/lib/utils';
 import {
 	PrescriptionPanierProvider,
@@ -47,6 +48,11 @@ const MAIN_ITEMS: { id: MainSection; icon: string; label: string; hint: string }
 function PrescriptionModuleInner({ patientId, patientType = 'hospitalise', serviceDestOverride }: PrescriptionModuleProps) {
 	const { setPatientId, setServiceDestOverride } = usePrescriptionPanier();
 	const [main, setMain] = useState<MainSection>('med');
+	// Seuls l'anesthésiste, le responsable CPA ou le major prescrivent réellement (même règle
+	// que le bouton "Prescrire" de la CPA, jusqu'ici non appliquée sur ce second point d'entrée
+	// — n'importe quel rôle du bloc pouvait créer une prescription depuis le dossier patient).
+	// La consultation (dont l'historique) reste ouverte à tous.
+	const { peutDeciderAptitudeCpa, roleName } = useRole();
 
 	const session = useMemo(() => getActiveSession(), []);
 
@@ -73,6 +79,14 @@ function PrescriptionModuleInner({ patientId, patientType = 'hospitalise', servi
 	}, [serviceDestOverride, setServiceDestOverride]);
 
 	function renderSection() {
+		if (main !== 'hist' && !peutDeciderAptitudeCpa) {
+			return (
+				<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] font-semibold text-amber-800">
+					La prescription est réservée à l'anesthésiste, au responsable CPA ou au major
+					{roleName ? ` (votre rôle actuel est : ${roleName})` : ''}. Vous pouvez consulter l'historique.
+				</div>
+			);
+		}
 		switch (main) {
 			case 'med':
 				return <MedicaleForm patient={patient} prescripteur={prescripteur} patientType={patientType} />;

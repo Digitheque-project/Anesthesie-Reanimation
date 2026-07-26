@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Request,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -27,8 +28,8 @@ export class VerificationVeilleController {
     summary:
       "Créer une vérification à la veille de l'intervention (Anesthésiste)",
   })
-  create(@Body() d: CreateVerificationVeilleDto) {
-    return this.service.create(d);
+  create(@Body() d: CreateVerificationVeilleDto, @Request() req: any) {
+    return this.service.create(d, req.centralUser?.userId);
   }
 
   @Get() @ApiOperation({ summary: 'Lister les vérifications veille' }) findAll(
@@ -49,8 +50,9 @@ export class VerificationVeilleController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() d: UpdateVerificationVeilleDto,
+    @Request() req: any,
   ) {
-    return this.service.update(id, d);
+    return this.service.update(id, d, req.centralUser?.userId);
   }
 
   @Delete(':id')

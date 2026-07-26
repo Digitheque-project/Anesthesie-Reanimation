@@ -6,6 +6,7 @@ import { AccueilClient } from '../external/accueil.client';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
 import { CentralUser } from '../central-auth/central-user.interface';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
 import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.dto';
 
@@ -17,6 +18,7 @@ export class ChecklistPendantOpService {
     private accueilClient: AccueilClient,
     private gateway: OperationGateway,
     private patientBlocStatutService: PatientBlocStatutService,
+    private tracabiliteService: TracabiliteService,
   ) {}
 
   async create(
@@ -31,9 +33,17 @@ export class ChecklistPendantOpService {
         validateurRole: centralUser.role,
       }),
     );
+    await this.tracabiliteService.log(
+      'ChecklistPendantOp',
+      saved.id,
+      'CREATE',
+      { patientId: saved.patientId },
+      centralUser.userId,
+    );
     // Le Time Out marque dans les faits le vrai début de l'opération.
     await this.patientBlocStatutService.avancerVersEnCoursOperation(
       saved.patientId,
+      centralUser.userId,
     );
     return saved;
   }
@@ -58,6 +68,7 @@ export class ChecklistPendantOpService {
   async update(
     id: string,
     dto: UpdateChecklistPendantOpDto,
+    centralUser?: CentralUser,
   ): Promise<ChecklistPendantOp> {
     const checklist = await this.repo.findOne({ where: { id } });
     if (!checklist)
@@ -65,6 +76,13 @@ export class ChecklistPendantOpService {
         `Checklist pendant opération ${id} non trouvée`,
       );
     const updated = await this.repo.save(Object.assign(checklist, dto));
+    await this.tracabiliteService.log(
+      'ChecklistPendantOp',
+      updated.id,
+      'UPDATE',
+      { patientId: updated.patientId },
+      centralUser?.userId,
+    );
     this.gateway.emitToOperation(
       updated.patientId,
       'checklist-pendant-op:maj',

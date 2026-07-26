@@ -148,8 +148,11 @@ export class PatientBlocController {
     summary:
       'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)',
   })
-  marquerApteCpa(@Param('patientId') patientId: string) {
-    return this.patientBlocStatutService.marquerApteCpa(patientId);
+  marquerApteCpa(@Param('patientId') patientId: string, @Request() req: any) {
+    return this.patientBlocStatutService.marquerApteCpa(
+      patientId,
+      req.centralUser?.userId,
+    );
   }
 
   @Patch(':patientId/inapte-cpa')
@@ -161,10 +164,12 @@ export class PatientBlocController {
   marquerInapteCpa(
     @Param('patientId') patientId: string,
     @Body('motifRefus') motifRefus: string,
+    @Request() req: any,
   ) {
     return this.patientBlocStatutService.marquerInapteCpa(
       patientId,
       motifRefus,
+      req.centralUser?.userId,
     );
   }
 
@@ -177,10 +182,12 @@ export class PatientBlocController {
   modifierDateIntervention(
     @Param('patientId') patientId: string,
     @Body() dto: UpdateDateInterventionDto,
+    @Request() req: any,
   ) {
     return this.patientBlocStatutService.modifierDateIntervention(
       patientId,
       dto.dateIntervention,
+      req.centralUser?.userId,
     );
   }
 

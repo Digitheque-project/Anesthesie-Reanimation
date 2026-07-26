@@ -6,12 +6,14 @@ import { ProtocoleOperatoireService } from './protocole-operatoire.service';
 import { ProtocoleOperatoireController } from './protocole-operatoire.controller';
 import { OperationGatewayModule } from '../operation-gateway/operation-gateway.module';
 import { MedecinModule } from '../medecin/medecin.module';
+import { TracabiliteModule } from '../tracabilite/tracabilite.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ProtocoleOperatoire, Drainage]),
     OperationGatewayModule,
     MedecinModule,
+    TracabiliteModule,
   ],
   controllers: [ProtocoleOperatoireController],
   providers: [ProtocoleOperatoireService],

@@ -27,8 +27,10 @@ import { SortieTab } from "@/components/clinical/dossier-patient/SortieTab";
 import HistoriqueTab from "@/components/clinical/dossier-patient/HistoriqueTab";
 import ResultatsParacliniquesTab from "@/components/clinical/dossier-patient/ResultatsParacliniquesTab";
 import { PrescriptionAccueilTab } from "@/components/clinical/dossier-patient/PrescriptionAccueilTab";
+import type { ServiceDestOverride } from "@/features/prescription/contexts/PrescriptionPanierContext";
 import { cn } from "@/lib/utils";
 import { accueilApiService } from "@/lib/clinical/accueil-api";
+import { patientService } from "@/lib/api";
 import { usePriseEnChargeName } from "@/components/clinical/bed-cards/usePriseEnChargeName";
 import { pickPriseEnChargeId } from "@/components/clinical/shared/utils";
 
@@ -220,6 +222,24 @@ function DossierPatientCompletPageContent() {
     };
   }, [patientId, urlChuId]);
 
+  // Service d'origine (fiche PatientBloc du bloc, distincte de l'identité Accueil ci-dessus) —
+  // sans lui, toute prescription "surveillance"/"transfusion" créée depuis cet onglet partait
+  // avec un service destinataire vide (voir PrescriptionPanierContext.SERVICE_DEST_MAP).
+  const [serviceDestOverride, setServiceDestOverride] = useState<ServiceDestOverride | undefined>(undefined);
+  useEffect(() => {
+    if (!patientId) { setServiceDestOverride(undefined); return; }
+    let active = true;
+    patientService.getById(patientId).then((p: any) => {
+      if (!active) return;
+      setServiceDestOverride(
+        p?.serviceOrigineId && p?.serviceOrigine
+          ? { serviceId: p.serviceOrigineId, serviceName: p.serviceOrigine }
+          : undefined,
+      );
+    }).catch(() => { if (active) setServiceDestOverride(undefined); });
+    return () => { active = false; };
+  }, [patientId]);
+
   const resolvedChuId = prefill?.chuId || urlChuId || undefined;
   const resolvedServiceId = prefill?.serviceId || urlServiceId || undefined;
   const resolvedEpisodeId =
@@ -373,7 +393,7 @@ function DossierPatientCompletPageContent() {
                   serviceId={resolvedServiceId}
                 />
               ) : activeTab === "prescription" && patientId ? (
-                <PrescriptionAccueilTab patientId={patientId} />
+                <PrescriptionAccueilTab patientId={patientId} serviceDestOverride={serviceDestOverride} />
               ) : activeTab === "cr_operatoire" && patientId ? (
                 <CrOperatoireTab patientId={patientId} />
               ) : activeTab === "sortie" && patientId ? (

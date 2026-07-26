@@ -5,12 +5,14 @@ import { ChecklistPendantOpController } from './checklist-pendant-op.controller'
 import { ChecklistPendantOpService } from './checklist-pendant-op.service';
 import { OperationGatewayModule } from '../operation-gateway/operation-gateway.module';
 import { PatientBlocModule } from '../patient-bloc/patient-bloc.module';
+import { TracabiliteModule } from '../tracabilite/tracabilite.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ChecklistPendantOp]),
     OperationGatewayModule,
     PatientBlocModule,
+    TracabiliteModule,
   ],
   controllers: [ChecklistPendantOpController],
   providers: [ChecklistPendantOpService],
