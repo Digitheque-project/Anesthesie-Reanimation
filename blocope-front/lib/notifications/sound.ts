@@ -75,3 +75,30 @@ export function demarrerAlarmeRepetee(intervalleMs = 2000): () => void {
   const id = setInterval(jouerBipAlarme, intervalleMs);
   return () => clearInterval(id);
 }
+
+// --- Sons de notification (fichiers réels, écran Notification CPA) ------------------------
+// Distincts des bips synthétisés ci-dessus : trois fichiers .wav fournis, un par type de
+// notification reçue sur l'écran "Notification CPA" (fil de prescription/demandes CPA).
+export type TypeNotificationSon = 'CPA_NORMALE' | 'PATIENT_URGENT' | 'PRESCRIPTION_NORMALE';
+
+const FICHIERS_SON_NOTIFICATION: Record<TypeNotificationSon, string> = {
+  // Demande de CPA (patient normal, venant d'un autre service).
+  CPA_NORMALE: '/sounds/DemandeCPA.wav',
+  // Patient urgent — demande de CPA ou prescription pour un patient à opérer, peu importe.
+  PATIENT_URGENT: '/sounds/PatientUrgent.wav',
+  // Prescription (patient normal, à opérer dans ce bloc).
+  PRESCRIPTION_NORMALE: '/sounds/NotificationPatientNormal(prescriptioon).wav',
+};
+
+export function jouerSonNotification(type: TypeNotificationSon) {
+  if (typeof window === 'undefined') return;
+  try {
+    const audio = new Audio(FICHIERS_SON_NOTIFICATION[type]);
+    audio.play().catch(() => {
+      // lecture bloquée par la politique autoplay du navigateur (pas encore d'interaction
+      // utilisateur sur la page) — on ignore silencieusement, rien de plus à faire ici.
+    });
+  } catch {
+    // fichier introuvable / API Audio indisponible — on ignore silencieusement
+  }
+}

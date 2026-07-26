@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import HeaderNotification from '@/components/bloc/notification-cpa/HeaderNotification'
 import StatsNotification from '@/components/bloc/notification-cpa/StatsNotification'
 import TableauNotifications from '@/components/bloc/notification-cpa/TableauNotifications'
@@ -12,6 +12,7 @@ import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { useRole } from '@/lib/hooks/useRole'
 import { dedupeParPatient } from '@/lib/notifications/dedupe'
 import { normaliserDemandeExterne } from '@/lib/notifications/normaliser-demande-externe'
+import { jouerSonNotification, type TypeNotificationSon } from '@/lib/notifications/sound'
 import { formaterNomPatient } from '@/lib/patient'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
@@ -29,8 +30,23 @@ export default function NotificationCPAPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedNotif, setSelectedNotif] = useState<any>(null)
   const [stats, setStats] = useState({ enAttente: 0, prioriteHaute: 0, rdvFixes24h: 0 })
+  // IDs déjà vus, pour ne jouer un son que sur une VRAIE nouvelle arrivée détectée entre deux
+  // rafraîchissements — jamais au premier chargement de la page (sinon un carillon à chaque
+  // ouverture, même quand rien de nouveau ne s'est passé depuis la dernière visite).
+  const idsConnus = useRef<Set<string> | null>(null)
 
-  useEffect(() => { charger() }, [])
+  useEffect(() => {
+    charger()
+    const intervalle = setInterval(charger, 20000)
+    return () => clearInterval(intervalle)
+  }, [])
+
+  const determinerSon = (n: any): TypeNotificationSon =>
+    (n.estUrgent || n.urgence === 3) ? 'PATIENT_URGENT' : n.origineExterne ? 'CPA_NORMALE' : 'PRESCRIPTION_NORMALE'
+
+  // Priorité d'affichage si plusieurs nouvelles notifications arrivent dans le même cycle : un
+  // patient urgent prime toujours, puis une demande CPA externe, puis une prescription normale.
+  const PRIORITE_SON: Record<TypeNotificationSon, number> = { PATIENT_URGENT: 3, CPA_NORMALE: 2, PRESCRIPTION_NORMALE: 1 }
 
   const charger = async () => {
     try {
@@ -44,6 +60,16 @@ export default function NotificationCPAPage() {
       // Un même patient peut apparaître plusieurs fois (plusieurs cycles d'ingestion, demande
       // interne + externe pour le même évènement...) — on ne garde qu'une entrée par patient.
       const toutes = dedupeParPatient([...notifs, ...demandesExternes])
+
+      if (idsConnus.current) {
+        const nouvelles = toutes.filter((n: any) => n.id && !idsConnus.current!.has(n.id))
+        if (nouvelles.length > 0) {
+          const son = nouvelles.map(determinerSon).sort((a, b) => PRIORITE_SON[b] - PRIORITE_SON[a])[0]
+          jouerSonNotification(son)
+        }
+      }
+      idsConnus.current = new Set(toutes.map((n: any) => n.id).filter(Boolean))
+
       setNotifications(toutes)
       setStats({
         enAttente: toutes.filter((n: any) => n.statut === 'EN_ATTENTE').length,
