@@ -1,6 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import {
+  ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
+} from 'recharts'
 import { rapportsService } from '@/lib/api'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import ExportToolbar from '@/components/bloc/layout/ExportToolbar'
@@ -9,11 +13,46 @@ import { libelleUrgence, styleUrgence } from '@/lib/urgence'
 
 const fmtDate = (v: any) => (v ? new Date(v).toLocaleDateString('fr-FR') : '—')
 
-const DECISION_STYLE: Record<string, { label: string; couleur: string; barre: string }> = {
-  APTE: { label: 'APTE', couleur: 'text-emerald-700', barre: 'bg-emerald-500' },
-  INAPTE: { label: 'INAPTE', couleur: 'text-red-700', barre: 'bg-red-500' },
-  REPORT: { label: 'REPORT', couleur: 'text-orange-700', barre: 'bg-orange-500' },
+const DECISION_STYLE: Record<string, { label: string; couleur: string; hex: string }> = {
+  APTE: { label: 'APTE', couleur: 'text-emerald-700', hex: '#10b981' },
+  INAPTE: { label: 'INAPTE', couleur: 'text-red-700', hex: '#ef4444' },
+  REPORT: { label: 'REPORT', couleur: 'text-orange-700', hex: '#f97316' },
 }
+
+const PALETTE_URGENCE: Record<string, string> = { NORMAL: '#3b82f6', URGENT: '#f97316', TRES_URGENT: '#ef4444' }
+const PALETTE_DONUT = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#14b8a6', '#f59e0b', '#6366f1']
+
+type Granularite = 'jour' | 'semaine' | 'mois' | 'annee'
+
+// Regroupe une série quotidienne {date, nbOperations} par jour/semaine/mois/année — calculé
+// côté client à partir des données déjà quotidiennes renvoyées par le backend, sans avoir besoin
+// d'un endpoint séparé par granularité.
+function cleEtLabel(dateStr: string, granularite: Granularite): { cle: string; label: string } {
+  const d = new Date(dateStr)
+  if (granularite === 'annee') {
+    const y = d.getFullYear()
+    return { cle: String(y), label: String(y) }
+  }
+  if (granularite === 'mois') {
+    const cle = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    return { cle, label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }) }
+  }
+  if (granularite === 'semaine') {
+    const debutSemaine = new Date(d)
+    const jourSemaine = (d.getDay() + 6) % 7 // lundi = 0
+    debutSemaine.setDate(d.getDate() - jourSemaine)
+    const cle = debutSemaine.toISOString().split('T')[0]
+    return { cle, label: `Sem. ${debutSemaine.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}` }
+  }
+  return { cle: dateStr, label: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) }
+}
+
+const GRANULARITES: { valeur: Granularite; label: string }[] = [
+  { valeur: 'jour', label: 'Jour' },
+  { valeur: 'semaine', label: 'Semaine' },
+  { valeur: 'mois', label: 'Mois' },
+  { valeur: 'annee', label: 'Année' },
+]
 
 export default function RapportsPage() {
   const [dashboard, setDashboard] = useState<any>(null)
@@ -26,6 +65,7 @@ export default function RapportsPage() {
   // les deux cas rendent le même tableau de bord vide, sans que l'utilisateur sache s'il doit
   // s'inquiéter d'un problème ou si c'est juste qu'aucune activité ne correspond encore.
   const [erreurChargement, setErreurChargement] = useState(false)
+  const [granulariteEvolution, setGranulariteEvolution] = useState<Granularite>('jour')
 
   useEffect(() => { setSession(obtenirSessionValide()) }, [])
   useEffect(() => { charger() }, [])
@@ -63,10 +103,36 @@ export default function RapportsPage() {
     )
   }, [operationsDetail, rechercheDetail])
 
-  const maxOperationsChir = Math.max(1, ...activiteChirurgiens.map(c => Number(c.nbOperations) || 0))
-  const maxActiviteAnesth = Math.max(1, ...activiteAnesthesistes.map(a => (Number(a.nbCPA) || 0) + (Number(a.nbOperations) || 0) + (Number(a.nbScoresSCCRE) || 0)))
-  const maxEvolution = Math.max(1, ...evolution.map(e => Number(e.nbOperations) || 0))
-  const totalTypes = typesChirurgie.reduce((s, t) => s + Number(t.count || 0), 0) || 1
+  const evolutionAgregee = useMemo(() => {
+    const map = new Map<string, { cle: string; label: string; nbOperations: number }>()
+    for (const e of evolution) {
+      const { cle, label } = cleEtLabel(e.date, granulariteEvolution)
+      const existant = map.get(cle)
+      if (existant) existant.nbOperations += Number(e.nbOperations) || 0
+      else map.set(cle, { cle, label, nbOperations: Number(e.nbOperations) || 0 })
+    }
+    return Array.from(map.values()).sort((a, b) => a.cle.localeCompare(b.cle))
+  }, [evolution, granulariteEvolution])
+
+  const decisionsCPAGraph = decisionsCPA.map((d: any) => ({
+    name: DECISION_STYLE[d.decision]?.label || d.decision,
+    value: Number(d.count) || 0,
+    fill: DECISION_STYLE[d.decision]?.hex || '#94a3b8',
+  }))
+  const patientsParStatutGraph = patientsParStatut.map((s: any, i: number) => ({
+    name: s.statut, value: Number(s.count) || 0, fill: PALETTE_DONUT[i % PALETTE_DONUT.length],
+  }))
+  const urgencesParNiveauGraph = urgencesParNiveau.map((u: any) => ({
+    name: libelleUrgence(u.niveauUrgence), value: Number(u.count) || 0, fill: PALETTE_URGENCE[u.niveauUrgence] || '#94a3b8',
+  }))
+  const typesChirurgieGraph = typesChirurgie.slice(0, 8).map((t: any) => ({ name: t.type, count: Number(t.count) || 0 }))
+  const activiteChirurgiensGraph = activiteChirurgiens.map((c: any) => ({
+    name: c.nomComplet?.trim() || 'Non renseigné', nbOperations: Number(c.nbOperations) || 0,
+  }))
+  const activiteAnesthesistesGraph = activiteAnesthesistes.map((a: any) => ({
+    name: a.nomComplet?.trim() || 'Non renseigné',
+    CPA: Number(a.nbCPA) || 0, Opérations: Number(a.nbOperations) || 0, 'Scores SCCRE': Number(a.nbScoresSCCRE) || 0,
+  }))
 
   // ————— Colonnes / lignes pour les exports —————
   const colonnesChirurgiens: Colonne[] = [{ cle: 'nomComplet', titre: 'Chirurgien' }, { cle: 'nbOperations', titre: "Nb opérations" }]
@@ -177,39 +243,50 @@ export default function RapportsPage() {
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-amber-600">gavel</span> Décisions CPA
           </h3>
-          {decisionsCPA.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <div className="space-y-3">
-              {decisionsCPA.map((d: any, i: number) => {
-                const style = DECISION_STYLE[d.decision] || DECISION_STYLE.REPORT
-                const total = decisionsCPA.reduce((s, x) => s + Number(x.count || 0), 0) || 1
-                return (
-                  <div key={i} className="space-y-1">
-                    <div className={`flex justify-between text-[11px] font-bold ${style.couleur}`}><span>{style.label}</span><span>{d.count}</span></div>
-                    <div className="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
-                      <div className={`h-full ${style.barre}`} style={{ width: `${(Number(d.count) / total) * 100}%` }}></div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+          {decisionsCPAGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={decisionsCPAGraph} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={3}>
+                  {decisionsCPAGraph.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Pie>
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
           )}
         </div>
 
-        {/* Évolution quotidienne */}
+        {/* Évolution des opérations */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
-          <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
-            <span className="material-symbols-outlined text-emerald-600">show_chart</span> Évolution des opérations
-          </h3>
-          {evolution.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée sur la période.</p> : (
-            <>
-              <div className="flex items-end gap-1 h-32">
-                {evolution.slice(-14).map((e: any, i: number) => (
-                  <div key={i} className="flex-1 bg-emerald-400 rounded-t-sm hover:bg-emerald-500 transition-colors" title={`${fmtDate(e.date)} : ${e.nbOperations}`}
-                    style={{ height: `${Math.max(4, (Number(e.nbOperations) / maxEvolution) * 100)}%` }}></div>
-                ))}
-              </div>
-              <p className="text-[10px] text-on-surface-variant mt-2 text-center">{evolution.length} jour(s) avec activité — {evolution.slice(-14).length} derniers affichés</p>
-            </>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 className="text-sm font-bold flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
+              <span className="material-symbols-outlined text-emerald-600">show_chart</span> Évolution des opérations
+            </h3>
+            <div className="flex bg-surface-container-low rounded-lg p-0.5 print:hidden">
+              {GRANULARITES.map(g => (
+                <button key={g.valeur} onClick={() => setGranulariteEvolution(g.valeur)}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${granulariteEvolution === g.valeur ? 'bg-emerald-500 text-white shadow-sm' : 'text-on-surface-variant hover:bg-white'}`}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {evolutionAgregee.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée sur la période.</p> : (
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={evolutionAgregee}>
+                <defs>
+                  <linearGradient id="degradeEvolution" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
+                <Tooltip />
+                <Area type="monotone" dataKey="nbOperations" name="Opérations" stroke="#10b981" fill="url(#degradeEvolution)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -218,18 +295,16 @@ export default function RapportsPage() {
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-violet-600">biotech</span> Types de chirurgie
           </h3>
-          {typesChirurgie.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <div className="space-y-2.5">
-              {typesChirurgie.slice(0, 6).map((t: any, i: number) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="text-xs font-bold w-24 truncate" title={t.type}>{t.type}</span>
-                  <div className="flex-1 h-2 bg-surface-container-low rounded-full overflow-hidden">
-                    <div className="h-full bg-violet-500 rounded-full" style={{ width: `${(Number(t.count) / totalTypes) * 100}%` }}></div>
-                  </div>
-                  <span className="text-xs font-bold text-on-surface-variant w-8 text-right">{t.count}</span>
-                </div>
-              ))}
-            </div>
+          {typesChirurgieGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={typesChirurgieGraph} layout="vertical" margin={{ left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
+                <Tooltip />
+                <Bar dataKey="count" name="Nb" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>
@@ -240,28 +315,33 @@ export default function RapportsPage() {
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-blue-600">pie_chart</span> Patients par statut
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {patientsParStatut.map((s: any, i: number) => (
-              <span key={i} className="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full text-xs font-bold text-blue-800">
-                {s.statut} <span className="text-blue-500">· {s.count}</span>
-              </span>
-            ))}
-          </div>
+          {patientsParStatutGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={patientsParStatutGraph} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                  {patientsParStatutGraph.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Pie>
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-red-600">emergency</span> Urgences par niveau (patients actifs)
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {urgencesParNiveau.map((u: any, i: number) => {
-              const style = styleUrgence(u.niveauUrgence)
-              return (
-                <span key={i} className={`px-3 py-1.5 bg-white border rounded-full text-xs font-bold ${style.texte}`} style={{ borderColor: 'currentColor' }}>
-                  {libelleUrgence(u.niveauUrgence)} · {u.count}
-                </span>
-              )
-            })}
-          </div>
+          {urgencesParNiveauGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={urgencesParNiveauGraph} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                  {urgencesParNiveauGraph.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Pie>
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -271,40 +351,35 @@ export default function RapportsPage() {
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-blue-600">content_cut</span> Activité par chirurgien
           </h3>
-          {activiteChirurgiens.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {activiteChirurgiens.map((c: any, i: number) => (
-                <div key={i} className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-bold text-on-surface"><span>{c.nomComplet?.trim() || 'Non renseigné'}</span><span>{c.nbOperations}</span></div>
-                  <div className="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
-                    <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(Number(c.nbOperations) / maxOperationsChir) * 100}%` }}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {activiteChirurgiensGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={Math.max(220, activiteChirurgiensGraph.length * 32)}>
+              <BarChart data={activiteChirurgiensGraph} layout="vertical" margin={{ left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
+                <Tooltip />
+                <Bar dataKey="nbOperations" name="Opérations" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-secondary">medical_services</span> Activité par anesthésiste
           </h3>
-          {activiteAnesthesistes.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {activiteAnesthesistes.map((a: any, i: number) => {
-                const totalPerso = (Number(a.nbCPA) || 0) + (Number(a.nbOperations) || 0) + (Number(a.nbScoresSCCRE) || 0)
-                return (
-                  <div key={i} className="space-y-1">
-                    <div className="flex justify-between text-[11px] font-bold text-on-surface">
-                      <span>{a.nomComplet?.trim() || 'Non renseigné'}</span>
-                      <span>{a.nbCPA} CPA · {a.nbOperations} op. · {a.nbScoresSCCRE} SCCRE</span>
-                    </div>
-                    <div className="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
-                      <div className="bg-secondary h-full rounded-full" style={{ width: `${(totalPerso / maxActiviteAnesth) * 100}%` }}></div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+          {activiteAnesthesistesGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={Math.max(220, activiteAnesthesistesGraph.length * 40)}>
+              <BarChart data={activiteAnesthesistesGraph} layout="vertical" margin={{ left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Bar dataKey="CPA" stackId="a" fill="#8b5cf6" />
+                <Bar dataKey="Opérations" stackId="a" fill="#3b82f6" />
+                <Bar dataKey="Scores SCCRE" stackId="a" fill="#14b8a6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>

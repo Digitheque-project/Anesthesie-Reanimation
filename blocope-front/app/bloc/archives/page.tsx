@@ -36,11 +36,15 @@ export default function ArchivesPage() {
   const [onglet, setOnglet] = useState<Onglet>('OPERES')
 
   // --- Patients opérés (parcours complet du bloc, jusqu'à la sortie) ---------------------
+  // Défilement continu plutôt que pagination : la page suivante se charge silencieusement en
+  // arrivant en bas de la liste, ajoutée à la suite plutôt que de remplacer l'écran.
+  const LIMITE_PATIENTS = 20
   const [patients, setPatients] = useState<any[]>([])
   const [loadingPatients, setLoadingPatients] = useState(true)
+  const [loadingPlus, setLoadingPlus] = useState(false)
   const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pages, setPages] = useState(0)
+  const [pageActuelle, setPageActuelle] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
 
   // --- Demandes CPA externes (parcours court : avis demandé, résultat renvoyé) ------------
   const [demandes, setDemandes] = useState<any[]>([])
@@ -55,7 +59,7 @@ export default function ArchivesPage() {
   const [dateFin, setDateFin] = useState('')
   const [exportPdfEnCours, setExportPdfEnCours] = useState<string | null>(null)
 
-  useEffect(() => { chargerPatients() }, [page, recherche, filtreSexe, dateDebut, dateFin])
+  useEffect(() => { chargerPatients() }, [recherche, filtreSexe, dateDebut, dateFin])
   useEffect(() => { chargerDemandes() }, [])
 
   const filtresActifsPatients = (liste: any[]) => {
@@ -71,17 +75,51 @@ export default function ArchivesPage() {
     try {
       const data = await patientService.getAll({
         statut: 'SORTI',
-        page,
-        limite: 12,
+        page: 1,
+        limite: LIMITE_PATIENTS,
         recherche: recherche || undefined,
       })
-      setPatients(filtresActifsPatients(data.data || []))
+      const lignes = data.data || []
+      setPatients(filtresActifsPatients(lignes))
       setTotal(data.total || 0)
-      setPages(data.pages || 0)
+      setPageActuelle(1)
+      setHasMore(lignes.length < (data.total || 0))
     } catch (err) {
       console.error('Erreur:', err)
     } finally {
       setLoadingPatients(false)
+    }
+  }
+
+  // Appelée en arrivant en bas de la liste — ajoute la page suivante à la suite de celle déjà
+  // affichée, sans jamais remplacer ce qui est déjà chargé.
+  const chargerPlusPatients = async () => {
+    if (loadingPlus || loadingPatients || !hasMore) return
+    setLoadingPlus(true)
+    try {
+      const pageSuivante = pageActuelle + 1
+      const data = await patientService.getAll({
+        statut: 'SORTI',
+        page: pageSuivante,
+        limite: LIMITE_PATIENTS,
+        recherche: recherche || undefined,
+      })
+      const lignes = data.data || []
+      setPatients(prev => [...prev, ...filtresActifsPatients(lignes)])
+      setTotal(data.total || 0)
+      setPageActuelle(pageSuivante)
+      setHasMore(pageSuivante * LIMITE_PATIENTS < (data.total || 0))
+    } catch (err) {
+      console.error('Erreur:', err)
+    } finally {
+      setLoadingPlus(false)
+    }
+  }
+
+  const handleScrollPatients = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 150) {
+      chargerPlusPatients()
     }
   }
 
@@ -235,7 +273,7 @@ export default function ArchivesPage() {
               </label>
               <input className="w-full bg-white border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 shadow-sm"
                 placeholder="Rechercher..." type="text" value={recherche}
-                onChange={e => { setRecherche(e.target.value); setPage(1) }} />
+                onChange={e => setRecherche(e.target.value)} />
             </div>
 
             {showFiltres && (
@@ -299,7 +337,7 @@ export default function ArchivesPage() {
         <>
         {/* Tableau — Patients opérés */}
         <div className="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm border border-surface-container">
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto" onScroll={handleScrollPatients}>
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-dim/30 border-b border-surface-container sticky top-0 z-10">
@@ -366,25 +404,22 @@ export default function ArchivesPage() {
                     </td>
                   </tr>
                 ))}
+                {loadingPlus && (
+                  <tr><td colSpan={7} className="px-6 py-4 text-center text-xs text-on-surface-variant">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                      Chargement de la suite...
+                    </span>
+                  </td></tr>
+                )}
               </tbody>
             </table>
           </div>
-          {/* Pagination */}
-          <div className="p-6 bg-surface-container-low flex items-center justify-between print:hidden">
+          <div className="px-6 py-4 bg-surface-container-low print:hidden">
             <p className="text-xs font-medium text-on-surface-variant">
               Affichage de <span className="font-bold">{patients.length}</span> sur <span className="font-bold">{total}</span> patients archivés
+              {hasMore && !loadingPlus && <span className="italic"> — faites défiler pour en voir plus</span>}
             </p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-                className="px-4 py-2 rounded-lg border border-outline-variant text-sm font-bold hover:bg-surface-container transition-colors disabled:opacity-50">
-                ← Précédent
-              </button>
-              <span className="text-sm font-bold text-on-surface">Page {page}/{pages || 1}</span>
-              <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page >= pages}
-                className="px-4 py-2 rounded-lg border border-outline-variant text-sm font-bold hover:bg-surface-container transition-colors disabled:opacity-50">
-                Suivant →
-              </button>
-            </div>
           </div>
         </div>
         </>
