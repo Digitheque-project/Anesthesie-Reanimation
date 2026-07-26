@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { SortieReveil } from '../entities/sortie-reveil.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
+import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
+import { PatientStatut } from '../entities/patient-bloc.entity';
 import { CentralUser } from '../central-auth/central-user.interface';
 import { CreateSortieReveilDto } from './dto/create-sortie-reveil.dto';
 import { UpdateSortieReveilDto } from './dto/update-sortie-reveil.dto';
@@ -14,6 +16,7 @@ export class SortieReveilService {
     @InjectRepository(SortieReveil) private repo: Repository<SortieReveil>,
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
+    private patientBlocStatutService: PatientBlocStatutService,
   ) {}
 
   // Le médecin autorisant la sortie est toujours l'anesthésiste connecté (route réservée au
@@ -26,7 +29,17 @@ export class SortieReveilService {
     const saved = await this.repo.save(
       this.repo.create({ ...(dto as any), medecinId: centralUser.userId }),
     );
-    return Array.isArray(saved) ? saved[0] : saved;
+    const sortie = Array.isArray(saved) ? saved[0] : saved;
+    // Sans ce passage à SORTI, le patient reste indéfiniment à EN_SALLE_REVEIL : jamais visible
+    // aux Archives (filtrées sur statut=SORTI) ni dans le décompte de sorties des Rapports,
+    // alors même que sa sortie vient d'être validée.
+    if (sortie.patientId) {
+      await this.patientBlocStatutService.changerStatut(
+        sortie.patientId,
+        PatientStatut.SORTI,
+      );
+    }
+    return sortie;
   }
   async findAll(page = 1, limite = 10) {
     const [data, total] = await this.repo.findAndCount({

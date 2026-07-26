@@ -22,17 +22,23 @@ export default function RapportsPage() {
   const [dateFin, setDateFin] = useState('')
   const [rechercheDetail, setRechercheDetail] = useState('')
   const [session, setSession] = useState<ReturnType<typeof obtenirSessionValide>>(null)
+  // Distingue "erreur technique de chargement" de "aucune donnée pour l'instant" — sans quoi
+  // les deux cas rendent le même tableau de bord vide, sans que l'utilisateur sache s'il doit
+  // s'inquiéter d'un problème ou si c'est juste qu'aucune activité ne correspond encore.
+  const [erreurChargement, setErreurChargement] = useState(false)
 
   useEffect(() => { setSession(obtenirSessionValide()) }, [])
   useEffect(() => { charger() }, [])
 
   const charger = async () => {
     setLoading(true)
+    setErreurChargement(false)
     try {
       const data = await rapportsService.getTableauDeBord(dateDebut || undefined, dateFin || undefined)
       setDashboard(data)
     } catch (err) {
       console.error('Erreur chargement tableau de bord:', err)
+      setErreurChargement(true)
     } finally {
       setLoading(false)
     }
@@ -104,6 +110,14 @@ export default function RapportsPage() {
         </div>
         <ExportToolbar onImprimer={imprimerSection} onCSV={handleCSV} onExcel={handleExcel} onPDF={handlePDF} />
       </div>
+
+      {erreurChargement && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 text-sm text-red-800 print:hidden">
+          <span className="material-symbols-outlined">error</span>
+          <span>Le tableau de bord n'a pas pu être chargé (erreur technique) — ce n'est pas forcément qu'il n'y a aucune activité. Réessayez ou contactez le support si le problème persiste.</span>
+          <button onClick={charger} className="ml-auto px-4 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg">Réessayer</button>
+        </div>
+      )}
 
       {/* Filtre de période */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-wrap items-end gap-3 print:hidden">
