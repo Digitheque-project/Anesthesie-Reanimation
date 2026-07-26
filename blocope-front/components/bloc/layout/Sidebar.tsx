@@ -6,58 +6,35 @@ import { usePathname } from "next/navigation";
 import { NavItem } from "@/types/bloc";
 import { effacerSession, redirigerVersLogin } from "@/lib/auth/central-session";
 
-const navItems: NavItem[] = [
-  {
-    label: 'Tableau de bord',
-    href: '/bloc',
-    icon: 'dashboard',
-  },
-  {
-    label: 'Prescription',
-    href: '/bloc/notification-cpa',
-    icon: 'notification_important',
-  },
-  {
-    label: 'Fil de travail',
-    href: '/bloc/rendez-vous',
-    icon: 'calendar_today',
-  },
-  {
-    label: 'Programme opératoire',
-    href: '/bloc/patient-du-jour',
-    icon: 'person',
-  },
-  {
-    label: 'Salle de réveil',
-    href: '/bloc/salle-de-reveil',
-    icon: 'bed',
-  },
-  {
-    label: 'Archives',
-    href: '/bloc/archives',
-    icon: 'inventory_2',
-  },
-  {
-    label: 'Rapport',
-    href: '/bloc/rapport',
-    icon: 'assessment',
-  },
+type NavItemColore = NavItem & { couleur: { bg: string; texte: string } };
+
+// Une couleur propre par rubrique — plus facile à repérer d'un coup d'œil qu'une icône
+// uniformément grise, et cohérent avec le style d'icônes-dans-pastille déjà utilisé ailleurs
+// dans l'app (cartes KPI des Rapports, en-têtes de section...).
+const navItems: NavItemColore[] = [
+  { label: 'Tableau de bord', href: '/bloc', icon: 'space_dashboard', couleur: { bg: 'bg-blue-100', texte: 'text-blue-600' } },
+  { label: 'Prescription', href: '/bloc/notification-cpa', icon: 'mark_email_unread', couleur: { bg: 'bg-amber-100', texte: 'text-amber-600' } },
+  { label: 'Fil de travail', href: '/bloc/rendez-vous', icon: 'event_note', couleur: { bg: 'bg-violet-100', texte: 'text-violet-600' } },
+  { label: 'Programme opératoire', href: '/bloc/patient-du-jour', icon: 'medical_services', couleur: { bg: 'bg-teal-100', texte: 'text-teal-600' } },
+  { label: 'Salle de réveil', href: '/bloc/salle-de-reveil', icon: 'king_bed', couleur: { bg: 'bg-rose-100', texte: 'text-rose-600' } },
+  { label: 'Archives', href: '/bloc/archives', icon: 'folder_special', couleur: { bg: 'bg-indigo-100', texte: 'text-indigo-600' } },
+  { label: 'Rapport', href: '/bloc/rapport', icon: 'monitoring', couleur: { bg: 'bg-emerald-100', texte: 'text-emerald-600' } },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 border-r border-surface-variant/30 bg-[#dbf1fe]">
+    <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 border-r border-surface-variant/30 bg-sky-50">
       {/* Logo and Brand */}
       <div className="px-6 py-4 flex flex-col items-center shrink-0">
         <div className="relative w-14 h-14 mb-2">
           <Image
-          src="/images/CHU-logos.png"
+          src="/images/chu.jpeg"
           alt="CHU"
           width={56}
           height={56}
-          className="rounded-full object-cover border-2 border-blue-500 shadow-md" />
+          className="rounded-full object-cover border-2 border-blue-500 shadow-md bg-white" />
         </div>
         <h1 className="font-headline font-extrabold text-primary text-center text-sm tracking-tight leading-tight">
           Service Anesthésie-Réanimation
@@ -77,14 +54,16 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
                 isActive
                   ? "bg-white text-primary font-bold shadow-sm"
-                  : "text-[#424752] hover:bg-white/40 font-medium"
+                  : "text-[#424752] hover:bg-white/60 font-medium"
               }`}
             >
-              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">
-                {item.icon}
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.couleur.bg} ${item.couleur.texte} group-hover:scale-110 transition-transform`}>
+                <span className="material-symbols-outlined text-[19px]" style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+                  {item.icon}
+                </span>
               </span>
               <span className="text-sm">{item.label}</span>
             </Link>
@@ -93,7 +72,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="mt-auto p-3 border-t border-surface-variant/20 space-y-1 shrink-0">
+      <div className="mt-auto p-3 border-t border-surface-container/20 space-y-1 shrink-0">
         <button
           className="w-full flex items-center gap-3 px-4 py-2 text-[#424752] hover:text-error transition-all group"
           onClick={() => { effacerSession(); redirigerVersLogin(); }}
