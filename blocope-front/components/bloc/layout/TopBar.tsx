@@ -34,8 +34,9 @@ export default function TopBar() {
       const notifs = dedupeParPatient([...(notifsRes.data || []), ...demandesExternes]);
       setNotifications(notifs);
 
-      // ← MODIFIÉ: Compter les notifications non lues
+      // Compter les notifications non lues — ni traitées (statut) ni déjà écartées (lu)
       const unread = notifs.filter((n: any) => {
+        if (n.lu) return false;
         // Pour les notifications internes (avec statut)
         if (n.statut) return n.statut === 'EN_ATTENTE';
         // Pour les notifications webhook (avec processed)
@@ -79,12 +80,20 @@ export default function TopBar() {
 
   if (pathname === '/login') return null;
 
-  // ← NOUVEAU: Marquer une notification comme lue
+  // Marquer une notification comme lue — persisté en base pour les notifications internes
+  // (voir notificationService.marquerLu), l'état local ci-dessous ne sert qu'à mettre à jour
+  // le compteur/la liste immédiatement, sans attendre le prochain rafraîchissement périodique.
+  const handleMarkAsRead = (notificationId: string) => {
+    notificationService.marquerLu(notificationId).catch((err) =>
+      console.error('Erreur marquage notification lue:', err)
+    );
+  };
+
   const handleNotificationRead = (notificationId: string) => {
     setUnreadCount(prev => Math.max(0, prev - 1));
     setNotifications(prev =>
       prev.map(n =>
-        n.id === notificationId ? { ...n, statut: 'LU', processed: true } : n
+        n.id === notificationId ? { ...n, lu: true } : n
       )
     );
   };
@@ -145,6 +154,7 @@ export default function TopBar() {
       isOpen={isModalOpen}
       onClose={() => setIsModalOpen(false)}
       notifications={notifications}
+      onMarkAsRead={handleMarkAsRead}
       onNotificationRead={handleNotificationRead}
     />
     </>

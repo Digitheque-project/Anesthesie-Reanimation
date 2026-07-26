@@ -64,6 +64,17 @@ export class NotificationCPA {
   })
   statut: StatutNotificationCPA;
 
+  // Distinct de `statut` (qui suit l'avancement du traitement — planifié, réalisé...) : une
+  // notification peut être vue/écartée sans que sa demande sous-jacente soit encore traitée.
+  // Sans ce champ, "marquer comme lu" ne pouvait jamais persister — l'ancienne implémentation
+  // n'existait qu'en mémoire locale du navigateur (perdue au rechargement, jamais filtrée nulle
+  // part), et son unique appel API visait une route qui n'a jamais existé côté backend.
+  @Column({ default: false })
+  lu: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  luLe: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

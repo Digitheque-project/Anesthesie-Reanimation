@@ -71,13 +71,8 @@ export const notificationService = {
   },
 
   marquerLu: async (id: string) => {
-    try {
-      const { data } = await apiClient.put(`/notifications-cpa/${id}/read`)
-      return data
-    } catch (error) {
-      console.warn('⚠️ API indisponible - simulation marquage lu')
-      return { success: true }
-    }
+    const { data } = await apiClient.patch(`/notifications-cpa/${id}/lu`)
+    return data
   },
 
   creerVpaDirect: async (payload: any) => {

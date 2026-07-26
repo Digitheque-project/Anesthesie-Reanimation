@@ -156,6 +156,16 @@ export class NotificationCPAService {
     return this.notificationRepo.save(Object.assign(n, dto));
   }
 
+  // Marque la notification comme vue/écartée — indépendant de `statut`, qui suit l'avancement
+  // du traitement (planifié, réalisé...). Une notification peut être lue sans être traitée.
+  async marquerLu(id: string): Promise<NotificationCPA> {
+    const n = await this.notificationRepo.findOne({ where: { id } });
+    if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
+    n.lu = true;
+    n.luLe = new Date();
+    return this.notificationRepo.save(n);
+  }
+
   async remove(id: string): Promise<{ message: string }> {
     const n = await this.notificationRepo.findOne({ where: { id } });
     if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
@@ -164,8 +174,10 @@ export class NotificationCPAService {
   }
 
   async getUnreadCount(): Promise<number> {
+    // "Non lu" = pas encore traité ET pas encore écarté par l'utilisateur — un item déjà
+    // planifié/réalisé n'a plus besoin d'attention, tout comme un item explicitement marqué lu.
     const internalUnread = await this.notificationRepo.count({
-      where: { statut: StatutNotificationCPA.EN_ATTENTE },
+      where: { statut: StatutNotificationCPA.EN_ATTENTE, lu: false },
     });
     const externalUnread = await this.webhookRepo.count({
       where: { processed: false },

@@ -61,6 +61,12 @@ export class NotificationCPAController {
     return this.service.planifierRDV(id, dto);
   }
 
+  @Patch(':id/lu')
+  @ApiOperation({ summary: 'Marquer une notification comme lue' })
+  marquerLu(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.marquerLu(id);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Supprimer une notification' })
   remove(@Param('id', ParseUUIDPipe) id: string) {

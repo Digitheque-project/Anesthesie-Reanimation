@@ -79,8 +79,10 @@ export default function NotificationModal({
 
   if (!isOpen || !notifications || notifications.length === 0) return null;
 
-  // Calculer le nombre de notifications non lues
-  const unreadCount = notifications.filter(n => !readNotifications.has(n.id)).length;
+  // Une notification déjà lue (marquée dans cette session, ou déjà `lu` en base lors d'une
+  // session précédente) ne doit plus apparaître dans le tiroir — pas juste être re-stylée.
+  const notificationsAffichees = notifications.filter(n => !readNotifications.has(n.id) && !n.lu);
+  const unreadCount = notificationsAffichees.length;
 
   const handleClose = () => {
     setIsClosing(true);
@@ -97,7 +99,10 @@ export default function NotificationModal({
       newRead.add(notification.id);
       setReadNotifications(newRead);
 
-      if (onMarkAsRead) {
+      // Persisté en base uniquement pour les notifications internes (NotificationCPA) — une
+      // demande de CPA externe n'a pas de champ `lu`, seul son `statut` fait foi (voir la liste
+      // /bloc/notification-cpa, qui l'exclut déjà une fois planifiée).
+      if (onMarkAsRead && !notification.origineExterne) {
         onMarkAsRead(notification.id);
       }
 
@@ -124,7 +129,7 @@ export default function NotificationModal({
     notifications.forEach(n => {
       if (n.id && !newRead.has(n.id)) {
         newRead.add(n.id);
-        if (onMarkAsRead) {
+        if (onMarkAsRead && !n.origineExterne) {
           onMarkAsRead(n.id);
         }
         if (onNotificationRead) {
@@ -135,7 +140,7 @@ export default function NotificationModal({
     setReadNotifications(newRead);
   };
 
-  const allRead = notifications.every(n => readNotifications.has(n.id));
+  const allRead = notificationsAffichees.length === 0;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -193,7 +198,7 @@ export default function NotificationModal({
           )}
 
           {/* Statut "Toutes lues" */}
-          {allRead && notifications.length > 0 && (
+          {allRead && (
             <div className="bg-green-100 border-b border-green-300 px-6 py-3 flex items-center gap-2 shrink-0">
               <span className="material-symbols-outlined text-green-600 text-lg">check_circle</span>
               <p className="text-green-800 font-bold text-sm">
@@ -202,18 +207,15 @@ export default function NotificationModal({
             </div>
           )}
 
-          {/* Liste des notifications */}
+          {/* Liste des notifications — les lues ont déjà disparu de notificationsAffichees */}
           <div className="p-4 flex-1 overflow-y-auto space-y-3">
-            {notifications.map((notification, index) => {
-              const isRead = readNotifications.has(notification.id);
+            {notificationsAffichees.map((notification, index) => {
               const niveau = getNiveauUrgence(notification);
               const config = URGENCE_CONFIG[niveau];
               return (
                 <div
                   key={notification.id || index}
-                  className={`bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow ${
-                    isRead ? 'border-green-300 bg-green-50/50' : config.cardClass
-                  }`}
+                  className={`bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow ${config.cardClass}`}
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${config.iconWrapClass}`}>
@@ -227,14 +229,7 @@ export default function NotificationModal({
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${config.badgeClass}`}>
                           {libelleUrgence(niveau)}
                         </span>
-                        {isRead && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
-                            ✓ Lu
-                          </span>
-                        )}
-                        {!isRead && (
-                          <span className={`w-2 h-2 rounded-full animate-pulse ${config.dotClass}`}></span>
-                        )}
+                        <span className={`w-2 h-2 rounded-full animate-pulse ${config.dotClass}`}></span>
                       </div>
                     </div>
                   </div>
@@ -287,20 +282,16 @@ export default function NotificationModal({
                   <div className="mb-3">
                     <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Service source</p>
                     <p className="text-sm font-medium text-gray-800">
-                      {notification.sourceServiceName || notification.sourceServiceId || 'N/A'}
+                      {notification.sourceServiceName || notification.serviceSourceNom || notification.serviceSourceId || 'N/A'}
                     </p>
                   </div>
 
                   <button
                     onClick={() => handleVoirPrescription(notification)}
-                    className={`w-full py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                      isRead
-                        ? 'bg-green-300 hover:bg-green-400 text-gray-700'
-                        : 'bg-yellow-400 hover:bg-yellow-500 text-gray-800'
-                    }`}
+                    className="w-full py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800"
                   >
                     <span className="material-symbols-outlined text-lg">description</span>
-                    {isRead ? 'Déjà lu ✓' : 'Voir prescription'}
+                    Voir prescription
                   </button>
                 </div>
               );

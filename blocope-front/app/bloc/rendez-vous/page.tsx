@@ -50,9 +50,12 @@ export default function RendezVousPage() {
         setCreneaux(rows);
       } else {
         const data = await planningService.getJour(selectedDate, onglet);
-        // Patient à statut Normal apte pour le CPA uniquement
+        // Patient normal, dont la CPA reste réellement à faire — un créneau CPA planifié pour
+        // un patient déjà CPA_REALISE/CPA_INAPTE (ou plus loin dans le parcours) ne doit plus
+        // apparaître ici : sans ce filtre, valider une CPA renvoyait l'utilisateur directement
+        // sur cet onglet où le patient qu'il venait de traiter réapparaissait aussitôt.
         const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
-          (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut !== 'CPA_INAPTE'
+          (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut === 'EN_ATTENTE_CPA'
         );
         setCreneaux(filtres);
       }
