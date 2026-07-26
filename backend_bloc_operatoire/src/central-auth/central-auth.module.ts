@@ -8,6 +8,10 @@ import { ServiceTokenService } from './service-token.service';
 @Module({
   imports: [JwtModule.register({}), ConfigModule],
   providers: [CentralAuthGuard, ServiceTokenService],
-  exports: [CentralAuthGuard, ServiceTokenService],
+  // JwtModule doit être ré-exporté : AppModule instancie sa propre copie de CentralAuthGuard
+  // (APP_GUARD, useClass) et a donc besoin de résoudre JwtService lui-même — jusqu'ici fourni
+  // incidemment par l'AuthModule local (supprimé), qui exportait aussi JwtModule sans lien
+  // avec ce module-ci.
+  exports: [CentralAuthGuard, ServiceTokenService, JwtModule],
 })
 export class CentralAuthModule {}

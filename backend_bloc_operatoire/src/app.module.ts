@@ -15,7 +15,6 @@ import { ProtocoleOperatoireModule } from './protocole-operatoire/protocole-oper
 import { ScoreSCCREModule } from './score-sccre/score-sccre.module';
 import { SortieReveilModule } from './sortie-reveil/sortie-reveil.module';
 import { NotificationCPAModule } from './notification-cpa/notification-cpa.module';
-import { AuthModule } from './auth/auth.module';
 import { ArchivesModule } from './archives/archives.module';
 import { RapportsModule } from './rapports/rapports.module';
 import { PlanningModule } from './planning/planning.module';
@@ -69,7 +68,6 @@ import centralAuthConfig from './config/central-auth.config';
     ScoreSCCREModule,
     SortieReveilModule,
     NotificationCPAModule,
-    AuthModule,
     ArchivesModule,
     RapportsModule,
     PlanningModule,
