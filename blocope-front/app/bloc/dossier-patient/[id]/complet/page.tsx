@@ -31,6 +31,7 @@ import type { ServiceDestOverride } from "@/features/prescription/contexts/Presc
 import { cn } from "@/lib/utils";
 import { accueilApiService } from "@/lib/clinical/accueil-api";
 import { patientService } from "@/lib/api";
+import { libelleStatutPatient, styleStatutPatient } from "@/lib/statut";
 import { usePriseEnChargeName } from "@/components/clinical/bed-cards/usePriseEnChargeName";
 import { pickPriseEnChargeId } from "@/components/clinical/shared/utils";
 
@@ -222,21 +223,26 @@ function DossierPatientCompletPageContent() {
     };
   }, [patientId, urlChuId]);
 
-  // Service d'origine (fiche PatientBloc du bloc, distincte de l'identité Accueil ci-dessus) —
-  // sans lui, toute prescription "surveillance"/"transfusion" créée depuis cet onglet partait
-  // avec un service destinataire vide (voir PrescriptionPanierContext.SERVICE_DEST_MAP).
+  // Fiche PatientBloc du bloc (distincte de l'identité Accueil ci-dessus) — fournit le service
+  // d'origine (sans lui, toute prescription "surveillance"/"transfusion" créée depuis cet onglet
+  // partait avec un service destinataire vide, voir PrescriptionPanierContext.SERVICE_DEST_MAP)
+  // et surtout le vrai statut de parcours du patient (CPA, VPA, en attente, ...), affiché dans
+  // l'en-tête ci-dessous : ce dossier "intégré" doit refléter le statut à jour, pas seulement
+  // l'identité brute renvoyée par le service Accueil.
+  const [blocPatient, setBlocPatient] = useState<any>(null);
   const [serviceDestOverride, setServiceDestOverride] = useState<ServiceDestOverride | undefined>(undefined);
   useEffect(() => {
-    if (!patientId) { setServiceDestOverride(undefined); return; }
+    if (!patientId) { setServiceDestOverride(undefined); setBlocPatient(null); return; }
     let active = true;
     patientService.getById(patientId).then((p: any) => {
       if (!active) return;
+      setBlocPatient(p ?? null);
       setServiceDestOverride(
         p?.serviceOrigineId && p?.serviceOrigine
           ? { serviceId: p.serviceOrigineId, serviceName: p.serviceOrigine }
           : undefined,
       );
-    }).catch(() => { if (active) setServiceDestOverride(undefined); });
+    }).catch(() => { if (active) { setServiceDestOverride(undefined); setBlocPatient(null); } });
     return () => { active = false; };
   }, [patientId]);
 
@@ -326,9 +332,21 @@ function DossierPatientCompletPageContent() {
                 <span className="font-bold text-slate-800">{priseEnChargeLabel}</span>
               </span>
             ) : null}
+            {blocPatient?.statut ? (
+              <span className={cn("inline-flex items-baseline gap-1 rounded-md px-2 py-1", styleStatutPatient(blocPatient.statut).badge)}>
+                <span className="font-semibold opacity-70">Statut :</span>
+                <span className="font-bold">{libelleStatutPatient(blocPatient.statut)}</span>
+              </span>
+            ) : null}
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+            {blocPatient?.statut === "CPA_INAPTE" ? (
+              <div className="flex max-w-full items-center gap-2 rounded-full border border-red-300 bg-red-50 px-3 py-1 text-[12px] font-semibold text-red-700">
+                <span aria-hidden>⚠</span>
+                <span className="truncate">CPA : Inapte{blocPatient.motifRefusCpa ? ` — ${blocPatient.motifRefusCpa}` : ""}</span>
+              </div>
+            ) : null}
             {allergies ? (
               <div className="flex max-w-full items-center gap-2 rounded-full border px-3 py-1 text-[12px] font-semibold" style={{ borderColor: `${ehr.allergyText}44`, backgroundColor: ehr.allergyBg, color: ehr.allergyText }}>
                 <span aria-hidden>⚠</span>

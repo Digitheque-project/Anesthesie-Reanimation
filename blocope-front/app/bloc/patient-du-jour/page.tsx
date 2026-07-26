@@ -10,7 +10,7 @@ import type { FiltresPatient } from '@/types/bloc'
 export default function PatientDuJourPage() {
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filtres, setFiltres] = useState<FiltresPatient>({ statut: '', specialite: '', recherche: '', sexe: '', ageMin: '', ageMax: '', heureDebut: '', heureFin: '' })
+  const [filtres, setFiltres] = useState<FiltresPatient>({ statut: '', specialite: '', recherche: '', sexe: '', heureDebut: '', heureFin: '' })
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => { charger() }, [selectedDate])
@@ -57,12 +57,6 @@ export default function PatientDuJourPage() {
     }
   }
 
-  const calculerAge = (dateNaissance?: string | null) => {
-    if (!dateNaissance) return null
-    const diff = Date.now() - new Date(dateNaissance).getTime()
-    return Math.max(0, Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)))
-  }
-
   // Tous les filtres (urgence, spécialité, recherche nom, sexe, plage horaire) s'appliquent
   // côté client : le paramètre `recherche` du backend ne filtre que l'idDossier
   // (patient-bloc.controller.ts), et /patients/search est un stub qui renvoie toujours [].
@@ -70,12 +64,6 @@ export default function PatientDuJourPage() {
     if (filtres.statut && p.etat !== filtres.statut) return false
     if (filtres.specialite && p.typeChirurgie !== filtres.specialite) return false
     if (filtres.sexe && p.sexe !== filtres.sexe) return false
-    if (filtres.ageMin || filtres.ageMax) {
-      const age = calculerAge(p.dateNaissance)
-      if (age === null) return false
-      if (filtres.ageMin && age < Number(filtres.ageMin)) return false
-      if (filtres.ageMax && age > Number(filtres.ageMax)) return false
-    }
     if (filtres.recherche) {
       const q = filtres.recherche.trim().toLowerCase()
       const cible = `${p.nom || ''} ${p.prenom || ''}`.toLowerCase()

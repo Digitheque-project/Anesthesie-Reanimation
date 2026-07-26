@@ -8,6 +8,7 @@ import DossierPatientTabs from '@/components/bloc/dossier-patient/DossierPatient
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import { libelleUrgence, styleUrgence } from '@/lib/urgence'
+import { libelleStatutPatient, styleStatutPatient } from '@/lib/statut'
 import { formaterNomPatient } from '@/lib/patient'
 import BackButton from '@/components/bloc/layout/BackButton'
 
@@ -110,7 +111,7 @@ function DossierPatientPageContent() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
           <div><span className="text-xs font-bold text-gray-500 uppercase">Chambre</span><p>{p.chambre || '—'}</p></div>
           <div><span className="text-xs font-bold text-gray-500 uppercase">Urgence</span><p className={`font-bold uppercase ${styleUrgence(p.niveauUrgence).texte}`}>{libelleUrgence(p.niveauUrgence)}</p></div>
-          <div><span className="text-xs font-bold text-gray-500 uppercase">Statut</span><p className="font-bold text-blue-600">{p.statut || '—'}</p></div>
+          <div><span className="text-xs font-bold text-gray-500 uppercase">Statut</span><p className={`font-bold ${styleStatutPatient(p.statut).texte}`}>{libelleStatutPatient(p.statut)}</p></div>
         </div>
       </div>
 
@@ -181,10 +182,14 @@ function DossierPatientPageContent() {
             <p className="text-sm font-bold text-red-700">❌ Patient inapte pour le CPA</p>
             {p.motifRefusCpa && <p className="text-sm text-red-800 mt-1">Motif : {p.motifRefusCpa}</p>}
           </div>
-        ) : p.statut && p.statut !== 'EN_ATTENTE_CPA' ? (
+        ) : p.statut === 'CPA_REALISE' ? (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-sm font-bold text-green-700">✅ CPA réalisée</p>
             <p className="text-xs text-green-800 mt-1">La décision d'aptitude est prise pendant la consultation CPA proprement dite.</p>
+          </div>
+        ) : p.statut && p.statut !== 'EN_ATTENTE_CPA' ? (
+          <div className={`p-3 rounded-lg border ${styleStatutPatient(p.statut).fondClair} border-current/20`}>
+            <p className={`text-sm font-bold ${styleStatutPatient(p.statut).texte}`}>✅ CPA validée — statut actuel : {libelleStatutPatient(p.statut)}</p>
           </div>
         ) : (
           <>

@@ -33,7 +33,7 @@ const SPECIALITES = [
 
 export default function PatientFilters({ onFilterChange, date, onDateChange }: PatientFiltersProps) {
   const [filtres, setFiltres] = useState<FiltresPatient>({
-    statut: '', specialite: '', recherche: '', sexe: '', ageMin: '', ageMax: '', heureDebut: '', heureFin: '',
+    statut: '', specialite: '', recherche: '', sexe: '', heureDebut: '', heureFin: '',
   });
 
   const patch = (next: Partial<FiltresPatient>) => {
@@ -133,19 +133,6 @@ export default function PatientFilters({ onFilterChange, date, onDateChange }: P
           </div>
         </div>
 
-        {/* Âge */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-outline uppercase tracking-widest px-1">
-            Âge (min / max)
-          </label>
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white rounded-lg border border-outline-variant/20 shadow-sm">
-            <input type="number" min={0} placeholder="0" value={filtres.ageMin} onChange={(e) => patch({ ageMin: e.target.value })}
-              className="text-sm font-medium text-on-surface bg-transparent border-none outline-none w-12" />
-            <span className="text-outline-variant">—</span>
-            <input type="number" min={0} placeholder="120" value={filtres.ageMax} onChange={(e) => patch({ ageMax: e.target.value })}
-              className="text-sm font-medium text-on-surface bg-transparent border-none outline-none w-12" />
-          </div>
-        </div>
       </div>
 
       {/* Recherche par nom/prénom */}
