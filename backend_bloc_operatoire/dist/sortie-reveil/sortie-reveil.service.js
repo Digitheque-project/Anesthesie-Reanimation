@@ -19,18 +19,30 @@ const typeorm_2 = require("typeorm");
 const sortie_reveil_entity_1 = require("../entities/sortie-reveil.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
+const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
+const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let SortieReveilService = class SortieReveilService {
     repo;
     accueilClient;
     medecinIdentiteService;
-    constructor(repo, accueilClient, medecinIdentiteService) {
+    patientBlocStatutService;
+    tracabiliteService;
+    constructor(repo, accueilClient, medecinIdentiteService, patientBlocStatutService, tracabiliteService) {
         this.repo = repo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
+        this.patientBlocStatutService = patientBlocStatutService;
+        this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
         const saved = await this.repo.save(this.repo.create({ ...dto, medecinId: centralUser.userId }));
-        return Array.isArray(saved) ? saved[0] : saved;
+        const sortie = Array.isArray(saved) ? saved[0] : saved;
+        await this.tracabiliteService.log('SortieReveil', sortie.id, 'CREATE', { patientId: sortie.patientId }, centralUser.userId);
+        if (sortie.patientId) {
+            await this.patientBlocStatutService.changerStatut(sortie.patientId, patient_bloc_entity_1.PatientStatut.SORTI, centralUser.userId);
+        }
+        return sortie;
     }
     async findAll(page = 1, limite = 10) {
         const [data, total] = await this.repo.findAndCount({
@@ -74,6 +86,8 @@ exports.SortieReveilService = SortieReveilService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(sortie_reveil_entity_1.SortieReveil)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         accueil_client_1.AccueilClient,
-        medecin_identite_service_1.MedecinIdentiteService])
+        medecin_identite_service_1.MedecinIdentiteService,
+        patient_bloc_statut_service_1.PatientBlocStatutService,
+        tracabilite_service_1.TracabiliteService])
 ], SortieReveilService);
 //# sourceMappingURL=sortie-reveil.service.js.map

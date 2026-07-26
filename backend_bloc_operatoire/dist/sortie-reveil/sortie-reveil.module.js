@@ -11,6 +11,8 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const sortie_reveil_entity_1 = require("../entities/sortie-reveil.entity");
 const medecin_module_1 = require("../medecin/medecin.module");
+const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
+const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
 const sortie_reveil_service_1 = require("./sortie-reveil.service");
 const sortie_reveil_controller_1 = require("./sortie-reveil.controller");
 let SortieReveilModule = class SortieReveilModule {
@@ -18,7 +20,12 @@ let SortieReveilModule = class SortieReveilModule {
 exports.SortieReveilModule = SortieReveilModule;
 exports.SortieReveilModule = SortieReveilModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([sortie_reveil_entity_1.SortieReveil]), medecin_module_1.MedecinModule],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([sortie_reveil_entity_1.SortieReveil]),
+            medecin_module_1.MedecinModule,
+            patient_bloc_module_1.PatientBlocModule,
+            tracabilite_module_1.TracabiliteModule,
+        ],
         controllers: [sortie_reveil_controller_1.SortieReveilController],
         providers: [sortie_reveil_service_1.SortieReveilService],
         exports: [sortie_reveil_service_1.SortieReveilService],

@@ -11,25 +11,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var TracabiliteService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TracabiliteService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const historique_modification_entity_1 = require("../entities/historique-modification.entity");
-let TracabiliteService = class TracabiliteService {
+let TracabiliteService = TracabiliteService_1 = class TracabiliteService {
     repo;
+    logger = new common_1.Logger(TracabiliteService_1.name);
     constructor(repo) {
         this.repo = repo;
     }
     async log(entite, entiteId, action, details, utilisateurId) {
-        return this.repo.save(this.repo.create({
-            entite,
-            entiteId,
-            action,
-            details: JSON.stringify(details),
-            utilisateurId,
-        }));
+        try {
+            return await this.repo.save(this.repo.create({
+                entite,
+                entiteId,
+                action,
+                details: JSON.stringify(details),
+                utilisateurId,
+            }));
+        }
+        catch (err) {
+            this.logger.error(`Échec d'écriture du journal de traçabilité (${entite}/${entiteId}/${action}): ${err.message}`);
+            return null;
+        }
     }
     async getHistorique(entite, entiteId) {
         return this.repo.find({
@@ -47,7 +55,7 @@ let TracabiliteService = class TracabiliteService {
     }
 };
 exports.TracabiliteService = TracabiliteService;
-exports.TracabiliteService = TracabiliteService = __decorate([
+exports.TracabiliteService = TracabiliteService = TracabiliteService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(historique_modification_entity_1.HistoriqueModification)),
     __metadata("design:paramtypes", [typeorm_2.Repository])

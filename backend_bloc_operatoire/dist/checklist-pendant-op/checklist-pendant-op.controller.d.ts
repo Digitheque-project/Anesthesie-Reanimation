@@ -7,5 +7,5 @@ export declare class ChecklistPendantOpController {
     create(dto: CreateChecklistPendantOpDto, req: any): Promise<import("../entities").ChecklistPendantOp>;
     findAll(patientId?: string): Promise<any>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateChecklistPendantOpDto): Promise<import("../entities").ChecklistPendantOp>;
+    update(id: string, dto: UpdateChecklistPendantOpDto, req: any): Promise<import("../entities").ChecklistPendantOp>;
 }

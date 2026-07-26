@@ -40,9 +40,9 @@ export declare class PatientBlocController {
         sortie: any[];
     }>;
     update(patientId: string, dto: UpdatePatientBlocDto): Promise<import("../entities").PatientBloc>;
-    marquerApteCpa(patientId: string): Promise<import("../entities").PatientBloc>;
-    marquerInapteCpa(patientId: string, motifRefus: string): Promise<import("../entities").PatientBloc>;
-    modifierDateIntervention(patientId: string, dto: UpdateDateInterventionDto): Promise<import("../entities").PatientBloc>;
+    marquerApteCpa(patientId: string, req: any): Promise<import("../entities").PatientBloc>;
+    marquerInapteCpa(patientId: string, motifRefus: string, req: any): Promise<import("../entities").PatientBloc>;
+    modifierDateIntervention(patientId: string, dto: UpdateDateInterventionDto, req: any): Promise<import("../entities").PatientBloc>;
     remove(patientId: string): Promise<{
         message: string;
     }>;

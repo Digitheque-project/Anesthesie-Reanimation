@@ -21,6 +21,7 @@ const drainage_entity_1 = require("../entities/drainage.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 const INTERVENANTS = [
     ['chirurgienId', 'chirurgien'],
     ['anesthesisteId', 'anesthesiste'],
@@ -33,14 +34,16 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     accueilClient;
     medecinIdentiteService;
     gateway;
-    constructor(repo, drainageRepo, accueilClient, medecinIdentiteService, gateway) {
+    tracabiliteService;
+    constructor(repo, drainageRepo, accueilClient, medecinIdentiteService, gateway, tracabiliteService) {
         this.repo = repo;
         this.drainageRepo = drainageRepo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
         this.gateway = gateway;
+        this.tracabiliteService = tracabiliteService;
     }
-    async create(dto) {
+    async create(dto, utilisateurId) {
         const { drainages, ...data } = dto;
         const proto = this.repo.create(data);
         const protoSaved = await this.repo.save(proto);
@@ -48,6 +51,7 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         if (drainages?.length)
             await this.drainageRepo.save(drainages.map((d) => this.drainageRepo.create({ ...d, protocole: saved })));
         const complet = await this.findOne(saved.id);
+        await this.tracabiliteService.log('ProtocoleOperatoire', saved.id, 'CREATE', { patientId: complet.patientId }, utilisateurId);
         this.gateway.emitToOperation(complet.patientId, 'protocole-operatoire:maj', { patientId: complet.patientId, protocole: complet });
         return complet;
     }
@@ -74,11 +78,12 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         const [enriched] = await this.medecinIdentiteService.enrichirPlusieurs([enrichedPatient], INTERVENANTS);
         return enriched;
     }
-    async update(id, dto) {
+    async update(id, dto, utilisateurId) {
         const p = await this.repo.findOne({ where: { id } });
         if (!p)
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
         const updated = await this.repo.save(Object.assign(p, dto));
+        await this.tracabiliteService.log('ProtocoleOperatoire', id, 'UPDATE', { patientId: updated.patientId }, utilisateurId);
         this.gateway.emitToOperation(updated.patientId, 'protocole-operatoire:maj', { patientId: updated.patientId, protocole: updated });
         return updated;
     }
@@ -99,6 +104,7 @@ exports.ProtocoleOperatoireService = ProtocoleOperatoireService = __decorate([
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         medecin_identite_service_1.MedecinIdentiteService,
-        operation_gateway_1.OperationGateway])
+        operation_gateway_1.OperationGateway,
+        tracabilite_service_1.TracabiliteService])
 ], ProtocoleOperatoireService);
 //# sourceMappingURL=protocole-operatoire.service.js.map

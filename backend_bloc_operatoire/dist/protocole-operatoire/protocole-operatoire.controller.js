@@ -19,14 +19,16 @@ const protocole_operatoire_service_1 = require("./protocole-operatoire.service")
 const create_protocole_operatoire_dto_1 = require("./dto/create-protocole-operatoire.dto");
 const update_protocole_operatoire_dto_1 = require("./dto/update-protocole-operatoire.dto");
 const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const require_permission_decorator_1 = require("../central-auth/require-permission.decorator");
 const role_clinique_1 = require("../central-auth/role-clinique");
+const LECTURE_PROTOCOLE = 'protocole-operatoire:read';
 let ProtocoleOperatoireController = class ProtocoleOperatoireController {
     service;
     constructor(service) {
         this.service = service;
     }
-    create(dto) {
-        return this.service.create(dto);
+    create(dto, req) {
+        return this.service.create(dto, req.centralUser?.userId);
     }
     findAll(p, l, patientId) {
         return this.service.findAll(p, l, patientId);
@@ -34,8 +36,8 @@ let ProtocoleOperatoireController = class ProtocoleOperatoireController {
     findOne(id) {
         return this.service.findOne(id);
     }
-    update(id, dto) {
-        return this.service.update(id, dto);
+    update(id, dto, req) {
+        return this.service.update(id, dto, req.centralUser?.userId);
     }
     remove(id) {
         return this.service.remove(id);
@@ -45,15 +47,19 @@ exports.ProtocoleOperatoireController = ProtocoleOperatoireController;
 __decorate([
     (0, common_1.Post)(),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un protocole opératoire (Chirurgien)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Creer un protocole operatoire (Chirurgien)' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_protocole_operatoire_dto_1.CreateProtocoleOperatoireDto]),
+    __metadata("design:paramtypes", [create_protocole_operatoire_dto_1.CreateProtocoleOperatoireDto, Object]),
     __metadata("design:returntype", void 0)
 ], ProtocoleOperatoireController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Lister tous les protocoles' }),
+    (0, require_permission_decorator_1.RequirePermission)(LECTURE_PROTOCOLE),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Lister tous les protocoles (membre du bloc ou permission protocole-operatoire:read)',
+    }),
     (0, swagger_1.ApiQuery)({ name: 'page', required: false }),
     (0, swagger_1.ApiQuery)({ name: 'limite', required: false }),
     (0, swagger_1.ApiQuery)({ name: 'patientId', required: false }),
@@ -66,7 +72,10 @@ __decorate([
 ], ProtocoleOperatoireController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Obtenir un protocole par ID' }),
+    (0, require_permission_decorator_1.RequirePermission)(LECTURE_PROTOCOLE),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Obtenir un protocole par ID (membre du bloc ou permission protocole-operatoire:read)',
+    }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -78,8 +87,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Modifier un protocole (Chirurgien)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_protocole_operatoire_dto_1.UpdateProtocoleOperatoireDto]),
+    __metadata("design:paramtypes", [String, update_protocole_operatoire_dto_1.UpdateProtocoleOperatoireDto, Object]),
     __metadata("design:returntype", void 0)
 ], ProtocoleOperatoireController.prototype, "update", null);
 __decorate([

@@ -14,6 +14,7 @@ const checklist_pendant_op_controller_1 = require("./checklist-pendant-op.contro
 const checklist_pendant_op_service_1 = require("./checklist-pendant-op.service");
 const operation_gateway_module_1 = require("../operation-gateway/operation-gateway.module");
 const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
+const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
 let ChecklistPendantOpModule = class ChecklistPendantOpModule {
 };
 exports.ChecklistPendantOpModule = ChecklistPendantOpModule;
@@ -23,6 +24,7 @@ exports.ChecklistPendantOpModule = ChecklistPendantOpModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([checklist_pendant_op_entity_1.ChecklistPendantOp]),
             operation_gateway_module_1.OperationGatewayModule,
             patient_bloc_module_1.PatientBlocModule,
+            tracabilite_module_1.TracabiliteModule,
         ],
         controllers: [checklist_pendant_op_controller_1.ChecklistPendantOpController],
         providers: [checklist_pendant_op_service_1.ChecklistPendantOpService],

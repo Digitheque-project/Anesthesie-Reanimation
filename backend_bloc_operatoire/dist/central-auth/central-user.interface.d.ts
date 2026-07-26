@@ -7,6 +7,7 @@ export interface CentralUser {
     roleId: string;
     role: string;
     permissions: string[];
+    accesExterne: boolean;
     chu: {
         id: string;
         name: string;

@@ -19,20 +19,24 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocStatutService {
     patientBlocRepo;
     notificationOutgoing;
+    tracabiliteService;
     logger = new common_1.Logger(PatientBlocStatutService_1.name);
-    constructor(patientBlocRepo, notificationOutgoing) {
+    constructor(patientBlocRepo, notificationOutgoing, tracabiliteService) {
         this.patientBlocRepo = patientBlocRepo;
         this.notificationOutgoing = notificationOutgoing;
+        this.tracabiliteService = tracabiliteService;
     }
-    async changerStatut(patientId, nouveauStatut) {
+    async changerStatut(patientId, nouveauStatut, utilisateurId) {
         const patient = await this.patientBlocRepo.findOne({
             where: { patientId },
         });
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
+        const ancienStatut = patient.statut;
         const transitionsValides = {
             [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [
                 patient_bloc_entity_1.PatientStatut.CPA_REALISE,
@@ -57,23 +61,25 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         if (!autorise)
             throw new common_1.ConflictException(`Transition invalide : ${patient.statut} → ${nouveauStatut}`);
         patient.statut = nouveauStatut;
-        return this.patientBlocRepo.save(patient);
+        const saved = await this.patientBlocRepo.save(patient);
+        await this.tracabiliteService.log('PatientBloc', patientId, 'STATUT_CHANGE', { ancienStatut, nouveauStatut }, utilisateurId);
+        return saved;
     }
-    async avancerVersEnCoursOperation(patientId) {
+    async avancerVersEnCoursOperation(patientId, utilisateurId) {
         const patient = await this.patientBlocRepo.findOne({
             where: { patientId },
         });
         if (!patient)
             return;
         if (patient.statut === patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE) {
-            await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC);
-            await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION);
+            await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC, utilisateurId);
+            await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION, utilisateurId);
         }
         else if (patient.statut === patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC) {
-            await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION);
+            await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION, utilisateurId);
         }
     }
-    async marquerApteCpa(patientId) {
+    async marquerApteCpa(patientId, utilisateurId) {
         const patient = await this.patientBlocRepo.findOne({
             where: { patientId },
         });
@@ -83,14 +89,15 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
             patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
             patient.motifRefusCpa = null;
             await this.patientBlocRepo.save(patient);
+            await this.tracabiliteService.log('PatientBloc', patientId, 'STATUT_CHANGE', { ancienStatut: patient_bloc_entity_1.PatientStatut.CPA_INAPTE, nouveauStatut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA }, utilisateurId);
         }
         return patient;
     }
-    async marquerInapteCpa(patientId, motifRefus) {
+    async marquerInapteCpa(patientId, motifRefus, utilisateurId) {
         if (!motifRefus || !motifRefus.trim()) {
             throw new common_1.BadRequestException('Le motif du refus est obligatoire.');
         }
-        const patient = await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.CPA_INAPTE);
+        const patient = await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.CPA_INAPTE, utilisateurId);
         patient.motifRefusCpa = motifRefus.trim();
         await this.patientBlocRepo.save(patient);
         try {
@@ -109,14 +116,17 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         }
         return patient;
     }
-    async modifierDateIntervention(patientId, dateIntervention) {
+    async modifierDateIntervention(patientId, dateIntervention, utilisateurId) {
         const patient = await this.patientBlocRepo.findOne({
             where: { patientId },
         });
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
+        const ancienneDate = patient.dateIntervention;
         patient.dateIntervention = new Date(dateIntervention);
-        return this.patientBlocRepo.save(patient);
+        const saved = await this.patientBlocRepo.save(patient);
+        await this.tracabiliteService.log('PatientBloc', patientId, 'UPDATE', { champ: 'dateIntervention', ancienneValeur: ancienneDate, nouvelleValeur: patient.dateIntervention }, utilisateurId);
+        return saved;
     }
 };
 exports.PatientBlocStatutService = PatientBlocStatutService;
@@ -124,6 +134,7 @@ exports.PatientBlocStatutService = PatientBlocStatutService = PatientBlocStatutS
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        notification_outgoing_service_1.NotificationOutgoingService])
+        notification_outgoing_service_1.NotificationOutgoingService,
+        tracabilite_service_1.TracabiliteService])
 ], PatientBlocStatutService);
 //# sourceMappingURL=patient-bloc-statut.service.js.map

@@ -28,6 +28,7 @@ const medecin_service_1 = require("../medecin/medecin.service");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const role_clinique_1 = require("../central-auth/role-clinique");
 const medecin_entity_1 = require("../entities/medecin.entity");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let CPAService = CPAService_1 = class CPAService {
     cpaRepository;
     patientBlocRepo;
@@ -38,8 +39,9 @@ let CPAService = CPAService_1 = class CPAService {
     demandeCpaExterneService;
     medecinService;
     medecinIdentiteService;
+    tracabiliteService;
     logger = new common_1.Logger(CPAService_1.name);
-    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService, medecinIdentiteService) {
+    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService, medecinIdentiteService, tracabiliteService) {
         this.cpaRepository = cpaRepository;
         this.patientBlocRepo = patientBlocRepo;
         this.premedRepository = premedRepository;
@@ -49,6 +51,7 @@ let CPAService = CPAService_1 = class CPAService {
         this.demandeCpaExterneService = demandeCpaExterneService;
         this.medecinService = medecinService;
         this.medecinIdentiteService = medecinIdentiteService;
+        this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
         if ((dto.decision === cpa_entity_1.DecisionCPA.INAPTE ||
@@ -140,6 +143,7 @@ let CPAService = CPAService_1 = class CPAService {
                 this.logger.error(`Erreur notification service origine: ${err.message}`);
             }
         }
+        await this.tracabiliteService.log('CPA', saved.id, 'CREATE', { patientId: dto.patientId, decision: dto.decision }, centralUser.userId);
         return this.findOne(saved.id);
     }
     async findAll(page = 1, limite = 10, patientId) {
@@ -167,12 +171,14 @@ let CPAService = CPAService_1 = class CPAService {
         const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'anesthesisteId', 'anesthesiste');
         return enriched;
     }
-    async update(id, dto) {
+    async update(id, dto, centralUser) {
         const cpa = await this.cpaRepository.findOne({ where: { id } });
         if (!cpa)
             throw new common_1.NotFoundException(`CPA ${id} non trouvée`);
         Object.assign(cpa, dto);
-        return this.cpaRepository.save(cpa);
+        const updated = await this.cpaRepository.save(cpa);
+        await this.tracabiliteService.log('CPA', id, 'UPDATE', { patientId: cpa.patientId }, centralUser?.userId);
+        return updated;
     }
     async remove(id) {
         const cpa = await this.cpaRepository.findOne({ where: { id } });
@@ -196,6 +202,7 @@ exports.CPAService = CPAService = CPAService_1 = __decorate([
         notification_outgoing_service_1.NotificationOutgoingService,
         demande_cpa_externe_service_1.DemandeCpaExterneService,
         medecin_service_1.MedecinService,
-        medecin_identite_service_1.MedecinIdentiteService])
+        medecin_identite_service_1.MedecinIdentiteService,
+        tracabilite_service_1.TracabiliteService])
 ], CPAService);
 //# sourceMappingURL=cpa.service.js.map

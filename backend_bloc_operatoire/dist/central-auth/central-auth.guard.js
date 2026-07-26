@@ -17,6 +17,7 @@ const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const public_decorator_1 = require("./public.decorator");
 const require_role_decorator_1 = require("./require-role.decorator");
+const require_permission_decorator_1 = require("./require-permission.decorator");
 const role_clinique_1 = require("./role-clinique");
 const verify_central_token_1 = require("./verify-central-token");
 let CentralAuthGuard = CentralAuthGuard_1 = class CentralAuthGuard {
@@ -40,24 +41,34 @@ let CentralAuthGuard = CentralAuthGuard_1 = class CentralAuthGuard {
         const token = this.extractToken(request);
         if (!token)
             throw new common_1.UnauthorizedException('Connexion requise (SSO central)');
+        const rolesRequis = this.reflector.getAllAndOverride(require_role_decorator_1.REQUIRE_ROLE_CLINIQUE_KEY, [context.getHandler(), context.getClass()]);
+        const permissionRequise = this.reflector.getAllAndOverride(require_permission_decorator_1.REQUIRE_PERMISSION_KEY, [context.getHandler(), context.getClass()]);
+        const permissionRepli = rolesRequis && rolesRequis.length > 0 ? undefined : permissionRequise;
         let centralUser;
         try {
-            centralUser = await (0, verify_central_token_1.verifyCentralToken)(token, this.jwtService, this.config);
+            centralUser = await (0, verify_central_token_1.verifyCentralToken)(token, this.jwtService, this.config, { permissionRepli });
         }
         catch (err) {
             if (err instanceof verify_central_token_1.NoServiceAccessError) {
                 throw new common_1.ForbiddenException(err.message);
             }
             this.logger.warn(`Token SSO invalide: ${err.message}`);
-            throw new common_1.UnauthorizedException('Session expirée ou invalide, veuillez vous reconnecter');
+            throw new common_1.UnauthorizedException('Session expiree ou invalide, veuillez vous reconnecter');
         }
         request.centralUser = centralUser;
-        const rolesRequis = this.reflector.getAllAndOverride(require_role_decorator_1.REQUIRE_ROLE_CLINIQUE_KEY, [context.getHandler(), context.getClass()]);
         if (rolesRequis && rolesRequis.length > 0) {
+            if (centralUser.accesExterne) {
+                throw new common_1.ForbiddenException(`Action reservee aux membres du service Bloc Operatoire (role ${rolesRequis.join(' ou ')})`);
+            }
             const roleUtilisateur = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
             if (!roleUtilisateur || !rolesRequis.includes(roleUtilisateur)) {
-                throw new common_1.ForbiddenException(`Action réservée au rôle ${rolesRequis.join(' ou ')} (votre rôle : ${centralUser.role})`);
+                throw new common_1.ForbiddenException(`Action reservee au role ${rolesRequis.join(' ou ')} (votre role : ${centralUser.role})`);
             }
+        }
+        if (permissionRequise &&
+            centralUser.accesExterne &&
+            !centralUser.permissions.includes(permissionRequise)) {
+            throw new common_1.ForbiddenException(`Permission ${permissionRequise} requise pour acceder a cette ressource`);
         }
         return true;
     }

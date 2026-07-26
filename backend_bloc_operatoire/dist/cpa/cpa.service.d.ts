@@ -9,6 +9,7 @@ import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-ext
 import { MedecinService } from '../medecin/medecin.service';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { CentralUser } from '../central-auth/central-user.interface';
+import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
 import { UpdateCPADto } from './dto/update-cpa.dto';
 export declare class CPAService {
@@ -21,8 +22,9 @@ export declare class CPAService {
     private demandeCpaExterneService;
     private medecinService;
     private medecinIdentiteService;
+    private tracabiliteService;
     private readonly logger;
-    constructor(cpaRepository: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, premedRepository: Repository<Premedicament>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, notificationOutgoing: NotificationOutgoingService, demandeCpaExterneService: DemandeCpaExterneService, medecinService: MedecinService, medecinIdentiteService: MedecinIdentiteService);
+    constructor(cpaRepository: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, premedRepository: Repository<Premedicament>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, notificationOutgoing: NotificationOutgoingService, demandeCpaExterneService: DemandeCpaExterneService, medecinService: MedecinService, medecinIdentiteService: MedecinIdentiteService, tracabiliteService: TracabiliteService);
     create(dto: CreateCPADto, centralUser: CentralUser): Promise<CPA>;
     findAll(page?: number, limite?: number, patientId?: string): Promise<{
         data: Record<string, any>[];
@@ -31,7 +33,7 @@ export declare class CPAService {
         pages: number;
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateCPADto): Promise<CPA>;
+    update(id: string, dto: UpdateCPADto, centralUser?: CentralUser): Promise<CPA>;
     remove(id: string): Promise<{
         message: string;
     }>;

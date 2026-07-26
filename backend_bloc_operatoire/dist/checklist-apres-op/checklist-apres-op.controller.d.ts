@@ -7,5 +7,5 @@ export declare class ChecklistApresOpController {
     create(dto: CreateChecklistApresOpDto, req: any): Promise<import("../entities").ChecklistApresOp>;
     findAll(patientId?: string): Promise<any>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateChecklistApresOpDto): Promise<import("../entities").ChecklistApresOp>;
+    update(id: string, dto: UpdateChecklistApresOpDto, req: any): Promise<import("../entities").ChecklistApresOp>;
 }

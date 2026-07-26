@@ -34,8 +34,8 @@ let CPAController = class CPAController {
     findOne(id) {
         return this.service.findOne(id);
     }
-    update(id, d) {
-        return this.service.update(id, d);
+    update(id, d, req) {
+        return this.service.update(id, d, req.centralUser);
     }
     remove(id) {
         return this.service.remove(id);
@@ -80,8 +80,9 @@ __decorate([
     }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_cpa_dto_1.UpdateCPADto]),
+    __metadata("design:paramtypes", [String, update_cpa_dto_1.UpdateCPADto, Object]),
     __metadata("design:returntype", void 0)
 ], CPAController.prototype, "update", null);
 __decorate([

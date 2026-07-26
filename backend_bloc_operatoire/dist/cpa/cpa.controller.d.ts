@@ -12,7 +12,7 @@ export declare class CPAController {
         pages: number;
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, d: UpdateCPADto): Promise<import("../entities").CPA>;
+    update(id: string, d: UpdateCPADto, req: any): Promise<import("../entities").CPA>;
     remove(id: string): Promise<{
         message: string;
     }>;

@@ -34,8 +34,8 @@ let ChecklistApresOpController = class ChecklistApresOpController {
     findOne(id) {
         return this.service.findOne(id);
     }
-    update(id, dto) {
-        return this.service.update(id, dto);
+    update(id, dto, req) {
+        return this.service.update(id, dto, req.centralUser);
     }
 };
 exports.ChecklistApresOpController = ChecklistApresOpController;
@@ -75,8 +75,9 @@ __decorate([
     }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_checklist_apres_op_dto_1.UpdateChecklistApresOpDto]),
+    __metadata("design:paramtypes", [String, update_checklist_apres_op_dto_1.UpdateChecklistApresOpDto, Object]),
     __metadata("design:returntype", void 0)
 ], ChecklistApresOpController.prototype, "update", null);
 exports.ChecklistApresOpController = ChecklistApresOpController = __decorate([

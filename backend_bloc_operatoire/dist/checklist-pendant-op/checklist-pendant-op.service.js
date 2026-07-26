@@ -20,16 +20,19 @@ const checklist_pendant_op_entity_1 = require("../entities/checklist-pendant-op.
 const accueil_client_1 = require("../external/accueil.client");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let ChecklistPendantOpService = class ChecklistPendantOpService {
     repo;
     accueilClient;
     gateway;
     patientBlocStatutService;
-    constructor(repo, accueilClient, gateway, patientBlocStatutService) {
+    tracabiliteService;
+    constructor(repo, accueilClient, gateway, patientBlocStatutService, tracabiliteService) {
         this.repo = repo;
         this.accueilClient = accueilClient;
         this.gateway = gateway;
         this.patientBlocStatutService = patientBlocStatutService;
+        this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
         const saved = await this.repo.save(this.repo.create({
@@ -38,7 +41,8 @@ let ChecklistPendantOpService = class ChecklistPendantOpService {
             validateurNom: `${centralUser.prenom} ${centralUser.nom}`.trim(),
             validateurRole: centralUser.role,
         }));
-        await this.patientBlocStatutService.avancerVersEnCoursOperation(saved.patientId);
+        await this.tracabiliteService.log('ChecklistPendantOp', saved.id, 'CREATE', { patientId: saved.patientId }, centralUser.userId);
+        await this.patientBlocStatutService.avancerVersEnCoursOperation(saved.patientId, centralUser.userId);
         return saved;
     }
     async findAll(patientId) {
@@ -54,11 +58,12 @@ let ChecklistPendantOpService = class ChecklistPendantOpService {
         const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
         return enriched;
     }
-    async update(id, dto) {
+    async update(id, dto, centralUser) {
         const checklist = await this.repo.findOne({ where: { id } });
         if (!checklist)
             throw new common_1.NotFoundException(`Checklist pendant opération ${id} non trouvée`);
         const updated = await this.repo.save(Object.assign(checklist, dto));
+        await this.tracabiliteService.log('ChecklistPendantOp', updated.id, 'UPDATE', { patientId: updated.patientId }, centralUser?.userId);
         this.gateway.emitToOperation(updated.patientId, 'checklist-pendant-op:maj', { patientId: updated.patientId, checklist: updated });
         return updated;
     }
@@ -70,6 +75,7 @@ exports.ChecklistPendantOpService = ChecklistPendantOpService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         operation_gateway_1.OperationGateway,
-        patient_bloc_statut_service_1.PatientBlocStatutService])
+        patient_bloc_statut_service_1.PatientBlocStatutService,
+        tracabilite_service_1.TracabiliteService])
 ], ChecklistPendantOpService);
 //# sourceMappingURL=checklist-pendant-op.service.js.map

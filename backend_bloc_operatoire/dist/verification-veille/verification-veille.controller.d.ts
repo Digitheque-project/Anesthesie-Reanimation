@@ -4,7 +4,7 @@ import { UpdateVerificationVeilleDto } from './dto/update-verification-veille.dt
 export declare class VerificationVeilleController {
     private readonly service;
     constructor(service: VerificationVeilleService);
-    create(d: CreateVerificationVeilleDto): Promise<import("../entities").VerificationVeille>;
+    create(d: CreateVerificationVeilleDto, req: any): Promise<import("../entities").VerificationVeille>;
     findAll(p?: number, l?: number): Promise<{
         data: Record<string, any>[];
         total: number;
@@ -12,7 +12,7 @@ export declare class VerificationVeilleController {
         pages: number;
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, d: UpdateVerificationVeilleDto): Promise<import("../entities").VerificationVeille>;
+    update(id: string, d: UpdateVerificationVeilleDto, req: any): Promise<import("../entities").VerificationVeille>;
     remove(id: string): Promise<{
         message: string;
     }>;

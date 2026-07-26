@@ -15,6 +15,7 @@ const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const demande_cpa_externe_module_1 = require("../demande-cpa-externe/demande-cpa-externe.module");
 const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
 const medecin_module_1 = require("../medecin/medecin.module");
+const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
 const verification_veille_service_1 = require("./verification-veille.service");
 const verification_veille_controller_1 = require("./verification-veille.controller");
 let VerificationVeilleModule = class VerificationVeilleModule {
@@ -27,6 +28,7 @@ exports.VerificationVeilleModule = VerificationVeilleModule = __decorate([
             demande_cpa_externe_module_1.DemandeCpaExterneModule,
             patient_bloc_module_1.PatientBlocModule,
             medecin_module_1.MedecinModule,
+            tracabilite_module_1.TracabiliteModule,
         ],
         controllers: [verification_veille_controller_1.VerificationVeilleController],
         providers: [verification_veille_service_1.VerificationVeilleService],

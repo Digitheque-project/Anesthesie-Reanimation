@@ -66,14 +66,14 @@ let PatientBlocController = class PatientBlocController {
     update(patientId, dto) {
         return this.patientBlocService.update(patientId, dto);
     }
-    marquerApteCpa(patientId) {
-        return this.patientBlocStatutService.marquerApteCpa(patientId);
+    marquerApteCpa(patientId, req) {
+        return this.patientBlocStatutService.marquerApteCpa(patientId, req.centralUser?.userId);
     }
-    marquerInapteCpa(patientId, motifRefus) {
-        return this.patientBlocStatutService.marquerInapteCpa(patientId, motifRefus);
+    marquerInapteCpa(patientId, motifRefus, req) {
+        return this.patientBlocStatutService.marquerInapteCpa(patientId, motifRefus, req.centralUser?.userId);
     }
-    modifierDateIntervention(patientId, dto) {
-        return this.patientBlocStatutService.modifierDateIntervention(patientId, dto.dateIntervention);
+    modifierDateIntervention(patientId, dto, req) {
+        return this.patientBlocStatutService.modifierDateIntervention(patientId, dto.dateIntervention, req.centralUser?.userId);
     }
     remove(patientId) {
         return this.patientBlocService.remove(patientId);
@@ -189,8 +189,9 @@ __decorate([
         summary: 'Fil de prescription : marquer le patient apte au circuit CPA (Responsable CPA)',
     }),
     __param(0, (0, common_1.Param)('patientId')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], PatientBlocController.prototype, "marquerApteCpa", null);
 __decorate([
@@ -201,8 +202,9 @@ __decorate([
     }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Body)('motifRefus')),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", void 0)
 ], PatientBlocController.prototype, "marquerInapteCpa", null);
 __decorate([
@@ -213,8 +215,9 @@ __decorate([
     }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_date_intervention_dto_1.UpdateDateInterventionDto]),
+    __metadata("design:paramtypes", [String, update_date_intervention_dto_1.UpdateDateInterventionDto, Object]),
     __metadata("design:returntype", void 0)
 ], PatientBlocController.prototype, "modifierDateIntervention", null);
 __decorate([

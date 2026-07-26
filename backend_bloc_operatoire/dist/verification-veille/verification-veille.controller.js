@@ -25,8 +25,8 @@ let VerificationVeilleController = class VerificationVeilleController {
     constructor(service) {
         this.service = service;
     }
-    create(d) {
-        return this.service.create(d);
+    create(d, req) {
+        return this.service.create(d, req.centralUser?.userId);
     }
     findAll(p, l) {
         return this.service.findAll(p, l);
@@ -34,8 +34,8 @@ let VerificationVeilleController = class VerificationVeilleController {
     findOne(id) {
         return this.service.findOne(id);
     }
-    update(id, d) {
-        return this.service.update(id, d);
+    update(id, d, req) {
+        return this.service.update(id, d, req.centralUser?.userId);
     }
     remove(id) {
         return this.service.remove(id);
@@ -49,8 +49,9 @@ __decorate([
         summary: "Créer une vérification à la veille de l'intervention (Anesthésiste)",
     }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_verification_veille_dto_1.CreateVerificationVeilleDto]),
+    __metadata("design:paramtypes", [create_verification_veille_dto_1.CreateVerificationVeilleDto, Object]),
     __metadata("design:returntype", void 0)
 ], VerificationVeilleController.prototype, "create", null);
 __decorate([
@@ -76,8 +77,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Modifier une vérification veille (Anesthésiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_verification_veille_dto_1.UpdateVerificationVeilleDto]),
+    __metadata("design:paramtypes", [String, update_verification_veille_dto_1.UpdateVerificationVeilleDto, Object]),
     __metadata("design:returntype", void 0)
 ], VerificationVeilleController.prototype, "update", null);
 __decorate([

@@ -15,6 +15,7 @@ const patient_bloc_service_1 = require("./patient-bloc.service");
 const patient_bloc_controller_1 = require("./patient-bloc.controller");
 const patient_bloc_statut_service_1 = require("./patient-bloc-statut.service");
 const protocole_operatoire_module_1 = require("../protocole-operatoire/protocole-operatoire.module");
+const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
 let PatientBlocModule = class PatientBlocModule {
 };
 exports.PatientBlocModule = PatientBlocModule;
@@ -23,6 +24,7 @@ exports.PatientBlocModule = PatientBlocModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([patient_bloc_entity_1.PatientBloc, demande_cpa_externe_entity_1.DemandeCpaExterne]),
             protocole_operatoire_module_1.ProtocoleOperatoireModule,
+            tracabilite_module_1.TracabiliteModule,
         ],
         controllers: [patient_bloc_controller_1.PatientBlocController],
         providers: [patient_bloc_service_1.PatientBlocService, patient_bloc_statut_service_1.PatientBlocStatutService],

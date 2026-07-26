@@ -21,16 +21,19 @@ const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let ChecklistApresOpService = class ChecklistApresOpService {
     repo;
     accueilClient;
     gateway;
     patientBlocStatutService;
-    constructor(repo, accueilClient, gateway, patientBlocStatutService) {
+    tracabiliteService;
+    constructor(repo, accueilClient, gateway, patientBlocStatutService, tracabiliteService) {
         this.repo = repo;
         this.accueilClient = accueilClient;
         this.gateway = gateway;
         this.patientBlocStatutService = patientBlocStatutService;
+        this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
         const saved = await this.repo.save(this.repo.create({
@@ -39,8 +42,9 @@ let ChecklistApresOpService = class ChecklistApresOpService {
             validateurNom: `${centralUser.prenom} ${centralUser.nom}`.trim(),
             validateurRole: centralUser.role,
         }));
+        await this.tracabiliteService.log('ChecklistApresOp', saved.id, 'CREATE', { patientId: saved.patientId }, centralUser.userId);
         if (dto.transfertSalleReveil) {
-            await this.patientBlocStatutService.changerStatut(saved.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL);
+            await this.patientBlocStatutService.changerStatut(saved.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL, centralUser.userId);
         }
         return saved;
     }
@@ -57,14 +61,15 @@ let ChecklistApresOpService = class ChecklistApresOpService {
         const [enriched] = await this.accueilClient.enrichWithIdentity([checklist]);
         return enriched;
     }
-    async update(id, dto) {
+    async update(id, dto, centralUser) {
         const checklist = await this.repo.findOne({ where: { id } });
         if (!checklist)
             throw new common_1.NotFoundException(`Checklist après opération ${id} non trouvée`);
         const transfertVientDEtreConfirme = dto.transfertSalleReveil === true && !checklist.transfertSalleReveil;
         const updated = await this.repo.save(Object.assign(checklist, dto));
+        await this.tracabiliteService.log('ChecklistApresOp', updated.id, 'UPDATE', { patientId: updated.patientId }, centralUser?.userId);
         if (transfertVientDEtreConfirme) {
-            await this.patientBlocStatutService.changerStatut(updated.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL);
+            await this.patientBlocStatutService.changerStatut(updated.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL, centralUser?.userId);
         }
         this.gateway.emitToOperation(updated.patientId, 'checklist-apres-op:maj', {
             patientId: updated.patientId,
@@ -80,6 +85,7 @@ exports.ChecklistApresOpService = ChecklistApresOpService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         operation_gateway_1.OperationGateway,
-        patient_bloc_statut_service_1.PatientBlocStatutService])
+        patient_bloc_statut_service_1.PatientBlocStatutService,
+        tracabilite_service_1.TracabiliteService])
 ], ChecklistApresOpService);
 //# sourceMappingURL=checklist-apres-op.service.js.map

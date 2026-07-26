@@ -25,6 +25,7 @@ const endoscopie_client_1 = require("../external/endoscopie.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cpa-externe.service");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
+const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let VerificationVeilleService = VerificationVeilleService_1 = class VerificationVeilleService {
     repo;
     patientBlocRepo;
@@ -34,8 +35,9 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
     medecinIdentiteService;
     demandeCpaExterneService;
     patientBlocStatutService;
+    tracabiliteService;
     logger = new common_1.Logger(VerificationVeilleService_1.name);
-    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, medecinIdentiteService, demandeCpaExterneService, patientBlocStatutService) {
+    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, medecinIdentiteService, demandeCpaExterneService, patientBlocStatutService, tracabiliteService) {
         this.repo = repo;
         this.patientBlocRepo = patientBlocRepo;
         this.cpaRepo = cpaRepo;
@@ -44,8 +46,9 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         this.medecinIdentiteService = medecinIdentiteService;
         this.demandeCpaExterneService = demandeCpaExterneService;
         this.patientBlocStatutService = patientBlocStatutService;
+        this.tracabiliteService = tracabiliteService;
     }
-    async create(dto) {
+    async create(dto, utilisateurId) {
         const cpa = await this.cpaRepo.findOne({
             where: { id: dto.cpaId, patientId: dto.patientId },
         });
@@ -57,8 +60,9 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         await this.patientBlocRepo.update(dto.patientId, {
             statut: patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
         });
+        await this.tracabiliteService.log('VerificationVeille', saved.id, 'CREATE', { patientId: dto.patientId }, utilisateurId);
         try {
-            await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC);
+            await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC, utilisateurId);
         }
         catch (err) {
             this.logger.warn(`Transition PRET_POUR_BLOC impossible pour ${dto.patientId}: ${err.message}`);
@@ -99,11 +103,13 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         const [enriched] = await this.medecinIdentiteService.enrichir([enrichedPatient], 'anesthesisteId', 'anesthesiste');
         return enriched;
     }
-    async update(id, dto) {
+    async update(id, dto, utilisateurId) {
         const verif = await this.repo.findOne({ where: { id } });
         if (!verif)
             throw new common_1.NotFoundException(`Vérification veille ${id} non trouvée`);
-        return this.repo.save(Object.assign(verif, dto));
+        const updated = await this.repo.save(Object.assign(verif, dto));
+        await this.tracabiliteService.log('VerificationVeille', id, 'UPDATE', { patientId: verif.patientId }, utilisateurId);
+        return updated;
     }
     async remove(id) {
         const verif = await this.repo.findOne({ where: { id } });
@@ -126,6 +132,7 @@ exports.VerificationVeilleService = VerificationVeilleService = VerificationVeil
         endoscopie_client_1.EndoscopieClient,
         medecin_identite_service_1.MedecinIdentiteService,
         demande_cpa_externe_service_1.DemandeCpaExterneService,
-        patient_bloc_statut_service_1.PatientBlocStatutService])
+        patient_bloc_statut_service_1.PatientBlocStatutService,
+        tracabilite_service_1.TracabiliteService])
 ], VerificationVeilleService);
 //# sourceMappingURL=verification-veille.service.js.map

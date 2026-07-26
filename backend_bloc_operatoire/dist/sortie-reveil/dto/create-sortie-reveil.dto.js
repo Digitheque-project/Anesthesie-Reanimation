@@ -9,9 +9,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateSortieReveilDto = void 0;
+exports.CreateSortieReveilDto = exports.ChecklistSortieReveilDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const sortie_reveil_entity_1 = require("../../entities/sortie-reveil.entity");
+class ChecklistSortieReveilDto {
+    signesVitauxStables;
+    douleurControlee;
+    prescriptionsFaites;
+    familleInformee;
+}
+exports.ChecklistSortieReveilDto = ChecklistSortieReveilDto;
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ChecklistSortieReveilDto.prototype, "signesVitauxStables", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ChecklistSortieReveilDto.prototype, "douleurControlee", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ChecklistSortieReveilDto.prototype, "prescriptionsFaites", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], ChecklistSortieReveilDto.prototype, "familleInformee", void 0);
 class CreateSortieReveilDto {
     patientId;
     scoreSCCREId;
@@ -50,6 +74,12 @@ __decorate([
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateSortieReveilDto.prototype, "autresServicesDestination", void 0);
+__decorate([
+    (0, class_validator_1.IsDefined)(),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => ChecklistSortieReveilDto),
+    __metadata("design:type", ChecklistSortieReveilDto)
+], CreateSortieReveilDto.prototype, "checklistSortie", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(sortie_reveil_entity_1.StatutSortieReveil),

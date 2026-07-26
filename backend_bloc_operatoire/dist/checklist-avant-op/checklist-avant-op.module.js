@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const checklist_avant_op_entity_1 = require("../entities/checklist-avant-op.entity");
 const checklist_avant_op_controller_1 = require("./checklist-avant-op.controller");
+const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
 let ChecklistAvantOpModule = class ChecklistAvantOpModule {
 };
 exports.ChecklistAvantOpModule = ChecklistAvantOpModule;
 exports.ChecklistAvantOpModule = ChecklistAvantOpModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([checklist_avant_op_entity_1.ChecklistAvantOp])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([checklist_avant_op_entity_1.ChecklistAvantOp]), tracabilite_module_1.TracabiliteModule],
         controllers: [checklist_avant_op_controller_1.ChecklistAvantOpController],
     })
 ], ChecklistAvantOpModule);

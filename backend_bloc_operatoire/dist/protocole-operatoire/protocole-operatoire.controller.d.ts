@@ -4,7 +4,7 @@ import { UpdateProtocoleOperatoireDto } from './dto/update-protocole-operatoire.
 export declare class ProtocoleOperatoireController {
     private readonly service;
     constructor(service: ProtocoleOperatoireService);
-    create(dto: CreateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
+    create(dto: CreateProtocoleOperatoireDto, req: any): Promise<import("../entities").ProtocoleOperatoire>;
     findAll(p?: number, l?: number, patientId?: string): Promise<{
         data: Record<string, any>[];
         total: number;
@@ -12,7 +12,7 @@ export declare class ProtocoleOperatoireController {
         pages: number;
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateProtocoleOperatoireDto): Promise<import("../entities").ProtocoleOperatoire>;
+    update(id: string, dto: UpdateProtocoleOperatoireDto, req: any): Promise<import("../entities").ProtocoleOperatoire>;
     remove(id: string): Promise<{
         message: string;
     }>;
