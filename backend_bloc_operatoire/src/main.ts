@@ -11,7 +11,8 @@ async function bootstrap() {
   app.use(helmet.default());
   app.enableCors({
     origin: CORS_ORIGINS,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Authorization,Content-Type,Accept',
     credentials: true,
   });
 
