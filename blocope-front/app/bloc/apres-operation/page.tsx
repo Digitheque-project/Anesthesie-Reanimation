@@ -39,7 +39,7 @@ function ApresOperationPageContent() {
   const [form, setForm] = useState({
     dateCreation: new Date().toISOString().split('T')[0],
     interventionEnregistree: false, compteFinalCorrect: false, etiquetageVerifie: false,
-    signalementsEffectues: false, transfertSalleReveil: false, observationsParticulieres: '',
+    signalementsEffectues: false, observationsParticulieres: '',
   })
   const [loading, setLoading] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
@@ -55,9 +55,12 @@ function ApresOperationPageContent() {
     }
     setLoading(true)
     try {
-      await apiClient.post('/checklists-apres-op', { patientId, ...form })
-      alert('✅ Check-list après intervention enregistrée ! Passage au protocole opératoire.')
-      router.push(`/bloc/protocole-operatoire?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
+      // Cette check-list EST le check de sortie du bloc (titre de l'écran) — sa validation par
+      // l'anesthésiste transfère donc toujours le patient en salle de réveil, sans case à cocher
+      // à part : il n'y a pas de cas où on validerait cette sortie sans transfert.
+      await apiClient.post('/checklists-apres-op', { patientId, ...form, transfertSalleReveil: true })
+      alert('✅ Check-list après intervention enregistrée ! Patient transféré en salle de réveil.')
+      router.push('/bloc/salle-de-reveil/liste')
     } catch (err: any) {
       console.error(err)
       const message = err.response?.data?.message || err.message || 'Erreur inconnue'

@@ -15,13 +15,20 @@ interface PatientReveil {
   idDossier: string;
   intervention: string;
   niveauUrgence: 'TRES_URGENT' | 'URGENT' | 'NORMAL' | string;
+  entree: Date | null;
   depuis: string;
 }
+
+type Tri = 'RECENT' | 'ANCIEN';
 
 export default function ListeSalleReveil() {
   const router = useRouter();
   const [patients, setPatients] = useState<PatientReveil[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recherche, setRecherche] = useState('');
+  const [filtreUrgence, setFiltreUrgence] = useState<'TOUS' | 'TRES_URGENT' | 'URGENT' | 'NORMAL'>('TOUS');
+  const [filtreDate, setFiltreDate] = useState('');
+  const [tri, setTri] = useState<Tri>('RECENT');
 
   useEffect(() => {
     chargerPatients();
@@ -31,15 +38,19 @@ export default function ListeSalleReveil() {
     try {
       setLoading(true);
       const data = await salleReveilService.getPatientsEnReveil();
-      setPatients((data || []).map((p: any) => ({
-        id: p.patientId || p.id,
-        nom: p.nom || '',
-        prenom: p.prenom || '',
-        idDossier: p.idDossier || '—',
-        intervention: p.libelle || p.typeChirurgie || 'Non spécifiée',
-        niveauUrgence: p.niveauUrgence || 'NORMAL',
-        depuis: p.updatedAt ? new Date(p.updatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—',
-      })));
+      setPatients((data || []).map((p: any) => {
+        const entree = p.updatedAt ? new Date(p.updatedAt) : null;
+        return {
+          id: p.patientId || p.id,
+          nom: p.nom || '',
+          prenom: p.prenom || '',
+          idDossier: p.idDossier || '—',
+          intervention: p.libelle || p.typeChirurgie || 'Non spécifiée',
+          niveauUrgence: p.niveauUrgence || 'NORMAL',
+          entree,
+          depuis: entree ? entree.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—',
+        };
+      }));
     } catch (err) {
       console.error('Erreur chargement:', err);
       setPatients([]);
@@ -52,6 +63,16 @@ export default function ListeSalleReveil() {
 
   const getUrgenceColor = (niveau: string) => styleUrgence(niveau).badge;
 
+  const patientsAffiches = patients
+    .filter((p) => filtreUrgence === 'TOUS' || p.niveauUrgence === filtreUrgence)
+    .filter((p) => !filtreDate || (p.entree && p.entree.toISOString().split('T')[0] === filtreDate))
+    .filter((p) => !recherche.trim() || formaterNomPatient(p).toLowerCase().includes(recherche.trim().toLowerCase()))
+    .sort((a, b) => {
+      const ta = a.entree?.getTime() ?? 0;
+      const tb = b.entree?.getTime() ?? 0;
+      return tri === 'RECENT' ? tb - ta : ta - tb;
+    });
+
   return (
     <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste a accès à la salle de réveil.">
     <div className="p-6 max-w-7xl mx-auto">
@@ -63,6 +84,46 @@ export default function ListeSalleReveil() {
         >
           🔄 Actualiser
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <input
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          placeholder="Rechercher un patient..."
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm flex-1 min-w-[180px]"
+        />
+        <select
+          value={filtreUrgence}
+          onChange={(e) => setFiltreUrgence(e.target.value as typeof filtreUrgence)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
+          <option value="TOUS">Toutes urgences</option>
+          <option value="NORMAL">Normal</option>
+          <option value="URGENT">Urgent</option>
+          <option value="TRES_URGENT">Très urgent</option>
+        </select>
+        <input
+          type="date"
+          value={filtreDate}
+          onChange={(e) => setFiltreDate(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          title="Filtrer par date d'entrée en salle de réveil"
+        />
+        {filtreDate && (
+          <button onClick={() => setFiltreDate('')} className="text-xs text-blue-600 font-bold hover:underline">
+            Effacer la date
+          </button>
+        )}
+        <select
+          value={tri}
+          onChange={(e) => setTri(e.target.value as Tri)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm ml-auto"
+        >
+          <option value="RECENT">Plus récent d'abord</option>
+          <option value="ANCIEN">Plus ancien d'abord</option>
+        </select>
+        <span className="text-xs font-bold text-gray-500">{patientsAffiches.length} patient{patientsAffiches.length > 1 ? 's' : ''}</span>
       </div>
 
       {loading ? (
@@ -83,14 +144,14 @@ export default function ListeSalleReveil() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {patients.length === 0 ? (
+              {patientsAffiches.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    Aucun patient en salle de réveil
+                    {patients.length === 0 ? 'Aucun patient en salle de réveil' : 'Aucun résultat pour ces filtres'}
                   </td>
                 </tr>
               ) : (
-                patients.map((patient) => (
+                patientsAffiches.map((patient) => (
                   <tr key={patient.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4">
                       <p className="font-medium text-gray-900">{formaterNomPatient(patient)}</p>
