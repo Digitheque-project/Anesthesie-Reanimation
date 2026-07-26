@@ -97,8 +97,8 @@ export default function TopBar() {
     <>
     <header className="fixed top-0 right-0 left-64 z-40 bg-white/80 backdrop-blur-md border-b border-outline-variant/30 px-8 py-4 flex justify-between items-center">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <Image src="/images/CHU-logos.png" alt="CHU" width={24} height={24} />
+        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-primary/10">
+          <Image src="/images/chu.jpeg" alt="CHU" width={40} height={40} className="object-cover" />
         </div>
         <div>
           <h1 className="text-lg font-extrabold text-primary font-headline tracking-tight">Service Anesthésie-Réanimation</h1>
