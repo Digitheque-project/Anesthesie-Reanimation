@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { planningService } from '@/lib/api';
+import { planningService, patientService } from '@/lib/api';
 import { formaterNomPatient } from '@/lib/patient';
 import { styleUrgence } from '@/lib/urgence';
 
@@ -26,12 +26,30 @@ export default function RendezVousPage() {
   const charger = async () => {
     setLoading(true);
     try {
-      const data = await planningService.getJour(selectedDate, onglet);
-      // Patient à statut Normal apte pour le CPA uniquement (sans objet pour la vérification veille)
-      const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
-        onglet === 'VERIFICATION_VEILLE' || ((c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut !== 'CPA_INAPTE')
-      );
-      setCreneaux(filtres);
+      if (onglet === 'VERIFICATION_VEILLE') {
+        // La vérification veille ne dépend plus d'un créneau planifié à une date précise : tout
+        // patient dont la CPA vient d'être validée (statut CPA_REALISE, apte, non urgent — sans
+        // objet pour une VPA en urgence) doit y être visible tant qu'il n'a pas été vérifié,
+        // qu'une date ait été posée ou non.
+        const { data } = await patientService.getAll({ statut: 'CPA_REALISE', niveauUrgence: 'NORMAL', limite: 200 });
+        const rows = (Array.isArray(data) ? data : []).map((p: any) => ({
+          id: p.patientId,
+          heureDebut: null,
+          patient: { id: p.patientId, nom: p.nom, prenom: p.prenom, niveauUrgence: p.niveauUrgence, statut: p.statut },
+          type: 'VERIFICATION_VEILLE',
+          chirurgien: p.chirurgien_nom ? { nom: p.chirurgien_nom } : null,
+          estUrgence: false,
+          statut: 'EN_ATTENTE',
+        }));
+        setCreneaux(rows);
+      } else {
+        const data = await planningService.getJour(selectedDate, onglet);
+        // Patient à statut Normal apte pour le CPA uniquement
+        const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
+          (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut !== 'CPA_INAPTE'
+        );
+        setCreneaux(filtres);
+      }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -51,6 +69,7 @@ export default function RendezVousPage() {
   };
 
   const ongletActif = ONGLETS.find(o => o.type === onglet)!;
+  const TYPE_LABELS: Record<string, string> = { CPA: 'CPA', VERIFICATION_VEILLE: 'Vérif. veille' };
 
   return (
     <div className="p-6 flex flex-col gap-6">
@@ -58,10 +77,14 @@ export default function RendezVousPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-on-surface font-headline tracking-tight">Fil de travail</h1>
-          <p className="text-sm text-on-surface-variant mt-1 capitalize">{formaterDate(selectedDate)}</p>
+          <p className="text-sm text-on-surface-variant mt-1 capitalize">
+            {onglet === 'VERIFICATION_VEILLE' ? 'Tous les patients CPA validée, en attente de vérification' : formaterDate(selectedDate)}
+          </p>
         </div>
-        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-          className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit" />
+        {onglet === 'CPA' && (
+          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit" />
+        )}
       </div>
 
       {/* Tableau */}
@@ -130,7 +153,7 @@ export default function RendezVousPage() {
                 const nom = formaterNomPatient(c.patient);
                 return (
                   <tr key={c.id || i} className={`hover:bg-surface-container/30 transition-colors border-l-4 ${style.bordure}`}>
-                    <td className="px-6 py-4 font-extrabold text-primary text-sm whitespace-nowrap">{c.heureDebut}</td>
+                    <td className="px-6 py-4 font-extrabold text-primary text-sm whitespace-nowrap">{c.heureDebut || '—'}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[11px] shrink-0">
@@ -141,7 +164,7 @@ export default function RendezVousPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-bold px-2 py-1 rounded bg-primary/5 text-primary">
-                        {c.type || '—'}
+                        {TYPE_LABELS[c.type] || c.type || '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">{c.chirurgien?.nom || '—'}</td>
@@ -153,8 +176,9 @@ export default function RendezVousPage() {
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${
                         c.statut === 'PLANIFIE' ? 'bg-blue-100 text-blue-700' :
-                        c.statut === 'TERMINE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                      }`}>{c.statut || '—'}</span>
+                        c.statut === 'TERMINE' ? 'bg-green-100 text-green-700' :
+                        c.statut === 'EN_ATTENTE' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                      }`}>{c.statut === 'EN_ATTENTE' ? 'En attente' : (c.statut || '—')}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
