@@ -5,6 +5,7 @@ import { useState } from "react";
 import { styleUrgence } from "@/lib/urgence";
 import { formaterNomPatient } from "@/lib/patient";
 import { libelleStatutPatient, styleStatutPatient } from "@/lib/statut";
+import { useRole } from "@/lib/hooks/useRole";
 
 interface Patient {
   id: string;
@@ -33,6 +34,7 @@ interface PatientsListTableProps {
 
 export default function PatientsListTable({ patients }: PatientsListTableProps) {
   const router = useRouter();
+  const { estChirurgien } = useRole();
   const [loadingPatients, setLoadingPatients] = useState<Set<string>>(new Set());
 
   const handleDemarrer = async (patient: Patient) => {
@@ -40,7 +42,13 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
     const cleanId = patient.realId || patient.id.replace("#", "");
     const nom = encodeURIComponent(formaterNomPatient(patient));
     const intervention = encodeURIComponent(patient.operation || '');
-    router.push(`/bloc/arrivee-bloc?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`);
+    // Le chirurgien n'a rien à faire sur l'arrivée en salle / installation (réservé à
+    // l'anesthésiste) : "Démarrer" l'amène directement sur le protocole opératoire, qui
+    // regroupe déjà le compte-rendu et les instructions post-opératoires sur un seul écran.
+    const cible = estChirurgien
+      ? `/bloc/protocole-operatoire?patientId=${cleanId}&patientNom=${nom}`
+      : `/bloc/arrivee-bloc?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`;
+    router.push(cible);
     setTimeout(() => setLoadingPatients((prev) => {
       const next = new Set(prev);
       next.delete(patient.id);
