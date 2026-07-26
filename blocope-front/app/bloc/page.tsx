@@ -44,14 +44,17 @@ export default function DashboardPage() {
       patientService.getAll({ statut: 'PRET_POUR_BLOC', limite: 50 }),
       patientService.getAll({ statut: 'EN_COURS_OPERATION', limite: 50 }),
       patientService.getAll({ statut: 'EN_SALLE_REVEIL', limite: 50 }),
-      patientService.getAll({ niveauUrgence: 'TRES_URGENT', limite: 50 }),
+      // "En attente de prise en charge" : seulement ceux qui ont encore leur CPA/VPA à faire —
+      // sans ce filtre, un patient très urgent déjà opéré ou en salle de réveil réapparaissait
+      // ici, alors que la bannière l'envoie justement faire sa CPA.
+      patientService.getAll({ niveauUrgence: 'TRES_URGENT', statut: 'EN_ATTENTE_CPA', limite: 50 }),
     ])
 
     if (statsRes.status === 'fulfilled') setStats(statsRes.value)
 
     if (tresUrgentsRes.status === 'fulfilled') {
       const liste = tresUrgentsRes.value?.data || []
-      setPatientsTresUrgents(liste.map((p: any) => ({ id: p.patientId || p.id, nom: nomPatient(p) })))
+      setPatientsTresUrgents(liste.map((p: any) => ({ id: p.patientId || p.id, nom: nomPatient(p), intervention: p.libelle || p.typeChirurgie || '' })))
     }
 
     if (notifsRes.status === 'fulfilled') {
@@ -89,7 +92,7 @@ export default function DashboardPage() {
     // la date à laquelle la CPA doit être réalisée.
     if (cpaRes.status === 'fulfilled') {
       const liste = cpaRes.value?.data || []
-      setPatientsCpa(liste.map(versLignePatient('EN_ATTENTE_CPA', 'Traiter', '/bloc/consultation-cpa')))
+      setPatientsCpa(liste.map(versLignePatient('EN_ATTENTE_CPA', 'Faire la CPA', '/bloc/consultation-cpa')))
     }
 
     // Prévu aujourd'hui, ou sans date programmée (à planifier en priorité)

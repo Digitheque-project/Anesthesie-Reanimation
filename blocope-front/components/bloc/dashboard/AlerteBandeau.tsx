@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 export interface PatientTresUrgent {
   id: string;
   nom: string;
+  intervention?: string;
 }
 
 interface AlerteBandeauProps {
@@ -12,14 +13,19 @@ interface AlerteBandeauProps {
 }
 
 // Bannière d'alerte pour les patients très urgents en attente de prise en charge — un bouton
-// "Voir" par patient, qui envoie directement faire la VPA (vérification pré-anesthésique,
-// page /bloc/verification-veille) plutôt qu'un lien générique vers le programme opératoire.
+// "Voir" par patient, qui envoie directement faire la VPA (Visite Pré-Anesthésique). Pour un
+// patient urgent, la VPA EST la CPA elle-même réalisée immédiatement (page /bloc/consultation-cpa,
+// avec statut=STAT) — /bloc/verification-veille est une étape complètement différente (contrôle
+// la veille de l'opération, pour des patients déjà passés par une CPA classique), jamais la bonne
+// destination ici.
 export default function AlerteBandeau({ patients }: AlerteBandeauProps) {
   const router = useRouter();
   if (patients.length <= 0) return null;
 
   const voirVpa = (p: PatientTresUrgent) => {
-    router.push(`/bloc/verification-veille?patientId=${p.id}&patientNom=${encodeURIComponent(p.nom)}`);
+    const params = new URLSearchParams({ patientId: p.id, patientNom: p.nom, statut: 'STAT' });
+    if (p.intervention) params.set('intervention', p.intervention);
+    router.push(`/bloc/consultation-cpa?${params.toString()}`);
   };
 
   return (

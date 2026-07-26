@@ -17,6 +17,7 @@ import {
   PrescriptionImagerieExterne,
 } from '../external/prescription-imagerie.client';
 import { PrescriptionService } from '../prescription/prescription.service';
+import { ServiceRegistryClient } from '../external/service-registry.client';
 
 // Ni le service Prescription (bloc), ni le service Prescription (imagerie) ne nous poussent
 // jamais la donnée directement : ils créent une prescription puis avertissent le service
@@ -46,6 +47,7 @@ export class PrescriptionImagerieListenerService
     private readonly config: ConfigService,
     private readonly prescriptionImagerieClient: PrescriptionImagerieClient,
     private readonly prescriptionService: PrescriptionService,
+    private readonly serviceRegistryClient: ServiceRegistryClient,
     @InjectRepository(NotificationCPA)
     private readonly notificationRepo: Repository<NotificationCPA>,
   ) {
@@ -168,6 +170,9 @@ export class PrescriptionImagerieListenerService
       .filter(Boolean)
       .join(' ')
       .trim();
+    const serviceSourceNom = await this.serviceRegistryClient.getServiceName(
+      prescription.serviceIdSource,
+    );
 
     await this.notificationRepo.save(
       this.notificationRepo.create({
@@ -175,6 +180,8 @@ export class PrescriptionImagerieListenerService
         patientId: prescription.patientId,
         intervention: prescription.type || 'Prescription imagerie',
         chirurgienNom: prescripteurNom || undefined,
+        serviceSourceId: prescription.serviceIdSource || undefined,
+        serviceSourceNom: serviceSourceNom || undefined,
         estUrgent,
         statut: StatutNotificationCPA.EN_ATTENTE,
       }),

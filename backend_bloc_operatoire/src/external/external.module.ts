@@ -10,6 +10,7 @@ import { PrescriptionImagerieClient } from './prescription-imagerie.client';
 import { NotificationBackClient } from './notification-back.client';
 import { DossierPatientClient } from './dossier-patient.client';
 import { CentralUserClient } from './central-user.client';
+import { ServiceRegistryClient } from './service-registry.client';
 import { PharmacieClient } from './pharmacie.client';
 
 @Global()
@@ -32,6 +33,7 @@ import { PharmacieClient } from './pharmacie.client';
     NotificationBackClient,
     DossierPatientClient,
     CentralUserClient,
+    ServiceRegistryClient,
     PharmacieClient,
   ],
   exports: [
@@ -44,6 +46,7 @@ import { PharmacieClient } from './pharmacie.client';
     NotificationBackClient,
     DossierPatientClient,
     CentralUserClient,
+    ServiceRegistryClient,
     PharmacieClient,
   ],
 })

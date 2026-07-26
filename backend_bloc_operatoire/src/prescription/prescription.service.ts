@@ -18,6 +18,7 @@ import {
   PrescriptionBlocExterne,
 } from '../external/prescription-externe.client';
 import { NotificationBackClient } from '../external/notification-back.client';
+import { ServiceRegistryClient } from '../external/service-registry.client';
 
 @Injectable()
 export class PrescriptionService {
@@ -31,6 +32,7 @@ export class PrescriptionService {
     private notificationRepo: Repository<NotificationCPA>,
     private prescriptionClient: PrescriptionExterneClient,
     private notificationBackClient: NotificationBackClient,
+    private serviceRegistryClient: ServiceRegistryClient,
     private config: ConfigService,
   ) {}
 
@@ -113,6 +115,12 @@ export class PrescriptionService {
 
     const acte = p.actes?.[0];
     const niveauUrgence = this.mapUrgence(p.urgence);
+    // Le service Prescriptions ne transmet que l'id du service demandeur, jamais son nom — sans
+    // cette résolution, "service source" restait vide partout où ce patient est affiché (fiche
+    // patient, prescription au sein de la CPA, notification).
+    const serviceSourceNom = await this.serviceRegistryClient.getServiceName(
+      p.serviceIdSource,
+    );
 
     let patient = await this.patientBlocRepo.findOne({
       where: { patientId: p.patientId },
@@ -135,6 +143,7 @@ export class PrescriptionService {
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence,
       serviceOrigineId: p.serviceIdSource || undefined,
+      serviceOrigine: serviceSourceNom || undefined,
       prescriptionExterneId: p.id,
     };
 
@@ -158,6 +167,8 @@ export class PrescriptionService {
         chirurgienId: undefined,
         chirurgienNom: p.chirurgien || undefined,
         professeurCPA: undefined,
+        serviceSourceId: p.serviceIdSource || undefined,
+        serviceSourceNom: serviceSourceNom || undefined,
         estUrgent: niveauUrgence !== NiveauUrgence.NORMAL,
         statut: StatutNotificationCPA.EN_ATTENTE,
       }),

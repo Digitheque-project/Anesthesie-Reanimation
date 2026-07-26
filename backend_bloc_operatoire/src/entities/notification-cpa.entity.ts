@@ -45,6 +45,15 @@ export class NotificationCPA {
   @Column({ type: 'varchar', nullable: true })
   professeurCPA: string | null; // professeur responsable de la CPA
 
+  // Service à l'origine de la prescription (ex. Chirurgie, Urgences) — id transmis par le
+  // service Prescriptions, nom résolu via le registre central des services (voir
+  // ServiceRegistryClient) car jamais transmis directement par la prescription elle-même.
+  @Column({ type: 'varchar', nullable: true })
+  serviceSourceId: string | null;
+
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  serviceSourceNom: string | null;
+
   @Column({ default: false })
   estUrgent: boolean;
 

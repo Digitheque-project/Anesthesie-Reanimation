@@ -41,7 +41,8 @@ export default function TableauNotifications({
               <th className="px-4 py-3 text-left">Patient</th>
               <th className="px-4 py-3 text-left">Intervention</th>
               <th className="px-4 py-3 text-left">Opération prévue</th>
-              <th className="px-4 py-3 text-left">Prescripteur</th>
+              <th className="px-4 py-3 text-left">Service source</th>
+              <th className="px-4 py-3 text-left">Responsable</th>
               <th className="px-4 py-3 text-left">Urgent</th>
               <th className="px-4 py-3 text-left">Action</th>
             </tr>
@@ -67,15 +68,10 @@ export default function TableauNotifications({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-sm">{n.heure || 'N/A'}</td>
+                  <td className="px-4 py-3 font-mono text-sm">{n.heure || n.heurePrescription || 'N/A'}</td>
                   <td className="px-4 py-3">
                     <div className="font-semibold text-on-surface">
                       {n.patientNom || formaterNomPatient(n.patient)}
-                      {n.origineExterne && n.sourceServiceName && (
-                        <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">
-                          {n.sourceServiceName}
-                        </span>
-                      )}
                       {estTresUrgent && (
                         <span className={`ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full ${styleUrgence(niveau).badge}`}>
                           ⚡ {libelleUrgence(niveau)}
@@ -94,7 +90,16 @@ export default function TableauNotifications({
                       <span className="text-xs text-on-surface-variant italic">Non communiquée</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-on-surface-variant">{n.prescripteur || n.professeurCPA || '-'}</td>
+                  <td className="px-4 py-3">
+                    {(n.sourceServiceName || n.serviceSourceNom) ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full whitespace-nowrap">
+                        {n.sourceServiceName || n.serviceSourceNom}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-on-surface-variant italic">Non communiqué</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-on-surface-variant">{n.prescripteur || n.chirurgienNom || n.professeurCPA || '-'}</td>
                   <td className="px-4 py-3">
                     <span className={`px-3 py-1 text-xs font-bold rounded-full ${styleUrgence(niveau).badge} ${niveau === 'TRES_URGENT' ? 'animate-pulse' : ''}`}>
                       {libelleUrgence(niveau)}
