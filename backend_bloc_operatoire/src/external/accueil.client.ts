@@ -5,6 +5,14 @@ function isAxiosError(error: any): boolean {
   return error && error.isAxiosError === true;
 }
 
+// Sans timeout explicite, un appel vers Accueil resterait en attente indéfiniment si le
+// service est lent/endormi (Render free tier) — avec jusqu'à des centaines d'appels en
+// parallèle (voir enrichWithIdentity, appelé pour chaque opération du Rapport), cela suffit à
+// dépasser le timeout de la plateforme et faire échouer toute la requête (y compris les
+// sections qui n'avaient pourtant pas besoin d'Accueil). 8s : assez court pour ne jamais faire
+// traîner tout un tableau de bord, assez long pour un aller-retour normal.
+const TIMEOUT_MS = 8000;
+
 // Classe AccueilClient qui gère les appels vers l'API externe
 export class AccueilClient {
   private readonly baseUrl: string;
@@ -16,7 +24,7 @@ export class AccueilClient {
   // Méthode pour récupérer les données d'accueil
   async getAccueilData(): Promise<any> {
     try {
-      const response = await axios.get(`${this.baseUrl}/accueil`);
+      const response = await axios.get(`${this.baseUrl}/accueil`, { timeout: TIMEOUT_MS });
       return response.data;
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 404) {
@@ -30,7 +38,7 @@ export class AccueilClient {
   // Autres méthodes utiles
   async getPatientData(patientId: string): Promise<any> {
     try {
-      const response = await axios.get(`${this.baseUrl}/patients/${patientId}`);
+      const response = await axios.get(`${this.baseUrl}/patients/${patientId}`, { timeout: TIMEOUT_MS });
       return response.data;
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 404) {
@@ -101,7 +109,7 @@ export class AccueilClient {
   // Méthode générique pour les requêtes GET
   async get(endpoint: string): Promise<any> {
     try {
-      const response = await axios.get(`${this.baseUrl}${endpoint}`);
+      const response = await axios.get(`${this.baseUrl}${endpoint}`, { timeout: TIMEOUT_MS });
       return response.data;
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 404) {
@@ -115,7 +123,7 @@ export class AccueilClient {
   // Méthode générique pour les requêtes POST
   async post(endpoint: string, data: any): Promise<any> {
     try {
-      const response = await axios.post(`${this.baseUrl}${endpoint}`, data);
+      const response = await axios.post(`${this.baseUrl}${endpoint}`, data, { timeout: TIMEOUT_MS });
       return response.data;
     } catch (err) {
       console.error(`Erreur POST ${endpoint}:`, err);

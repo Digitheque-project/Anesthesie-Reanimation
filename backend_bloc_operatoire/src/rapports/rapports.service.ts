@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Not, In } from 'typeorm';
 import { PatientBloc } from '../entities/patient-bloc.entity';
@@ -18,6 +18,8 @@ import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 
 @Injectable()
 export class RapportsService {
+  private readonly logger = new Logger(RapportsService.name);
+
   constructor(
     @InjectRepository(PatientBloc)
     private patientBlocRepo: Repository<PatientBloc>,
@@ -357,18 +359,15 @@ export class RapportsService {
   // Point d'entrée unique du dashboard Rapport : agrège tout ce qui précède en un seul appel,
   // filtré sur la même période, pour éviter les incohérences entre widgets et limiter le nombre
   // de requêtes réseau du frontend.
+  //
+  // Promise.allSettled plutôt que Promise.all : chaque section interroge des services externes
+  // (Accueil, utilisateurs centraux) potentiellement lents ou temporairement indisponibles —
+  // avant, l'échec d'une seule section (ex. Accueil endormi pendant l'enrichissement du détail
+  // des opérations) faisait échouer TOUT le tableau de bord, y compris les sections qui
+  // n'avaient aucun besoin de cette section-là. Chaque section dégrade maintenant vers une
+  // valeur vide/neutre si elle échoue, sans jamais faire tomber les autres.
   async tableauDeBord(dateDebut?: string, dateFin?: string) {
-    const [
-      statistiques,
-      activiteParChirurgien,
-      activiteParAnesthesiste,
-      decisionsCPA,
-      typesChirurgie,
-      tachesAccomplies,
-      evolutionQuotidienne,
-      operationsDetail,
-      sortiesReveil,
-    ] = await Promise.all([
+    const sections = await Promise.allSettled([
       this.statistiquesGenerales(dateDebut, dateFin),
       this.activiteParChirurgien(dateDebut, dateFin),
       this.activiteParAnesthesiste(dateDebut, dateFin),
@@ -379,6 +378,39 @@ export class RapportsService {
       this.operationsDetail(dateDebut, dateFin),
       this.sortieRepo.count(),
     ]);
+
+    const noms = [
+      'statistiquesGenerales',
+      'activiteParChirurgien',
+      'activiteParAnesthesiste',
+      'decisionsCPA',
+      'typesChirurgie',
+      'tachesAccomplies',
+      'tauxOccupation',
+      'operationsDetail',
+      'sortiesReveil',
+    ];
+    const valeursParDefaut: any[] = [{}, [], [], [], [], {}, [], [], 0];
+
+    const resultats = sections.map((s, i) => {
+      if (s.status === 'fulfilled') return s.value;
+      this.logger.error(
+        `Section "${noms[i]}" du tableau de bord en échec, dégradée à vide: ${s.reason?.message ?? s.reason}`,
+      );
+      return valeursParDefaut[i];
+    });
+
+    const [
+      statistiques,
+      activiteParChirurgien,
+      activiteParAnesthesiste,
+      decisionsCPA,
+      typesChirurgie,
+      tachesAccomplies,
+      evolutionQuotidienne,
+      operationsDetail,
+      sortiesReveil,
+    ] = resultats;
 
     return {
       periode: { dateDebut: dateDebut || null, dateFin: dateFin || null },
