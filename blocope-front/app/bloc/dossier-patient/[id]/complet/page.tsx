@@ -251,7 +251,15 @@ function DossierPatientCompletPageContent() {
   const resolvedEpisodeId =
     prefill?.hospitalisationId || urlHospitalisationId || undefined;
 
-  const patient = apiPatient ?? prefill?.patient ?? null;
+  // apiPatient (fetch direct Accueil, dépend d'un chuId de session/URL) échoue silencieusement
+  // pour tout patient arrivé par un flux interne au bloc (CPA, prescription...) qui n'a jamais
+  // été ouvert depuis une carte-lit Accueil — blocPatient (fiche PatientBloc, déjà enrichie
+  // côté backend via AccueilClient.enrichWithIdentity, sans dépendance à la session courante)
+  // sert alors de filet de sécurité pour ne jamais retomber sur un dossier vide de tout nom.
+  const patient = useMemo(() => {
+    if (!blocPatient && !apiPatient && !prefill?.patient) return null;
+    return { ...(blocPatient || {}), ...(apiPatient || {}), ...(prefill?.patient || {}) };
+  }, [blocPatient, apiPatient, prefill]);
 
   const hydratedPatientInfo = useMemo(
     () => toObservationPatientInfo(patient),
