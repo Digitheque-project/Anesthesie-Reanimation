@@ -118,7 +118,7 @@ export default function NotificationModal({
       router.push(`/bloc/demande-cpa-externe/${notification.id}`);
       handleClose();
     } else if (notification.patientId) {
-      router.push(`/bloc/dossier-patient/${notification.patientId}`);
+      router.push(`/bloc/dossier-patient/${notification.patientId}?notifId=${notification.id || ''}`);
       handleClose();
     }
   };

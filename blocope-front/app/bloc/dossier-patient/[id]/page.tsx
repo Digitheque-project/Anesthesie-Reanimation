@@ -31,6 +31,10 @@ function DossierPatientPageContent() {
   const [loading, setLoading] = useState(true)
   const [showPlanifier, setShowPlanifier] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // Service source / date de réception ne vivent pas sur PatientBloc mais sur la notification
+  // de prescription elle-même — sans cette fiche, ces deux champs (et le repli de la date
+  // d'opération prévue si elle n'a pas été synchronisée sur PatientBloc) restaient vides.
+  const [notification, setNotification] = useState<any>(null)
   const { peutPlanifierCpa, roleName } = useRole()
 
   const charger = () => {
@@ -47,6 +51,16 @@ function DossierPatientPageContent() {
   useEffect(() => {
     if (patientId) charger()
   }, [patientId])
+
+  useEffect(() => {
+    if (notifId) {
+      notificationService.getById(notifId).then(setNotification).catch(() => setNotification(null))
+    } else if (patientId) {
+      notificationService.getAll(1, 100)
+        .then((res: any) => setNotification((res.data || []).find((n: any) => n.patientId === patientId) || null))
+        .catch(() => setNotification(null))
+    }
+  }, [notifId, patientId])
 
   const handleValiderPlanification = async (formData: any) => {
     try {
@@ -132,7 +146,7 @@ function DossierPatientPageContent() {
         <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined">clinical_notes</span> Prescription chirurgicale
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm mb-2">
           <div className="p-3 bg-blue-50 rounded-lg">
             <span className="text-xs font-bold text-gray-500 uppercase">Intervention prévue</span>
             <p className="font-bold text-lg">{p.libelle || 'Non spécifiée'}</p>
@@ -144,14 +158,26 @@ function DossierPatientPageContent() {
           <div className="p-3 bg-blue-50 rounded-lg">
             <span className="text-xs font-bold text-gray-500 uppercase">Date et heure prévues de l'opération</span>
             <p className="font-bold">
-              {p.dateIntervention
-                ? new Date(p.dateIntervention).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+              {(p.dateIntervention || notification?.dateIntervention)
+                ? new Date(p.dateIntervention || notification.dateIntervention).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                 : 'Non communiquée'}
             </p>
           </div>
           <div className="p-3 bg-blue-50 rounded-lg">
             <span className="text-xs font-bold text-gray-500 uppercase">Chirurgien</span>
-            <p className="font-bold">{p.chirurgien_nom || '—'}</p>
+            <p className="font-bold">{p.chirurgien_nom || notification?.chirurgienNom || '—'}</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <span className="text-xs font-bold text-gray-500 uppercase">Service source</span>
+            <p className="font-bold">{notification?.sourceServiceName || notification?.serviceSourceNom || notification?.serviceSourceId || '—'}</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <span className="text-xs font-bold text-gray-500 uppercase">Date de réception</span>
+            <p className="font-bold">
+              {notification?.createdAt
+                ? new Date(notification.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '—'}
+            </p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">

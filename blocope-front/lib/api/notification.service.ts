@@ -61,6 +61,11 @@ export const notificationService = {
     }
   },
 
+  getById: async (id: string) => {
+    const { data } = await apiClient.get(`/notifications-cpa/${id}`)
+    return data
+  },
+
   getUnreadCount: async () => {
     try {
       const { data } = await apiClient.get('/notifications-cpa/unread/count')
