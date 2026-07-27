@@ -212,7 +212,6 @@ export default function RapportsPage() {
           { label: 'Patients (total)', val: stats.totalPatients, icon: 'groups', couleur: 'blue' },
           { label: 'Patients actifs', val: stats.totalPatientsActifs, icon: 'directions_walk', couleur: 'cyan' },
           { label: 'Opérations', val: stats.totalOperations, icon: 'monitor_heart', couleur: 'emerald' },
-          { label: 'Urgences en cours', val: stats.totalUrgences, icon: 'warning', couleur: 'red' },
           { label: 'CPA réalisées', val: decisionsCPA.reduce((s, d) => s + Number(d.count || 0), 0), icon: 'assignment_turned_in', couleur: 'amber' },
           { label: 'Scores SCCRE', val: stats.totalScores, icon: 'bed', couleur: 'violet' },
           { label: 'Sorties de réveil', val: stats.totalSortiesReveil, icon: 'exit_to_app', couleur: 'teal' },
