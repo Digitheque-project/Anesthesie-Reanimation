@@ -45,6 +45,10 @@ export class PatientBlocStatutService {
       ],
       [PatientStatut.CPA_REALISE]: [
         PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+        // Patient urgent/très urgent : pas de "veille" à attendre avant une opération le jour
+        // même — bascule directe vers la liste des patients à opérer aujourd'hui (voir
+        // CPAService.create, qui ne déclenche ce saut que pour niveauUrgence URGENT/TRES_URGENT).
+        PatientStatut.PRET_POUR_BLOC,
       ],
       [PatientStatut.CPA_INAPTE]: [],
       [PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [

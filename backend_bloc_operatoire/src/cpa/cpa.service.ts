@@ -7,7 +7,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CPA, DecisionCPA } from '../entities/cpa.entity';
-import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
+import {
+  PatientBloc,
+  PatientStatut,
+  NiveauUrgence,
+} from '../entities/patient-bloc.entity';
 import { Premedicament } from '../entities/premedicament.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { EndoscopieClient } from '../external/endoscopie.client';
@@ -15,6 +19,7 @@ import { NotificationOutgoingService } from '../external/notification-outgoing.s
 import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-externe.service';
 import { MedecinService } from '../medecin/medecin.service';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
+import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
 import { CentralUser } from '../central-auth/central-user.interface';
 import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 import { RoleMedecin } from '../entities/medecin.entity';
@@ -39,6 +44,7 @@ export class CPAService {
     private medecinService: MedecinService,
     private medecinIdentiteService: MedecinIdentiteService,
     private tracabiliteService: TracabiliteService,
+    private patientBlocStatutService: PatientBlocStatutService,
   ) {}
 
   async create(dto: CreateCPADto, centralUser: CentralUser): Promise<CPA> {
@@ -112,6 +118,25 @@ export class CPAService {
       await this.patientBlocRepo.update(dto.patientId, {
         statut: nouveauStatut,
       });
+
+      // Patient urgent/très urgent déclaré APTE : pas de "vérification la veille" à attendre,
+      // l'opération peut avoir lieu le jour même — bascule directe vers PRET_POUR_BLOC pour
+      // qu'il apparaisse immédiatement dans la liste des patients à opérer aujourd'hui.
+      if (nouveauStatut === PatientStatut.CPA_REALISE) {
+        const patientUrgence = await this.patientBlocRepo.findOne({
+          where: { patientId: dto.patientId },
+        });
+        if (
+          patientUrgence?.niveauUrgence === NiveauUrgence.URGENT ||
+          patientUrgence?.niveauUrgence === NiveauUrgence.TRES_URGENT
+        ) {
+          await this.patientBlocStatutService.changerStatut(
+            dto.patientId,
+            PatientStatut.PRET_POUR_BLOC,
+            centralUser.userId,
+          );
+        }
+      }
 
       if (dto.decision !== DecisionCPA.REPORT) {
         const demande =
