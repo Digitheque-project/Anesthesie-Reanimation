@@ -15,6 +15,7 @@ import { MomentOperatoire } from '../entities/moment-operatoire.entity';
 import { ProtocoleOperatoire } from '../entities/protocole-operatoire.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
+import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 
 @Injectable()
 export class RapportsService {
@@ -219,6 +220,76 @@ export class RapportsService {
     );
   }
 
+  // Activité par IBODE : les moments opératoires (chronologie per-op, catégories Chirurgie/
+  // Divers) sont la seule action per-opératoire que l'IBODE réalise lui-même — auteurId/
+  // auteurNom/auteurRole sont capturés directement à la création (voir
+  // MomentsOperatoireService.create), pas de jointure identité nécessaire. auteurRole est le
+  // libellé libre transmis par le SSO central (pas l'enum normalisé) — filtré/groupé en mémoire
+  // via matchRoleClinique plutôt qu'en SQL, pour rester cohérent avec la même normalisation que
+  // le reste de l'app (accents, casse, variantes de libellé).
+  async activiteParIbode(dateDebut?: string, dateFin?: string) {
+    const where =
+      dateDebut && dateFin
+        ? { horodatage: Between(new Date(dateDebut), new Date(dateFin)) }
+        : {};
+    const moments = await this.momentRepo.find({
+      where: { ...where, annule: false },
+    });
+    const parId = new Map<
+      string,
+      { medecinId: string; nomComplet: string; nbOperations: number }
+    >();
+    for (const m of moments) {
+      if (matchRoleClinique(m.auteurRole) !== RoleClinique.IBODE) continue;
+      const existant = parId.get(m.auteurId);
+      if (existant) existant.nbOperations += 1;
+      else
+        parId.set(m.auteurId, {
+          medecinId: m.auteurId,
+          nomComplet: m.auteurNom || '—',
+          nbOperations: 1,
+        });
+    }
+    return Array.from(parId.values()).sort(
+      (a, b) => b.nbOperations - a.nbOperations,
+    );
+  }
+
+  // Activité par Responsable CPA : contrairement à l'anesthésiste, le Responsable CPA n'a pas
+  // d'acte clinique qui lui soit propre — anesthesisteId sur CPA désigne toujours le vrai
+  // clinicien (voir CPAService.create). saisiParId/saisiParRole capturent qui a effectivement
+  // rempli/soumis le dossier, seule trace d'activité propre au Responsable CPA aujourd'hui.
+  async activiteParResponsableCpa(dateDebut?: string, dateFin?: string) {
+    const periode =
+      dateDebut && dateFin
+        ? { dateConsultation: Between(new Date(dateDebut), new Date(dateFin)) }
+        : {};
+    const dossiers = await this.cpaRepository.find({ where: periode });
+    const parId = new Map<string, { medecinId: string; nbDossiers: number }>();
+    for (const c of dossiers) {
+      if (
+        !c.saisiParId ||
+        matchRoleClinique(c.saisiParRole) !== RoleClinique.RESPONSABLE_CPA
+      )
+        continue;
+      const existant = parId.get(c.saisiParId);
+      if (existant) existant.nbDossiers += 1;
+      else parId.set(c.saisiParId, { medecinId: c.saisiParId, nbDossiers: 1 });
+    }
+    const identites = await this.medecinIdentiteService.resoudreLot(
+      Array.from(parId.keys()),
+    );
+    return Array.from(parId.values())
+      .map((r) => {
+        const identite = identites[r.medecinId];
+        return {
+          ...r,
+          nomComplet: identite ? `${identite.prenom} ${identite.nom}` : '—',
+        };
+      })
+      .sort((a, b) => b.nbDossiers - a.nbDossiers);
+  }
+
   async decisionsCPA(dateDebut?: string, dateFin?: string) {
     const periode =
       dateDebut && dateFin
@@ -376,6 +447,8 @@ export class RapportsService {
       this.statistiquesGenerales(dateDebut, dateFin),
       this.activiteParChirurgien(dateDebut, dateFin),
       this.activiteParAnesthesiste(dateDebut, dateFin),
+      this.activiteParIbode(dateDebut, dateFin),
+      this.activiteParResponsableCpa(dateDebut, dateFin),
       this.decisionsCPA(dateDebut, dateFin),
       this.typesChirurgie(),
       this.tachesAccomplies(dateDebut, dateFin),
@@ -388,6 +461,8 @@ export class RapportsService {
       'statistiquesGenerales',
       'activiteParChirurgien',
       'activiteParAnesthesiste',
+      'activiteParIbode',
+      'activiteParResponsableCpa',
       'decisionsCPA',
       'typesChirurgie',
       'tachesAccomplies',
@@ -395,7 +470,7 @@ export class RapportsService {
       'operationsDetail',
       'sortiesReveil',
     ];
-    const valeursParDefaut: any[] = [{}, [], [], [], [], {}, [], [], 0];
+    const valeursParDefaut: any[] = [{}, [], [], [], [], [], [], {}, [], [], 0];
 
     const resultats = sections.map((s, i) => {
       if (s.status === 'fulfilled') return s.value;
@@ -409,6 +484,8 @@ export class RapportsService {
       statistiques,
       activiteParChirurgien,
       activiteParAnesthesiste,
+      activiteParIbode,
+      activiteParResponsableCpa,
       decisionsCPA,
       typesChirurgie,
       tachesAccomplies,
@@ -423,6 +500,8 @@ export class RapportsService {
       statistiques: { ...statistiques, totalSortiesReveil: sortiesReveil },
       activiteParChirurgien,
       activiteParAnesthesiste,
+      activiteParIbode,
+      activiteParResponsableCpa,
       decisionsCPA,
       typesChirurgie,
       tachesAccomplies,

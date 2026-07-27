@@ -87,6 +87,8 @@ export default function RapportsPage() {
   const stats = dashboard?.statistiques || {}
   const activiteChirurgiens: any[] = dashboard?.activiteParChirurgien || []
   const activiteAnesthesistes: any[] = dashboard?.activiteParAnesthesiste || []
+  const activiteIbode: any[] = dashboard?.activiteParIbode || []
+  const activiteRespoCpa: any[] = dashboard?.activiteParResponsableCpa || []
   const decisionsCPA: any[] = dashboard?.decisionsCPA || []
   const typesChirurgie: any[] = dashboard?.typesChirurgie || []
   const evolution: any[] = dashboard?.evolutionQuotidienne || []
@@ -133,6 +135,23 @@ export default function RapportsPage() {
     name: a.nomComplet?.trim() || 'Non renseigné',
     CPA: Number(a.nbCPA) || 0, Opérations: Number(a.nbOperations) || 0, 'Scores SCCRE': Number(a.nbScoresSCCRE) || 0,
   }))
+  const activiteIbodeGraph = activiteIbode.map((i: any) => ({
+    name: i.nomComplet?.trim() || 'Non renseigné', nbOperations: Number(i.nbOperations) || 0,
+  }))
+  const activiteRespoCpaGraph = activiteRespoCpa.map((r: any) => ({
+    name: r.nomComplet?.trim() || 'Non renseigné', nbDossiers: Number(r.nbDossiers) || 0,
+  }))
+
+  // Vue d'ensemble : volume total d'activité par rôle (pas par individu) — sert de repère
+  // immédiat avant de descendre dans le détail par personnel ci-dessous. Les unités diffèrent
+  // par rôle (opérations, actes CPA/scores, moments horodatés, dossiers saisis) : une barre par
+  // rôle plutôt qu'un donut, qui suggérerait à tort des parts d'un même total.
+  const vueEnsembleGraph = [
+    { name: 'Chirurgien', value: activiteChirurgiens.reduce((s, c: any) => s + (Number(c.nbOperations) || 0), 0), fill: '#3b82f6' },
+    { name: 'Anesthésiste', value: activiteAnesthesistes.reduce((s, a: any) => s + (Number(a.nbCPA) || 0) + (Number(a.nbOperations) || 0) + (Number(a.nbScoresSCCRE) || 0), 0), fill: '#8b5cf6' },
+    { name: 'IBODE', value: activiteIbode.reduce((s, i: any) => s + (Number(i.nbOperations) || 0), 0), fill: '#f43f5e' },
+    { name: 'Responsable CPA', value: activiteRespoCpa.reduce((s, r: any) => s + (Number(r.nbDossiers) || 0), 0), fill: '#f59e0b' },
+  ]
 
   // ————— Colonnes / lignes pour les exports —————
   const colonnesChirurgiens: Colonne[] = [{ cle: 'nomComplet', titre: 'Chirurgien' }, { cle: 'nbOperations', titre: "Nb opérations" }]
@@ -221,17 +240,21 @@ export default function RapportsPage() {
         ))}
       </div>
 
-      {/* Tâches accomplies */}
+      {/* Tâches accomplies — barres de progression (val / nb d'opérations sur la période) plutôt
+          que des chiffres bruts serrés côte à côte : Moments horodatés reste à part (plusieurs
+          moments par opération, pas de "100%" qui aurait un sens). */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
         <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">task_alt</span> Tâches accomplies dans le bloc
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <TacheCard label="Check-lists Sign In" val={taches.checklistsAvantOp} icone="checklist" couleur="blue" />
-          <TacheCard label="Check-lists Time Out" val={taches.checklistsPendantOp} icone="pause_circle" couleur="teal" />
-          <TacheCard label="Check-lists Sign Out" val={taches.checklistsApresOp} icone="assignment_turned_in" couleur="indigo" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <TacheProgress label="Check-lists Sign In" val={taches.checklistsAvantOp} total={Number(stats.totalOperations) || 0} icone="checklist" couleur="blue" />
+          <TacheProgress label="Check-lists Time Out" val={taches.checklistsPendantOp} total={Number(stats.totalOperations) || 0} icone="pause_circle" couleur="teal" />
+          <TacheProgress label="Check-lists Sign Out" val={taches.checklistsApresOp} total={Number(stats.totalOperations) || 0} icone="assignment_turned_in" couleur="indigo" />
+          <TacheProgress label="Comptes-rendus opératoires" val={taches.comptesRendusOperatoires} total={Number(stats.totalOperations) || 0} icone="description" couleur="amber" />
+        </div>
+        <div className="w-full sm:w-64">
           <TacheCard label="Moments horodatés" val={taches.momentsOperatoires} icone="timeline" couleur="rose" />
-          <TacheCard label="Comptes-rendus opératoires" val={taches.comptesRendusOperatoires} icone="description" couleur="amber" />
         </div>
       </div>
 
@@ -295,13 +318,13 @@ export default function RapportsPage() {
             <span className="material-symbols-outlined text-violet-600">biotech</span> Types de chirurgie
           </h3>
           {typesChirurgieGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={typesChirurgieGraph} layout="vertical" margin={{ left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={typesChirurgieGraph} margin={{ left: 0, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
+                <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
                 <Tooltip />
-                <Bar dataKey="count" name="Nb" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="count" name="Nb" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -344,20 +367,40 @@ export default function RapportsPage() {
         </div>
       </div>
 
-      {/* Activité par personnel */}
+      {/* Vue d'ensemble — volume total d'activité par rôle, avant le détail par personnel */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
+        <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
+          <span className="material-symbols-outlined text-primary">groups_2</span> Vue d'ensemble — activité de tous les personnels
+        </h3>
+        {vueEnsembleGraph.every(v => v.value === 0) ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={vueEnsembleGraph} margin={{ left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700 }} />
+              <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
+              <Tooltip />
+              <Bar dataKey="value" name="Actes enregistrés" radius={[4, 4, 0, 0]}>
+                {vueEnsembleGraph.map((v, i) => <Cell key={i} fill={v.fill} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Activité par personnel (détail par individu) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
             <span className="material-symbols-outlined text-blue-600">content_cut</span> Activité par chirurgien
           </h3>
           {activiteChirurgiensGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <ResponsiveContainer width="100%" height={Math.max(220, activiteChirurgiensGraph.length * 32)}>
-              <BarChart data={activiteChirurgiensGraph} layout="vertical" margin={{ left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={activiteChirurgiensGraph} margin={{ left: 0, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
+                <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
                 <Tooltip />
-                <Bar dataKey="nbOperations" name="Opérations" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="nbOperations" name="Opérations" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -367,16 +410,48 @@ export default function RapportsPage() {
             <span className="material-symbols-outlined text-secondary">medical_services</span> Activité par anesthésiste
           </h3>
           {activiteAnesthesistesGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
-            <ResponsiveContainer width="100%" height={Math.max(220, activiteAnesthesistesGraph.length * 40)}>
-              <BarChart data={activiteAnesthesistesGraph} layout="vertical" margin={{ left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={activiteAnesthesistesGraph} margin={{ left: 0, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
+                <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
                 <Bar dataKey="CPA" stackId="a" fill="#8b5cf6" />
                 <Bar dataKey="Opérations" stackId="a" fill="#3b82f6" />
-                <Bar dataKey="Scores SCCRE" stackId="a" fill="#14b8a6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="Scores SCCRE" stackId="a" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
+          <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
+            <span className="material-symbols-outlined text-rose-600">king_bed</span> Activité par IBODE
+          </h3>
+          {activiteIbodeGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={activiteIbodeGraph} margin={{ left: 0, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
+                <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
+                <Tooltip />
+                <Bar dataKey="nbOperations" name="Moments horodatés" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-outline-variant/20">
+          <h3 className="text-sm font-bold mb-4 flex items-center gap-2 text-on-surface-variant uppercase tracking-widest">
+            <span className="material-symbols-outlined text-amber-600">assignment_ind</span> Activité par Responsable CPA
+          </h3>
+          {activiteRespoCpaGraph.length === 0 ? <p className="text-xs text-on-surface-variant italic">Aucune donnée.</p> : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={activiteRespoCpaGraph} margin={{ left: 0, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
+                <YAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} width={28} />
+                <Tooltip />
+                <Bar dataKey="nbDossiers" name="Dossiers CPA saisis" fill="#f59e0b" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -446,15 +521,16 @@ export default function RapportsPage() {
   )
 }
 
-const KPI_COULEUR: Record<string, { bg: string; text: string }> = {
-  blue: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  cyan: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
-  emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  red: { bg: 'bg-red-100', text: 'text-red-700' },
-  amber: { bg: 'bg-amber-100', text: 'text-amber-700' },
-  violet: { bg: 'bg-violet-100', text: 'text-violet-700' },
-  teal: { bg: 'bg-teal-100', text: 'text-teal-700' },
-  indigo: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+const KPI_COULEUR: Record<string, { bg: string; text: string; barre: string }> = {
+  blue: { bg: 'bg-blue-100', text: 'text-blue-700', barre: 'bg-blue-500' },
+  cyan: { bg: 'bg-cyan-100', text: 'text-cyan-700', barre: 'bg-cyan-500' },
+  emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700', barre: 'bg-emerald-500' },
+  red: { bg: 'bg-red-100', text: 'text-red-700', barre: 'bg-red-500' },
+  amber: { bg: 'bg-amber-100', text: 'text-amber-700', barre: 'bg-amber-500' },
+  violet: { bg: 'bg-violet-100', text: 'text-violet-700', barre: 'bg-violet-500' },
+  teal: { bg: 'bg-teal-100', text: 'text-teal-700', barre: 'bg-teal-500' },
+  indigo: { bg: 'bg-indigo-100', text: 'text-indigo-700', barre: 'bg-indigo-500' },
+  rose: { bg: 'bg-rose-100', text: 'text-rose-700', barre: 'bg-rose-500' },
 }
 
 function KpiCard({ label, valeur, icone, couleur }: { label: string; valeur: any; icone: string; couleur: string }) {
@@ -479,6 +555,31 @@ function TacheCard({ label, val, icone, couleur }: { label: string; val: any; ic
       <span className={`material-symbols-outlined ${c.text}`}>{icone}</span>
       <span className={`text-xl font-extrabold ${c.text}`}>{val ?? 0}</span>
       <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">{label}</span>
+    </div>
+  )
+}
+
+// Remplace un simple chiffre par une barre de progression (valeur / total sur la période) —
+// plus lisible en un coup d'œil qu'une grille de nombres serrés côte à côte, et montre
+// directement la proportion accomplie plutôt qu'un compte brut sans repère.
+function TacheProgress({ label, val, total, icone, couleur }: { label: string; val: any; total: number; icone: string; couleur: string }) {
+  const c = KPI_COULEUR[couleur] || KPI_COULEUR.blue
+  const valeur = Number(val) || 0
+  const pct = total > 0 ? Math.min(100, Math.round((valeur / total) * 100)) : 0
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-lowest">
+      <div className={`w-10 h-10 rounded-lg ${c.bg} flex items-center justify-center shrink-0`}>
+        <span className={`material-symbols-outlined ${c.text}`}>{icone}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wide truncate">{label}</span>
+          <span className={`text-xs font-extrabold ${c.text} shrink-0`}>{valeur}{total > 0 ? ` / ${total}` : ''}</span>
+        </div>
+        <div className="h-2 rounded-full bg-outline-variant/20 overflow-hidden">
+          <div className={`h-full rounded-full ${c.barre} transition-all`} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
     </div>
   )
 }

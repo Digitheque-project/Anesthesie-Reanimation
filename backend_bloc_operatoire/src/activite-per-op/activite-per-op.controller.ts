@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Request,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import {
@@ -58,8 +59,9 @@ export class ActivitePerOpController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateActivitePerOpDto,
+    @Request() req: any,
   ) {
-    return this.service.update(id, dto);
+    return this.service.update(id, dto, req.centralUser);
   }
 
   @Post(':id/constantes')

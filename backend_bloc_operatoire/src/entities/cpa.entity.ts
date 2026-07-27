@@ -57,6 +57,18 @@ export class CPA {
   @Column({ type: 'varchar', nullable: true })
   anesthesisteId: string | null;
 
+  // Distinct d'anesthesisteId : celui-ci reste toujours le clinicien ayant réalisé l'examen,
+  // saisiParId/saisiParRole capturent qui a effectivement rempli/soumis ce dossier (utile quand
+  // un Responsable CPA ou un Major saisit la CPA au nom de l'anesthésiste) — sert notamment à
+  // mesurer l'activité propre du Responsable CPA dans les rapports, qui n'a sinon aucune trace
+  // d'activité clinique qui lui soit propre. userId central SSO, jamais vide en pratique (le
+  // guard exige toujours un utilisateur authentifié pour créer une CPA).
+  @Column({ type: 'varchar', nullable: true })
+  saisiParId: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  saisiParRole: string | null;
+
   @Column({ type: 'date' })
   dateConsultation: Date;
 

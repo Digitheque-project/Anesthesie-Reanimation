@@ -9,6 +9,8 @@ import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { CreateActivitePerOpDto } from './dto/create-activite-per-op.dto';
 import { UpdateActivitePerOpDto } from './dto/update-activite-per-op.dto';
 import { AjouterConstanteDto } from './dto/ajouter-constante.dto';
+import { CentralUser } from '../central-auth/central-user.interface';
+import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 
 @Injectable()
 export class ActivitePerOpService {
@@ -87,10 +89,25 @@ export class ActivitePerOpService {
   async update(
     id: string,
     dto: UpdateActivitePerOpDto,
+    centralUser?: CentralUser,
   ): Promise<ActivitePerOp> {
     const a = await this.repo.findOne({ where: { id } });
     if (!a) throw new NotFoundException(`Activité ${id} non trouvée`);
-    return this.repo.save(Object.assign(a, dto));
+    // anesthesisteId n'a jamais de sélecteur dans le formulaire (mêmes raisons que
+    // chirurgienId sur ProtocoleOperatoire) — le seul appelant réel de cette route est
+    // l'anesthésiste connecté (le bouton "Valider" est masqué à l'IBODE côté frontend), donc on
+    // s'auto-désigne depuis la session plutôt que de dépendre d'une saisie manuelle inexistante.
+    // Miroir de la logique CPAService.create() : seul un vrai ANESTHESISTE s'auto-attribue,
+    // jamais un autre rôle qui appellerait cette route.
+    const patch: Record<string, any> = { ...dto };
+    if (
+      !patch.anesthesisteId &&
+      centralUser &&
+      matchRoleClinique(centralUser.role) === RoleClinique.ANESTHESISTE
+    ) {
+      patch.anesthesisteId = centralUser.userId;
+    }
+    return this.repo.save(Object.assign(a, patch));
   }
 
   async remove(id: string): Promise<{ message: string }> {
