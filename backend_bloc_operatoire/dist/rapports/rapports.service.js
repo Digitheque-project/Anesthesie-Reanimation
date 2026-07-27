@@ -31,6 +31,7 @@ const moment_operatoire_entity_1 = require("../entities/moment-operatoire.entity
 const protocole_operatoire_entity_1 = require("../entities/protocole-operatoire.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let RapportsService = RapportsService_1 = class RapportsService {
     patientBlocRepo;
     activiteRepo;
@@ -104,13 +105,13 @@ let RapportsService = RapportsService_1 = class RapportsService {
         const whereAct = dateDebut && dateFin
             ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
             : {};
-        const rows = await this.activiteRepo
-            .createQueryBuilder('a')
-            .select('a.chirurgienId', 'medecinId')
+        const rows = await this.protocoleRepo
+            .createQueryBuilder('p')
+            .select('p.chirurgienId', 'medecinId')
             .addSelect('COUNT(*)', 'nbOperations')
             .where(whereAct)
-            .andWhere('a.chirurgienId IS NOT NULL')
-            .groupBy('a.chirurgienId')
+            .andWhere('p.chirurgienId IS NOT NULL')
+            .groupBy('p.chirurgienId')
             .orderBy('nbOperations', 'DESC')
             .getRawMany();
         const identites = await this.medecinIdentiteService.resoudreLot(rows.map((r) => r.medecinId));
@@ -190,6 +191,56 @@ let RapportsService = RapportsService_1 = class RapportsService {
             b.nbOperations +
             b.nbScoresSCCRE -
             (a.nbCPA + a.nbOperations + a.nbScoresSCCRE));
+    }
+    async activiteParIbode(dateDebut, dateFin) {
+        const where = dateDebut && dateFin
+            ? { horodatage: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        const moments = await this.momentRepo.find({
+            where: { ...where, annule: false },
+        });
+        const parId = new Map();
+        for (const m of moments) {
+            if ((0, role_clinique_1.matchRoleClinique)(m.auteurRole) !== role_clinique_1.RoleClinique.IBODE)
+                continue;
+            const existant = parId.get(m.auteurId);
+            if (existant)
+                existant.nbOperations += 1;
+            else
+                parId.set(m.auteurId, {
+                    medecinId: m.auteurId,
+                    nomComplet: m.auteurNom || '—',
+                    nbOperations: 1,
+                });
+        }
+        return Array.from(parId.values()).sort((a, b) => b.nbOperations - a.nbOperations);
+    }
+    async activiteParResponsableCpa(dateDebut, dateFin) {
+        const periode = dateDebut && dateFin
+            ? { dateConsultation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        const dossiers = await this.cpaRepository.find({ where: periode });
+        const parId = new Map();
+        for (const c of dossiers) {
+            if (!c.saisiParId ||
+                (0, role_clinique_1.matchRoleClinique)(c.saisiParRole) !== role_clinique_1.RoleClinique.RESPONSABLE_CPA)
+                continue;
+            const existant = parId.get(c.saisiParId);
+            if (existant)
+                existant.nbDossiers += 1;
+            else
+                parId.set(c.saisiParId, { medecinId: c.saisiParId, nbDossiers: 1 });
+        }
+        const identites = await this.medecinIdentiteService.resoudreLot(Array.from(parId.keys()));
+        return Array.from(parId.values())
+            .map((r) => {
+            const identite = identites[r.medecinId];
+            return {
+                ...r,
+                nomComplet: identite ? `${identite.prenom} ${identite.nom}` : '—',
+            };
+        })
+            .sort((a, b) => b.nbDossiers - a.nbDossiers);
     }
     async decisionsCPA(dateDebut, dateFin) {
         const periode = dateDebut && dateFin
@@ -314,6 +365,8 @@ let RapportsService = RapportsService_1 = class RapportsService {
             this.statistiquesGenerales(dateDebut, dateFin),
             this.activiteParChirurgien(dateDebut, dateFin),
             this.activiteParAnesthesiste(dateDebut, dateFin),
+            this.activiteParIbode(dateDebut, dateFin),
+            this.activiteParResponsableCpa(dateDebut, dateFin),
             this.decisionsCPA(dateDebut, dateFin),
             this.typesChirurgie(),
             this.tachesAccomplies(dateDebut, dateFin),
@@ -325,6 +378,8 @@ let RapportsService = RapportsService_1 = class RapportsService {
             'statistiquesGenerales',
             'activiteParChirurgien',
             'activiteParAnesthesiste',
+            'activiteParIbode',
+            'activiteParResponsableCpa',
             'decisionsCPA',
             'typesChirurgie',
             'tachesAccomplies',
@@ -332,20 +387,22 @@ let RapportsService = RapportsService_1 = class RapportsService {
             'operationsDetail',
             'sortiesReveil',
         ];
-        const valeursParDefaut = [{}, [], [], [], [], {}, [], [], 0];
+        const valeursParDefaut = [{}, [], [], [], [], [], [], {}, [], [], 0];
         const resultats = sections.map((s, i) => {
             if (s.status === 'fulfilled')
                 return s.value;
             this.logger.error(`Section "${noms[i]}" du tableau de bord en échec, dégradée à vide: ${s.reason?.message ?? s.reason}`);
             return valeursParDefaut[i];
         });
-        const [statistiques, activiteParChirurgien, activiteParAnesthesiste, decisionsCPA, typesChirurgie, tachesAccomplies, evolutionQuotidienne, operationsDetail, sortiesReveil,] = resultats;
+        const [statistiques, activiteParChirurgien, activiteParAnesthesiste, activiteParIbode, activiteParResponsableCpa, decisionsCPA, typesChirurgie, tachesAccomplies, evolutionQuotidienne, operationsDetail, sortiesReveil,] = resultats;
         return {
             periode: { dateDebut: dateDebut || null, dateFin: dateFin || null },
             genereLe: new Date().toISOString(),
             statistiques: { ...statistiques, totalSortiesReveil: sortiesReveil },
             activiteParChirurgien,
             activiteParAnesthesiste,
+            activiteParIbode,
+            activiteParResponsableCpa,
             decisionsCPA,
             typesChirurgie,
             tachesAccomplies,

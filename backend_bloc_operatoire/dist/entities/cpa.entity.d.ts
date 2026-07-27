@@ -26,6 +26,8 @@ export declare class CPA {
     id: string;
     patientId: string;
     anesthesisteId: string | null;
+    saisiParId: string | null;
+    saisiParRole: string | null;
     dateConsultation: Date;
     antecedentsAnesthesie: boolean;
     notesIncidents: string;

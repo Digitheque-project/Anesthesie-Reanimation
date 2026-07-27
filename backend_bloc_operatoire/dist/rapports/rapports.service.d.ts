@@ -48,6 +48,16 @@ export declare class RapportsService {
         nbOperations: number;
         nbScoresSCCRE: number;
     }[]>;
+    activiteParIbode(dateDebut?: string, dateFin?: string): Promise<{
+        medecinId: string;
+        nomComplet: string;
+        nbOperations: number;
+    }[]>;
+    activiteParResponsableCpa(dateDebut?: string, dateFin?: string): Promise<{
+        nomComplet: string;
+        medecinId: string;
+        nbDossiers: number;
+    }[]>;
     decisionsCPA(dateDebut?: string, dateFin?: string): Promise<any[]>;
     typesChirurgie(): Promise<any[]>;
     tachesAccomplies(dateDebut?: string, dateFin?: string): Promise<{
@@ -79,6 +89,8 @@ export declare class RapportsService {
         statistiques: any;
         activiteParChirurgien: any;
         activiteParAnesthesiste: any;
+        activiteParIbode: any;
+        activiteParResponsableCpa: any;
         decisionsCPA: any;
         typesChirurgie: any;
         tachesAccomplies: any;
@@ -94,6 +106,8 @@ export declare class RapportsService {
         statistiques: any;
         activiteParChirurgien: any;
         activiteParAnesthesiste: any;
+        activiteParIbode: any;
+        activiteParResponsableCpa: any;
         decisionsCPA: any;
         typesChirurgie: any;
         tachesAccomplies: any;

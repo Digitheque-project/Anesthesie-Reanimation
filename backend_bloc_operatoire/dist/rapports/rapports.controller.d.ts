@@ -11,6 +11,8 @@ export declare class RapportsController {
         statistiques: any;
         activiteParChirurgien: any;
         activiteParAnesthesiste: any;
+        activiteParIbode: any;
+        activiteParResponsableCpa: any;
         decisionsCPA: any;
         typesChirurgie: any;
         tachesAccomplies: any;
@@ -39,6 +41,8 @@ export declare class RapportsController {
         statistiques: any;
         activiteParChirurgien: any;
         activiteParAnesthesiste: any;
+        activiteParIbode: any;
+        activiteParResponsableCpa: any;
         decisionsCPA: any;
         typesChirurgie: any;
         tachesAccomplies: any;

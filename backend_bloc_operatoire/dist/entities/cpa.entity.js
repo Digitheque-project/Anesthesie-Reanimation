@@ -43,6 +43,8 @@ let CPA = class CPA {
     id;
     patientId;
     anesthesisteId;
+    saisiParId;
+    saisiParRole;
     dateConsultation;
     antecedentsAnesthesie;
     notesIncidents;
@@ -93,6 +95,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], CPA.prototype, "anesthesisteId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "saisiParId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "saisiParRole", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'date' }),
     __metadata("design:type", Date)

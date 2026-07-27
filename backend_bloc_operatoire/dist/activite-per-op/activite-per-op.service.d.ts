@@ -7,6 +7,7 @@ import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { CreateActivitePerOpDto } from './dto/create-activite-per-op.dto';
 import { UpdateActivitePerOpDto } from './dto/update-activite-per-op.dto';
 import { AjouterConstanteDto } from './dto/ajouter-constante.dto';
+import { CentralUser } from '../central-auth/central-user.interface';
 export declare class ActivitePerOpService {
     private repo;
     private constanteRepo;
@@ -22,7 +23,7 @@ export declare class ActivitePerOpService {
         pages: number;
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateActivitePerOpDto): Promise<ActivitePerOp>;
+    update(id: string, dto: UpdateActivitePerOpDto, centralUser?: CentralUser): Promise<ActivitePerOp>;
     remove(id: string): Promise<{
         message: string;
     }>;

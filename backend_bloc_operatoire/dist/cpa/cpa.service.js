@@ -77,7 +77,12 @@ let CPAService = CPAService_1 = class CPAService {
             anesthesisteId = null;
         }
         const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto;
-        const cpa = this.cpaRepository.create({ ...cpaData, anesthesisteId });
+        const cpa = this.cpaRepository.create({
+            ...cpaData,
+            anesthesisteId,
+            saisiParId: centralUser.userId,
+            saisiParRole: centralUser.role,
+        });
         const savedCPA = await this.cpaRepository.save(cpa);
         const saved = Array.isArray(savedCPA) ? savedCPA[0] : savedCPA;
         if (premedicaments?.length) {

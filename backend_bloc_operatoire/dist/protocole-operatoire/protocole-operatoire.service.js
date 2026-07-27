@@ -45,6 +45,8 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     }
     async create(dto, utilisateurId) {
         const { drainages, ...data } = dto;
+        if (utilisateurId)
+            data.chirurgienId = utilisateurId;
         const proto = this.repo.create(data);
         const protoSaved = await this.repo.save(proto);
         const saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;

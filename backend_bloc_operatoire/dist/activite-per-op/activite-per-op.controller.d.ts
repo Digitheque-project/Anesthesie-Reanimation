@@ -13,7 +13,7 @@ export declare class ActivitePerOpController {
         pages: number;
     }>;
     findOne(id: string): Promise<any>;
-    update(id: string, dto: UpdateActivitePerOpDto): Promise<import("../entities").ActivitePerOp>;
+    update(id: string, dto: UpdateActivitePerOpDto, req: any): Promise<import("../entities").ActivitePerOp>;
     ajouterConstante(id: string, dto: AjouterConstanteDto): Promise<import("../entities").ConstantePerOp>;
     remove(id: string): Promise<{
         message: string;

@@ -21,6 +21,7 @@ const constante_per_op_entity_1 = require("../entities/constante-per-op.entity")
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let ActivitePerOpService = class ActivitePerOpService {
     repo;
     constanteRepo;
@@ -80,11 +81,17 @@ let ActivitePerOpService = class ActivitePerOpService {
         ]);
         return enriched;
     }
-    async update(id, dto) {
+    async update(id, dto, centralUser) {
         const a = await this.repo.findOne({ where: { id } });
         if (!a)
             throw new common_1.NotFoundException(`Activité ${id} non trouvée`);
-        return this.repo.save(Object.assign(a, dto));
+        const patch = { ...dto };
+        if (!patch.anesthesisteId &&
+            centralUser &&
+            (0, role_clinique_1.matchRoleClinique)(centralUser.role) === role_clinique_1.RoleClinique.ANESTHESISTE) {
+            patch.anesthesisteId = centralUser.userId;
+        }
+        return this.repo.save(Object.assign(a, patch));
     }
     async remove(id) {
         const a = await this.repo.findOne({ where: { id } });
