@@ -33,6 +33,12 @@ export class ProtocoleOperatoireService {
     utilisateurId?: string,
   ): Promise<ProtocoleOperatoire> {
     const { drainages, ...data } = dto as any;
+    // Le formulaire ne propose aucun sélecteur pour désigner le chirurgien (voir le commentaire
+    // sur l'entité) — chirurgienId restait donc systématiquement vide. Cette route est réservée
+    // au rôle Chirurgien (@RequireRoleClinique(CHIRURGIEN)), l'utilisateur connecté EST le
+    // chirurgien : on l'auto-renseigne depuis sa session plutôt que de dépendre d'une saisie
+    // manuelle. Sans identité connectée (jamais en pratique ici), on garde la valeur du DTO.
+    if (utilisateurId) data.chirurgienId = utilisateurId;
     const proto = this.repo.create(data);
     const protoSaved = await this.repo.save(proto);
     const saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;

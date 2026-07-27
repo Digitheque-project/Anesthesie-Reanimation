@@ -96,18 +96,23 @@ export class RapportsService {
     };
   }
 
+  // Source : ProtocoleOperatoire, pas ActivitePerOp — le chirurgien ne visite jamais l'écran
+  // "Activité pendant l'opération" (réservé Anesthésiste/IBODE), son seul acte enregistré dans le
+  // bloc est le protocole opératoire (chirurgienId désormais auto-rempli depuis sa session à la
+  // création, voir ProtocoleOperatoireService.create). ActivitePerOp.chirurgienId, lui, n'est
+  // renseigné par aucun flux existant et resterait toujours vide.
   async activiteParChirurgien(dateDebut?: string, dateFin?: string) {
     const whereAct =
       dateDebut && dateFin
         ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) }
         : {};
-    const rows = await this.activiteRepo
-      .createQueryBuilder('a')
-      .select('a.chirurgienId', 'medecinId')
+    const rows = await this.protocoleRepo
+      .createQueryBuilder('p')
+      .select('p.chirurgienId', 'medecinId')
       .addSelect('COUNT(*)', 'nbOperations')
       .where(whereAct)
-      .andWhere('a.chirurgienId IS NOT NULL')
-      .groupBy('a.chirurgienId')
+      .andWhere('p.chirurgienId IS NOT NULL')
+      .groupBy('p.chirurgienId')
       .orderBy('nbOperations', 'DESC')
       .getRawMany();
     const identites = await this.medecinIdentiteService.resoudreLot(
