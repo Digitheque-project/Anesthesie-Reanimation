@@ -7,6 +7,7 @@ import { libelleUrgence, styleUrgence } from '@/lib/urgence';
 import { formaterNomPatient } from '@/lib/patient';
 import RoleGate from '@/components/bloc/auth/RoleGate';
 import { RoleClinique } from '@/lib/auth/role-clinique';
+import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton';
 
 interface PatientReveil {
   id: string;
@@ -171,6 +172,7 @@ export default function ListeSalleReveil() {
                         >
                           📋 Surveiller
                         </button>
+                        <VoirDossierButton patientId={patient.id} variant="icon" />
                       </div>
                     </td>
                   </tr>

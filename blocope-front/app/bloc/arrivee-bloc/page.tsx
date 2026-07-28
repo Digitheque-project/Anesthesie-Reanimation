@@ -135,7 +135,7 @@ function ArriveeBlocPageContent() {
   return (
     <main className="p-6 max-w-4xl mx-auto">
       <BackButton className="mb-3" />
-      <PatientIdentityHeader patient={patient || { nom: patientNom }} intervention={intervention} />
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} intervention={intervention} patientId={patientId} />
 
       <div className="mt-4 space-y-6">
         {/* Arrivée / Installation */}

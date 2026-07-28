@@ -11,6 +11,7 @@ import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
+import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 
 const SERVICES_CLINIQUES = [
@@ -50,10 +51,11 @@ function SalleDeReveilPageContent() {
   const [evs, setEvs] = useState(2)
   const [eqa, setEqa] = useState(2)
   const [eva, setEva] = useState(3)
-  const [etatInitial, setEtatInitial] = useState({ intubation: true, curarisation: false })
+  const [etatInitial, setEtatInitial] = useState({ intubation: false, curarisation: false })
   const [reponse, setReponse] = useState({ intubation: false, curarisation: false })
   const [showOptionSortie, setShowOptionSortie] = useState(false)
-  const [orientation, setOrientation] = useState<'origine' | 'autres'>('origine')
+  // Pas de destination pré-cochée : l'anesthésiste doit choisir activement où part le patient.
+  const [orientation, setOrientation] = useState<'' | 'origine' | 'autres'>('')
   const [serviceChoisi, setServiceChoisi] = useState('')
   const [scoreSCCREId, setScoreSCCREId] = useState<string | null>(null)
   const [checklistSortie, setChecklistSortie] = useState({ signesVitauxStables: false, douleurControlee: false, prescriptionsFaites: false, familleInformee: false })
@@ -109,6 +111,7 @@ function SalleDeReveilPageContent() {
     if (!estAnesthesiste) { alert('❌ L\'autorisation de sortie est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : '')); return }
     if (!scoreSCCREId) { alert('❌ Enregistrez d\'abord le score de réveil'); return }
     if (!checklistComplete) { alert('❌ Complétez la checklist de sortie avant de valider'); return }
+    if (!orientation) { alert('❌ Choisissez la destination du patient (option de sortie) avant de valider'); return }
     try {
       await apiClient.post('/sorties-reveil', {
         patientId, scoreSCCREId,
@@ -130,7 +133,7 @@ function SalleDeReveilPageContent() {
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="font-headline font-extrabold tracking-tight text-on-surface text-2xl">🛏️ Salle de réveil — Surveillance</h1>
-        <div className="w-24" />
+        <VoirDossierButton patientId={patientId} variant="icon" />
       </div>
 
       {/* Contexte patient */}
@@ -172,11 +175,11 @@ function SalleDeReveilPageContent() {
             <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">À l'arrivée en salle</p>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
-                <Checkbox size="sm" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} />
+                <Checkbox size="lg" checked={etatInitial.intubation} onChange={e => setEtatInitial({...etatInitial, intubation: e.target.checked})} />
                 <span className="ml-3 text-sm">Intubation (initial)</span>
               </label>
               <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
-                <Checkbox size="sm" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} />
+                <Checkbox size="lg" checked={etatInitial.curarisation} onChange={e => setEtatInitial({...etatInitial, curarisation: e.target.checked})} />
                 <span className="ml-3 text-sm">Curarisation (initial)</span>
               </label>
             </div>
@@ -303,12 +306,13 @@ function SalleDeReveilPageContent() {
           </button>
           {orientation === 'autres' && serviceChoisi && <p className="mt-2 text-sm font-bold text-primary">Service : {serviceChoisi}</p>}
           {orientation === 'origine' && <p className="mt-2 text-sm font-bold text-emerald-700">Service d'origine</p>}
+          {!orientation && <p className="mt-2 text-sm font-bold text-amber-700">Aucune destination choisie pour l'instant</p>}
 
-          <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !estAnesthesiste}
+          <button onClick={handleValiderSortie} disabled={scoreTotal < 9 || !scoreSCCREId || !checklistComplete || !orientation || !estAnesthesiste}
             className={`mt-4 w-full py-3 font-bold rounded-xl transition-all ${
-              scoreTotal >= 9 && scoreSCCREId && checklistComplete && estAnesthesiste ? 'bg-emerald-600 text-white shadow-lg hover:bg-emerald-700' : 'bg-surface-container text-on-surface-variant cursor-not-allowed'
+              scoreTotal >= 9 && scoreSCCREId && checklistComplete && orientation && estAnesthesiste ? 'bg-emerald-600 text-white shadow-lg hover:bg-emerald-700' : 'bg-surface-container text-on-surface-variant cursor-not-allowed'
             }`}>
-            {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !estAnesthesiste ? `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}` : 'Autoriser la sortie'}
+            {scoreTotal < 9 ? 'Score insuffisant (< 9)' : !scoreSCCREId ? 'Enregistrez le score ci-dessus' : !checklistComplete ? 'Complétez la checklist' : !orientation ? "Choisissez l'option de sortie" : !estAnesthesiste ? `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}` : 'Autoriser la sortie'}
           </button>
         </div>
       </section>
@@ -320,11 +324,11 @@ function SalleDeReveilPageContent() {
             <h3 className="text-xl font-extrabold text-primary mb-6">Orientation du patient</h3>
             <div className="space-y-4">
               <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
-                <input type="radio" name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-5 h-5 text-primary" />
+                <input type="radio" name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-7 h-7 text-primary" />
                 <span className="font-bold">Service d'origine</span>
               </label>
               <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
-                <input type="radio" name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-5 h-5 text-primary" />
+                <input type="radio" name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-7 h-7 text-primary" />
                 <span className="font-bold">Autres services</span>
               </label>
               {orientation === 'autres' && (

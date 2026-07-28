@@ -10,6 +10,7 @@ import { formaterNomPatient } from '@/lib/patient'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
+import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 
 const LIBELLE_STATUT: Record<string, string> = {
   EN_ATTENTE: 'En attente de planification',
@@ -113,7 +114,10 @@ function DemandeCpaExternePageContent() {
           <div>
             <h2 className="text-xl font-extrabold text-primary">{formaterNomPatient(demande)}</h2>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${style.badge}`}>{libelleUrgence(niveau)}</span>
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${style.badge}`}>{libelleUrgence(niveau)}</span>
+            <VoirDossierButton patientId={demande.patientId} variant="icon" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">

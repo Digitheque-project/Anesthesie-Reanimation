@@ -37,10 +37,18 @@ function ApresOperationPageContent() {
     patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
   }, [patientId])
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    dateCreation: string
+    interventionEnregistree: boolean | null
+    compteFinalCorrect: boolean | null
+    etiquetageVerifie: boolean | null
+    signalementsEffectues: boolean | null
+    observationsParticulieres: string
+  }>({
     dateCreation: new Date().toISOString().split('T')[0],
-    interventionEnregistree: false, compteFinalCorrect: false, etiquetageVerifie: false,
-    signalementsEffectues: false, observationsParticulieres: '',
+    // Aucune réponse pré-cochée : chaque item doit être choisi activement.
+    interventionEnregistree: null, compteFinalCorrect: null, etiquetageVerifie: null,
+    signalementsEffectues: null, observationsParticulieres: '',
   })
   const [loading, setLoading] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
@@ -49,9 +57,16 @@ function ApresOperationPageContent() {
 
   useEffect(() => on('checklist-apres-op:maj', () => setMajDistante(true)), [on])
 
+  const reponsesIncompletes = form.interventionEnregistree === null || form.compteFinalCorrect === null
+    || form.etiquetageVerifie === null || form.signalementsEffectues === null
+
   const handleSubmit = async () => {
     if (!peutValiderChecklistApresOp) {
       alert('❌ La check-list après intervention est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
+    if (reponsesIncompletes) {
+      alert('❌ Répondez à chaque item Oui/Non avant de valider.')
       return
     }
     setLoading(true)
@@ -76,7 +91,7 @@ function ApresOperationPageContent() {
 
       <h1 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight mb-4">Check-list après intervention – Check de sortie du bloc</h1>
 
-      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} />
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
 
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
 
@@ -104,13 +119,13 @@ function ApresOperationPageContent() {
                 <span className="font-medium text-on-surface">{item.label}</span>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input className="w-5 h-5 text-primary rounded" type="radio" name={item.key}
-                      checked={form[item.key as keyof typeof form] as boolean} onChange={() => setForm({...form, [item.key]: true})} />
+                    <input className="w-7 h-7 text-primary rounded" type="radio" name={item.key}
+                      checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({...form, [item.key]: true})} />
                     <span className="text-sm font-semibold">Oui</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input className="w-5 h-5 text-primary rounded" type="radio" name={item.key}
-                      checked={!form[item.key as keyof typeof form] as boolean} onChange={() => setForm({...form, [item.key]: false})} />
+                    <input className="w-7 h-7 text-primary rounded" type="radio" name={item.key}
+                      checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({...form, [item.key]: false})} />
                     <span className="text-sm font-semibold">Non/N/A</span>
                   </label>
                 </div>

@@ -47,7 +47,12 @@ function VerificationPostOpPageContent() {
     patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
   }, [patientId])
 
-  const [form, setForm] = useState({ dateCreation: new Date().toISOString().split('T')[0], identiteUltimeConfirmee: false, interventionConfirmee: false, siteOperatoireConfirme: false, installationCorrecte: false, documentsDisponibles: false, antibioprophylaxieFaite: false, constantesStables: false, ventilationOK: false })
+  const [form, setForm] = useState<{ dateCreation: string; [key: string]: string | boolean | null }>({
+    dateCreation: new Date().toISOString().split('T')[0],
+    // Aucune réponse pré-cochée : chaque item doit être choisi activement, jamais "Non" par défaut.
+    identiteUltimeConfirmee: null, interventionConfirmee: null, siteOperatoireConfirme: null, installationCorrecte: null,
+    documentsDisponibles: null, antibioprophylaxieFaite: null, constantesStables: null, ventilationOK: null,
+  })
   const [loading, setLoading] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
   const { on } = useOperationRealtime(patientId)
@@ -55,9 +60,15 @@ function VerificationPostOpPageContent() {
 
   useEffect(() => on('checklist-pendant-op:maj', () => setMajDistante(true)), [on])
 
+  const reponsesIncompletes = ITEMS.some(item => form[item.key as keyof typeof form] === null)
+
   const handleSubmit = async () => {
     if (!estAnesthesiste) {
       alert('❌ La check-list avant incision est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
+    if (reponsesIncompletes) {
+      alert('❌ Répondez à chaque item Oui/Non avant de valider la check-list.')
       return
     }
     setLoading(true)
@@ -82,7 +93,7 @@ function VerificationPostOpPageContent() {
         <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant incision</h1>
       </header>
 
-      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} />
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
 
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
 
@@ -108,11 +119,11 @@ function VerificationPostOpPageContent() {
               <p className="text-sm font-bold text-secondary mb-1">{item.numero}- {item.titre} :</p>
               {item.desc && <p className="text-xs mb-3">{item.desc}</p>}
               <div className="flex space-x-6">
-                <label className="flex items-center text-xs font-medium cursor-pointer">
-                  <input className="mr-2 text-secondary focus:ring-secondary w-4 h-4" name={item.key} type="radio" checked={form[item.key as keyof typeof form] as boolean} onChange={() => setForm({ ...form, [item.key]: true })} /><span>Oui</span>
+                <label className="flex items-center text-sm font-medium cursor-pointer">
+                  <input className="mr-2 text-secondary focus:ring-secondary w-7 h-7" name={item.key} type="radio" checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({ ...form, [item.key]: true })} /><span>Oui</span>
                 </label>
-                <label className="flex items-center text-xs font-medium cursor-pointer">
-                  <input className="mr-2 text-secondary focus:ring-secondary w-4 h-4" name={item.key} type="radio" checked={!(form[item.key as keyof typeof form] as boolean)} onChange={() => setForm({ ...form, [item.key]: false })} /><span>Non</span>
+                <label className="flex items-center text-sm font-medium cursor-pointer">
+                  <input className="mr-2 text-secondary focus:ring-secondary w-7 h-7" name={item.key} type="radio" checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({ ...form, [item.key]: false })} /><span>Non</span>
                 </label>
               </div>
             </div>

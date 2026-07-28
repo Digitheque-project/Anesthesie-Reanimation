@@ -22,10 +22,13 @@ const ACCENT_CLASSES: Record<CheckboxAccent, string> = {
   'inverse-primary': 'accent-inverse-primary focus-visible:ring-inverse-primary/30',
 }
 
+// Agrandies pour faciliter le cochage (accessibilité — utilisateurs ayant des difficultés
+// visuelles/de motricité fine) : la taille "md" (par défaut, utilisée partout) reste la
+// référence, mais chaque palier est plus grand qu'avant.
 const SIZE_CLASSES: Record<CheckboxSize, string> = {
-  sm: 'h-4 w-4',
-  md: 'h-5 w-5',
-  lg: 'h-6 w-6',
+  sm: 'h-5 w-5',
+  md: 'h-7 w-7',
+  lg: 'h-9 w-9',
 }
 
 export default function Checkbox({ accent = 'primary', size = 'md', className = '', ...props }: CheckboxProps) {

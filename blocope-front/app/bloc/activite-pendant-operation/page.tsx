@@ -10,6 +10,7 @@ import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
+import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import { useRole } from '@/lib/hooks/useRole'
 
 export default function ActivitePendantOperationPage() {
@@ -136,6 +137,7 @@ function ActivitePendantOperationPageContent() {
             </span>
             <span className="text-[10px] font-extrabold tracking-wider">PROCÉDURE EN COURS</span>
           </div>
+          <VoirDossierButton patientId={patientId} variant="icon" />
         </div>
       </header>
 

@@ -2,6 +2,7 @@
 
 import { formaterNomPatient } from '@/lib/patient'
 import { libelleUrgence, styleUrgence } from '@/lib/urgence'
+import VoirDossierButton from './VoirDossierButton'
 
 interface PatientIdentityHeaderProps {
   patient?: {
@@ -16,6 +17,8 @@ interface PatientIdentityHeaderProps {
   /** Sous-titre optionnel (ex. intervention prévue, titre de la checklist en cours). */
   intervention?: string
   loading?: boolean
+  /** Si fourni, affiche le bouton "Voir dossier patient" (dossier intégré, statut à jour). */
+  patientId?: string | null
 }
 
 const calculerAge = (dateNaissance?: string | null): number | null => {
@@ -30,7 +33,7 @@ const calculerAge = (dateNaissance?: string | null): number | null => {
 // (checklists, vérifications, salle de réveil, etc.) — calqué sur le meilleur exemple existant
 // (app/bloc/dossier-patient/[id]/page.tsx), pour que l'équipe soignante voie toujours clairement
 // de quel patient il s'agit, avec les mêmes informations partout.
-export default function PatientIdentityHeader({ patient, intervention, loading }: PatientIdentityHeaderProps) {
+export default function PatientIdentityHeader({ patient, intervention, loading, patientId }: PatientIdentityHeaderProps) {
   const age = calculerAge(patient?.dateNaissance)
   const urgence = patient?.niveauUrgence
 
@@ -63,6 +66,7 @@ export default function PatientIdentityHeader({ patient, intervention, loading }
               {libelleUrgence(urgence)}
             </span>
           )}
+          {patientId && <VoirDossierButton patientId={patientId} variant="link" />}
         </div>
       </div>
     </div>

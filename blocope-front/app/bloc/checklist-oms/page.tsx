@@ -37,19 +37,42 @@ function ChecklistAvantOpPageContent() {
     patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
   }, [patientId])
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    dateCreation: string
+    identiteConfirmee: boolean | null
+    interventionSiteConfirmes: boolean | null
+    documentationDisponible: boolean | null
+    installationConnue: boolean | null
+    materielChirurgicalVerifie: boolean
+    materielAnesthesiqueVerifie: boolean
+    allergiePatient: boolean
+    risqueIntubation: boolean
+    risqueSaignement: boolean
+    notesChirurgicales: string
+    notesAnesthesiques: string
+    notesIdeIbode: string
+  }>({
     dateCreation: new Date().toISOString().split('T')[0],
-    identiteConfirmee: false, interventionSiteConfirmes: false, documentationDisponible: false,
-    installationConnue: false, materielChirurgicalVerifie: false, materielAnesthesiqueVerifie: false,
+    // Aucune réponse pré-cochée pour les items Oui/Non : l'utilisateur doit choisir activement
+    // (le vert n'apparaît qu'après un clic), jamais "Non" par défaut.
+    identiteConfirmee: null, interventionSiteConfirmes: null, documentationDisponible: null,
+    installationConnue: null, materielChirurgicalVerifie: false, materielAnesthesiqueVerifie: false,
     allergiePatient: false, risqueIntubation: false, risqueSaignement: false,
     notesChirurgicales: '', notesAnesthesiques: '', notesIdeIbode: '',
   })
   const [loading, setLoading] = useState(false)
   const { estAnesthesiste, roleName } = useRole()
 
+  const reponsesIncompletes = form.identiteConfirmee === null || form.interventionSiteConfirmes === null
+    || form.documentationDisponible === null || form.installationConnue === null
+
   const handleSubmit = async () => {
     if (!estAnesthesiste) {
       alert('❌ La check-list avant opération est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
+      return
+    }
+    if (reponsesIncompletes) {
+      alert('❌ Répondez à chaque item Oui/Non avant de valider la check-list.')
       return
     }
     // ✅ SUPPRIMÉ : Vérification des médicaments
@@ -80,7 +103,7 @@ function ChecklistAvantOpPageContent() {
         <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
       </header>
 
-      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} />
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
 
       {!estAnesthesiste && (
         <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
@@ -105,11 +128,11 @@ function ChecklistAvantOpPageContent() {
               <p className="text-sm font-bold text-primary mb-3">1- Identité du patient :</p>
               <p className="text-xs mb-3">- le patient a décliné son nom. Sinon par défaut, autre moyen de vérification de son identité</p>
               <div className="flex space-x-6">
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-                  <Radio size="sm" name="identity_check" checked={form.identiteConfirmee} onChange={() => setForm({...form, identiteConfirmee: true})} /><span>Oui</span>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <Radio size="lg" name="identity_check" checked={form.identiteConfirmee === true} onChange={() => setForm({...form, identiteConfirmee: true})} /><span>Oui</span>
                 </label>
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-                  <Radio size="sm" name="identity_check" checked={!form.identiteConfirmee} onChange={() => setForm({...form, identiteConfirmee: false})} /><span>Non</span>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <Radio size="lg" name="identity_check" checked={form.identiteConfirmee === false} onChange={() => setForm({...form, identiteConfirmee: false})} /><span>Non</span>
                 </label>
               </div>
             </div>
@@ -119,13 +142,13 @@ function ChecklistAvantOpPageContent() {
               <p className="text-sm font-bold text-primary mb-3">2- L'intervention et site opération sont confirmés :</p>
               <p className="text-xs mb-2">- Idéalement par le patient et dans tous les cas, par le dossier ou procédure spécifique</p>
               <div className="flex space-x-6 mb-3">
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer"><Radio size="sm" name="site_confirme" checked={form.interventionSiteConfirmes} onChange={() => setForm({...form, interventionSiteConfirmes: true})} /> Oui</label>
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer"><Radio size="sm" name="site_confirme" checked={!form.interventionSiteConfirmes} onChange={() => setForm({...form, interventionSiteConfirmes: false})} /> Non</label>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer"><Radio size="lg" name="site_confirme" checked={form.interventionSiteConfirmes === true} onChange={() => setForm({...form, interventionSiteConfirmes: true})} /> Oui</label>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer"><Radio size="lg" name="site_confirme" checked={form.interventionSiteConfirmes === false} onChange={() => setForm({...form, interventionSiteConfirmes: false})} /> Non</label>
               </div>
               <p className="text-xs mb-2">- La documentation clinique et para-clinique nécessaire est disponible en salle</p>
               <div className="flex space-x-6">
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer"><Radio size="sm" name="documentation_dispo" checked={form.documentationDisponible} onChange={() => setForm({...form, documentationDisponible: true})} /> Oui</label>
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer"><Radio size="sm" name="documentation_dispo" checked={!form.documentationDisponible} onChange={() => setForm({...form, documentationDisponible: false})} /> Non</label>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer"><Radio size="lg" name="documentation_dispo" checked={form.documentationDisponible === true} onChange={() => setForm({...form, documentationDisponible: true})} /> Oui</label>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer"><Radio size="lg" name="documentation_dispo" checked={form.documentationDisponible === false} onChange={() => setForm({...form, documentationDisponible: false})} /> Non</label>
               </div>
             </div>
 
@@ -134,8 +157,8 @@ function ChecklistAvantOpPageContent() {
               <p className="text-sm font-bold text-primary mb-3">3- Le mode d'installation est :</p>
               <p className="text-xs mb-3">Connu de l'équipe en salle.</p>
               <div className="flex space-x-6">
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer"><Radio size="sm" name="installation_connue" checked={form.installationConnue} onChange={() => setForm({...form, installationConnue: true})} /> Oui</label>
-                <label className="flex items-center gap-2 text-xs font-medium cursor-pointer"><Radio size="sm" name="installation_connue" checked={!form.installationConnue} onChange={() => setForm({...form, installationConnue: false})} /> N/A</label>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer"><Radio size="lg" name="installation_connue" checked={form.installationConnue === true} onChange={() => setForm({...form, installationConnue: true})} /> Oui</label>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer"><Radio size="lg" name="installation_connue" checked={form.installationConnue === false} onChange={() => setForm({...form, installationConnue: false})} /> N/A</label>
               </div>
             </div>
 
@@ -145,11 +168,11 @@ function ChecklistAvantOpPageContent() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- pour la partie chirurgicale...</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="sm" checked={form.materielChirurgicalVerifie} onChange={e => setForm({...form, materielChirurgicalVerifie: e.target.checked})} /> oui</label>
+                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" checked={form.materielChirurgicalVerifie} onChange={e => setForm({...form, materielChirurgicalVerifie: e.target.checked})} /> oui</label>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- pour la partie anesthésique</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="sm" checked={form.materielAnesthesiqueVerifie} onChange={e => setForm({...form, materielAnesthesiqueVerifie: e.target.checked})} /> oui</label>
+                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" checked={form.materielAnesthesiqueVerifie} onChange={e => setForm({...form, materielAnesthesiqueVerifie: e.target.checked})} /> oui</label>
                 </div>
               </div>
             </div>
@@ -161,15 +184,15 @@ function ChecklistAvantOpPageContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Allergie du patient</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="sm" accent="error" checked={form.allergiePatient} onChange={e => setForm({...form, allergiePatient: e.target.checked})} /> oui</label>
+                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" accent="error" checked={form.allergiePatient} onChange={e => setForm({...form, allergiePatient: e.target.checked})} /> oui</label>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs leading-tight">- Risque d'inhalation, de difficulté d'intubation</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="sm" accent="error" checked={form.risqueIntubation} onChange={e => setForm({...form, risqueIntubation: e.target.checked})} /> oui</label>
+                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" accent="error" checked={form.risqueIntubation} onChange={e => setForm({...form, risqueIntubation: e.target.checked})} /> oui</label>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Risque de saignement important</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="sm" accent="error" checked={form.risqueSaignement} onChange={e => setForm({...form, risqueSaignement: e.target.checked})} /> oui</label>
+                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" accent="error" checked={form.risqueSaignement} onChange={e => setForm({...form, risqueSaignement: e.target.checked})} /> oui</label>
                 </div>
               </div>
             </div>

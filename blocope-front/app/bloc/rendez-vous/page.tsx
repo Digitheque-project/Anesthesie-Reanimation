@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { planningService, patientService } from '@/lib/api';
 import { formaterNomPatient } from '@/lib/patient';
 import { styleUrgence } from '@/lib/urgence';
+import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton';
 
 type Onglet = 'CPA' | 'VERIFICATION_VEILLE';
 
@@ -210,12 +211,15 @@ export default function RendezVousPage() {
                       }`}>{c.statut === 'EN_ATTENTE' ? 'En attente' : (c.statut || '—')}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => router.push(`${ongletActif.cible}?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(nom)}`)}
-                        className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors whitespace-nowrap"
-                      >
-                        {ongletActif.actionLabel}
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => router.push(`${ongletActif.cible}?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(nom)}`)}
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors whitespace-nowrap"
+                        >
+                          {ongletActif.actionLabel}
+                        </button>
+                        <VoirDossierButton patientId={c.patient?.id} variant="icon" />
+                      </div>
                     </td>
                   </tr>
                 );

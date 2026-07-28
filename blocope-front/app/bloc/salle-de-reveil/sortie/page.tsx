@@ -9,6 +9,7 @@ import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
+import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -46,7 +47,8 @@ function SortieSalleReveilPageContent() {
     prescriptionsFaites: false,
     familleInformee: false
   })
-  const [orientation, setOrientation] = useState<'origine' | 'autres'>('origine')
+  // Pas de destination pré-cochée : à choisir activement.
+  const [orientation, setOrientation] = useState<'' | 'origine' | 'autres'>('')
   const [serviceChoisi, setServiceChoisi] = useState('')
   const [anesthesistes, setAnesthesistes] = useState<any[]>([])
   const [medecinId, setMedecinId] = useState('')
@@ -60,7 +62,7 @@ function SortieSalleReveilPageContent() {
   }, [])
 
   const checklistComplete = Object.values(checklist).every(Boolean)
-  const peutSortir = scoreTotal >= 9 && checklistComplete && !!medecinId && peutValiderSortieReveil
+  const peutSortir = scoreTotal >= 9 && checklistComplete && !!medecinId && !!orientation && peutValiderSortieReveil
 
   const handleAutoriserSortie = async () => {
     if (!peutSortir) return
@@ -90,6 +92,7 @@ function SortieSalleReveilPageContent() {
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl px-8 py-4 border-b border-[#c7dde9] flex items-center gap-4">
         <BackButton />
         <h2 className="font-headline font-extrabold text-[#00478d] text-2xl">Sortie de Salle de Réveil</h2>
+        <VoirDossierButton patientId={patientId} variant="icon" className="ml-auto" />
       </header>
 
       <div className="p-8 max-w-3xl mx-auto space-y-8">
@@ -131,11 +134,11 @@ function SortieSalleReveilPageContent() {
           <h3 className="font-bold text-lg text-[#00478d] mb-4">Orientation du patient</h3>
           <div className="space-y-3">
             <label className="flex items-center space-x-3 p-3 rounded-lg border border-[#c7dde9] cursor-pointer">
-              <input type="radio" name="orient" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-5 h-5 text-[#00478d]" />
+              <input type="radio" name="orient" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-7 h-7 text-[#00478d]" />
               <span className="font-bold">Service d'origine</span>
             </label>
             <label className="flex items-center space-x-3 p-3 rounded-lg border border-[#c7dde9] cursor-pointer">
-              <input type="radio" name="orient" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-5 h-5 text-[#00478d]" />
+              <input type="radio" name="orient" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-7 h-7 text-[#00478d]" />
               <span className="font-bold">Autres services</span>
             </label>
             {orientation === 'autres' && (

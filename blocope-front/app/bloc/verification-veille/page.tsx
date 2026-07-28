@@ -105,7 +105,7 @@ function VerificationVeillePageContent() {
   return (
     <main className="p-6">
       <BackButton className="mb-3" />
-      <PatientIdentityHeader patient={patient || { nom: patientNom }} />
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} patientId={patientId} />
       <div className="flex justify-end -mt-2 mb-3">
         {cpaId ? (
           <span className="px-3 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase tracking-wider">✅ CPA validée</span>
@@ -148,11 +148,11 @@ function VerificationVeillePageContent() {
                       <p className="text-[11px] text-on-surface-variant">{item.desc}</p>
                     </div>
                   </div>
-                  <div className="flex bg-white/80 p-1 rounded border border-outline-variant/30">
+                  <div className="flex bg-white/80 p-1.5 rounded-lg border border-outline-variant/30">
                     <button onClick={() => setForm({...form, [item.key]: true})}
-                      className={`px-5 py-1.5 rounded font-bold text-xs transition-all ${valeur === true ? 'bg-emerald-500 text-white' : 'text-on-surface-variant hover:bg-white'}`}>OUI</button>
+                      className={`px-7 py-3 rounded-lg font-bold text-sm transition-all ${valeur === true ? 'bg-emerald-500 text-white' : 'text-on-surface-variant hover:bg-white'}`}>OUI</button>
                     <button onClick={() => setForm({...form, [item.key]: false})}
-                      className={`px-5 py-1.5 rounded font-bold text-xs transition-all ${valeur === false ? 'bg-red-500 text-white' : 'text-on-surface-variant hover:bg-white'}`}>NON</button>
+                      className={`px-7 py-3 rounded-lg font-bold text-sm transition-all ${valeur === false ? 'bg-red-500 text-white' : 'text-on-surface-variant hover:bg-white'}`}>NON</button>
                   </div>
                 </div>
               )

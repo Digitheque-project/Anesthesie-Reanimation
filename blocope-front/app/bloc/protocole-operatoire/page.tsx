@@ -76,7 +76,7 @@ function ProtocoleOperatoirePageContent() {
   return (
     <main className="p-6 h-full overflow-y-auto">
       <BackButton className="mb-3" />
-      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole opératoire" />
+      <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole opératoire" patientId={patientId} />
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
       {!estChirurgien && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
