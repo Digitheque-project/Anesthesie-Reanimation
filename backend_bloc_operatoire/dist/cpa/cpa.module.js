@@ -15,6 +15,7 @@ const premedicament_entity_1 = require("../entities/premedicament.entity");
 const demande_cpa_externe_module_1 = require("../demande-cpa-externe/demande-cpa-externe.module");
 const medecin_module_1 = require("../medecin/medecin.module");
 const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
+const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
 const cpa_service_1 = require("./cpa.service");
 const cpa_controller_1 = require("./cpa.controller");
 let CPAModule = class CPAModule {
@@ -27,6 +28,7 @@ exports.CPAModule = CPAModule = __decorate([
             demande_cpa_externe_module_1.DemandeCpaExterneModule,
             medecin_module_1.MedecinModule,
             tracabilite_module_1.TracabiliteModule,
+            patient_bloc_module_1.PatientBlocModule,
         ],
         controllers: [cpa_controller_1.CPAController],
         providers: [cpa_service_1.CPAService],

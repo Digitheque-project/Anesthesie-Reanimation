@@ -29,8 +29,7 @@ let MomentsOperatoireService = class MomentsOperatoireService {
     async create(dto, centralUser) {
         const role = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
         const categoriesAutorisees = {
-            [role_clinique_1.RoleClinique.ANESTHESISTE]: ['ANESTHESIE'],
-            [role_clinique_1.RoleClinique.IBODE]: ['CHIRURGIE', 'DIVERS'],
+            [role_clinique_1.RoleClinique.ANESTHESISTE]: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
         };
         const autorisees = role ? categoriesAutorisees[role] : undefined;
         if (!autorisees || !autorisees.includes(dto.categorie)) {

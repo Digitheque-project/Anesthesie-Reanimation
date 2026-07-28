@@ -8,6 +8,7 @@ import { NotificationOutgoingService } from '../external/notification-outgoing.s
 import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-externe.service';
 import { MedecinService } from '../medecin/medecin.service';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
+import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
 import { CentralUser } from '../central-auth/central-user.interface';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
@@ -23,8 +24,9 @@ export declare class CPAService {
     private medecinService;
     private medecinIdentiteService;
     private tracabiliteService;
+    private patientBlocStatutService;
     private readonly logger;
-    constructor(cpaRepository: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, premedRepository: Repository<Premedicament>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, notificationOutgoing: NotificationOutgoingService, demandeCpaExterneService: DemandeCpaExterneService, medecinService: MedecinService, medecinIdentiteService: MedecinIdentiteService, tracabiliteService: TracabiliteService);
+    constructor(cpaRepository: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, premedRepository: Repository<Premedicament>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, notificationOutgoing: NotificationOutgoingService, demandeCpaExterneService: DemandeCpaExterneService, medecinService: MedecinService, medecinIdentiteService: MedecinIdentiteService, tracabiliteService: TracabiliteService, patientBlocStatutService: PatientBlocStatutService);
     create(dto: CreateCPADto, centralUser: CentralUser): Promise<CPA>;
     findAll(page?: number, limite?: number, patientId?: string): Promise<{
         data: Record<string, any>[];

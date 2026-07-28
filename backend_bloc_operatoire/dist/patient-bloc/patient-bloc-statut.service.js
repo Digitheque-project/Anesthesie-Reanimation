@@ -44,6 +44,7 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
             ],
             [patient_bloc_entity_1.PatientStatut.CPA_REALISE]: [
                 patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+                patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
             ],
             [patient_bloc_entity_1.PatientStatut.CPA_INAPTE]: [],
             [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [

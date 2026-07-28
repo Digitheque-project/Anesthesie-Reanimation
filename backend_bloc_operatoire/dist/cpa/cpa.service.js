@@ -26,6 +26,7 @@ const notification_outgoing_service_1 = require("../external/notification-outgoi
 const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cpa-externe.service");
 const medecin_service_1 = require("../medecin/medecin.service");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
+const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
 const role_clinique_1 = require("../central-auth/role-clinique");
 const medecin_entity_1 = require("../entities/medecin.entity");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
@@ -40,8 +41,9 @@ let CPAService = CPAService_1 = class CPAService {
     medecinService;
     medecinIdentiteService;
     tracabiliteService;
+    patientBlocStatutService;
     logger = new common_1.Logger(CPAService_1.name);
-    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService, medecinIdentiteService, tracabiliteService) {
+    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService, medecinIdentiteService, tracabiliteService, patientBlocStatutService) {
         this.cpaRepository = cpaRepository;
         this.patientBlocRepo = patientBlocRepo;
         this.premedRepository = premedRepository;
@@ -52,6 +54,7 @@ let CPAService = CPAService_1 = class CPAService {
         this.medecinService = medecinService;
         this.medecinIdentiteService = medecinIdentiteService;
         this.tracabiliteService = tracabiliteService;
+        this.patientBlocStatutService = patientBlocStatutService;
     }
     async create(dto, centralUser) {
         if ((dto.decision === cpa_entity_1.DecisionCPA.INAPTE ||
@@ -98,6 +101,15 @@ let CPAService = CPAService_1 = class CPAService {
             await this.patientBlocRepo.update(dto.patientId, {
                 statut: nouveauStatut,
             });
+            if (nouveauStatut === patient_bloc_entity_1.PatientStatut.CPA_REALISE) {
+                const patientUrgence = await this.patientBlocRepo.findOne({
+                    where: { patientId: dto.patientId },
+                });
+                if (patientUrgence?.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.URGENT ||
+                    patientUrgence?.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.TRES_URGENT) {
+                    await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC, centralUser.userId);
+                }
+            }
             if (dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
                 const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
                 if (demande) {
@@ -208,6 +220,7 @@ exports.CPAService = CPAService = CPAService_1 = __decorate([
         demande_cpa_externe_service_1.DemandeCpaExterneService,
         medecin_service_1.MedecinService,
         medecin_identite_service_1.MedecinIdentiteService,
-        tracabilite_service_1.TracabiliteService])
+        tracabilite_service_1.TracabiliteService,
+        patient_bloc_statut_service_1.PatientBlocStatutService])
 ], CPAService);
 //# sourceMappingURL=cpa.service.js.map
