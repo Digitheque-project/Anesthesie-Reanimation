@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const demande_cpa_externe_service_1 = require("./demande-cpa-externe.service");
 const receive_demande_cpa_dto_1 = require("./dto/receive-demande-cpa.dto");
+const receive_demande_cpa_response_dto_1 = require("./dto/receive-demande-cpa-response.dto");
+const statut_demande_cpa_publique_dto_1 = require("./dto/statut-demande-cpa-publique.dto");
 const update_demande_cpa_dto_1 = require("./dto/update-demande-cpa.dto");
 const planifier_demande_cpa_dto_1 = require("./dto/planifier-demande-cpa.dto");
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
@@ -64,7 +66,7 @@ __decorate([
             'Consultation Pré-Anesthésique avant un acte sous anesthésie. Fournir `sourceCallbackUrl` pour ' +
             'recevoir automatiquement le résultat (décision APTE/INAPTE/REPORT) dès que la CPA est réalisée.',
     }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Demande enregistrée avec succès.' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Demande enregistrée avec succès.', type: receive_demande_cpa_response_dto_1.ReceiveDemandeCpaResponseDto }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [receive_demande_cpa_dto_1.ReceiveDemandeCpaDto]),
@@ -75,11 +77,15 @@ __decorate([
     (0, common_1.Get)(':id/statut'),
     (0, swagger_1.ApiOperation)({
         summary: "Consulter l'état d'une demande de CPA externe (accessible au service demandeur, sans authentification)",
+        description: "Filet de secours au push temps réel (canal Notification + sourceCallbackUrl) : renvoie l'état " +
+            "d'avancement de la demande et, une fois la CPA réalisée, la décision (APTE/INAPTE/REPORT) et le " +
+            'motif quand elle est INAPTE ou REPORT.',
     }),
+    (0, swagger_1.ApiResponse)({ status: 200, type: statut_demande_cpa_publique_dto_1.StatutDemandeCpaPubliqueDto }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], DemandeCpaExterneController.prototype, "getStatutPublic", null);
 __decorate([
     (0, common_1.Get)(),

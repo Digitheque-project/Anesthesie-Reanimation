@@ -22,20 +22,23 @@ const rxjs_1 = require("rxjs");
 const typeorm_2 = require("typeorm");
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
+const cpa_entity_1 = require("../entities/cpa.entity");
 const notification_back_client_1 = require("../external/notification-back.client");
 const accueil_client_1 = require("../external/accueil.client");
 let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExterneService {
     repo;
     creneauRepo;
+    cpaRepo;
     config;
     http;
     notificationBackClient;
     accueilClient;
     logger = new common_1.Logger(DemandeCpaExterneService_1.name);
     blocServiceId;
-    constructor(repo, creneauRepo, config, http, notificationBackClient, accueilClient) {
+    constructor(repo, creneauRepo, cpaRepo, config, http, notificationBackClient, accueilClient) {
         this.repo = repo;
         this.creneauRepo = creneauRepo;
+        this.cpaRepo = cpaRepo;
         this.config = config;
         this.http = http;
         this.notificationBackClient = notificationBackClient;
@@ -207,6 +210,19 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
     }
     async findStatutPublic(id) {
         const demande = await this.findOne(id);
+        let decision = null;
+        let dateCpa = null;
+        let observations = null;
+        let motifRefus = null;
+        if (demande.cpaId) {
+            const cpa = await this.cpaRepo.findOne({ where: { id: demande.cpaId } });
+            if (cpa) {
+                decision = cpa.decision;
+                dateCpa = cpa.dateConsultation;
+                observations = cpa.notesIncidents || null;
+                motifRefus = cpa.motifRefus || null;
+            }
+        }
         return {
             id: demande.id,
             patientId: demande.patientId,
@@ -216,6 +232,10 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
             vpaId: demande.vpaId || null,
             dateCpaPlanifiee: demande.dateCpaPlanifiee || null,
             dateVpaPlanifiee: demande.dateVpaPlanifiee || null,
+            decision,
+            dateCpa,
+            observations,
+            motifRefus,
         };
     }
 };
@@ -224,7 +244,9 @@ exports.DemandeCpaExterneService = DemandeCpaExterneService = DemandeCpaExterneS
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(demande_cpa_externe_entity_1.DemandeCpaExterne)),
     __param(1, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
+    __param(2, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         config_1.ConfigService,
         axios_1.HttpService,

@@ -47,9 +47,13 @@ function SalleDeReveilPageContent() {
   // Pré-rempli depuis le vrai horodatage du moment "Arrivée en salle" (posé sur l'écran Arrivée
   // au bloc) — pas une valeur figée : reste modifiable si l'anesthésiste doit la corriger.
   const [heureArrivee, setHeureArrivee] = useState('')
-  const [scores, setScores] = useState({ motricite: 2, respiration: 2, pressionArterielle: 2, etatConscience: 2, coloration: 2 })
-  const [evs, setEvs] = useState(2)
-  const [eqa, setEqa] = useState(2)
+  // Surveillance obligatoire : aucune valeur pré-cochée, chaque item doit être évalué
+  // activement (jamais un score par défaut qui n'aurait jamais été vraiment mesuré).
+  const [scores, setScores] = useState<Record<'motricite' | 'respiration' | 'pressionArterielle' | 'etatConscience' | 'coloration', number | null>>({
+    motricite: null, respiration: null, pressionArterielle: null, etatConscience: null, coloration: null,
+  })
+  const [evs, setEvs] = useState<number | null>(null)
+  const [eqa, setEqa] = useState<number | null>(null)
   const [eva, setEva] = useState(3)
   const [etatInitial, setEtatInitial] = useState({ intubation: false, curarisation: false })
   const [reponse, setReponse] = useState({ intubation: false, curarisation: false })
@@ -88,11 +92,13 @@ function SalleDeReveilPageContent() {
       .catch(console.error)
   }, [patientId])
 
-  const scoreTotal = scores.motricite + scores.respiration + scores.pressionArterielle + scores.etatConscience + scores.coloration
+  const scoreItemsIncomplets = Object.values(scores).some(v => v === null) || evs === null || eqa === null
+  const scoreTotal = (scores.motricite ?? 0) + (scores.respiration ?? 0) + (scores.pressionArterielle ?? 0) + (scores.etatConscience ?? 0) + (scores.coloration ?? 0)
   const checklistComplete = Object.values(checklistSortie).every(Boolean)
 
   const handleEnregistrerScore = async () => {
     if (!peutSurveiller) { alert('❌ La surveillance de réveil est réservée à l\'anesthésiste et à l\'IBODE.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : '')); return }
+    if (scoreItemsIncomplets) { alert('❌ Évaluez chaque item de surveillance (SCCRE, EVS, EQA) avant d\'enregistrer le score.'); return }
     try {
       const { data } = await apiClient.post('/scores-sccre', {
         patientId: patientId || patient?.id,
@@ -262,10 +268,10 @@ function SalleDeReveilPageContent() {
               </div>
             ))}
           </div>
-          <button onClick={handleEnregistrerScore} disabled={!peutSurveiller}
-            title={!peutSurveiller ? 'Réservé à l\'anesthésiste et à l\'IBODE' : undefined}
+          <button onClick={handleEnregistrerScore} disabled={!peutSurveiller || scoreItemsIncomplets}
+            title={!peutSurveiller ? 'Réservé à l\'anesthésiste et à l\'IBODE' : scoreItemsIncomplets ? 'Évaluez chaque item avant de valider' : undefined}
             className="mt-6 w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-            {!peutSurveiller ? 'Réservé à l\'anesthésiste et à l\'IBODE' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
+            {!peutSurveiller ? 'Réservé à l\'anesthésiste et à l\'IBODE' : scoreItemsIncomplets ? 'Évaluez chaque item ci-dessus' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
           </button>
         </div>
       </section>

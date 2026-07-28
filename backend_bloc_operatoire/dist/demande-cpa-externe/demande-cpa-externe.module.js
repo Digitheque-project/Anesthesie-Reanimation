@@ -12,6 +12,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const axios_1 = require("@nestjs/axios");
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
+const cpa_entity_1 = require("../entities/cpa.entity");
 const demande_cpa_externe_service_1 = require("./demande-cpa-externe.service");
 const demande_cpa_externe_controller_1 = require("./demande-cpa-externe.controller");
 let DemandeCpaExterneModule = class DemandeCpaExterneModule {
@@ -20,7 +21,7 @@ exports.DemandeCpaExterneModule = DemandeCpaExterneModule;
 exports.DemandeCpaExterneModule = DemandeCpaExterneModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([demande_cpa_externe_entity_1.DemandeCpaExterne, creneau_bloc_entity_1.CreneauBloc]),
+            typeorm_1.TypeOrmModule.forFeature([demande_cpa_externe_entity_1.DemandeCpaExterne, creneau_bloc_entity_1.CreneauBloc, cpa_entity_1.CPA]),
             axios_1.HttpModule.register({ timeout: 45000 }),
         ],
         controllers: [demande_cpa_externe_controller_1.DemandeCpaExterneController],

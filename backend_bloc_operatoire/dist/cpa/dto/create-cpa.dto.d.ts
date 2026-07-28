@@ -76,6 +76,7 @@ export declare class CreateCPADto {
     conclusion?: string;
     recommandationsProtocole?: string;
     typeAnesthesie: string;
+    sousTypeAnesthesie?: string;
     techniqueIntubation: string;
     premedicaments?: PremedicamentDto[];
     medicamentsAnesthesieReanimation?: MedicamentAnesthesieReanimationDto[];

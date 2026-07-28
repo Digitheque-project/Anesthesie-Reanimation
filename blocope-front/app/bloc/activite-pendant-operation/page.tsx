@@ -146,7 +146,7 @@ function ActivitePendantOperationPageContent() {
           boutons, aucun formulaire clinique ni checklist. */}
       <div className="flex-1 min-h-0 flex gap-6 p-6">
         {estAnesthesiste && (
-        <div className="flex-1 min-w-0 overflow-y-auto space-y-6 pb-24">
+        <div className="flex-1 min-w-0 overflow-y-auto space-y-6">
         {/* Section 1: APPORTS */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
           <div className="bg-emerald-50 px-6 py-3 border-b border-emerald-100 flex items-center gap-2">
@@ -249,7 +249,7 @@ function ActivitePendantOperationPageContent() {
         </section>
 
         {/* VALIDER */}
-        <div className="flex justify-end pt-4 pb-8">
+        <div className="flex justify-end pt-4 pb-4">
           <button
             onClick={handleSubmit}
             disabled={loading || !activiteId}

@@ -133,6 +133,7 @@ class CreateCPADto {
     conclusion;
     recommandationsProtocole;
     typeAnesthesie;
+    sousTypeAnesthesie;
     techniqueIntubation;
     premedicaments;
     medicamentsAnesthesieReanimation;
@@ -382,6 +383,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "typeAnesthesie", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "sousTypeAnesthesie", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

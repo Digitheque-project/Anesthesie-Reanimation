@@ -13,6 +13,8 @@ import RoleGate from '@/components/bloc/auth/RoleGate';
 import { RoleClinique } from '@/lib/auth/role-clinique';
 import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
 import BackButton from '@/components/bloc/layout/BackButton';
+import { exporterFichePdf } from '@/lib/export/export';
+import { formaterNomPatient } from '@/lib/patient';
 
 export default function ConsultationCpaPage() {
   return (
@@ -541,6 +543,191 @@ function ConsultationCpaPageContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Construit la fiche CPA (sections clé/valeur) à partir de l'état actuel du formulaire, pour
+  // export PDF et partage — les champs vides sont omis automatiquement (voir exporterFichePdf).
+  const construireSectionsCpa = () => {
+    const nomComplet = formaterNomPatient(patient) || patientNom;
+    const decisionLabel: Record<string, string> = { APTE: 'APTE', INAPTE: 'INAPTE', REPORT: 'CPA À REPORTER' };
+    return [
+      {
+        titre: 'Patient',
+        champs: [
+          { label: 'Nom', valeur: nomComplet },
+          { label: 'N° Dossier', valeur: patient?.idDossier ? `#${patient.idDossier}` : '' },
+          { label: 'Diagnostic / Intervention prévue', valeur: intervention || patient?.libelle || '' },
+          { label: 'Date de consultation', valeur: new Date().toLocaleDateString('fr-FR') },
+        ],
+      },
+      {
+        titre: 'Antécédents',
+        champs: [
+          { label: 'Histoire actuelle', valeur: form.histoireActuelle },
+          { label: 'Urgence — Dernier repas / boisson', valeur: form.dernierRepasBoisson },
+          { label: 'Patient mineur', valeur: form.patientMineur ? 'Oui' : '' },
+          { label: 'Autorisation d\'opérer signée', valeur: form.autorisationOpererSignee ? 'Oui' : '' },
+          { label: 'ATCD médicaux', valeur: form.atcdMedicaux },
+          { label: 'ATCD anesthésiques et chirurgicaux', valeur: form.atcdChirurgicaux },
+          { label: 'Incidents', valeur: form.notesIncidents },
+          { label: 'Antécédents d\'anesthésie', valeur: form.antecedentsAnesthesie === true ? 'OUI' : form.antecedentsAnesthesie === false ? 'NON' : '' },
+          { label: 'Asthme', valeur: form.asthme ? 'Oui' : '' },
+          { label: 'Temps de saignement', valeur: form.tempsSaignement },
+          { label: 'ATCD Obstétricaux (G/P/A/DDR)', valeur: [form.atcdObstetricauxG && `G:${form.atcdObstetricauxG}`, form.atcdObstetricauxP && `P:${form.atcdObstetricauxP}`, form.atcdObstetricauxA && `A:${form.atcdObstetricauxA}`, form.atcdObstetricauxDdr && `DDR:${form.atcdObstetricauxDdr}`].filter(Boolean).join(' — ') },
+          { label: 'Allergies médicamenteuses', valeur: form.allergiesMedicamenteuses },
+          { label: 'Allergies (autres)', valeur: form.allergiesAutres },
+          { label: 'Contraception', valeur: form.contraception },
+          { label: 'Groupe sanguin', valeur: [form.groupeSanguinCpaGroupe, form.groupeSanguinCpaPhenotype && `Phénotype ${form.groupeSanguinCpaPhenotype}`, form.groupeSanguinCpaRai && `RAI ${form.groupeSanguinCpaRai}`].filter(Boolean).join(' — ') },
+          { label: 'ATCD Familiaux', valeur: form.atcdFamiliaux },
+          { label: 'Transfusions antérieures', valeur: form.transfusionsAnterieures === true ? 'OUI' : form.transfusionsAnterieures === false ? 'NON' : '' },
+          { label: 'Incidents transfusionnels', valeur: form.transfusionsIncidents },
+        ],
+      },
+      {
+        titre: 'Examen clinique',
+        champs: [
+          { label: 'Fréquence cardiaque', valeur: form.frequenceCardiaque ? `${form.frequenceCardiaque} bpm` : '' },
+          { label: 'Tension artérielle', valeur: (form.taSystolique || form.taDiastolique) ? `${form.taSystolique || '?'}/${form.taDiastolique || '?'}` : '' },
+          { label: 'Taille', valeur: form.taille ? `${form.taille} cm` : '' },
+          { label: 'Poids', valeur: form.poids ? `${form.poids} kg` : '' },
+          { label: 'Cardio-vasculaire', valeur: form.examenCardiovasculaire },
+          { label: 'Pulmonaire', valeur: form.examenPulmonaire },
+          { label: 'Neurologique', valeur: form.examenNeurologique },
+          { label: 'Coloration conjonctivale', valeur: form.colorationConjonctivale },
+          { label: 'Abords veineux', valeur: form.abordVeineux },
+          { label: 'Rachis', valeur: form.rachis },
+        ],
+      },
+      {
+        titre: 'Voies aériennes',
+        champs: [
+          { label: 'Score Mallampati', valeur: scoreMallampati != null ? String(scoreMallampati) : '' },
+          { label: 'Ouverture buccale', valeur: form.ouvertureBuccale ? `${form.ouvertureBuccale} cm` : '' },
+          { label: 'DMTC', valeur: form.distanceMentoThyroidienne ? `${form.distanceMentoThyroidienne} cm` : '' },
+          { label: 'Dents', valeur: form.dents },
+          { label: 'Tabac', valeur: form.tabac },
+          { label: 'Alcool', valeur: form.alcool },
+        ],
+      },
+      {
+        titre: 'Bilan biologique / paraclinique',
+        champs: [
+          { label: 'Numération (GB/GR/Hb/Ht/PL/TP/PQ/TCA/Fibri)', valeur: [
+            form.bilanGb && `GB:${form.bilanGb}`, form.bilanGr && `GR:${form.bilanGr}`, form.bilanHb && `Hb:${form.bilanHb}`, form.bilanHt && `Ht:${form.bilanHt}`,
+            form.bilanPl && `PL:${form.bilanPl}`, form.bilanTp && `TP:${form.bilanTp}`, form.bilanPq && `PQ:${form.bilanPq}`, form.bilanTca && `TCA:${form.bilanTca}`, form.bilanFibri && `Fibri:${form.bilanFibri}`,
+          ].filter(Boolean).join(' — ') },
+          { label: 'Ionogramme (Na/K/Cl/RA/Gly/Prot/Urée/Créat/Ac Ur)', valeur: [
+            form.bilanNa && `Na:${form.bilanNa}`, form.bilanK && `K:${form.bilanK}`, form.bilanCl && `Cl:${form.bilanCl}`, form.bilanRa && `RA:${form.bilanRa}`, form.bilanGly && `Gly:${form.bilanGly}`,
+            form.bilanProt && `Prot:${form.bilanProt}`, form.bilanUree && `Urée:${form.bilanUree}`, form.bilanCreat && `Créat:${form.bilanCreat}`, form.bilanAcUr && `Ac Ur:${form.bilanAcUr}`,
+          ].filter(Boolean).join(' — ') },
+          { label: 'ECG', valeur: form.ecg },
+          { label: 'Rx (radio pulmonaire)', valeur: form.radioPulmonaire },
+          { label: 'Écho', valeur: form.echographie },
+          { label: 'Scanner', valeur: form.scanner },
+          { label: 'Autres examens', valeur: form.autresExamensParacliniques },
+        ],
+      },
+      {
+        titre: 'Protocole retenu',
+        champs: [
+          { label: 'Score ASA', valeur: scoreASA != null ? `ASA ${scoreASA}` : '' },
+          { label: 'Type d\'anesthésie', valeur: form.typeAnesthesie },
+          { label: 'Technique', valeur: form.sousTypeAnesthesie },
+          { label: 'Technique d\'intubation', valeur: form.techniqueIntubation },
+          { label: 'Recommandations et protocoles', valeur: form.recommandationsProtocole },
+        ],
+      },
+      {
+        titre: 'Instructions pré-opératoires',
+        champs: [
+          { label: 'Jeûne', valeur: form.jeune },
+          { label: 'Préparation physique', valeur: form.preparationPhysique },
+          { label: 'Tâches infirmières', valeur: form.tachesInfirmieres },
+          { label: 'Prémédication', valeur: medicaments.map(m => `${m.premedication} ${m.dose} (${m.voieAdmin})`).join(' ; ') },
+        ],
+      },
+      {
+        titre: 'Conclusion',
+        champs: [
+          { label: 'Traitement en cours', valeur: form.traitementEnCours },
+          { label: 'Traitement à suivre', valeur: form.traitementASuivre },
+          { label: 'Conclusion', valeur: form.conclusion },
+          { label: 'Décision', valeur: decision ? decisionLabel[decision] : '' },
+          { label: 'Motif', valeur: motifRefus },
+        ],
+      },
+    ];
+  };
+
+  const [exportEnCours, setExportEnCours] = useState(false);
+
+  const genererPdfCpa = async (): Promise<{ blob: Blob; nomFichier: string }> => {
+    const nomComplet = formaterNomPatient(patient) || patientNom;
+    const nomFichier = `CPA-${nomComplet.replace(/[^a-zA-Z0-9]+/g, '-')}-${new Date().toISOString().split('T')[0]}`;
+    const sessionActuelle = obtenirSessionValide();
+    const blob = await exporterFichePdf(
+      "Fiche d'Anesthésie – Réanimation",
+      `${estUrgent ? 'Visite Pré-Anesthésique (VPA)' : 'Consultation Pré-Anesthésique (CPA)'} — ${sessionActuelle?.acces.chu?.name || ''}`,
+      construireSectionsCpa(),
+      nomFichier
+    );
+    return { blob, nomFichier };
+  };
+
+  const handleTelechargerPdf = async () => {
+    setExportEnCours(true);
+    try {
+      await genererPdfCpa();
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erreur lors de la génération du PDF');
+    } finally {
+      setExportEnCours(false);
+    }
+  };
+
+  // Partage direct (Web Share API, niveau 2 avec fichiers) : disponible surtout sur mobile
+  // (Android/iOS) — sur desktop, la plupart des navigateurs ne le supportent pas encore. Repli
+  // clair dans ce cas : le PDF est tout de même téléchargé, avec une invite à le joindre
+  // manuellement dans WhatsApp/l'email, plutôt que de prétendre à un envoi 100% automatique
+  // qu'aucune page web ne peut garantir sans API native.
+  const handlePartager = async () => {
+    setExportEnCours(true);
+    try {
+      const { blob, nomFichier } = await genererPdfCpa();
+      const nomComplet = formaterNomPatient(patient) || patientNom;
+      const fichier = new File([blob], `${nomFichier}.pdf`, { type: 'application/pdf' });
+      const texte = `Fiche CPA — ${nomComplet}${decision ? ` — Décision : ${decision}` : ''}`;
+
+      if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
+        await navigator.share({ files: [fichier], title: 'Fiche CPA', text: texte });
+        return;
+      }
+
+      // Repli : le PDF est déjà téléchargé (voir genererPdfCpa) — on ouvre juste le canal
+      // choisi avec un texte pré-rempli, à charge pour l'utilisateur de joindre le fichier
+      // téléchargé (aucune page web ne peut le faire à sa place sans l'API ci-dessus).
+      alert("📄 PDF téléchargé. Votre navigateur ne permet pas de le joindre automatiquement : ouvrez WhatsApp ou votre messagerie et joignez le fichier téléchargé.");
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') { console.error(err); alert('❌ Erreur lors du partage'); }
+    } finally {
+      setExportEnCours(false);
+    }
+  };
+
+  const handlePartagerWhatsApp = async () => {
+    const nomComplet = formaterNomPatient(patient) || patientNom;
+    await handleTelechargerPdf();
+    const texte = encodeURIComponent(`Fiche CPA — ${nomComplet}${decision ? ` — Décision : ${decision}` : ''} (PDF téléchargé à joindre manuellement)`);
+    window.open(`https://wa.me/?text=${texte}`, '_blank');
+  };
+
+  const handlePartagerEmail = async () => {
+    const nomComplet = formaterNomPatient(patient) || patientNom;
+    await handleTelechargerPdf();
+    const sujet = encodeURIComponent(`Fiche CPA — ${nomComplet}`);
+    const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint la fiche CPA de ${nomComplet}${decision ? ` (décision : ${decision})` : ''}.\nLe PDF a été téléchargé sur cet ordinateur — pensez à le joindre à cet email avant l'envoi.\n\nCordialement.`);
+    window.open(`mailto:?subject=${sujet}&body=${corps}`, '_blank');
   };
 
   return (
@@ -1276,6 +1463,35 @@ function ConsultationCpaPageContent() {
               </div>
             </div>
           )}
+
+          {/* Export / Partage — capture la fiche CPA telle que remplie à l'instant en PDF, à
+              envoyer au professeur responsable de CPA. Le partage direct (pièce jointe) ne
+              fonctionne que sur les navigateurs qui supportent l'API Web Share niveau 2
+              (surtout mobile) — sur les autres, le PDF est téléchargé et il faut le joindre à
+              la main, aucune page web ne peut le faire automatiquement. */}
+          <div className="mt-4 pt-4 border-t border-surface-container">
+            <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">ios_share</span> Exporter / Partager la fiche CPA
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={handleTelechargerPdf} disabled={exportEnCours}
+                className="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface rounded-lg text-xs font-bold hover:bg-surface-container transition-colors disabled:opacity-50">
+                <span className="material-symbols-outlined text-base">picture_as_pdf</span> Télécharger en PDF
+              </button>
+              <button type="button" onClick={handlePartager} disabled={exportEnCours}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors disabled:opacity-50">
+                <span className="material-symbols-outlined text-base">share</span> Partager (appareil)
+              </button>
+              <button type="button" onClick={handlePartagerWhatsApp} disabled={exportEnCours}
+                className="flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-50">
+                <span className="material-symbols-outlined text-base">chat</span> WhatsApp
+              </button>
+              <button type="button" onClick={handlePartagerEmail} disabled={exportEnCours}
+                className="flex items-center gap-2 px-4 py-2 bg-on-surface-variant text-white rounded-lg text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-50">
+                <span className="material-symbols-outlined text-base">mail</span> Email
+              </button>
+            </div>
+          </div>
 
           {/* Bouton Valider */}
           <div className="mt-4 pt-4 border-t border-surface-container flex justify-end">

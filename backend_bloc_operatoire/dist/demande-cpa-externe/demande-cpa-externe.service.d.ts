@@ -3,21 +3,24 @@ import { HttpService } from '@nestjs/axios';
 import { Repository } from 'typeorm';
 import { DemandeCpaExterne, StatutDemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
+import { CPA } from '../entities/cpa.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
+import { StatutDemandeCpaPubliqueDto } from './dto/statut-demande-cpa-publique.dto';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { AccueilClient } from '../external/accueil.client';
 export declare class DemandeCpaExterneService {
     private repo;
     private creneauRepo;
+    private cpaRepo;
     private config;
     private http;
     private notificationBackClient;
     private accueilClient;
     private readonly logger;
     private readonly blocServiceId;
-    constructor(repo: Repository<DemandeCpaExterne>, creneauRepo: Repository<CreneauBloc>, config: ConfigService, http: HttpService, notificationBackClient: NotificationBackClient, accueilClient: AccueilClient);
+    constructor(repo: Repository<DemandeCpaExterne>, creneauRepo: Repository<CreneauBloc>, cpaRepo: Repository<CPA>, config: ConfigService, http: HttpService, notificationBackClient: NotificationBackClient, accueilClient: AccueilClient);
     receive(dto: ReceiveDemandeCpaDto): Promise<DemandeCpaExterne>;
     findAll(statut?: StatutDemandeCpaExterne): Promise<any>;
     findOne(id: string): Promise<DemandeCpaExterne>;
@@ -27,14 +30,5 @@ export declare class DemandeCpaExterneService {
     marquerCpaRealisee(demande: DemandeCpaExterne, cpaId: string, apte: boolean): Promise<DemandeCpaExterne>;
     marquerVpaRealisee(demande: DemandeCpaExterne, vpaId: string): Promise<DemandeCpaExterne>;
     notifierResultat(demande: DemandeCpaExterne, type: string, payload: any): Promise<void>;
-    findStatutPublic(id: string): Promise<{
-        id: string;
-        patientId: string;
-        sourceReferenceId: string;
-        statut: StatutDemandeCpaExterne;
-        cpaId: string | null;
-        vpaId: string | null;
-        dateCpaPlanifiee: Date;
-        dateVpaPlanifiee: Date;
-    }>;
+    findStatutPublic(id: string): Promise<StatutDemandeCpaPubliqueDto>;
 }

@@ -90,3 +90,49 @@ export async function exporterPDF(
 export function imprimerSection() {
   window.print()
 }
+
+// Export "fiche" (clé/valeur par section) — pour un document ponctuel type CPA, distinct
+// d'exporterPDF ci-dessus qui attend des tableaux de lignes homogènes. Retourne aussi le Blob
+// généré (en plus de déclencher le téléchargement) pour permettre un partage direct via l'API
+// Web Share, sans avoir à régénérer le PDF une seconde fois.
+export async function exporterFichePdf(
+  titre: string,
+  sousTitre: string,
+  sections: { titre: string; champs: { label: string; valeur: string }[] }[],
+  nomFichier: string
+): Promise<Blob> {
+  const { default: jsPDF } = await import('jspdf')
+  const autoTable = (await import('jspdf-autotable')).default
+  const doc = new jsPDF()
+
+  doc.setFontSize(16)
+  doc.setTextColor(0, 94, 184)
+  doc.text(titre, 14, 18)
+  doc.setFontSize(10)
+  doc.setTextColor(100)
+  doc.text(sousTitre, 14, 25)
+  doc.text(`Généré le ${new Date().toLocaleString('fr-FR')}`, 14, 30)
+
+  let y = 38
+  for (const section of sections) {
+    const champsRemplis = section.champs.filter(c => c.valeur && c.valeur.trim() !== '' && c.valeur !== '—')
+    if (!champsRemplis.length) continue
+    if (y > 260) { doc.addPage(); y = 18 }
+    doc.setFontSize(12)
+    doc.setTextColor(0, 94, 184)
+    doc.text(section.titre, 14, y)
+    autoTable(doc, {
+      startY: y + 3,
+      body: champsRemplis.map(c => [c.label, c.valeur]),
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 55, textColor: [80, 80, 80] }, 1: { cellWidth: 'auto' } },
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
+    })
+    // @ts-ignore — jspdf-autotable étend l'instance avec lastAutoTable au runtime
+    y = (doc as any).lastAutoTable.finalY + 10
+  }
+
+  doc.save(`${nomFichier}.pdf`)
+  return doc.output('blob') as Blob
+}

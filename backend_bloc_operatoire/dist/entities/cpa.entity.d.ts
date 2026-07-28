@@ -91,6 +91,7 @@ export declare class CPA {
     conclusion: string | null;
     recommandationsProtocole: string | null;
     typeAnesthesie: string;
+    sousTypeAnesthesie: string | null;
     techniqueIntubation: string;
     premedicaments: Premedicament[];
     medicamentsAnesthesieReanimation: {

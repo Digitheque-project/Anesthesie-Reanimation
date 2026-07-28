@@ -96,6 +96,7 @@ let CPA = class CPA {
     conclusion;
     recommandationsProtocole;
     typeAnesthesie;
+    sousTypeAnesthesie;
     techniqueIntubation;
     premedicaments;
     medicamentsAnesthesieReanimation;
@@ -333,6 +334,10 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], CPA.prototype, "typeAnesthesie", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "sousTypeAnesthesie", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)

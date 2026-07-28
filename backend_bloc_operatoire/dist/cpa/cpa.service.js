@@ -120,6 +120,7 @@ let CPAService = CPAService_1 = class CPAService {
                             decision: saved.decision,
                             dateCpa: saved.dateConsultation,
                             observations: saved.notesIncidents,
+                            motifRefus: saved.motifRefus,
                         });
                         if (!demande.sourceCallbackUrl) {
                             await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
