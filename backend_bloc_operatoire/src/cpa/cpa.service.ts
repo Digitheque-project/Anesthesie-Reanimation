@@ -160,6 +160,7 @@ export class CPAService {
                 decision: saved.decision,
                 dateCpa: saved.dateConsultation,
                 observations: saved.notesIncidents,
+                motifRefus: saved.motifRefus,
               },
             );
             if (!demande.sourceCallbackUrl) {

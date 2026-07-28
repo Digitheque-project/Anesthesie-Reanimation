@@ -265,12 +265,17 @@ export class DemandeCpaExterneService {
     let decision: string | null = null;
     let dateCpa: Date | null = null;
     let observations: string | null = null;
+    // Le motif n'a de sens que pour INAPTE/REPORT (voir CPAService.create, qui l'exige dans ces
+    // deux cas) — c'est justement l'information la plus utile à transmettre au demandeur quand
+    // ce n'est pas APTE, donc jamais omise ici.
+    let motifRefus: string | null = null;
     if (demande.cpaId) {
       const cpa = await this.cpaRepo.findOne({ where: { id: demande.cpaId } });
       if (cpa) {
         decision = cpa.decision;
         dateCpa = cpa.dateConsultation;
         observations = cpa.notesIncidents || null;
+        motifRefus = cpa.motifRefus || null;
       }
     }
     return {
@@ -285,6 +290,7 @@ export class DemandeCpaExterneService {
       decision,
       dateCpa,
       observations,
+      motifRefus,
     };
   }
 }
