@@ -13,6 +13,7 @@ import { CPA } from '../entities/cpa.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
+import { StatutDemandeCpaPubliqueDto } from './dto/statut-demande-cpa-publique.dto';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { AccueilClient } from '../external/accueil.client';
 
@@ -260,7 +261,7 @@ export class DemandeCpaExterneService {
   // complet (antécédents, allergies, bilan biologique...), qui reste réservé au personnel du
   // bloc. decision/dateCpa/observations ne sont renseignés qu'une fois demande.cpaId posé (voir
   // marquerCpaRealisee, appelé par CPAService.create après la décision APTE/INAPTE/REPORT).
-  async findStatutPublic(id: string) {
+  async findStatutPublic(id: string): Promise<StatutDemandeCpaPubliqueDto> {
     const demande = await this.findOne(id);
     let decision: string | null = null;
     let dateCpa: Date | null = null;

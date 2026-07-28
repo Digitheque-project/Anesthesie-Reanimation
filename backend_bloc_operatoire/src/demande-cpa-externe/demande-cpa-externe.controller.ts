@@ -18,6 +18,8 @@ import {
 } from '@nestjs/swagger';
 import { DemandeCpaExterneService } from './demande-cpa-externe.service';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
+import { ReceiveDemandeCpaResponseDto } from './dto/receive-demande-cpa-response.dto';
+import { StatutDemandeCpaPubliqueDto } from './dto/statut-demande-cpa-publique.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
 import { StatutDemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
@@ -47,8 +49,8 @@ export class DemandeCpaExterneController {
       'Consultation Pré-Anesthésique avant un acte sous anesthésie. Fournir `sourceCallbackUrl` pour ' +
       'recevoir automatiquement le résultat (décision APTE/INAPTE/REPORT) dès que la CPA est réalisée.',
   })
-  @ApiResponse({ status: 200, description: 'Demande enregistrée avec succès.' })
-  async receive(@Body() dto: ReceiveDemandeCpaDto) {
+  @ApiResponse({ status: 200, description: 'Demande enregistrée avec succès.', type: ReceiveDemandeCpaResponseDto })
+  async receive(@Body() dto: ReceiveDemandeCpaDto): Promise<ReceiveDemandeCpaResponseDto> {
     const demande = await this.service.receive(dto);
     return {
       received: true,
@@ -66,8 +68,13 @@ export class DemandeCpaExterneController {
   @ApiOperation({
     summary:
       "Consulter l'état d'une demande de CPA externe (accessible au service demandeur, sans authentification)",
+    description:
+      "Filet de secours au push temps réel (canal Notification + sourceCallbackUrl) : renvoie l'état " +
+      "d'avancement de la demande et, une fois la CPA réalisée, la décision (APTE/INAPTE/REPORT) et le " +
+      'motif quand elle est INAPTE ou REPORT.',
   })
-  getStatutPublic(@Param('id', ParseUUIDPipe) id: string) {
+  @ApiResponse({ status: 200, type: StatutDemandeCpaPubliqueDto })
+  getStatutPublic(@Param('id', ParseUUIDPipe) id: string): Promise<StatutDemandeCpaPubliqueDto> {
     return this.service.findStatutPublic(id);
   }
 
