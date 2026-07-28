@@ -21,6 +21,10 @@ export type MedicamentRow = {
   /** Catégorie d'origine (ex. "SERUM") — non utilisée par ce composant, sert au parent à
    * regrouper/filtrer les lignes d'un tableau à plat (ex. catalogue CPA). */
   categorie?: string;
+  /** Valeurs cliquables (concentration, calibre, nom alternatif...) qui remplissent directement
+   * le champ Dosage/Quantité — évite d'avoir à les taper pour les articles qui proposent un
+   * choix connu (ex. SGH 5%/10%, Lidocaïne 1%/2%). */
+  variantes?: string[];
 };
 
 export type MedicamentTableAccent =
@@ -231,6 +235,26 @@ export default function MedicamentTable({
                         className={dosageInputClassName}
                       />
                     </div>
+                    {/* Choix connus (concentration, calibre, nom alternatif...) : un clic
+                        remplit directement le champ ci-dessus, sans avoir à le taper. */}
+                    {row.variantes && row.variantes.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {row.variantes.map((variante) => (
+                          <button
+                            key={variante}
+                            type="button"
+                            onClick={() => patchRow(row.id, "dosage", variante)}
+                            className={`rounded-full border px-2.5 py-1 text-[10px] font-bold transition-colors ${
+                              row.dosage === variante
+                                ? "border-primary bg-primary text-white"
+                                : "border-outline-variant/30 bg-white text-on-surface-variant hover:border-primary/50 hover:text-primary"
+                            }`}
+                          >
+                            {variante}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <input

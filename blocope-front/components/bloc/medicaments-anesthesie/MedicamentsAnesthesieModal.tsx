@@ -10,7 +10,7 @@ import { pharmacieService, type ArticlePharmacie } from "@/lib/api/pharmacie.ser
 // article (`categorie::libellé`) pour que la sélection survive aux re-rendus.
 export function construireLignesInitiales(): MedicamentRow[] {
   return (Object.keys(CATALOGUE_MEDICAMENTS) as CategorieMedicament[]).flatMap((categorie) =>
-    CATALOGUE_MEDICAMENTS[categorie].items.map((label) => ({
+    CATALOGUE_MEDICAMENTS[categorie].items.map(({ label, variantes }) => ({
       id: `${categorie}::${label}`,
       label,
       selected: false,
@@ -18,6 +18,7 @@ export function construireLignesInitiales(): MedicamentRow[] {
       dosage: "",
       nombre: "",
       categorie,
+      variantes,
     }))
   );
 }
