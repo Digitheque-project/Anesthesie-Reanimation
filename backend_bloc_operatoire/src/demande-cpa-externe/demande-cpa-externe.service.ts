@@ -9,6 +9,7 @@ import {
   StatutDemandeCpaExterne,
 } from '../entities/demande-cpa-externe.entity';
 import { CreneauBloc, TypeRDV } from '../entities/creneau-bloc.entity';
+import { CPA } from '../entities/cpa.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
@@ -24,6 +25,7 @@ export class DemandeCpaExterneService {
     @InjectRepository(DemandeCpaExterne)
     private repo: Repository<DemandeCpaExterne>,
     @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
+    @InjectRepository(CPA) private cpaRepo: Repository<CPA>,
     private config: ConfigService,
     private http: HttpService,
     private notificationBackClient: NotificationBackClient,
@@ -254,8 +256,23 @@ export class DemandeCpaExterneService {
   // Endpoint public : permet au service demandeur de vérifier l'état de sa demande sans notre
   // jeton SSO (il n'a pas de token scopé sur notre serviceId) — utile en secours de la
   // notification temps réel, ou en poll simple côté service demandeur.
+  // Route publique (voir contrôleur) — seul le résultat est exposé ici, jamais le dossier CPA
+  // complet (antécédents, allergies, bilan biologique...), qui reste réservé au personnel du
+  // bloc. decision/dateCpa/observations ne sont renseignés qu'une fois demande.cpaId posé (voir
+  // marquerCpaRealisee, appelé par CPAService.create après la décision APTE/INAPTE/REPORT).
   async findStatutPublic(id: string) {
     const demande = await this.findOne(id);
+    let decision: string | null = null;
+    let dateCpa: Date | null = null;
+    let observations: string | null = null;
+    if (demande.cpaId) {
+      const cpa = await this.cpaRepo.findOne({ where: { id: demande.cpaId } });
+      if (cpa) {
+        decision = cpa.decision;
+        dateCpa = cpa.dateConsultation;
+        observations = cpa.notesIncidents || null;
+      }
+    }
     return {
       id: demande.id,
       patientId: demande.patientId,
@@ -265,6 +282,9 @@ export class DemandeCpaExterneService {
       vpaId: demande.vpaId || null,
       dateCpaPlanifiee: demande.dateCpaPlanifiee || null,
       dateVpaPlanifiee: demande.dateVpaPlanifiee || null,
+      decision,
+      dateCpa,
+      observations,
     };
   }
 }
