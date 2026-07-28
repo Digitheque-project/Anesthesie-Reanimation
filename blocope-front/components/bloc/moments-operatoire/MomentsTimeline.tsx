@@ -6,13 +6,13 @@ import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import { useRole } from '@/lib/hooks/useRole'
 import type { CategorieMoment } from '@/lib/data/catalogue-moments-operatoires'
 
-// Séparation stricte par rôle — miroir de MomentsCatalogueService/MomentsOperatoireService côté
-// backend. Le chirurgien ne clique jamais de bouton (délègue toujours à l'IBODE) ; l'anesthésiste
-// et l'IBODE ne partagent aucune catégorie. Les autres rôles (Responsable CPA, Major) consultent
-// l'historique mais ne déclenchent/créent rien ici.
+// Séparation stricte par rôle — miroir de MomentsOperatoireService côté backend. Pendant
+// l'opération, l'IBODE n'a aucune interface propre : tous les boutons (toutes catégories) sont
+// réservés à l'anesthésiste. L'IBODE retrouve une interface partagée avec l'anesthésiste plus
+// tard, en salle de réveil (voir salle-de-reveil/suivi). Les autres rôles (Responsable CPA,
+// Major) consultent l'historique mais ne déclenchent/créent rien ici.
 const CATEGORIES_AUTORISEES: Record<string, CategorieMoment[]> = {
-  ANESTHESISTE: ['ANESTHESIE'],
-  IBODE: ['CHIRURGIE', 'DIVERS'],
+  ANESTHESISTE: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
 }
 
 const TITRES_CATEGORIE: Record<CategorieMoment, string> = {

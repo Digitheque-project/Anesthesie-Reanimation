@@ -18,7 +18,7 @@ const SERVICES_CLINIQUES = [
 
 export default function SortieSalleReveilPage() {
   return (
-    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste a accès à la salle de réveil.">
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.MAJOR]} message="Vous n'avez pas accès à la salle de réveil.">
       <Suspense fallback={<div>Chargement...</div>}>
         <SortieSalleReveilPageContent />
       </Suspense>

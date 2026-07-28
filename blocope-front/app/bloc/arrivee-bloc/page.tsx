@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { patientService } from '@/lib/api'
+import { useRole } from '@/lib/hooks/useRole'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
@@ -12,7 +13,7 @@ import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function ArriveeBlocPage() {
   return (
-    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste enregistre l'arrivée du patient au bloc.">
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.MAJOR]} message="Vous n'avez pas accès à l'arrivée au bloc.">
       <Suspense fallback={<div>Chargement...</div>}>
         <ArriveeBlocPageContent />
       </Suspense>
@@ -43,6 +44,9 @@ function ArriveeBlocPageContent() {
   // juste une coche muette, et permet aussi de retrouver l'état après un rechargement de page.
   const [momentsHoraires, setMomentsHoraires] = useState<Record<string, string>>({})
   const [enCours, setEnCours] = useState<string | null>(null)
+  // Le Major a accès à l'interface (RoleGate) pour consulter, mais n'enregistre pas les actes
+  // cliniques à sa place — mêmes garde-fous que sur les autres écrans réservés à l'anesthésiste.
+  const { estAnesthesiste } = useRole()
 
   useEffect(() => {
     if (!patientId) return
@@ -150,8 +154,8 @@ function ArriveeBlocPageContent() {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => !confirme && declencherMoment(label)}
-                  disabled={enCours === label || confirme}
+                  onClick={() => !confirme && estAnesthesiste && declencherMoment(label)}
+                  disabled={enCours === label || confirme || !estAnesthesiste}
                   className={`flex items-center justify-center gap-3 p-6 rounded-xl border-2 font-bold text-sm uppercase tracking-wide transition-all ${
                     confirme ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-surface-container-low border-outline-variant hover:border-primary hover:bg-primary-fixed/20'
                   } disabled:cursor-default`}
@@ -189,7 +193,7 @@ function ArriveeBlocPageContent() {
                 <label key={etat} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-all group ${
                   actif ? `${cfg.bg} ${cfg.border} shadow-md scale-[1.03]` : 'bg-background border-surface-container-highest hover:border-outline-variant hover:shadow-sm'
                 }`}>
-                  <input className="sr-only" type="radio" name="etatArrivee" checked={actif} onChange={() => choisirEtatArrivee(etat)} />
+                  <input className="sr-only" type="radio" name="etatArrivee" checked={actif} disabled={!estAnesthesiste} onChange={() => estAnesthesiste && choisirEtatArrivee(etat)} />
                   <span className={`material-symbols-outlined text-3xl ${actif ? cfg.icon : 'text-on-surface-variant/50'}`} style={actif ? { fontVariationSettings: "'FILL' 1" } : undefined}>
                     {cfg.icone}
                   </span>

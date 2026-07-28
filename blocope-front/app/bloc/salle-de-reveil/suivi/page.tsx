@@ -21,7 +21,7 @@ const SERVICES_CLINIQUES = [
 
 export default function SalleDeReveilPage() {
   return (
-    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste a accès à la salle de réveil.">
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR]} message="Vous n'avez pas accès à la salle de réveil.">
       <Suspense fallback={<div>Chargement...</div>}>
         <SalleDeReveilPageContent />
       </Suspense>
@@ -36,8 +36,11 @@ function SalleDeReveilPageContent() {
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const intervention = searchParams.get('intervention') || ''
 
-  const { estAnesthesiste, roleName } = useRole()
-  const [nomAnesthesiste, setNomAnesthesiste] = useState('')
+  const { estAnesthesiste, estIbode, roleName } = useRole()
+  // Surveillance de réveil : interface partagée Anesthésiste/IBODE (contrairement à la décision
+  // de sortie ci-dessous, qui reste une décision clinique réservée à l'anesthésiste).
+  const peutSurveiller = estAnesthesiste || estIbode
+  const [nomPersonnel, setNomPersonnel] = useState('')
   const [patient, setPatient] = useState<any>(null)
   const [activiteId, setActiviteId] = useState<string | null>(null)
   // Pré-rempli depuis le vrai horodatage du moment "Arrivée en salle" (posé sur l'écran Arrivée
@@ -62,7 +65,7 @@ function SalleDeReveilPageContent() {
 
   useEffect(() => {
     const session = obtenirSessionValide()
-    if (session) setNomAnesthesiste(`${session.payload.firstname} ${session.payload.name}`.trim())
+    if (session) setNomPersonnel(`${session.payload.firstname} ${session.payload.name}`.trim())
   }, [])
 
   // Récupère la véritable heure d'arrivée au bloc (moment "Arrivée en salle" horodaté lors de
@@ -87,7 +90,7 @@ function SalleDeReveilPageContent() {
   const checklistComplete = Object.values(checklistSortie).every(Boolean)
 
   const handleEnregistrerScore = async () => {
-    if (!estAnesthesiste) { alert('❌ La surveillance de réveil est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : '')); return }
+    if (!peutSurveiller) { alert('❌ La surveillance de réveil est réservée à l\'anesthésiste et à l\'IBODE.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : '')); return }
     try {
       const { data } = await apiClient.post('/scores-sccre', {
         patientId: patientId || patient?.id,
@@ -140,8 +143,8 @@ function SalleDeReveilPageContent() {
           <div><p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Intervention</p><p className="text-sm font-semibold text-on-surface">{intervention || patient?.libelle || '—'}</p></div>
           <div className="w-px h-8 bg-outline-variant/20" />
           <div>
-            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Anesthésiste</p>
-            <p className="text-sm font-bold text-primary">{estAnesthesiste ? (nomAnesthesiste || '—') : `Réservé à l'anesthésiste${roleName ? ` (rôle actuel : ${roleName})` : ''}`}</p>
+            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Personnel de surveillance</p>
+            <p className="text-sm font-bold text-primary">{peutSurveiller ? (nomPersonnel || '—') : `Réservé à l'anesthésiste et à l'IBODE${roleName ? ` (rôle actuel : ${roleName})` : ''}`}</p>
           </div>
         </div>
         <div className="flex flex-col items-end">
@@ -256,10 +259,10 @@ function SalleDeReveilPageContent() {
               </div>
             ))}
           </div>
-          <button onClick={handleEnregistrerScore} disabled={!estAnesthesiste}
-            title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
+          <button onClick={handleEnregistrerScore} disabled={!peutSurveiller}
+            title={!peutSurveiller ? 'Réservé à l\'anesthésiste et à l\'IBODE' : undefined}
             className="mt-6 w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-            {!estAnesthesiste ? 'Réservé à l\'anesthésiste' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
+            {!peutSurveiller ? 'Réservé à l\'anesthésiste et à l\'IBODE' : scoreSCCREId ? '✓ Score enregistré — Réenregistrer' : 'Valider le score'}
           </button>
         </div>
       </section>

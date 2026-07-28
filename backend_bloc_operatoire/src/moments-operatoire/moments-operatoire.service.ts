@@ -23,13 +23,12 @@ export class MomentsOperatoireService {
     dto: CreateMomentOperatoireDto,
     centralUser: CentralUser,
   ): Promise<MomentOperatoire> {
-    // Séparation stricte par rôle : l'anesthésiste n'horodate que la catégorie ANESTHESIE ; le
-    // chirurgien ne clique jamais de bouton (délègue toujours à l'IBODE) ; l'IBODE couvre
-    // CHIRURGIE et DIVERS. Pas de chevauchement entre catégories anesthésiste/IBODE.
+    // Séparation stricte par rôle : pendant l'opération, l'IBODE n'a aucune interface propre —
+    // tous les boutons (toutes catégories) sont réservés à l'anesthésiste. L'IBODE retrouve une
+    // interface partagée avec l'anesthésiste plus tard, en salle de réveil.
     const role = matchRoleClinique(centralUser.role);
     const categoriesAutorisees: Record<string, string[]> = {
-      [RoleClinique.ANESTHESISTE]: ['ANESTHESIE'],
-      [RoleClinique.IBODE]: ['CHIRURGIE', 'DIVERS'],
+      [RoleClinique.ANESTHESISTE]: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
     };
     const autorisees = role ? categoriesAutorisees[role] : undefined;
     if (!autorisees || !autorisees.includes(dto.categorie)) {

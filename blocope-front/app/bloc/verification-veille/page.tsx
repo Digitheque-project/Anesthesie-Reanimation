@@ -14,7 +14,7 @@ import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function VerificationVeillePage() {
   return (
-    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la vérification de la veille.">
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.MAJOR]} message="Vous n'avez pas accès à la vérification de la veille.">
       <Suspense fallback={<div>Chargement...</div>}>
         <VerificationVeillePageContent />
       </Suspense>

@@ -15,7 +15,7 @@ import { useRole } from '@/lib/hooks/useRole'
 export default function ActivitePendantOperationPage() {
   return (
     <RoleGate
-      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.IBODE]}
+      allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR]}
       message="Cette page (chronologie de l'opération) n'est pas accessible pour votre rôle."
     >
       <Suspense fallback={<div>Chargement...</div>}>
@@ -32,9 +32,10 @@ function ActivitePendantOperationPageContent() {
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const intervention = searchParams.get('intervention') || ''
   const [patient, setPatient] = useState<any>(null)
-  // L'IBODE n'a accès qu'aux boutons de chronologie (per-op) — pas au formulaire clinique
-  // (apports/sorties/surveillance/ventilation), réservé à l'anesthésiste. "et c'est tout".
-  const { estIbode } = useRole()
+  // Pendant l'opération, seul l'anesthésiste a une interface active ici (formulaire clinique et
+  // boutons de chronologie) — l'IBODE n'a aucune interface à ce stade (voir MomentsTimeline),
+  // le Major consulte sans agir. Tous deux ne voient que l'historique en lecture seule.
+  const { estAnesthesiste } = useRole()
 
   useEffect(() => {
     if (!patientId) return
@@ -142,7 +143,7 @@ function ActivitePendantOperationPageContent() {
           (boutons de chronologie, ne défile jamais avec la page) — l'IBODE ne voit que les
           boutons, aucun formulaire clinique ni checklist. */}
       <div className="flex-1 min-h-0 flex gap-6 p-6">
-        {!estIbode && (
+        {estAnesthesiste && (
         <div className="flex-1 min-w-0 overflow-y-auto space-y-6 pb-24">
         {/* Section 1: APPORTS */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
@@ -261,7 +262,7 @@ function ActivitePendantOperationPageContent() {
 
         {/* Colonne des boutons de chronologie + historique : largeur fixe pour l'anesthésiste
             (à côté du formulaire clinique), pleine largeur pour l'IBODE (seul contenu de l'écran). */}
-        <div className={estIbode ? 'flex-1 min-w-0 h-full max-w-2xl mx-auto' : 'w-[420px] shrink-0 h-full'}>
+        <div className={estAnesthesiste ? 'w-[420px] shrink-0 h-full' : 'flex-1 min-w-0 h-full max-w-2xl mx-auto'}>
           <MomentsTimeline patientId={patientId} />
         </div>
       </div>

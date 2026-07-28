@@ -15,7 +15,7 @@ import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function ApresOperationPage() {
   return (
-    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la check-list après intervention.">
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.MAJOR]} message="Vous n'avez pas accès à la check-list après intervention.">
       <Suspense fallback={<div>Chargement...</div>}>
         <ApresOperationPageContent />
       </Suspense>

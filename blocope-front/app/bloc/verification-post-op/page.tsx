@@ -14,7 +14,7 @@ import BackButton from '@/components/bloc/layout/BackButton'
 
 export default function VerificationPostOpPage() {
   return (
-    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE]} message="Seul l'anesthésiste réalise la vérification post-opératoire.">
+    <RoleGate allowedRoles={[RoleClinique.ANESTHESISTE, RoleClinique.MAJOR]} message="Vous n'avez pas accès à la vérification post-opératoire.">
       <Suspense fallback={<div>Chargement...</div>}>
         <VerificationPostOpPageContent />
       </Suspense>
