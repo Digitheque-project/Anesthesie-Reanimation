@@ -17,8 +17,33 @@ export declare class CreateCPADto {
     patientId: string;
     anesthesisteId?: string;
     dateConsultation: string;
+    histoireActuelle?: string;
+    dernierRepasBoisson?: string;
+    patientMineur?: boolean;
+    autorisationOpererSignee?: boolean;
     antecedentsAnesthesie: boolean;
+    atcdMedicaux?: string;
+    atcdChirurgicaux?: string;
     notesIncidents?: string;
+    asthme?: boolean;
+    tempsSaignement?: 'NORMAL' | 'ALLONGE';
+    atcdObstetricaux?: {
+        g?: string;
+        p?: string;
+        a?: string;
+        ddr?: string;
+    };
+    allergiesMedicamenteuses?: string;
+    allergiesAutres?: string;
+    contraception?: string;
+    groupeSanguinCpa?: {
+        groupe?: string;
+        phenotype?: string;
+        rai?: string;
+    };
+    atcdFamiliaux?: string;
+    transfusionsAnterieures?: boolean;
+    transfusionsIncidents?: string;
     frequenceCardiaque?: number;
     tensionArterielle?: {
         systolique: number;
@@ -38,8 +63,18 @@ export declare class CreateCPADto {
     dents: string;
     tabac: string;
     alcool: string;
+    bilanBiologique?: Record<string, string>;
+    ecg?: string;
+    radioPulmonaire?: string;
+    echographie?: string;
+    scanner?: string;
+    autresExamensParacliniques?: string;
     scoreASA: ScoreASA;
     decision: DecisionCPA;
+    traitementEnCours?: string;
+    traitementASuivre?: string;
+    conclusion?: string;
+    recommandationsProtocole?: string;
     typeAnesthesie: string;
     techniqueIntubation: string;
     premedicaments?: PremedicamentDto[];

@@ -29,8 +29,33 @@ export declare class CPA {
     saisiParId: string | null;
     saisiParRole: string | null;
     dateConsultation: Date;
+    histoireActuelle: string | null;
+    dernierRepasBoisson: string | null;
+    patientMineur: boolean;
+    autorisationOpererSignee: boolean;
     antecedentsAnesthesie: boolean;
+    atcdMedicaux: string | null;
+    atcdChirurgicaux: string | null;
     notesIncidents: string;
+    asthme: boolean;
+    tempsSaignement: 'NORMAL' | 'ALLONGE' | null;
+    atcdObstetricaux: {
+        g?: string;
+        p?: string;
+        a?: string;
+        ddr?: string;
+    } | null;
+    allergiesMedicamenteuses: string | null;
+    allergiesAutres: string | null;
+    contraception: string | null;
+    groupeSanguinCpa: {
+        groupe?: string;
+        phenotype?: string;
+        rai?: string;
+    } | null;
+    atcdFamiliaux: string | null;
+    transfusionsAnterieures: boolean;
+    transfusionsIncidents: string | null;
     frequenceCardiaque: number | null;
     tensionArterielle: {
         systolique: number;
@@ -50,11 +75,21 @@ export declare class CPA {
     dents: string;
     tabac: string;
     alcool: string;
+    bilanBiologique: Record<string, string> | null;
+    ecg: string | null;
+    radioPulmonaire: string | null;
+    echographie: string | null;
+    scanner: string | null;
+    autresExamensParacliniques: string | null;
     scoreASA: ScoreASA;
     decision: DecisionCPA;
     motifRefus: string;
     decisionOperation: DecisionOperation | null;
     validationProfInformelle: string;
+    traitementEnCours: string | null;
+    traitementASuivre: string | null;
+    conclusion: string | null;
+    recommandationsProtocole: string | null;
     typeAnesthesie: string;
     techniqueIntubation: string;
     premedicaments: Premedicament[];

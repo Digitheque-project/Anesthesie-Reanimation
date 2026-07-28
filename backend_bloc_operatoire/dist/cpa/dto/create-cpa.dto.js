@@ -86,8 +86,24 @@ class CreateCPADto {
     patientId;
     anesthesisteId;
     dateConsultation;
+    histoireActuelle;
+    dernierRepasBoisson;
+    patientMineur;
+    autorisationOpererSignee;
     antecedentsAnesthesie;
+    atcdMedicaux;
+    atcdChirurgicaux;
     notesIncidents;
+    asthme;
+    tempsSaignement;
+    atcdObstetricaux;
+    allergiesMedicamenteuses;
+    allergiesAutres;
+    contraception;
+    groupeSanguinCpa;
+    atcdFamiliaux;
+    transfusionsAnterieures;
+    transfusionsIncidents;
     frequenceCardiaque;
     tensionArterielle;
     taille;
@@ -104,8 +120,18 @@ class CreateCPADto {
     dents;
     tabac;
     alcool;
+    bilanBiologique;
+    ecg;
+    radioPulmonaire;
+    echographie;
+    scanner;
+    autresExamensParacliniques;
     scoreASA;
     decision;
+    traitementEnCours;
+    traitementASuivre;
+    conclusion;
+    recommandationsProtocole;
     typeAnesthesie;
     techniqueIntubation;
     premedicaments;
@@ -134,6 +160,26 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "dateConsultation", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "histoireActuelle", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "dernierRepasBoisson", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateCPADto.prototype, "patientMineur", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateCPADto.prototype, "autorisationOpererSignee", void 0);
+__decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateCPADto.prototype, "antecedentsAnesthesie", void 0);
@@ -141,7 +187,67 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
+], CreateCPADto.prototype, "atcdMedicaux", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "atcdChirurgicaux", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
 ], CreateCPADto.prototype, "notesIncidents", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateCPADto.prototype, "asthme", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(['NORMAL', 'ALLONGE']),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "tempsSaignement", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)(),
+    __metadata("design:type", Object)
+], CreateCPADto.prototype, "atcdObstetricaux", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "allergiesMedicamenteuses", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "allergiesAutres", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "contraception", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)(),
+    __metadata("design:type", Object)
+], CreateCPADto.prototype, "groupeSanguinCpa", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "atcdFamiliaux", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateCPADto.prototype, "transfusionsAnterieures", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "transfusionsIncidents", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),
@@ -215,6 +321,36 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "alcool", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)(),
+    __metadata("design:type", Object)
+], CreateCPADto.prototype, "bilanBiologique", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "ecg", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "radioPulmonaire", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "echographie", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "scanner", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "autresExamensParacliniques", void 0);
+__decorate([
     (0, class_validator_1.IsEnum)(cpa_entity_1.ScoreASA),
     __metadata("design:type", Object)
 ], CreateCPADto.prototype, "scoreASA", void 0);
@@ -222,6 +358,26 @@ __decorate([
     (0, class_validator_1.IsEnum)(cpa_entity_1.DecisionCPA),
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "decision", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "traitementEnCours", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "traitementASuivre", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "conclusion", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCPADto.prototype, "recommandationsProtocole", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

@@ -72,12 +72,70 @@ export class CPA {
   @Column({ type: 'date' })
   dateConsultation: Date;
 
-  // Antécédents
+  // Antécédents — champs ajoutés lors de la relecture de la fiche papier « Fiche d'Anesthésie –
+  // Réanimation », section 1. Tous nullable/optionnels : seule la décision finale reste
+  // bloquante à la validation, comme pour le reste de l'examen clinique.
+  @Column({ type: 'text', nullable: true })
+  histoireActuelle: string | null;
+
+  // "Urgence (Dernier repas à / Dernière boisson)" — distinct de `jeune` (consignes de jeûne
+  // données pour l'opération à venir) : ici, c'est un constat rétrospectif utile en urgence pour
+  // évaluer le risque d'inhalation, pas une instruction prospective.
+  @Column({ type: 'text', nullable: true })
+  dernierRepasBoisson: string | null;
+
+  @Column({ default: false })
+  patientMineur: boolean;
+
+  @Column({ default: false })
+  autorisationOpererSignee: boolean;
+
   @Column({ default: false })
   antecedentsAnesthesie: boolean;
 
   @Column({ type: 'text', nullable: true })
+  atcdMedicaux: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  atcdChirurgicaux: string | null;
+
+  // "Incidents" de la fiche papier — notesIncidents existait déjà avant cette relecture, on le
+  // garde tel quel (même nom de champ, déjà utilisé par des CPA existantes).
+  @Column({ type: 'text', nullable: true })
   notesIncidents: string;
+
+  @Column({ default: false })
+  asthme: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  tempsSaignement: 'NORMAL' | 'ALLONGE' | null;
+
+  // ATCD Obstétricaux : G(este)/P(are)/A(vortement)/DDR (date des dernières règles).
+  @Column({ type: 'simple-json', nullable: true })
+  atcdObstetricaux: { g?: string; p?: string; a?: string; ddr?: string } | null;
+
+  @Column({ type: 'text', nullable: true })
+  allergiesMedicamenteuses: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  allergiesAutres: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  contraception: string | null;
+
+  // Groupage propre à la CPA (phénotype/RAI) — distinct de PatientBloc.groupeSanguin, qui ne
+  // porte que le groupe ABO/Rhésus simple transmis par Accueil.
+  @Column({ type: 'simple-json', nullable: true })
+  groupeSanguinCpa: { groupe?: string; phenotype?: string; rai?: string } | null;
+
+  @Column({ type: 'text', nullable: true })
+  atcdFamiliaux: string | null;
+
+  @Column({ default: false })
+  transfusionsAnterieures: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  transfusionsIncidents: string | null;
 
   // Examen clinique — mesures non bloquantes : seule la décision finale est obligatoire à la
   // validation de la CPA, l'anesthésiste peut valider sans avoir renseigné chaque constante.
@@ -130,6 +188,28 @@ export class CPA {
   @Column('text')
   alcool: string;
 
+  // Bilan biologique / paraclinique — valeurs saisies librement (texte), pas de contrôle de
+  // plage : ce sont des résultats d'examens externes recopiés, pas des mesures prises ici.
+  // Numération : GB, GR, Hb, Ht, PL, TP, PQ, TCA, Fibri. Ionogramme : Na, K, Cl, RA, Gly, Prot,
+  // Urée, Créat, Ac Ur.
+  @Column({ type: 'simple-json', nullable: true })
+  bilanBiologique: Record<string, string> | null;
+
+  @Column({ type: 'text', nullable: true })
+  ecg: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  radioPulmonaire: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  echographie: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  scanner: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  autresExamensParacliniques: string | null;
+
   // Score & Décision
   @Column({ type: 'enum', enum: ScoreASA })
   scoreASA: ScoreASA;
@@ -148,6 +228,22 @@ export class CPA {
   // bloque ni ne conditionne rien.
   @Column({ type: 'text', nullable: true })
   validationProfInformelle: string;
+
+  // Conclusion — section 4 de la fiche papier.
+  @Column({ type: 'text', nullable: true })
+  traitementEnCours: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  traitementASuivre: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  conclusion: string | null;
+
+  // Distinct de typeAnesthesie/techniqueIntubation (protocole retenu, ci-dessous) : ici, texte
+  // libre pour toute recommandation complémentaire (ex. surveillance renforcée, précautions
+  // particulières) qui ne rentre pas dans les champs structurés.
+  @Column({ type: 'text', nullable: true })
+  recommandationsProtocole: string | null;
 
   @Column()
   typeAnesthesie: string;

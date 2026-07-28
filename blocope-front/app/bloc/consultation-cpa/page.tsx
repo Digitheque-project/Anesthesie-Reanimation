@@ -28,8 +28,30 @@ export default function ConsultationCpaPage() {
 }
 
 const DEFAULT_FORM = {
+  // Section 1 — Antécédents (fiche papier)
+  histoireActuelle: '',
+  dernierRepasBoisson: '',
+  patientMineur: false,
+  autorisationOpererSignee: false,
   antecedentsAnesthesie: true,
+  atcdMedicaux: '',
+  atcdChirurgicaux: '',
   notesIncidents: '',
+  asthme: false,
+  tempsSaignement: '' as '' | 'NORMAL' | 'ALLONGE',
+  atcdObstetricauxG: '',
+  atcdObstetricauxP: '',
+  atcdObstetricauxA: '',
+  atcdObstetricauxDdr: '',
+  allergiesMedicamenteuses: '',
+  allergiesAutres: '',
+  contraception: '',
+  groupeSanguinCpaGroupe: '',
+  groupeSanguinCpaPhenotype: '',
+  groupeSanguinCpaRai: '',
+  atcdFamiliaux: '',
+  transfusionsAnterieures: false,
+  transfusionsIncidents: '',
   frequenceCardiaque: '',
   taSystolique: '',
   taDiastolique: '',
@@ -46,6 +68,14 @@ const DEFAULT_FORM = {
   dents: 'Denture saine',
   tabac: 'Non fumeur',
   alcool: 'Aucun',
+  // Section 3 — Bilan biologique / paraclinique (fiche papier)
+  bilanGb: '', bilanGr: '', bilanHb: '', bilanHt: '', bilanPl: '', bilanTp: '', bilanPq: '', bilanTca: '', bilanFibri: '',
+  bilanNa: '', bilanK: '', bilanCl: '', bilanRa: '', bilanGly: '', bilanProt: '', bilanUree: '', bilanCreat: '', bilanAcUr: '',
+  ecg: '',
+  radioPulmonaire: '',
+  echographie: '',
+  scanner: '',
+  autresExamensParacliniques: '',
   typeAnesthesie: 'Anesthésie Générale (AG)',
   techniqueIntubation: 'Sonde Endotrachéale',
   jeune: '',
@@ -53,6 +83,11 @@ const DEFAULT_FORM = {
   jeuneLiquides: '',
   preparationPhysique: '',
   tachesInfirmieres: '',
+  // Section 4 — Conclusion (fiche papier)
+  traitementEnCours: '',
+  traitementASuivre: '',
+  conclusion: '',
+  recommandationsProtocole: '',
 }
 
 // Reconstitue l'état des lignes du catalogue à partir des médicaments d'anesthésie/réanimation
@@ -169,8 +204,29 @@ function ConsultationCpaPageContent() {
     const c = cpaExistante;
     setForm(f => ({
       ...f,
+      histoireActuelle: c.histoireActuelle || '',
+      dernierRepasBoisson: c.dernierRepasBoisson || '',
+      patientMineur: c.patientMineur ?? f.patientMineur,
+      autorisationOpererSignee: c.autorisationOpererSignee ?? f.autorisationOpererSignee,
       antecedentsAnesthesie: c.antecedentsAnesthesie ?? f.antecedentsAnesthesie,
+      atcdMedicaux: c.atcdMedicaux || '',
+      atcdChirurgicaux: c.atcdChirurgicaux || '',
       notesIncidents: c.notesIncidents || '',
+      asthme: c.asthme ?? f.asthme,
+      tempsSaignement: c.tempsSaignement || '',
+      atcdObstetricauxG: c.atcdObstetricaux?.g || '',
+      atcdObstetricauxP: c.atcdObstetricaux?.p || '',
+      atcdObstetricauxA: c.atcdObstetricaux?.a || '',
+      atcdObstetricauxDdr: c.atcdObstetricaux?.ddr || '',
+      allergiesMedicamenteuses: c.allergiesMedicamenteuses || '',
+      allergiesAutres: c.allergiesAutres || '',
+      contraception: c.contraception || '',
+      groupeSanguinCpaGroupe: c.groupeSanguinCpa?.groupe || '',
+      groupeSanguinCpaPhenotype: c.groupeSanguinCpa?.phenotype || '',
+      groupeSanguinCpaRai: c.groupeSanguinCpa?.rai || '',
+      atcdFamiliaux: c.atcdFamiliaux || '',
+      transfusionsAnterieures: c.transfusionsAnterieures ?? f.transfusionsAnterieures,
+      transfusionsIncidents: c.transfusionsIncidents || '',
       frequenceCardiaque: c.frequenceCardiaque != null ? String(c.frequenceCardiaque) : '',
       taSystolique: c.tensionArterielle?.systolique != null ? String(c.tensionArterielle.systolique) : '',
       taDiastolique: c.tensionArterielle?.diastolique != null ? String(c.tensionArterielle.diastolique) : '',
@@ -187,11 +243,26 @@ function ConsultationCpaPageContent() {
       dents: c.dents || f.dents,
       tabac: c.tabac || f.tabac,
       alcool: c.alcool || f.alcool,
+      bilanGb: c.bilanBiologique?.gb || '', bilanGr: c.bilanBiologique?.gr || '', bilanHb: c.bilanBiologique?.hb || '',
+      bilanHt: c.bilanBiologique?.ht || '', bilanPl: c.bilanBiologique?.pl || '', bilanTp: c.bilanBiologique?.tp || '',
+      bilanPq: c.bilanBiologique?.pq || '', bilanTca: c.bilanBiologique?.tca || '', bilanFibri: c.bilanBiologique?.fibri || '',
+      bilanNa: c.bilanBiologique?.na || '', bilanK: c.bilanBiologique?.k || '', bilanCl: c.bilanBiologique?.cl || '',
+      bilanRa: c.bilanBiologique?.ra || '', bilanGly: c.bilanBiologique?.gly || '', bilanProt: c.bilanBiologique?.prot || '',
+      bilanUree: c.bilanBiologique?.uree || '', bilanCreat: c.bilanBiologique?.creat || '', bilanAcUr: c.bilanBiologique?.acUr || '',
+      ecg: c.ecg || '',
+      radioPulmonaire: c.radioPulmonaire || '',
+      echographie: c.echographie || '',
+      scanner: c.scanner || '',
+      autresExamensParacliniques: c.autresExamensParacliniques || '',
       typeAnesthesie: c.typeAnesthesie || f.typeAnesthesie,
       techniqueIntubation: c.techniqueIntubation || f.techniqueIntubation,
       jeune: c.jeune || '',
       preparationPhysique: c.preparationPhysique || '',
       tachesInfirmieres: c.tachesInfirmieres || '',
+      traitementEnCours: c.traitementEnCours || '',
+      traitementASuivre: c.traitementASuivre || '',
+      conclusion: c.conclusion || '',
+      recommandationsProtocole: c.recommandationsProtocole || '',
     }));
     if (c.mallampati != null) setScoreMallampati(c.mallampati);
     if (c.scoreASA != null) setScoreASA(c.scoreASA);
@@ -317,8 +388,28 @@ function ConsultationCpaPageContent() {
           patientId: patientIdFinal,
           anesthesisteId: estAnesthesisteConnecte ? undefined : anesthesisteId,
           dateConsultation: new Date().toISOString().split('T')[0],
+          histoireActuelle: form.histoireActuelle || undefined,
+          dernierRepasBoisson: form.dernierRepasBoisson || undefined,
+          patientMineur: form.patientMineur,
+          autorisationOpererSignee: form.autorisationOpererSignee,
           antecedentsAnesthesie: form.antecedentsAnesthesie,
+          atcdMedicaux: form.atcdMedicaux || undefined,
+          atcdChirurgicaux: form.atcdChirurgicaux || undefined,
           notesIncidents: form.notesIncidents || undefined,
+          asthme: form.asthme,
+          tempsSaignement: form.tempsSaignement || undefined,
+          atcdObstetricaux: (form.atcdObstetricauxG || form.atcdObstetricauxP || form.atcdObstetricauxA || form.atcdObstetricauxDdr)
+            ? { g: form.atcdObstetricauxG || undefined, p: form.atcdObstetricauxP || undefined, a: form.atcdObstetricauxA || undefined, ddr: form.atcdObstetricauxDdr || undefined }
+            : undefined,
+          allergiesMedicamenteuses: form.allergiesMedicamenteuses || undefined,
+          allergiesAutres: form.allergiesAutres || undefined,
+          contraception: form.contraception || undefined,
+          groupeSanguinCpa: (form.groupeSanguinCpaGroupe || form.groupeSanguinCpaPhenotype || form.groupeSanguinCpaRai)
+            ? { groupe: form.groupeSanguinCpaGroupe || undefined, phenotype: form.groupeSanguinCpaPhenotype || undefined, rai: form.groupeSanguinCpaRai || undefined }
+            : undefined,
+          atcdFamiliaux: form.atcdFamiliaux || undefined,
+          transfusionsAnterieures: form.transfusionsAnterieures,
+          transfusionsIncidents: form.transfusionsIncidents || undefined,
           frequenceCardiaque: versNombre(form.frequenceCardiaque),
           tensionArterielle: (form.taSystolique !== '' && form.taDiastolique !== '')
             ? { systolique: versNombre(form.taSystolique), diastolique: versNombre(form.taDiastolique) }
@@ -337,11 +428,30 @@ function ConsultationCpaPageContent() {
           dents: form.dents,
           tabac: form.tabac,
           alcool: form.alcool,
+          bilanBiologique: (() => {
+            const cles: [string, string][] = [
+              ['gb', form.bilanGb], ['gr', form.bilanGr], ['hb', form.bilanHb], ['ht', form.bilanHt],
+              ['pl', form.bilanPl], ['tp', form.bilanTp], ['pq', form.bilanPq], ['tca', form.bilanTca], ['fibri', form.bilanFibri],
+              ['na', form.bilanNa], ['k', form.bilanK], ['cl', form.bilanCl], ['ra', form.bilanRa], ['gly', form.bilanGly],
+              ['prot', form.bilanProt], ['uree', form.bilanUree], ['creat', form.bilanCreat], ['acUr', form.bilanAcUr],
+            ];
+            const remplies = cles.filter(([, v]) => v.trim() !== '');
+            return remplies.length ? Object.fromEntries(remplies) : undefined;
+          })(),
+          ecg: form.ecg || undefined,
+          radioPulmonaire: form.radioPulmonaire || undefined,
+          echographie: form.echographie || undefined,
+          scanner: form.scanner || undefined,
+          autresExamensParacliniques: form.autresExamensParacliniques || undefined,
           scoreASA: typeof scoreASA === 'string' ? scoreASA : Number(scoreASA),
           decision,
           decisionOperation: (decision === 'APTE' || decision === 'INAPTE') ? (decisionOperation || undefined) : undefined,
           motifRefus: (decision === 'INAPTE' || decision === 'REPORT') ? motifRefus.trim() : undefined,
           validationProfInformelle: validationProfInformelle.trim() || undefined,
+          traitementEnCours: form.traitementEnCours || undefined,
+          traitementASuivre: form.traitementASuivre || undefined,
+          conclusion: form.conclusion || undefined,
+          recommandationsProtocole: form.recommandationsProtocole || undefined,
           typeAnesthesie: form.typeAnesthesie,
           techniqueIntubation: form.techniqueIntubation,
           premedicaments: medicaments.map(m => ({
@@ -517,13 +627,49 @@ function ConsultationCpaPageContent() {
       <div className="flex flex-col lg:flex-row gap-2">
         {/* COLONNE GAUCHE */}
         <div className={`flex-1 space-y-2 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
-          {/* Antécédents anesthésiques */}
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
+          {/* Antécédents — section 1 de la fiche papier "Fiche d'Anesthésie – Réanimation" */}
+          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history_edu</span>
-              <h2 className="text-lg font-bold font-headline text-primary">Antécédents anesthésiques</h2>
+              <h2 className="text-lg font-bold font-headline text-primary">Antécédents</h2>
             </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-on-surface-variant">Histoire actuelle</label>
+              <textarea disabled={!peutEditerExamenEtDecision} value={form.histoireActuelle} onChange={setField('histoireActuelle')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/20 disabled:opacity-60" placeholder="Motif de consultation, contexte actuel..."></textarea>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-on-surface-variant">Urgence — Dernier repas / Dernière boisson</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.dernierRepasBoisson} onChange={setField('dernierRepasBoisson')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="ex: repas à 19h, eau à 22h" />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-on-surface-variant">Mineur — Autorisation d'opérer</label>
+                <div className="flex gap-2 h-[46px]">
+                  <label className={`flex-1 flex items-center justify-center gap-2 px-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.patientMineur} onChange={e => setForm(f => ({ ...f, patientMineur: e.target.checked }))} className="w-4 h-4" type="checkbox" /><span className="text-xs font-bold">Patient mineur</span>
+                  </label>
+                  <label className={`flex-1 flex items-center justify-center gap-2 px-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.autorisationOpererSignee} onChange={e => setForm(f => ({ ...f, autorisationOpererSignee: e.target.checked }))} className="w-4 h-4" type="checkbox" /><span className="text-xs font-bold">Autorisation signée</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="space-y-2"><label className="block text-sm font-semibold text-on-surface-variant">ATCD médicaux</label>
+                <textarea disabled={!peutEditerExamenEtDecision} value={form.atcdMedicaux} onChange={setField('atcdMedicaux')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="HTA, diabète..."></textarea>
+              </div>
+              <div className="space-y-2"><label className="block text-sm font-semibold text-on-surface-variant">ATCD anesthésiques et chirurgicaux</label>
+                <textarea disabled={!peutEditerExamenEtDecision} value={form.atcdChirurgicaux} onChange={setField('atcdChirurgicaux')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Interventions, anesthésies antérieures..."></textarea>
+              </div>
+              <div className="space-y-2"><label className="block text-sm font-semibold text-on-surface-variant">Incidents</label>
+                <textarea disabled={!peutEditerExamenEtDecision} value={form.notesIncidents} onChange={setField('notesIncidents')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Décrire tout incident..."></textarea>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-on-surface-variant">Antécédents d'anesthésie ?</label>
                 <div className="flex gap-2">
@@ -536,9 +682,73 @@ function ConsultationCpaPageContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant">Notes d'incidents</label>
-                <textarea disabled={!peutEditerExamenEtDecision} value={form.notesIncidents} onChange={setField('notesIncidents')} className="w-full h-24 bg-surface-container-low border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/20 disabled:opacity-60" placeholder="Décrire tout incident..."></textarea>
+                <label className="block text-sm font-semibold text-on-surface-variant">Asthme</label>
+                <label className={`flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                  <input disabled={!peutEditerExamenEtDecision} checked={form.asthme} onChange={e => setForm(f => ({ ...f, asthme: e.target.checked }))} className="w-4 h-4" type="checkbox" /><span className="text-sm font-bold">Asthmatique</span>
+                </label>
               </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-on-surface-variant">Temps de saignement</label>
+                <div className="flex gap-2">
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.tempsSaignement === 'NORMAL'} onChange={() => setForm(f => ({ ...f, tempsSaignement: 'NORMAL' }))} className="hidden" name="tempsSaignement" type="radio" /><span className="text-xs font-bold">NORMAL</span>
+                  </label>
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.tempsSaignement === 'ALLONGE'} onChange={() => setForm(f => ({ ...f, tempsSaignement: 'ALLONGE' }))} className="hidden" name="tempsSaignement" type="radio" /><span className="text-xs font-bold">ALLONGÉ</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-outline-variant/20 pt-3 space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">ATCD Obstétricaux</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div><label className="text-[10px] font-bold block mb-1">G (Geste)</label><input disabled={!peutEditerExamenEtDecision} value={form.atcdObstetricauxG} onChange={setField('atcdObstetricauxG')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" /></div>
+                <div><label className="text-[10px] font-bold block mb-1">P (Pare)</label><input disabled={!peutEditerExamenEtDecision} value={form.atcdObstetricauxP} onChange={setField('atcdObstetricauxP')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" /></div>
+                <div><label className="text-[10px] font-bold block mb-1">A (Avortement)</label><input disabled={!peutEditerExamenEtDecision} value={form.atcdObstetricauxA} onChange={setField('atcdObstetricauxA')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" /></div>
+                <div><label className="text-[10px] font-bold block mb-1">DDR</label><input disabled={!peutEditerExamenEtDecision} value={form.atcdObstetricauxDdr} onChange={setField('atcdObstetricauxDdr')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" type="date" /></div>
+              </div>
+            </div>
+
+            <div className="border-t border-outline-variant/20 pt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Allergies médicamenteuses</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.allergiesMedicamenteuses} onChange={setField('allergiesMedicamenteuses')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Aucune / préciser..." /></div>
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Allergies (autres)</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.allergiesAutres} onChange={setField('allergiesAutres')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Latex, alimentaire..." /></div>
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Contraception</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.contraception} onChange={setField('contraception')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" /></div>
+            </div>
+
+            <div className="border-t border-outline-variant/20 pt-3 space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Groupe sanguin</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div><label className="text-[10px] font-bold block mb-1">Groupe (A/B/AB/O)</label>
+                  <select disabled={!peutEditerExamenEtDecision} value={form.groupeSanguinCpaGroupe} onChange={setField('groupeSanguinCpaGroupe')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60">
+                    <option value="">—</option><option>A</option><option>B</option><option>AB</option><option>O</option>
+                  </select>
+                </div>
+                <div><label className="text-[10px] font-bold block mb-1">Phénotype</label><input disabled={!peutEditerExamenEtDecision} value={form.groupeSanguinCpaPhenotype} onChange={setField('groupeSanguinCpaPhenotype')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" /></div>
+                <div><label className="text-[10px] font-bold block mb-1">RAI</label><input disabled={!peutEditerExamenEtDecision} value={form.groupeSanguinCpaRai} onChange={setField('groupeSanguinCpaRai')} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" placeholder="Négative / positive..." /></div>
+              </div>
+            </div>
+
+            <div className="border-t border-outline-variant/20 pt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">ATCD Familiaux</label>
+                <textarea disabled={!peutEditerExamenEtDecision} value={form.atcdFamiliaux} onChange={setField('atcdFamiliaux')} className="w-full h-16 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="HTA, diabète, asthme..."></textarea>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-on-surface-variant block">Transfusions antérieures ?</label>
+                <div className="flex gap-2">
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.transfusionsAnterieures} onChange={() => setForm(f => ({ ...f, transfusionsAnterieures: true }))} className="hidden" name="transfusions" type="radio" /><span className="text-sm font-bold">OUI</span>
+                  </label>
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={!form.transfusionsAnterieures} onChange={() => setForm(f => ({ ...f, transfusionsAnterieures: false }))} className="hidden" name="transfusions" type="radio" /><span className="text-sm font-bold">NON</span>
+                  </label>
+                </div>
+              </div>
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Incidents transfusionnels</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.transfusionsIncidents} onChange={setField('transfusionsIncidents')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Aucun / préciser..." /></div>
             </div>
           </section>
 
@@ -619,6 +829,49 @@ function ConsultationCpaPageContent() {
               </div>
             </div>
           </section>
+
+          {/* Bilan biologique / paraclinique — section 3 de la fiche papier */}
+          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">biotech</span>
+              <h2 className="text-lg font-bold font-headline text-primary">Bilan biologique / paraclinique</h2>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Numération</label>
+              <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
+                {([['bilanGb', 'GB'], ['bilanGr', 'GR'], ['bilanHb', 'Hb'], ['bilanHt', 'Ht'], ['bilanPl', 'PL'], ['bilanTp', 'TP'], ['bilanPq', 'PQ'], ['bilanTca', 'TCA'], ['bilanFibri', 'Fibri']] as const).map(([key, label]) => (
+                  <div key={key}><label className="text-[10px] font-bold block mb-1">{label}</label>
+                    <input disabled={!peutEditerExamenEtDecision} value={form[key]} onChange={setField(key)} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" /></div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 border-t border-outline-variant/20 pt-3">
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Ionogramme</label>
+              <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
+                {([['bilanNa', 'Na'], ['bilanK', 'K'], ['bilanCl', 'Cl'], ['bilanRa', 'RA'], ['bilanGly', 'Gly'], ['bilanProt', 'Prot'], ['bilanUree', 'Urée'], ['bilanCreat', 'Créat'], ['bilanAcUr', 'Ac Ur']] as const).map(([key, label]) => (
+                  <div key={key}><label className="text-[10px] font-bold block mb-1">{label}</label>
+                    <input disabled={!peutEditerExamenEtDecision} value={form[key]} onChange={setField(key)} className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm disabled:opacity-60" /></div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border-t border-outline-variant/20 pt-3">
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">ECG</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.ecg} onChange={setField('ecg')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="RAS / anomalie..." /></div>
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Rx (radio pulmonaire)</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.radioPulmonaire} onChange={setField('radioPulmonaire')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="RAS / anomalie..." /></div>
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Écho</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.echographie} onChange={setField('echographie')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="RAS / anomalie..." /></div>
+              <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Scanner</label>
+                <input disabled={!peutEditerExamenEtDecision} value={form.scanner} onChange={setField('scanner')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="RAS / anomalie..." /></div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-on-surface-variant block">Autres examens</label>
+              <textarea disabled={!peutEditerExamenEtDecision} value={form.autresExamensParacliniques} onChange={setField('autresExamensParacliniques')} className="w-full h-16 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea>
+            </div>
+          </section>
         </div>
 
         {/* COLONNE DROITE */}
@@ -664,10 +917,32 @@ function ConsultationCpaPageContent() {
                   <option>Sonde Endotrachéale</option><option>Masque Laryngé</option><option>IOT Séquence Rapide</option>
                 </select>
               </div>
+              <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
+                <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">checklist</span> Recommandations et protocoles
+                </label>
+                <textarea disabled={!peutEditerExamenEtDecision} value={form.recommandationsProtocole} onChange={setField('recommandationsProtocole')} className="w-full h-20 bg-white border border-secondary/20 rounded-xl p-3 text-sm focus:ring-2 focus:ring-secondary/30 outline-none disabled:opacity-60" placeholder="Surveillance renforcée, précautions particulières..."></textarea>
+              </div>
             </div>
           </section>
         </div>
       </div>
+
+      {/* Conclusion — section 4 de la fiche papier */}
+      <section className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">summarize</span>
+          <h2 className="text-lg font-bold font-headline text-primary">Conclusion</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Traitement en cours</label>
+            <textarea disabled={!peutEditerExamenEtDecision} value={form.traitementEnCours} onChange={setField('traitementEnCours')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea></div>
+          <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Traitement à suivre</label>
+            <textarea disabled={!peutEditerExamenEtDecision} value={form.traitementASuivre} onChange={setField('traitementASuivre')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea></div>
+        </div>
+        <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Conclusion</label>
+          <textarea disabled={!peutEditerExamenEtDecision} value={form.conclusion} onChange={setField('conclusion')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea></div>
+      </section>
 
       {/* Instructions & Prescription */}
       <div className="rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-blue-50/80 to-white shadow-md overflow-hidden">

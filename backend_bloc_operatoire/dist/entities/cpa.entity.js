@@ -46,8 +46,24 @@ let CPA = class CPA {
     saisiParId;
     saisiParRole;
     dateConsultation;
+    histoireActuelle;
+    dernierRepasBoisson;
+    patientMineur;
+    autorisationOpererSignee;
     antecedentsAnesthesie;
+    atcdMedicaux;
+    atcdChirurgicaux;
     notesIncidents;
+    asthme;
+    tempsSaignement;
+    atcdObstetricaux;
+    allergiesMedicamenteuses;
+    allergiesAutres;
+    contraception;
+    groupeSanguinCpa;
+    atcdFamiliaux;
+    transfusionsAnterieures;
+    transfusionsIncidents;
     frequenceCardiaque;
     tensionArterielle;
     taille;
@@ -64,11 +80,21 @@ let CPA = class CPA {
     dents;
     tabac;
     alcool;
+    bilanBiologique;
+    ecg;
+    radioPulmonaire;
+    echographie;
+    scanner;
+    autresExamensParacliniques;
     scoreASA;
     decision;
     motifRefus;
     decisionOperation;
     validationProfInformelle;
+    traitementEnCours;
+    traitementASuivre;
+    conclusion;
+    recommandationsProtocole;
     typeAnesthesie;
     techniqueIntubation;
     premedicaments;
@@ -108,13 +134,77 @@ __decorate([
     __metadata("design:type", Date)
 ], CPA.prototype, "dateConsultation", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "histoireActuelle", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "dernierRepasBoisson", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], CPA.prototype, "patientMineur", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], CPA.prototype, "autorisationOpererSignee", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], CPA.prototype, "antecedentsAnesthesie", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "atcdMedicaux", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "atcdChirurgicaux", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], CPA.prototype, "notesIncidents", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], CPA.prototype, "asthme", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "tempsSaignement", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "atcdObstetricaux", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "allergiesMedicamenteuses", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "allergiesAutres", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "contraception", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "groupeSanguinCpa", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "atcdFamiliaux", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], CPA.prototype, "transfusionsAnterieures", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "transfusionsIncidents", void 0);
 __decorate([
     (0, typeorm_1.Column)('int', { nullable: true }),
     __metadata("design:type", Object)
@@ -180,6 +270,30 @@ __decorate([
     __metadata("design:type", String)
 ], CPA.prototype, "alcool", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "bilanBiologique", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "ecg", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "radioPulmonaire", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "echographie", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "scanner", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "autresExamensParacliniques", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: ScoreASA }),
     __metadata("design:type", Object)
 ], CPA.prototype, "scoreASA", void 0);
@@ -199,6 +313,22 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], CPA.prototype, "validationProfInformelle", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "traitementEnCours", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "traitementASuivre", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "conclusion", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "recommandationsProtocole", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
