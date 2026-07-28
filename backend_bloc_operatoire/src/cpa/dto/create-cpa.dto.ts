@@ -102,6 +102,7 @@ export class CreateCPADto {
   @IsOptional() @IsString() conclusion?: string;
   @IsOptional() @IsString() recommandationsProtocole?: string;
   @IsString() typeAnesthesie: string;
+  @IsOptional() @IsString() sousTypeAnesthesie?: string;
   @IsString() techniqueIntubation: string;
   @IsOptional()
   @IsArray()

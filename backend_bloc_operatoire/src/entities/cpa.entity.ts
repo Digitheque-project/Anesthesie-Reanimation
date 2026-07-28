@@ -245,8 +245,15 @@ export class CPA {
   @Column({ type: 'text', nullable: true })
   recommandationsProtocole: string | null;
 
+  // Catégorie de haut niveau : 'Anesthésie Générale (AG)' | 'ALR' | 'AL'.
   @Column()
   typeAnesthesie: string;
+
+  // Technique précise au sein de la catégorie ci-dessus — AG : Sédation/Intubation/Masque
+  // Laryngé/Masque Facial ; ALR : Rachianesthésie/APD/Blocage ; sans objet pour AL (texte libre
+  // combiné plutôt qu'un enum strict, la liste des techniques pouvant évoluer).
+  @Column({ type: 'varchar', nullable: true })
+  sousTypeAnesthesie: string | null;
 
   @Column()
   techniqueIntubation: string;

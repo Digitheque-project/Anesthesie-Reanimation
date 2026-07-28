@@ -33,7 +33,7 @@ const DEFAULT_FORM = {
   dernierRepasBoisson: '',
   patientMineur: false,
   autorisationOpererSignee: false,
-  antecedentsAnesthesie: true,
+  antecedentsAnesthesie: null as boolean | null,
   atcdMedicaux: '',
   atcdChirurgicaux: '',
   notesIncidents: '',
@@ -50,7 +50,7 @@ const DEFAULT_FORM = {
   groupeSanguinCpaPhenotype: '',
   groupeSanguinCpaRai: '',
   atcdFamiliaux: '',
-  transfusionsAnterieures: false,
+  transfusionsAnterieures: null as boolean | null,
   transfusionsIncidents: '',
   frequenceCardiaque: '',
   taSystolique: '',
@@ -60,14 +60,14 @@ const DEFAULT_FORM = {
   examenCardiovasculaire: '',
   examenPulmonaire: '',
   examenNeurologique: '',
-  colorationConjonctivale: 'Normale (Rose)',
+  colorationConjonctivale: '',
   abordVeineux: '',
   rachis: '',
   ouvertureBuccale: '',
   distanceMentoThyroidienne: '',
-  dents: 'Denture saine',
-  tabac: 'Non fumeur',
-  alcool: 'Aucun',
+  dents: '',
+  tabac: '',
+  alcool: '',
   // Section 3 — Bilan biologique / paraclinique (fiche papier)
   bilanGb: '', bilanGr: '', bilanHb: '', bilanHt: '', bilanPl: '', bilanTp: '', bilanPq: '', bilanTca: '', bilanFibri: '',
   bilanNa: '', bilanK: '', bilanCl: '', bilanRa: '', bilanGly: '', bilanProt: '', bilanUree: '', bilanCreat: '', bilanAcUr: '',
@@ -76,8 +76,11 @@ const DEFAULT_FORM = {
   echographie: '',
   scanner: '',
   autresExamensParacliniques: '',
-  typeAnesthesie: 'Anesthésie Générale (AG)',
-  techniqueIntubation: 'Sonde Endotrachéale',
+  // Aucune valeur pré-cochée : l'utilisateur doit choisir activement (voir aussi
+  // antecedentsAnesthesie/scoreMallampati/scoreASA plus bas, gérés en state séparé).
+  typeAnesthesie: '',
+  sousTypeAnesthesie: '',
+  techniqueIntubation: '',
   jeune: '',
   jeuneSolides: '',
   jeuneLiquides: '',
@@ -124,8 +127,8 @@ function ConsultationCpaPageContent() {
 
   const [patient, setPatient] = useState<any>(null);
   const [form, setForm] = useState(DEFAULT_FORM);
-  const [scoreMallampati, setScoreMallampati] = useState<number>(1);
-  const [scoreASA, setScoreASA] = useState<number | string>(1);
+  const [scoreMallampati, setScoreMallampati] = useState<number | null>(null);
+  const [scoreASA, setScoreASA] = useState<number | string | null>(null);
   const [decision, setDecision] = useState<'APTE' | 'INAPTE' | 'REPORT' | ''>('');
   // Devenir de l'opération une fois l'aptitude tranchée — distinct de `decision === 'REPORT'`
   // qui concerne la CPA elle-même (à refaire), pas l'opération.
@@ -255,6 +258,7 @@ function ConsultationCpaPageContent() {
       scanner: c.scanner || '',
       autresExamensParacliniques: c.autresExamensParacliniques || '',
       typeAnesthesie: c.typeAnesthesie || f.typeAnesthesie,
+      sousTypeAnesthesie: c.sousTypeAnesthesie || '',
       techniqueIntubation: c.techniqueIntubation || f.techniqueIntubation,
       jeune: c.jeune || '',
       preparationPhysique: c.preparationPhysique || '',
@@ -379,6 +383,23 @@ function ConsultationCpaPageContent() {
         // Première étape : le Major/Responsable CPA (ou l'anesthésiste s'il réalise seul sa
         // propre CPA) remplit l'examen et pose la décision.
         if (!peutEditerExamenEtDecision) { alert('❌ Seul un anesthésiste, un responsable CPA ou un major peut remplir et valider la CPA'); setLoading(false); return; }
+        // Aucune valeur n'étant plus pré-cochée par défaut, ces champs cliniquement
+        // structurants doivent être activement choisis avant de pouvoir valider — plutôt que de
+        // silencieusement retomber sur une valeur jamais vraiment observée.
+        const champsManquants: string[] = [];
+        if (form.antecedentsAnesthesie === null) champsManquants.push("Antécédents d'anesthésie (OUI/NON)");
+        if (!form.colorationConjonctivale) champsManquants.push('Coloration conjonctivale');
+        if (!form.dents) champsManquants.push('Dents');
+        if (!form.tabac) champsManquants.push('Tabac');
+        if (!form.alcool) champsManquants.push('Alcool');
+        if (scoreMallampati === null) champsManquants.push('Score Mallampati');
+        if (scoreASA === null) champsManquants.push('Score ASA');
+        if (!form.typeAnesthesie) champsManquants.push("Type d'anesthésie");
+        if (champsManquants.length) {
+          alert('❌ Complétez ces champs avant de valider :\n— ' + champsManquants.join('\n— '));
+          setLoading(false);
+          return;
+        }
         if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); setLoading(false); return; }
         if ((decision === 'INAPTE' || decision === 'REPORT') && !motifRefus.trim()) {
           alert(`❌ Le motif ${decision === 'INAPTE' ? 'du refus' : 'du report'} est obligatoire`); setLoading(false); return;
@@ -422,7 +443,7 @@ function ConsultationCpaPageContent() {
           colorationConjonctivale: form.colorationConjonctivale,
           abordVeineux: form.abordVeineux || 'RAS',
           rachis: form.rachis || 'RAS',
-          mallampati: scoreMallampati,
+          mallampati: scoreMallampati as number,
           ouvertureBuccale: versNombre(form.ouvertureBuccale),
           distanceMentoThyroidienne: versNombre(form.distanceMentoThyroidienne),
           dents: form.dents,
@@ -453,6 +474,7 @@ function ConsultationCpaPageContent() {
           conclusion: form.conclusion || undefined,
           recommandationsProtocole: form.recommandationsProtocole || undefined,
           typeAnesthesie: form.typeAnesthesie,
+          sousTypeAnesthesie: form.sousTypeAnesthesie || undefined,
           techniqueIntubation: form.techniqueIntubation,
           premedicaments: medicaments.map(m => ({
             nom: m.premedication,
@@ -673,11 +695,11 @@ function ConsultationCpaPageContent() {
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-on-surface-variant">Antécédents d'anesthésie ?</label>
                 <div className="flex gap-2">
-                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={form.antecedentsAnesthesie} onChange={() => setForm(f => ({ ...f, antecedentsAnesthesie: true }))} className="hidden" name="history" type="radio" /><span className="text-sm font-bold">OUI</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-4 border-2 border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.antecedentsAnesthesie === true} onChange={() => setForm(f => ({ ...f, antecedentsAnesthesie: true }))} className="hidden" name="history" type="radio" /><span className="text-base font-bold">OUI</span>
                   </label>
-                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={!form.antecedentsAnesthesie} onChange={() => setForm(f => ({ ...f, antecedentsAnesthesie: false }))} className="hidden" name="history" type="radio" /><span className="text-sm font-bold">NON</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-4 border-2 border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.antecedentsAnesthesie === false} onChange={() => setForm(f => ({ ...f, antecedentsAnesthesie: false }))} className="hidden" name="history" type="radio" /><span className="text-base font-bold">NON</span>
                   </label>
                 </div>
               </div>
@@ -739,11 +761,11 @@ function ConsultationCpaPageContent() {
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-on-surface-variant block">Transfusions antérieures ?</label>
                 <div className="flex gap-2">
-                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={form.transfusionsAnterieures} onChange={() => setForm(f => ({ ...f, transfusionsAnterieures: true }))} className="hidden" name="transfusions" type="radio" /><span className="text-sm font-bold">OUI</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-4 border-2 border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.transfusionsAnterieures === true} onChange={() => setForm(f => ({ ...f, transfusionsAnterieures: true }))} className="hidden" name="transfusions" type="radio" /><span className="text-base font-bold">OUI</span>
                   </label>
-                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={!form.transfusionsAnterieures} onChange={() => setForm(f => ({ ...f, transfusionsAnterieures: false }))} className="hidden" name="transfusions" type="radio" /><span className="text-sm font-bold">NON</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-4 border-2 border-outline-variant rounded-xl transition-colors has-[:checked]:bg-primary-fixed has-[:checked]:border-primary ${peutEditerExamenEtDecision ? 'cursor-pointer hover:bg-surface-container' : 'cursor-not-allowed'}`}>
+                    <input disabled={!peutEditerExamenEtDecision} checked={form.transfusionsAnterieures === false} onChange={() => setForm(f => ({ ...f, transfusionsAnterieures: false }))} className="hidden" name="transfusions" type="radio" /><span className="text-base font-bold">NON</span>
                   </label>
                 </div>
               </div>
@@ -781,7 +803,7 @@ function ConsultationCpaPageContent() {
               <div className="md:col-span-4 grid grid-cols-1 gap-3">
                 <div><label className="text-xs font-bold uppercase tracking-tighter">Coloration Conjonctivale</label>
                   <select disabled={!peutEditerExamenEtDecision} value={form.colorationConjonctivale} onChange={setField('colorationConjonctivale')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60">
-                    <option>Normale (Rose)</option><option>Pâleur</option><option>Ictère</option><option>Congestion</option>
+                    <option value="">— Sélectionner —</option><option>Normale (Rose)</option><option>Pâleur</option><option>Ictère</option><option>Congestion</option>
                   </select>
                 </div>
                 <div><label className="text-xs font-bold uppercase tracking-tighter">Abords veineux</label><textarea disabled={!peutEditerExamenEtDecision} value={form.abordVeineux} onChange={setField('abordVeineux')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm h-20 disabled:opacity-60" placeholder="Qualité du réseau..."></textarea></div>
@@ -802,7 +824,7 @@ function ConsultationCpaPageContent() {
                 <div className="grid grid-cols-4 gap-2">
                   {[1, 2, 3, 4].map((score) => (
                     <button key={score} onClick={() => setScoreMallampati(score)} disabled={!peutEditerExamenEtDecision}
-                      className={`p-3 rounded-lg border font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreMallampati === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
+                      className={`p-4 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreMallampati === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
                       {score}
                     </button>
                   ))}
@@ -814,17 +836,17 @@ function ConsultationCpaPageContent() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4 border-t border-outline-variant/20 pt-4">
               <div className="space-y-2"><label className="text-sm font-semibold uppercase tracking-widest text-[10px]">DENTS</label>
                 <select disabled={!peutEditerExamenEtDecision} value={form.dents} onChange={setField('dents')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60">
-                  <option>Denture saine</option><option>Prothèse amovible</option><option>Dents fragiles/mobiles</option>
+                  <option value="">— Sélectionner —</option><option>Denture saine</option><option>Prothèse amovible</option><option>Dents fragiles/mobiles</option>
                 </select>
               </div>
               <div className="space-y-2"><label className="text-sm font-semibold uppercase tracking-widest text-[10px]">TABAC</label>
                 <select disabled={!peutEditerExamenEtDecision} value={form.tabac} onChange={setField('tabac')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60">
-                  <option>Non fumeur</option><option>Fumeur actif</option><option>Fumeur passif</option><option>Ancien fumeur</option>
+                  <option value="">— Sélectionner —</option><option>Non fumeur</option><option>Fumeur actif</option><option>Fumeur passif</option><option>Ancien fumeur</option>
                 </select>
               </div>
               <div className="space-y-2"><label className="text-sm font-semibold uppercase tracking-widest text-[10px]">ALCOOLS</label>
                 <select disabled={!peutEditerExamenEtDecision} value={form.alcool} onChange={setField('alcool')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60">
-                  <option>Aucun</option><option>Occasionnel</option><option>Régulier</option><option>Chronique</option><option>Sevrage</option>
+                  <option value="">— Sélectionner —</option><option>Aucun</option><option>Occasionnel</option><option>Régulier</option><option>Chronique</option><option>Sevrage</option>
                 </select>
               </div>
             </div>
@@ -874,56 +896,40 @@ function ConsultationCpaPageContent() {
           </section>
         </div>
 
-        {/* COLONNE DROITE */}
-        <div className={`w-full lg:w-80 space-y-2 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
-          <section className="bg-primary-container text-on-primary rounded-2xl p-4 shadow-lg shadow-primary/20">
-            <h2 className="text-lg font-bold font-headline mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>award_star</span> Score ASA
-            </h2>
-            <div className="grid grid-cols-4 gap-2 mb-2">
-              {[1, 2, 3, 4, 5, 6].map((score) => (
-                <button key={score} onClick={() => setScoreASA(score)} disabled={!peutEditerExamenEtDecision}
-                  className={`aspect-square rounded-xl font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === score ? 'bg-white text-primary shadow-md scale-105' : 'bg-white/20 hover:bg-white/40'}`}>
-                  {score}
+        {/* COLONNE DROITE — l'action de prescription, mise bien en évidence en haut à droite
+            (Score ASA et Protocole retenu sont désormais en bas de page, juste avant la
+            décision finale). */}
+        <div className="w-full lg:w-80 space-y-2">
+          <section className={`rounded-2xl p-5 shadow-lg overflow-hidden ${peutDeciderAptitudeCpa ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-amber-500/40' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-2xl" style={peutDeciderAptitudeCpa ? { fontVariationSettings: "'FILL' 1" } : undefined}>edit_note</span>
+              <h2 className="text-lg font-bold font-headline">Prescription</h2>
+            </div>
+            {!peutDeciderAptitudeCpa ? (
+              <p className="text-xs">
+                Prescrire pendant la CPA est réservé à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-white/90 mb-3">
+                  Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
+                </p>
+                <button type="button" onClick={() => setShowPrescriptionModal(true)}
+                  className="w-full flex items-center justify-center gap-2 p-3.5 bg-white text-orange-600 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+                  <span className="material-symbols-outlined">edit_note</span> Prescrire
                 </button>
-              ))}
-              <button onClick={() => setScoreASA('E')} disabled={!peutEditerExamenEtDecision}
-                className={`col-span-2 aspect-[2/1] rounded-xl font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === 'E' ? 'bg-white text-primary shadow-md scale-105' : 'bg-tertiary-container/40 hover:bg-tertiary-container/60'}`}>
-                ASA E
-              </button>
-            </div>
-            <p className="text-[10px] text-white/70 uppercase font-bold text-center">Patient avec pathologie systémique sévère</p>
-          </section>
-
-          <section className="bg-white rounded-2xl shadow-md border-2 border-secondary/20 overflow-hidden">
-            <div className="bg-gradient-to-r from-secondary to-secondary/80 px-4 py-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-white">vaccines</span>
-              <h2 className="text-sm font-extrabold text-white uppercase tracking-widest">Protocole retenu</h2>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
-                <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">medication_liquid</span> Type d'anesthésie
-                </label>
-                <select disabled={!peutEditerExamenEtDecision} value={form.typeAnesthesie} onChange={setField('typeAnesthesie')} className="w-full bg-white border border-secondary/20 rounded-xl p-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-secondary/30 outline-none disabled:opacity-60">
-                  <option>Anesthésie Générale (AG)</option><option>Rachianesthésie</option><option>ALR</option><option>Sédation</option>
-                </select>
-              </div>
-              <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
-                <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">air</span> Technique d'intubation
-                </label>
-                <select disabled={!peutEditerExamenEtDecision} value={form.techniqueIntubation} onChange={setField('techniqueIntubation')} className="w-full bg-white border border-secondary/20 rounded-xl p-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-secondary/30 outline-none disabled:opacity-60">
-                  <option>Sonde Endotrachéale</option><option>Masque Laryngé</option><option>IOT Séquence Rapide</option>
-                </select>
-              </div>
-              <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
-                <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">checklist</span> Recommandations et protocoles
-                </label>
-                <textarea disabled={!peutEditerExamenEtDecision} value={form.recommandationsProtocole} onChange={setField('recommandationsProtocole')} className="w-full h-20 bg-white border border-secondary/20 rounded-xl p-3 text-sm focus:ring-2 focus:ring-secondary/30 outline-none disabled:opacity-60" placeholder="Surveillance renforcée, précautions particulières..."></textarea>
-              </div>
-            </div>
+              </>
+            )}
+            <PrescriptionCpaModal
+              open={showPrescriptionModal}
+              onClose={() => setShowPrescriptionModal(false)}
+              patientId={patientId || patient?.id || ''}
+              serviceDestOverride={
+                patient?.serviceOrigineId && patient?.serviceOrigine
+                  ? { serviceId: patient.serviceOrigineId, serviceName: patient.serviceOrigine }
+                  : undefined
+              }
+            />
           </section>
         </div>
       </div>
@@ -1046,43 +1052,86 @@ function ConsultationCpaPageContent() {
             </div>
           </div>
 
-          {/* Prescription pendant la CPA — au cas où l'anesthésiste/responsable CPA/major en a
-              besoin, avant la décision finale. Envoyée dans le dossier partagé du patient avec
-              son service d'origine comme destinataire explicite (pas d'action obligatoire). */}
-          <div className="mt-4 pt-4 border-t border-surface-container">
-            <h3 className="text-sm font-bold text-on-surface-variant mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">clinical_notes</span> Prescription
-            </h3>
-            {!peutDeciderAptitudeCpa ? (
-              <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Prescrire pendant la CPA est réservé à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
-              </div>
-            ) : (
-              <>
-                <p className="text-xs text-on-surface-variant mb-2">
-                  Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
-                </p>
-                <button type="button" onClick={() => setShowPrescriptionModal(true)}
-                  className="w-full flex items-center justify-between p-4 border border-surface-container rounded-xl hover:bg-primary-fixed/10 transition-colors">
-                  <span className="flex items-center gap-2 text-sm font-bold text-primary">
-                    <span className="material-symbols-outlined">edit_note</span>
-                    Prescrire
-                  </span>
-                  <span className="text-xs font-bold text-primary underline">Ouvrir</span>
+          {/* Score ASA + Protocole retenu — déplacés en bas de page, juste avant la décision
+              finale (la prescription, elle, est montée en haut à droite). */}
+          <div className={`mt-4 pt-4 border-t border-surface-container grid grid-cols-1 lg:grid-cols-2 gap-4 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+            <section className="bg-primary-container text-on-primary rounded-2xl p-4 shadow-lg shadow-primary/20">
+              <h2 className="text-lg font-bold font-headline mb-2 flex items-center gap-2">
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>award_star</span> Score ASA
+              </h2>
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {[1, 2, 3, 4, 5, 6].map((score) => (
+                  <button key={score} onClick={() => setScoreASA(score)} disabled={!peutEditerExamenEtDecision}
+                    className={`aspect-square rounded-xl font-bold text-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === score ? 'bg-white text-primary shadow-md scale-105' : 'bg-white/20 hover:bg-white/40'}`}>
+                    {score}
+                  </button>
+                ))}
+                <button onClick={() => setScoreASA('E')} disabled={!peutEditerExamenEtDecision}
+                  className={`col-span-2 aspect-[2/1] rounded-xl font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === 'E' ? 'bg-white text-primary shadow-md scale-105' : 'bg-tertiary-container/40 hover:bg-tertiary-container/60'}`}>
+                  ASA E
                 </button>
-              </>
-            )}
+              </div>
+              <p className="text-[10px] text-white/70 uppercase font-bold text-center">Patient avec pathologie systémique sévère</p>
+            </section>
 
-            <PrescriptionCpaModal
-              open={showPrescriptionModal}
-              onClose={() => setShowPrescriptionModal(false)}
-              patientId={patientId || patient?.id || ''}
-              serviceDestOverride={
-                patient?.serviceOrigineId && patient?.serviceOrigine
-                  ? { serviceId: patient.serviceOrigineId, serviceName: patient.serviceOrigine }
-                  : undefined
-              }
-            />
+            <section className="bg-white rounded-2xl shadow-md border-2 border-secondary/20 overflow-hidden">
+              <div className="bg-gradient-to-r from-secondary to-secondary/80 px-4 py-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-white">vaccines</span>
+                <h2 className="text-sm font-extrabold text-white uppercase tracking-widest">Protocole retenu</h2>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
+                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">medication_liquid</span> Type d'anesthésie
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {['Anesthésie Générale (AG)', 'ALR', 'AL'].map(type => (
+                      <button key={type} type="button" disabled={!peutEditerExamenEtDecision}
+                        onClick={() => setForm(f => ({ ...f, typeAnesthesie: type, sousTypeAnesthesie: '' }))}
+                        className={`p-3 rounded-lg border-2 font-bold text-xs transition-all disabled:opacity-60 disabled:cursor-not-allowed ${form.typeAnesthesie === type ? 'border-secondary bg-secondary text-white shadow-md' : 'border-secondary/20 bg-white text-on-surface hover:bg-secondary/10'}`}>
+                        {type === 'Anesthésie Générale (AG)' ? 'AG' : type}
+                      </button>
+                    ))}
+                  </div>
+                  {form.typeAnesthesie === 'Anesthésie Générale (AG)' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Sédation', 'Intubation', 'Masque Laryngé', 'Masque Facial'].map(st => (
+                        <button key={st} type="button" disabled={!peutEditerExamenEtDecision}
+                          onClick={() => setForm(f => ({ ...f, sousTypeAnesthesie: st }))}
+                          className={`p-2.5 rounded-lg border-2 font-semibold text-xs transition-all disabled:opacity-60 disabled:cursor-not-allowed ${form.sousTypeAnesthesie === st ? 'border-secondary bg-secondary-fixed text-secondary' : 'border-secondary/20 bg-white text-on-surface-variant hover:bg-secondary/5'}`}>
+                          {st}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {form.typeAnesthesie === 'ALR' && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {['Rachianesthésie', 'APD', 'Blocage'].map(st => (
+                        <button key={st} type="button" disabled={!peutEditerExamenEtDecision}
+                          onClick={() => setForm(f => ({ ...f, sousTypeAnesthesie: st }))}
+                          className={`p-2.5 rounded-lg border-2 font-semibold text-xs transition-all disabled:opacity-60 disabled:cursor-not-allowed ${form.sousTypeAnesthesie === st ? 'border-secondary bg-secondary-fixed text-secondary' : 'border-secondary/20 bg-white text-on-surface-variant hover:bg-secondary/5'}`}>
+                          {st}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
+                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">air</span> Technique d'intubation
+                  </label>
+                  <select disabled={!peutEditerExamenEtDecision} value={form.techniqueIntubation} onChange={setField('techniqueIntubation')} className="w-full bg-white border border-secondary/20 rounded-xl p-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-secondary/30 outline-none disabled:opacity-60">
+                    <option value="">— Sélectionner —</option><option>Sonde Endotrachéale</option><option>Masque Laryngé</option><option>IOT Séquence Rapide</option>
+                  </select>
+                </div>
+                <div className="p-3 bg-secondary/5 rounded-xl border border-secondary/10">
+                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wide block mb-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">checklist</span> Recommandations et protocoles
+                  </label>
+                  <textarea disabled={!peutEditerExamenEtDecision} value={form.recommandationsProtocole} onChange={setField('recommandationsProtocole')} className="w-full h-20 bg-white border border-secondary/20 rounded-xl p-3 text-sm focus:ring-2 focus:ring-secondary/30 outline-none disabled:opacity-60" placeholder="Surveillance renforcée, précautions particulières..."></textarea>
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* Décision Finale — seul champ réellement obligatoire de la consultation : mise en
