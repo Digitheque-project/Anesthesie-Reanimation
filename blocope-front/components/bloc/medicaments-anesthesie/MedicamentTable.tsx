@@ -93,6 +93,10 @@ type MedicamentTableProps = {
   /** Prix unitaire (Ar) par id de ligne, trouvé dans le catalogue Pharmacie par rapprochement de
    * nom — null si aucun article correspondant, absent si le catalogue n'a pas encore chargé. */
   prixParId?: Record<string, number | null>;
+  /** true une fois que le fetch du catalogue Pharmacie s'est terminé (avec ou sans résultat) —
+   * distingue "en cours de chargement" de "chargé mais aucun article trouvé", sans quoi les deux
+   * cas laissent le statut et le prix total silencieusement vides. */
+  catalogueCharge?: boolean;
 };
 
 export default function MedicamentTable({
@@ -102,6 +106,7 @@ export default function MedicamentTable({
   rows,
   onRowsChange,
   prixParId,
+  catalogueCharge,
 }: MedicamentTableProps) {
   const patchRow = (
     id: string,
@@ -170,18 +175,21 @@ export default function MedicamentTable({
               const prixTotal =
                 prixUnitaire != null && ligneRenseignee ? prixUnitaire * nombreValeur : null;
 
-              // Disponibilité pharmacie, indépendante du remplissage dosage/nombre : dès que le
-              // catalogue Pharmacie a chargé, l'anesthésiste doit savoir en un coup d'œil si le
-              // médicament est en stock — pas seulement une fois le prix total calculé.
-              const disponible = prixUnitaire !== undefined ? prixUnitaire !== null : null;
+              // Statut pharmacie, indépendant du remplissage dosage/nombre : dès que le catalogue
+              // Pharmacie a chargé, l'anesthésiste doit savoir en un coup d'œil si le médicament
+              // est en stock — pas seulement une fois le prix total calculé. Toujours un des
+              // trois états ci-dessous, jamais silencieux : "chargement" tant que le catalogue
+              // n'a pas fini de charger (voir catalogueCharge), sinon disponible/indisponible.
+              const statutPharmacie: "chargement" | "disponible" | "indisponible" =
+                !catalogueCharge ? "chargement" : prixUnitaire != null ? "disponible" : "indisponible";
 
               return (
                 <tr
                   key={row.id}
                   className={`transition-colors ${
                     row.selected ? rowSelectedClass[accent] :
-                    disponible === true ? "bg-emerald-50/60 hover:bg-emerald-50" :
-                    disponible === false ? "bg-rose-50/40 hover:bg-rose-50/70" :
+                    statutPharmacie === "disponible" ? "bg-emerald-50/60 hover:bg-emerald-50" :
+                    statutPharmacie === "indisponible" ? "bg-rose-50/40 hover:bg-rose-50/70" :
                     "hover:bg-surface-container-low/50"
                   }`}
                 >
@@ -203,16 +211,22 @@ export default function MedicamentTable({
                         </span>
                       )}
                       <span>{row.label}</span>
-                      {disponible === true && (
+                      {statutPharmacie === "disponible" && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-emerald-700">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           Disponible pharmacie
                         </span>
                       )}
-                      {disponible === false && (
+                      {statutPharmacie === "indisponible" && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-rose-600">
                           <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
                           Non disponible
+                        </span>
+                      )}
+                      {statutPharmacie === "chargement" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-low px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-on-surface-variant">
+                          <span className="h-1.5 w-1.5 rounded-full bg-outline-variant animate-pulse" />
+                          Vérification…
                         </span>
                       )}
                     </div>
@@ -270,10 +284,12 @@ export default function MedicamentTable({
                   <td className="px-4 py-3 text-xs font-bold text-on-surface-variant">
                     {prixTotal != null ? (
                       <span className="text-emerald-700">{formatAr(prixTotal)}</span>
-                    ) : ligneRenseignee && prixUnitaire === null ? (
-                      <span className="text-rose-500">Non disponible à la pharmacie</span>
-                    ) : (
+                    ) : !ligneRenseignee ? (
                       "—"
+                    ) : statutPharmacie === "chargement" ? (
+                      <span className="text-on-surface-variant italic">Vérification du prix…</span>
+                    ) : (
+                      <span className="text-rose-500">Non disponible à la pharmacie</span>
                     )}
                   </td>
                 </tr>

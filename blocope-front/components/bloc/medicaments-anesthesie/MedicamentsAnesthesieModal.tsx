@@ -42,17 +42,28 @@ export default function MedicamentsAnesthesieModal({
 
   // Catalogue de prix Pharmacie, chargé une fois à l'ouverture de la modale (mis en cache
   // côté backend, pas besoin de le refetch à chaque réouverture dans la même session).
+  // `catalogueCharge` distingue "en cours de chargement" de "chargé mais vide" — sans ça, un
+  // catalogue vide (service Pharmacie indisponible ou PHARMACIE_API_URL non configuré côté
+  // backend) et un catalogue qui n'a simplement pas fini de charger sont indiscernables, et le
+  // prix total comme le badge de disponibilité restent silencieusement vides dans les deux cas,
+  // sans qu'on sache s'il faut attendre ou signaler un problème de configuration.
   const [articlesPharmacie, setArticlesPharmacie] = useState<ArticlePharmacie[]>([]);
+  const [catalogueCharge, setCatalogueCharge] = useState(false);
   useEffect(() => {
-    if (open && articlesPharmacie.length === 0) {
-      pharmacieService.getPrix().then(setArticlesPharmacie).catch(() => {});
+    if (open && !catalogueCharge) {
+      pharmacieService.getPrix()
+        .then(setArticlesPharmacie)
+        .catch(() => setArticlesPharmacie([]))
+        .finally(() => setCatalogueCharge(true));
     }
-  }, [open, articlesPharmacie.length]);
+  }, [open, catalogueCharge]);
+
+  const catalogueIndisponible = catalogueCharge && articlesPharmacie.length === 0;
 
   const prixParId = useMemo(() => {
     const table: Record<string, number | null> = {};
+    if (!articlesPharmacie.length) return table;
     for (const row of rows) {
-      if (!articlesPharmacie.length) continue;
       const article = trouverArticlePharmacie(row.label, articlesPharmacie);
       table[row.id] = article ? article.sale_price : null;
     }
@@ -91,6 +102,20 @@ export default function MedicamentsAnesthesieModal({
         </div>
 
         <div className="overflow-y-auto p-6 space-y-4 bg-surface-container-lowest/40">
+          {catalogueIndisponible && (
+            <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <span className="material-symbols-outlined text-amber-600">warning</span>
+              <div>
+                <p className="font-bold">Catalogue des prix Pharmacie indisponible</p>
+                <p className="text-xs mt-0.5">
+                  Impossible de vérifier la disponibilité ou d'afficher le prix total pour l'instant
+                  (service Pharmacie injoignable ou non configuré) — ce n'est pas que les articles sont
+                  hors stock. Vous pouvez continuer à sélectionner les médicaments, les prix se
+                  compléteront dès que le catalogue sera de nouveau accessible.
+                </p>
+              </div>
+            </div>
+          )}
           {categories.map((categorie) => {
             const def = CATALOGUE_MEDICAMENTS[categorie];
             const sousLignes = rows.filter((r) => r.categorie === categorie);
@@ -103,6 +128,7 @@ export default function MedicamentsAnesthesieModal({
                 rows={sousLignes}
                 onRowsChange={(nouvelles) => patchCategorie(categorie, nouvelles)}
                 prixParId={prixParId}
+                catalogueCharge={catalogueCharge}
               />
             );
           })}
