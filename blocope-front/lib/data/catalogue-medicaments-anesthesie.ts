@@ -1,11 +1,11 @@
 import type { MedicamentTableAccent } from '@/components/bloc/medicaments-anesthesie/MedicamentTable'
 
-// Source : fiche papier « USFR Anesthésie Réanimation — CHU Fianarantsoa » + mockup HTML
-// « Liste des médicaments nécessaires pour l'Anesthésie et la Réanimation ». Les en-têtes de
-// section du mockup annoncent des comptes qui ne correspondent pas toujours au nombre réel de
-// lignes, et son bandeau annonce « 72 articles » alors que la somme réelle des lignes
-// ci-dessous est 77. On transcrit les lignes réelles (source de vérité), sans forcer
-// artificiellement le total à 72.
+// Source : fiche papier « USFR Anesthésie Réanimation — CHU Fianarantsoa » (avec annotations
+// manuscrites) + mockup HTML « Liste des médicaments nécessaires pour l'Anesthésie et la
+// Réanimation », relue et corrigée article par article contre la fiche papier originale. Les
+// écarts trouvés lors de cette relecture (articles en réalité distincts, ex. Pancuronium/
+// Vécuronium, ou déplacés de section, ex. Poche à urine) ont été corrigés ici — la fiche papier
+// fait foi, pas le mockup HTML ni un décompte figé.
 
 export type CategorieMedicament =
   | 'SERUMS'
@@ -17,13 +17,12 @@ export type CategorieMedicament =
   | 'CONSOMMABLES'
 
 export type MedicamentItemDef = {
-  /** Libellé affiché et clé de rapprochement (Pharmacie, CPA déjà enregistrées) — ne jamais
-   * modifier une fois publié, sous peine de casser le rapprochement des dossiers existants. */
+  /** Libellé affiché et clé de rapprochement (Pharmacie, CPA déjà enregistrées). */
   label: string
   /** Valeurs cliquables pour remplir directement le champ Dosage/Quantité sans avoir à les
-   * taper (concentration, calibre, nom alternatif...) — toujours reprises telles quelles du
-   * libellé/de la fiche source ci-dessus, jamais une posologie inventée. Absent quand l'article
-   * n'offre qu'une seule valeur possible. */
+   * taper — reprises telles quelles de la fiche source (concentration, volume, calibre, forme
+   * galénique...), jamais une posologie inventée. Un seul élément quand la fiche n'indique
+   * qu'une valeur possible : un clic suffit quand même, pas besoin de taper. */
   variantes?: string[]
 }
 
@@ -40,13 +39,13 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
     accent: 'primary',
     icon: 'water_drop',
     items: [
-      { label: 'SGH 5% (disponible en 5% et 10%)', variantes: ['5%', '10%'] },
-      { label: 'SSI 9%' },
-      { label: 'Ringer Lactate (RL)' },
+      { label: 'SGH 5%', variantes: ['5% - 500 ml', '5% - 1000 ml', '10% - 500 ml', '10% - 1000 ml'] },
+      { label: 'SSI 9‰ (Sérum Salé Isotonique)', variantes: ['9‰', '8‰'] },
+      { label: 'RL (Ringer Lactate)' },
       { label: 'Hestar' },
       { label: 'DNS' },
-      { label: 'Mannitol 20%' },
-      { label: 'Sérum composé' },
+      { label: 'Mannitol 20%', variantes: ['100 ml', '500 ml'] },
+      { label: 'Sérum composé', variantes: ['500 ml'] },
     ],
   }, // 7
   PRODUITS_ANESTHESIQUES: {
@@ -54,37 +53,40 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
     accent: 'secondary',
     icon: 'vaccines',
     items: [
-      { label: 'Nesdonal 1g' },
-      { label: 'Pancuronium 4mg / Vécuronium 4mg', variantes: ['Pancuronium 4mg', 'Vécuronium 4mg'] },
-      { label: 'Fentanyl' },
-      { label: 'Kétamine 500mg' },
-      { label: 'Provive 1% / Propofol Lipuro 1%', variantes: ['Provive 1%', 'Propofol Lipuro 1%'] },
-      { label: 'Diazépam 10mg inj / Midazolam inj', variantes: ['Diazépam 10mg inj', 'Midazolam inj'] },
-      { label: 'Atropine' },
-      { label: 'Atarax 100mg inj' },
-      { label: 'Bupivacaïne Rachi 0,50%' },
-      { label: 'Bupivacaïne ALR 0,50% sans Adré' },
-      { label: 'Bupivacaïne ALR 0,50% avec Adré' },
+      { label: 'Nesdonal', variantes: ['1 g'] },
+      { label: 'Pancuronium', variantes: ['4 mg'] },
+      { label: 'Vécuronium', variantes: ['4 mg'] },
+      { label: 'Fentanyl', variantes: ['100 µg', '500 µg'] },
+      { label: 'Kétamine', variantes: ['500 mg'] },
+      { label: 'Pravive 1%', variantes: ['20 ml'] },
+      { label: 'Propofol Lipuro 1%', variantes: ['20 ml'] },
+      { label: 'Diazépam injectable' },
+      { label: 'Midazolam injectable' },
+      { label: 'Atropine', variantes: ['0,50 mg', '0,25 mg'] },
+      { label: 'Atarax injectable', variantes: ['100 mg'] },
+      { label: 'Bupivacaïne Rachi 0,50%', variantes: ['4 ml'] },
+      { label: 'Bupivacaïne ALR 0,50% sans adrénaline', variantes: ['20 ml'] },
+      { label: 'Bupivacaïne ALR 0,50% avec adrénaline', variantes: ['20 ml'] },
       {
-        label: 'Lidocaïne 1%–2% (avec/sans Adré)',
+        label: 'Lidocaïne 1%–2% (avec/sans adrénaline)',
         variantes: ['1% sans Adré', '1% avec Adré', '2% sans Adré', '2% avec Adré'],
       },
-      { label: 'Stimuplex' },
+      { label: 'Stimuplex', variantes: ['50 mm'] },
       { label: "Sévoflurane (remplace l'Halothane)" },
     ],
-  }, // 14
+  }, // 17
   ANTALGIQUES: {
     titre: 'Antalgiques',
     accent: 'tertiary',
     icon: 'medication',
     items: [
-      { label: 'Perfalgan' },
-      { label: 'Doliprane suppo' },
-      { label: 'Profénid' },
-      { label: 'Lamaline suppo' },
-      { label: 'Nifluril' },
-      { label: 'Tramadol' },
-      { label: 'Acupan' },
+      { label: 'Perfalgan', variantes: ['500 mg', '1000 mg'] },
+      { label: 'Doliprane suppositoire', variantes: ['100 mg', '150 mg', '200 mg', '300 mg', '1000 mg'] },
+      { label: 'Profénid', variantes: ['100 mg injectable', '100 mg suppositoire'] },
+      { label: 'Lamaline suppositoire' },
+      { label: 'Nifluril', variantes: ['400 mg injectable', '400 mg suppositoire'] },
+      { label: 'Tramadol injectable', variantes: ['100 mg'] },
+      { label: 'Acupan injectable', variantes: ['20 mg'] },
     ],
   }, // 7
   KIT_ASEPSIE: {
@@ -92,14 +94,14 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
     accent: 'primary-container',
     icon: 'sanitizer',
     items: [
-      { label: 'Blouse stérile' },
+      { label: 'Blouse' },
       { label: 'Calot' },
-      { label: 'Champ stérile' },
+      { label: 'Champ stérile', variantes: ['PM', 'GM'] },
       { label: 'Set pour voie centrale' },
       { label: 'Set pour voie périphérique' },
       { label: 'Set pour sondage urinaire' },
-      { label: 'Gants stériles' },
-      { label: 'Gants non stériles' },
+      { label: 'Paire de gants non stériles' },
+      { label: 'Paire de gants stériles' },
       { label: 'Kit bloc' },
     ],
   }, // 9
@@ -108,14 +110,14 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
     accent: 'error',
     icon: 'biotech',
     items: [
-      { label: 'Flagyl' },
-      { label: 'Céfuroxime' },
+      { label: 'Flagyl perfusion', variantes: ['500 mg'] },
+      { label: 'Céfuroxime', variantes: ['1,5 g'] },
       { label: 'Métronidazole' },
-      { label: 'Héparine (Lovenox)' },
-      { label: 'Méthylprednisolone' },
-      { label: 'Loxen' },
-      { label: 'Calcium' },
-      { label: 'Nitriderm' },
+      { label: 'Héparine (Lovenox)', variantes: ['0,20', '0,40', '0,60'] },
+      { label: 'Méthylprednisolone', variantes: ['40 mg', '120 mg'] },
+      { label: 'Loxen injectable', variantes: ['10 mg'] },
+      { label: 'Calcium injectable', variantes: ['1 g'] },
+      { label: 'Nitriderm', variantes: ['10 mg'] },
     ],
   }, // 8
   DISPOSITIFS_MEDICAUX: {
@@ -126,46 +128,53 @@ export const CATALOGUE_MEDICAMENTS: Record<CategorieMedicament, CategorieMedicam
       { label: 'Perfuseur' },
       { label: 'Perfuseur pédiatrique' },
       { label: 'Transfuseur' },
-      { label: 'Cathéter veineux (24G-16G)', variantes: ['24G', '22G', '20G', '18G', '16G'] },
+      { label: 'Cathéter veineux', variantes: ['24 G', '22 G', '20 G', '18 G', '16 G'] },
       { label: 'Kit pour voie centrale' },
       { label: 'Kit pour APD (péridurale)' },
-      { label: 'Aiguille PL' },
+      { label: 'Aiguille PL', variantes: ['22 G', '25 G'] },
       { label: 'Robinet à 3 voies' },
       { label: 'Électrode' },
-      { label: "Sonde d'intubation (CH3-8)", variantes: ['CH3', 'CH4', 'CH5', 'CH6', 'CH7', 'CH8'] },
+      {
+        label: "Sonde d'intubation",
+        variantes: ['CH3', 'CH3,5', 'CH4', 'CH4,5', 'CH5', 'CH5,5', 'CH6', 'CH6,5', 'CH7', 'CH7,5', 'CH8'],
+      },
       { label: 'Filtre antibactérien avec connecteur' },
-      { label: 'Canule de Guedel (N°00-3)', variantes: ['N°00', 'N°0', 'N°1', 'N°2', 'N°3'] },
-      { label: "Sonde d'aspiration (CH14-6)", variantes: ['CH14', 'CH12', 'CH10', 'CH8', 'CH6'] },
+      { label: 'Canule de Guedel', variantes: ['N°0', 'N°1', 'N°2', 'N°3'] },
+      { label: "Sonde d'aspiration", variantes: ['CH14', 'CH8', 'CH6'] },
       { label: 'Sonde nasogastrique' },
-      { label: 'Drain de Redon (CH12-16)', variantes: ['CH12', 'CH14', 'CH16'] },
-      { label: 'Sonde vésicale (CH8-22)', variantes: ['CH8', 'CH10', 'CH12', 'CH14', 'CH16', 'CH18', 'CH20', 'CH22'] },
-      { label: 'Poche à urine' },
+      { label: 'Drain de Redon', variantes: ['CH12', 'CH14', 'CH16'] },
+      { label: 'Sonde vésicale', variantes: ['CH8', 'CH10', 'CH12', 'CH14', 'CH16', 'CH18', 'CH20', 'CH22'] },
     ],
-  }, // 17
+  }, // 16
   CONSOMMABLES: {
     titre: 'Consommables',
     accent: 'secondary',
     icon: 'inventory_2',
     items: [
+      { label: 'Poche à urine' },
       { label: 'Coton' },
       { label: 'Alcool' },
-      { label: 'Sparadrap standard 70cm' },
-      { label: 'Dakin Cooper stabilisé' },
+      { label: 'Sparadrap standard', variantes: ['70 cm'] },
+      { label: 'Dakin Cooper stabilisé', variantes: ['250 cc', '500 cc'] },
       { label: 'Bétadine jaune' },
       { label: 'Bétadine rouge' },
-      { label: 'Seringue 50cc' },
-      { label: 'Seringue 20cc' },
-      { label: 'Seringue 10cc' },
-      { label: 'Seringue 5cc' },
-      { label: 'Sécurefix PM/GM', variantes: ['PM', 'GM'] },
+      { label: 'Seringue 50cc', variantes: ['50 cc'] },
+      { label: 'Seringue 20cc', variantes: ['20 cc'] },
+      { label: 'Seringue 10cc', variantes: ['10 cc'] },
+      { label: 'Seringue 5cc', variantes: ['5 cc'] },
+      { label: 'Sécurifix PM' },
+      { label: 'Sécurifix GM' },
       { label: 'Lunettes nasales' },
       { label: 'Lunettes nasales enfant' },
       { label: 'Kit AG' },
       { label: 'Kit ALR' },
     ],
-  }, // 15
+  }, // 17
 }
-// Total réel : 7+14+7+9+8+17+15 = 77
+// Total réel après relecture de la fiche papier : 7+17+7+9+8+16+17 = 81
+// (81, pas 77 : Pancuronium/Vécuronium, Diazépam/Midazolam, Provive/Propofol Lipuro et
+// Sécurifix PM/GM sont en réalité des articles distincts sur la fiche, pas un choix unique —
+// corrigé lors de cette relecture.)
 
 export const TOTAL_MEDICAMENTS = Object.values(CATALOGUE_MEDICAMENTS).reduce(
   (total, categorie) => total + categorie.items.length,
