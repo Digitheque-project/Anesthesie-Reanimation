@@ -45,9 +45,9 @@ function ChecklistAvantOpPageContent() {
     installationConnue: boolean | null
     materielChirurgicalVerifie: boolean
     materielAnesthesiqueVerifie: boolean
-    allergiePatient: boolean
-    risqueIntubation: boolean
-    risqueSaignement: boolean
+    allergiePatient: boolean | null
+    risqueIntubation: boolean | null
+    risqueSaignement: boolean | null
     notesChirurgicales: string
     notesAnesthesiques: string
     notesIdeIbode: string
@@ -57,14 +57,19 @@ function ChecklistAvantOpPageContent() {
     // (le vert n'apparaît qu'après un clic), jamais "Non" par défaut.
     identiteConfirmee: null, interventionSiteConfirmes: null, documentationDisponible: null,
     installationConnue: null, materielChirurgicalVerifie: false, materielAnesthesiqueVerifie: false,
-    allergiePatient: false, risqueIntubation: false, risqueSaignement: false,
+    allergiePatient: null, risqueIntubation: null, risqueSaignement: null,
     notesChirurgicales: '', notesAnesthesiques: '', notesIdeIbode: '',
   })
   const [loading, setLoading] = useState(false)
   const { estAnesthesiste, roleName } = useRole()
 
+  // Tous les items de la checklist sont obligatoires : les 4 items Oui/Non, les 2 confirmations
+  // de matériel (doivent être cochées), et les 3 points de vérification croisée (doivent être
+  // activement répondus Oui/Non, jamais laissés sur une valeur par défaut).
   const reponsesIncompletes = form.identiteConfirmee === null || form.interventionSiteConfirmes === null
     || form.documentationDisponible === null || form.installationConnue === null
+    || !form.materielChirurgicalVerifie || !form.materielAnesthesiqueVerifie
+    || form.allergiePatient === null || form.risqueIntubation === null || form.risqueSaignement === null
 
   const handleSubmit = async () => {
     if (!estAnesthesiste) {
@@ -184,15 +189,24 @@ function ChecklistAvantOpPageContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Allergie du patient</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" accent="error" checked={form.allergiePatient} onChange={e => setForm({...form, allergiePatient: e.target.checked})} /> oui</label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="allergie_patient" checked={form.allergiePatient === true} onChange={() => setForm({...form, allergiePatient: true})} /> Oui</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="allergie_patient" checked={form.allergiePatient === false} onChange={() => setForm({...form, allergiePatient: false})} /> Non</label>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs leading-tight">- Risque d'inhalation, de difficulté d'intubation</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" accent="error" checked={form.risqueIntubation} onChange={e => setForm({...form, risqueIntubation: e.target.checked})} /> oui</label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_intubation" checked={form.risqueIntubation === true} onChange={() => setForm({...form, risqueIntubation: true})} /> Oui</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_intubation" checked={form.risqueIntubation === false} onChange={() => setForm({...form, risqueIntubation: false})} /> Non</label>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Risque de saignement important</span>
-                  <label className="flex items-center gap-2 text-xs"><Checkbox size="lg" accent="error" checked={form.risqueSaignement} onChange={e => setForm({...form, risqueSaignement: e.target.checked})} /> oui</label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_saignement" checked={form.risqueSaignement === true} onChange={() => setForm({...form, risqueSaignement: true})} /> Oui</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_saignement" checked={form.risqueSaignement === false} onChange={() => setForm({...form, risqueSaignement: false})} /> Non</label>
+                  </div>
                 </div>
               </div>
             </div>

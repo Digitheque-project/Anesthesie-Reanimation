@@ -34,10 +34,13 @@ export class ProtocoleOperatoireController {
   constructor(private readonly service: ProtocoleOperatoireService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.CHIRURGIEN)
-  @ApiOperation({ summary: 'Creer un protocole operatoire (Chirurgien)' })
+  @RequireRoleClinique(RoleClinique.CHIRURGIEN, RoleClinique.ANESTHESISTE)
+  @ApiOperation({
+    summary:
+      'Creer un protocole operatoire / protocole anesthesique (Chirurgien ou Anesthesiste)',
+  })
   create(@Body() dto: CreateProtocoleOperatoireDto, @Request() req: any) {
-    return this.service.create(dto, req.centralUser?.userId);
+    return this.service.create(dto, req.centralUser);
   }
 
   @Get()
@@ -68,14 +71,14 @@ export class ProtocoleOperatoireController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.CHIRURGIEN)
-  @ApiOperation({ summary: 'Modifier un protocole (Chirurgien)' })
+  @RequireRoleClinique(RoleClinique.CHIRURGIEN, RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier un protocole (Chirurgien ou Anesthesiste)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProtocoleOperatoireDto,
     @Request() req: any,
   ) {
-    return this.service.update(id, dto, req.centralUser?.userId);
+    return this.service.update(id, dto, req.centralUser);
   }
 
   @Delete(':id')

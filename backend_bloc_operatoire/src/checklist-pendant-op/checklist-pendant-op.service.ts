@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChecklistPendantOp } from '../entities/checklist-pendant-op.entity';
@@ -9,6 +13,19 @@ import { CentralUser } from '../central-auth/central-user.interface';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateChecklistPendantOpDto } from './dto/create-checklist-pendant-op.dto';
 import { UpdateChecklistPendantOpDto } from './dto/update-checklist-pendant-op.dto';
+
+// Les 8 items du Time Out (dernière pause d'équipe avant incision) — miroir de la liste ITEMS
+// du frontend (app/bloc/verification-post-op/page.tsx), tous obligatoires.
+const ITEMS_OBLIGATOIRES = [
+  'identiteUltimeConfirmee',
+  'interventionConfirmee',
+  'siteOperatoireConfirme',
+  'installationCorrecte',
+  'documentsDisponibles',
+  'antibioprophylaxieFaite',
+  'constantesStables',
+  'ventilationOK',
+];
 
 @Injectable()
 export class ChecklistPendantOpService {
@@ -25,6 +42,14 @@ export class ChecklistPendantOpService {
     dto: CreateChecklistPendantOpDto,
     centralUser: CentralUser,
   ): Promise<ChecklistPendantOp> {
+    const manquants = ITEMS_OBLIGATOIRES.filter(
+      (cle) => (dto as any)[cle] === null || (dto as any)[cle] === undefined,
+    );
+    if (manquants.length) {
+      throw new BadRequestException(
+        `Checklist incomplète — items manquants : ${manquants.join(', ')}`,
+      );
+    }
     const saved = await this.repo.save(
       this.repo.create({
         ...dto,

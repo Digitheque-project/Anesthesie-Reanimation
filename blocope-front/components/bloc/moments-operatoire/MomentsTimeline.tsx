@@ -243,12 +243,12 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex flex-col">
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 shrink-0">Historique</h3>
         {moments.length === 0 ? (
           <p className="text-xs text-on-surface-variant">Aucun moment horodaté pour l'instant.</p>
         ) : (
-          <ul className="space-y-1.5 overflow-y-auto flex-1 min-h-0">
+          <ul className="space-y-1.5 overflow-y-auto max-h-80">
             {moments.map((m) => {
               const style = CATEGORIE_STYLE[m.categorie] || CATEGORIE_STYLE.DIVERS
               return (

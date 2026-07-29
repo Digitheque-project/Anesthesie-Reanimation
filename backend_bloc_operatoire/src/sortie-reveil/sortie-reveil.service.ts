@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SortieReveil } from '../entities/sortie-reveil.entity';
@@ -28,6 +32,18 @@ export class SortieReveilService {
     dto: CreateSortieReveilDto,
     centralUser: CentralUser,
   ): Promise<SortieReveil> {
+    // @IsBoolean() sur ChecklistSortieReveilDto accepte aussi bien true que false : il valide le
+    // type, pas que chaque point ait réellement été confirmé. La checklist de sortie doit être
+    // entièrement cochée (comme déjà exigé côté frontend, salle-de-reveil/*) avant d'autoriser
+    // la sortie du patient.
+    const itemsNonConfirmes = Object.entries(dto.checklistSortie ?? {}).filter(
+      ([, valeur]) => valeur !== true,
+    );
+    if (itemsNonConfirmes.length) {
+      throw new BadRequestException(
+        `Checklist de sortie incomplète — items non confirmés : ${itemsNonConfirmes.map(([cle]) => cle).join(', ')}`,
+      );
+    }
     const saved = await this.repo.save(
       this.repo.create({ ...(dto as any), medecinId: centralUser.userId }),
     );

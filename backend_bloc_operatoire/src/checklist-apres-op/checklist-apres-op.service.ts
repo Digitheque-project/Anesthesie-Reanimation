@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChecklistApresOp } from '../entities/checklist-apres-op.entity';
@@ -10,6 +14,14 @@ import { CentralUser } from '../central-auth/central-user.interface';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateChecklistApresOpDto } from './dto/create-checklist-apres-op.dto';
 import { UpdateChecklistApresOpDto } from './dto/update-checklist-apres-op.dto';
+
+// Miroir des 4 items obligatoires du frontend (app/bloc/apres-operation/page.tsx).
+const ITEMS_OBLIGATOIRES = [
+  'interventionEnregistree',
+  'compteFinalCorrect',
+  'etiquetageVerifie',
+  'signalementsEffectues',
+];
 
 @Injectable()
 export class ChecklistApresOpService {
@@ -29,6 +41,14 @@ export class ChecklistApresOpService {
     dto: CreateChecklistApresOpDto,
     centralUser: CentralUser,
   ): Promise<ChecklistApresOp> {
+    const manquants = ITEMS_OBLIGATOIRES.filter(
+      (cle) => (dto as any)[cle] === null || (dto as any)[cle] === undefined,
+    );
+    if (manquants.length) {
+      throw new BadRequestException(
+        `Checklist incomplète — items manquants : ${manquants.join(', ')}`,
+      );
+    }
     const saved = await this.repo.save(
       this.repo.create({
         ...dto,

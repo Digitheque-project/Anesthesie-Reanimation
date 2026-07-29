@@ -152,6 +152,20 @@ function ConsultationCpaPageContent() {
   const [showCatalogueModal, setShowCatalogueModal] = useState(false);
   const [medicamentsAnesthesieRows, setMedicamentsAnesthesieRows] = useState<MedicamentRow[]>(() => construireLignesInitiales());
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  // Destinataire du partage CPA (professeur responsable CPA) : demandé une seule fois, puis
+  // mémorisé en local pour les partages suivants — aucun contact n'est stocké côté serveur.
+  const [destinataireCpa, setDestinataireCpa] = useState<{ email: string; telephone: string } | null>(null);
+  const [showDestinataireModal, setShowDestinataireModal] = useState(false);
+  const [destinataireActionEnAttente, setDestinataireActionEnAttente] = useState<'whatsapp' | 'email' | null>(null);
+  const [destinataireEmailSaisi, setDestinataireEmailSaisi] = useState('');
+  const [destinataireTelephoneSaisi, setDestinataireTelephoneSaisi] = useState('');
+
+  useEffect(() => {
+    try {
+      const brut = localStorage.getItem('cpa-destinataire-partage');
+      if (brut) setDestinataireCpa(JSON.parse(brut));
+    } catch { /* localStorage indisponible ou valeur corrompue : on repart d'un destinataire vide */ }
+  }, []);
   const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, estResponsableCpa, estMajor, roleName } = useRole();
   const [nomAnesthesiste, setNomAnesthesiste] = useState('');
   const [anesthesistes, setAnesthesistes] = useState<any[]>([]);
@@ -715,19 +729,61 @@ function ConsultationCpaPageContent() {
     }
   };
 
-  const handlePartagerWhatsApp = async () => {
+  const enregistrerDestinataire = (destinataire: { email: string; telephone: string }) => {
+    setDestinataireCpa(destinataire);
+    try { localStorage.setItem('cpa-destinataire-partage', JSON.stringify(destinataire)); } catch { /* stockage indisponible : le destinataire sera juste redemandé la prochaine fois */ }
+  };
+
+  const executerPartageWhatsApp = async (telephone: string) => {
     const nomComplet = formaterNomPatient(patient) || patientNom;
     await handleTelechargerPdf();
     const texte = encodeURIComponent(`Fiche CPA — ${nomComplet}${decision ? ` — Décision : ${decision}` : ''} (PDF téléchargé à joindre manuellement)`);
-    window.open(`https://wa.me/?text=${texte}`, '_blank');
+    const numero = telephone.replace(/[^\d+]/g, '');
+    window.open(`https://wa.me/${numero}?text=${texte}`, '_blank');
   };
 
-  const handlePartagerEmail = async () => {
+  const executerPartageEmail = async (email: string) => {
     const nomComplet = formaterNomPatient(patient) || patientNom;
     await handleTelechargerPdf();
     const sujet = encodeURIComponent(`Fiche CPA — ${nomComplet}`);
     const corps = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint la fiche CPA de ${nomComplet}${decision ? ` (décision : ${decision})` : ''}.\nLe PDF a été téléchargé sur cet ordinateur — pensez à le joindre à cet email avant l'envoi.\n\nCordialement.`);
-    window.open(`mailto:?subject=${sujet}&body=${corps}`, '_blank');
+    window.open(`mailto:${email}?subject=${sujet}&body=${corps}`, '_blank');
+  };
+
+  // Le destinataire (professeur responsable CPA) n'est demandé qu'une seule fois — voir
+  // enregistrerDestinataire — puis réutilisé automatiquement pour tous les partages suivants.
+  const handlePartagerWhatsApp = async () => {
+    if (!destinataireCpa?.telephone) {
+      setDestinataireActionEnAttente('whatsapp');
+      setShowDestinataireModal(true);
+      return;
+    }
+    await executerPartageWhatsApp(destinataireCpa.telephone);
+  };
+
+  const handlePartagerEmail = async () => {
+    if (!destinataireCpa?.email) {
+      setDestinataireActionEnAttente('email');
+      setShowDestinataireModal(true);
+      return;
+    }
+    await executerPartageEmail(destinataireCpa.email);
+  };
+
+  const handleConfirmerDestinataire = async () => {
+    const destinataire = { email: destinataireEmailSaisi.trim(), telephone: destinataireTelephoneSaisi.trim() };
+    enregistrerDestinataire(destinataire);
+    setShowDestinataireModal(false);
+    if (destinataireActionEnAttente === 'whatsapp' && destinataire.telephone) await executerPartageWhatsApp(destinataire.telephone);
+    else if (destinataireActionEnAttente === 'email' && destinataire.email) await executerPartageEmail(destinataire.email);
+    setDestinataireActionEnAttente(null);
+  };
+
+  const ouvrirModaleDestinataire = () => {
+    setDestinataireEmailSaisi(destinataireCpa?.email || '');
+    setDestinataireTelephoneSaisi(destinataireCpa?.telephone || '');
+    setDestinataireActionEnAttente(null);
+    setShowDestinataireModal(true);
   };
 
   return (
@@ -1473,7 +1529,7 @@ function ConsultationCpaPageContent() {
             <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-base">ios_share</span> Exporter / Partager la fiche CPA
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               <button type="button" onClick={handleTelechargerPdf} disabled={exportEnCours}
                 className="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface rounded-lg text-xs font-bold hover:bg-surface-container transition-colors disabled:opacity-50">
                 <span className="material-symbols-outlined text-base">picture_as_pdf</span> Télécharger en PDF
@@ -1490,8 +1546,46 @@ function ConsultationCpaPageContent() {
                 className="flex items-center gap-2 px-4 py-2 bg-on-surface-variant text-white rounded-lg text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-50">
                 <span className="material-symbols-outlined text-base">mail</span> Email
               </button>
+              <button type="button" onClick={ouvrirModaleDestinataire}
+                className="text-xs font-bold text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+                {destinataireCpa?.email || destinataireCpa?.telephone ? 'Modifier le destinataire' : 'Définir le destinataire'}
+              </button>
             </div>
+            {(destinataireCpa?.email || destinataireCpa?.telephone) && (
+              <p className="text-[11px] text-on-surface-variant mt-1.5">
+                Destinataire mémorisé : {destinataireCpa.email || '—'}{destinataireCpa.telephone ? ` · ${destinataireCpa.telephone}` : ''}
+              </p>
+            )}
           </div>
+
+          {/* Modale de saisie du destinataire — demandée une seule fois (au premier partage
+              WhatsApp/email), puis mémorisée en localStorage pour les partages suivants. */}
+          {showDestinataireModal && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                <h3 className="text-lg font-extrabold text-on-surface mb-1">Destinataire du partage CPA</h3>
+                <p className="text-xs text-on-surface-variant mb-4">Coordonnées du professeur responsable de CPA — mémorisées pour les prochains partages.</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-on-surface-variant mb-1 block">Email</label>
+                    <input type="email" className="w-full border border-outline-variant/30 rounded-lg p-2.5 text-sm" placeholder="professeur@exemple.mg"
+                      value={destinataireEmailSaisi} onChange={e => setDestinataireEmailSaisi(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-on-surface-variant mb-1 block">Téléphone WhatsApp</label>
+                    <input type="tel" className="w-full border border-outline-variant/30 rounded-lg p-2.5 text-sm" placeholder="+261 34 00 000 00"
+                      value={destinataireTelephoneSaisi} onChange={e => setDestinataireTelephoneSaisi(e.target.value)} />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <button type="button" onClick={() => { setShowDestinataireModal(false); setDestinataireActionEnAttente(null); }}
+                    className="px-4 py-2 border border-outline-variant/30 rounded-lg text-sm font-bold hover:bg-surface-container-low">Annuler</button>
+                  <button type="button" onClick={handleConfirmerDestinataire} disabled={!destinataireEmailSaisi.trim() && !destinataireTelephoneSaisi.trim()}
+                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold disabled:opacity-50">Enregistrer</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Bouton Valider */}
           <div className="mt-4 pt-4 border-t border-surface-container flex justify-end">

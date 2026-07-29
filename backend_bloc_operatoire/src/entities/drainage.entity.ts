@@ -6,6 +6,7 @@ export enum TypeDrainage {
   DRAIN_CRANE = 'DRAIN_CRANE',
   DRAIN_THORAX = 'DRAIN_THORAX',
   DRAIN_ABDOMEN = 'DRAIN_ABDOMEN',
+  MEMBRE_SEIN_AUTRES = 'MEMBRE_SEIN_AUTRES',
 }
 
 export enum ModeDrainage {

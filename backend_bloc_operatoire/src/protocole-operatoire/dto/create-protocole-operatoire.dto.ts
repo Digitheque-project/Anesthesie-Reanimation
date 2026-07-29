@@ -27,7 +27,10 @@ export class CreateProtocoleOperatoireDto {
   @IsOptional() @IsString() anesthesisteId?: string;
   @IsOptional() @IsString() infirmiereId?: string;
   @IsOptional() @IsString() aideOperatoireId?: string;
-  @IsString() compteRenduIntervention: string;
+  // Nullable : le chirurgien et l'anesthésiste peuvent chacun créer/compléter cet enregistrement
+  // indépendamment (le premier arrivé crée, l'autre met à jour) — voir ProtocoleOperatoireService.
+  @IsOptional() @IsString() compteRenduIntervention?: string;
+  @IsOptional() @IsString() compteRenduAnesthesique?: string;
   @IsOptional() surveillance?: any;
   @IsOptional()
   @IsArray()
@@ -35,5 +38,5 @@ export class CreateProtocoleOperatoireDto {
   @Type(() => DrainageDto)
   drainages?: DrainageDto[];
   @IsOptional() prescriptions?: any;
-  @IsBoolean() prescriptionsConjointes: boolean;
+  @IsOptional() @IsBoolean() prescriptionsConjointes?: boolean;
 }

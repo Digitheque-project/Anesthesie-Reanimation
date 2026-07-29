@@ -37,30 +37,40 @@ export class ProtocoleOperatoire {
   @Column({ type: 'varchar', nullable: true })
   aideOperatoireId: string | null;
 
-  @Column('text')
-  compteRenduIntervention: string;
+  // Compte-rendu du chirurgien — distinct de compteRenduAnesthesique (rédigé par l'anesthésiste,
+  // équivalent anesthésique de ce compte-rendu). Nullable : l'anesthésiste peut créer cet
+  // enregistrement en premier (juste après la check-list après intervention) sans attendre que
+  // le chirurgien ait déjà saisi le sien.
+  @Column('text', { nullable: true })
+  compteRenduIntervention: string | null;
 
-  // Surveillance post-opératoire
+  // Compte-rendu de l'anesthésiste ("Protocole Anesthésique") — technique réalisée, produits/
+  // doses administrés, incidents per-opératoires. Symétrique de compteRenduIntervention.
+  @Column('text', { nullable: true })
+  compteRenduAnesthesique: string | null;
+
+  // Instructions post-opératoires — communes au chirurgien et à l'anesthésiste (les deux rôles
+  // peuvent lire/compléter le même enregistrement, voir ProtocoleOperatoireController).
   @Column('simple-json')
   surveillance: {
-    ta: string;
-    pouls: string;
-    fr: string;
-    temperature: string;
-    diurèse: string;
-    autres: string;
+    ta: { coche: boolean; valeur: string };
+    pouls: { coche: boolean; valeur: string };
+    fr: { coche: boolean; valeur: string };
+    temperature: { coche: boolean; valeur: string };
+    diurese: { coche: boolean; valeur: string };
+    autres: { coche: boolean; valeur: string };
   };
 
-  // Drainages (relation)
+  // Drainages (relation) — également partie des Instructions post-opératoires communes.
   @OneToMany(() => Drainage, (d) => d.protocole, { cascade: true })
   drainages: Drainage[];
 
   // Prescriptions post-opératoires
   @Column('simple-json')
   prescriptions: {
-    perfusionBrasGauche: boolean;
-    perfusionBrasDroit: boolean;
-    voieCentrale: boolean;
+    perfusionBrasGauche: { valeur: string; enY: string };
+    perfusionBrasDroit: { valeur: string; enY: string };
+    voieCentrale: { valeur: string; enY: string };
     antibiotiques: string;
     antalgiques: string;
     autres: string;

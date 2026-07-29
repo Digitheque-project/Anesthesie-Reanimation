@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,6 +18,34 @@ import { AccueilClient } from '../external/accueil.client';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
+
+// Items obligatoires : les 4 items Oui/Non de la phase 1, les 2 confirmations de matériel
+// (doivent être cochées) et les 3 points de vérification croisée (allergie/intubation/
+// saignement, à répondre activement même si la réponse est "non"). Dupliqué avec la
+// vérification déjà faite côté frontend (checklist-oms/page.tsx), pour ne pas dépendre
+// uniquement du client sur un point de sécurité patient.
+const ITEMS_TRI_STATE = [
+  'identiteConfirmee',
+  'interventionSiteConfirmes',
+  'documentationDisponible',
+  'installationConnue',
+  'allergiePatient',
+  'risqueIntubation',
+  'risqueSaignement',
+];
+const ITEMS_COCHES = ['materielChirurgicalVerifie', 'materielAnesthesiqueVerifie'];
+
+function verifierChecklistComplete(dto: any) {
+  const manquants = ITEMS_TRI_STATE.filter(
+    (cle) => dto[cle] === null || dto[cle] === undefined,
+  );
+  const nonCoches = ITEMS_COCHES.filter((cle) => dto[cle] !== true);
+  if (manquants.length || nonCoches.length) {
+    throw new BadRequestException(
+      `Checklist incomplète — items manquants : ${[...manquants, ...nonCoches].join(', ')}`,
+    );
+  }
+}
 
 @ApiTags('Checklist Avant Op')
 @Controller('checklists-avant-op')
@@ -34,6 +63,7 @@ export class ChecklistAvantOpController {
     summary: 'Créer une checklist avant opération (Anesthésiste)',
   })
   async create(@Body() dto: any, @Request() req: any) {
+    verifierChecklistComplete(dto);
     const centralUser = req.centralUser;
     const savedResult = await this.repo.save(
       this.repo.create({

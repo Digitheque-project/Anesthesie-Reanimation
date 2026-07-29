@@ -75,8 +75,8 @@ function ApresOperationPageContent() {
       // l'anesthésiste transfère donc toujours le patient en salle de réveil, sans case à cocher
       // à part : il n'y a pas de cas où on validerait cette sortie sans transfert.
       await apiClient.post('/checklists-apres-op', { patientId, ...form, transfertSalleReveil: true })
-      alert('✅ Check-list après intervention enregistrée ! Patient transféré en salle de réveil.')
-      router.push('/bloc/salle-de-reveil/liste')
+      alert('✅ Check-list après intervention enregistrée ! Complétez maintenant le protocole anesthésique et les instructions post-opératoires.')
+      router.push(`/bloc/protocole-anesthesique?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
     } catch (err: any) {
       console.error(err)
       const message = err.response?.data?.message || err.message || 'Erreur inconnue'
