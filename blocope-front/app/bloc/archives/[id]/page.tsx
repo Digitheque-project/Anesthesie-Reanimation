@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import ExportToolbar from '@/components/bloc/layout/ExportToolbar'
 import { exporterCSV, exporterExcel, exporterPDF, imprimerSection, Colonne } from '@/lib/export/export'
-import { fmtDate, fmtDateHeure, fmtHeure, nomPersonne, collecterEquipe, construireChronologie } from '@/lib/export/dossier-patient'
+import { fmtDate, fmtDateHeure, fmtHeure, nomPersonne, collecterEquipe, construireChronologie, libelleAnesthesie } from '@/lib/export/dossier-patient'
+import PiecesJointesUploader from '@/components/bloc/pieces-jointes/PiecesJointesUploader'
 import { formaterNomPatient } from '@/lib/patient'
 
 export default function ArchiveDetailPage() {
@@ -157,7 +158,7 @@ export default function ArchiveDetailPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge texte={dossier.cpa.decision} couleur={dossier.cpa.decision === 'APTE' ? 'emerald' : dossier.cpa.decision === 'INAPTE' ? 'red' : 'orange'} />
                   <Badge texte={`ASA ${dossier.cpa.scoreASA}`} couleur="amber" />
-                  <Badge texte={dossier.cpa.typeAnesthesie} couleur="sky" />
+                  <Badge texte={libelleAnesthesie(dossier.cpa)} couleur="sky" />
                   <span className="text-xs text-on-surface-variant ml-auto">{fmtDate(dossier.cpa.dateConsultation)}</span>
                 </div>
                 {dossier.cpa.motifRefus && <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-2">{dossier.cpa.motifRefus}</p>}
@@ -175,6 +176,12 @@ export default function ArchiveDetailPage() {
                         <span key={i} className="px-2 py-1 bg-amber-50 border border-amber-200 rounded-full text-[11px] font-semibold text-amber-800">{m.nom}</span>
                       ))}
                     </div>
+                  </div>
+                )}
+                {dossier.cpa.piecesJointes?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Pièces jointes ({dossier.cpa.piecesJointes.length})</p>
+                    <PiecesJointesUploader value={dossier.cpa.piecesJointes} onChange={() => {}} disabled />
                   </div>
                 )}
               </div>
@@ -281,8 +288,9 @@ export default function ArchiveDetailPage() {
             )}
           </SectionEtape>
 
-          {/* 8. Protocole opératoire */}
-          <SectionEtape numero={9} icone="clinical_notes" couleur="violet" titre="Protocole opératoire">
+          {/* 8. Protocole opératoire + Protocole anesthésique + Instructions post-opératoires
+              (même enregistrement partagé chirurgien/anesthésiste, voir InstructionsPostOpForm) */}
+          <SectionEtape numero={9} icone="clinical_notes" couleur="violet" titre="Protocole opératoire & anesthésique">
             {(dossier.protocolesOperatoires?.length || 0) === 0 ? <VideMessage texte="Aucun protocole enregistré." /> : (
               dossier.protocolesOperatoires.map((pr: any) => (
                 <div key={pr.id} className="space-y-3 pb-3 mb-3 border-b border-surface-variant/20 last:border-0 last:pb-0 last:mb-0">
@@ -292,11 +300,20 @@ export default function ArchiveDetailPage() {
                     ['Infirmière', nomPersonne(pr.infirmiere)],
                     ['Aide opératoire', nomPersonne(pr.aideOperatoire)],
                     ['Date', fmtDate(pr.dateOperation)],
-                    ['Drainages', pr.drainages?.length || 0],
                   ]} />
                   {pr.compteRenduIntervention && (
-                    <p className="text-sm text-on-surface-variant leading-relaxed bg-violet-50/50 border border-violet-100 p-3 rounded-xl">{pr.compteRenduIntervention}</p>
+                    <div>
+                      <p className="text-[10px] font-bold text-violet-700 uppercase tracking-wide mb-1">Compte-rendu de l'intervention (chirurgien)</p>
+                      <p className="text-sm text-on-surface-variant leading-relaxed bg-violet-50/50 border border-violet-100 p-3 rounded-xl">{pr.compteRenduIntervention}</p>
+                    </div>
                   )}
+                  {pr.compteRenduAnesthesique && (
+                    <div>
+                      <p className="text-[10px] font-bold text-violet-700 uppercase tracking-wide mb-1">Protocole anesthésique (anesthésiste)</p>
+                      <p className="text-sm text-on-surface-variant leading-relaxed bg-violet-50/50 border border-violet-100 p-3 rounded-xl">{pr.compteRenduAnesthesique}</p>
+                    </div>
+                  )}
+                  <InstructionsPostOpDetail protocole={pr} />
                 </div>
               ))
             )}
@@ -389,6 +406,60 @@ function ChampsGrid({ champs }: { champs: [string, any][] }) {
           <p className="text-sm font-bold text-on-surface">{valeur === undefined || valeur === null || valeur === '' ? '—' : String(valeur)}</p>
         </div>
       ))}
+    </div>
+  )
+}
+
+const LABEL_SURVEILLANCE: Record<string, string> = { ta: 'TA', pouls: 'Pouls', fr: 'FR', temperature: 'Température', diurese: 'Diurèse', autres: 'Autres' }
+const LABEL_TYPE_DRAINAGE: Record<string, string> = {
+  SONDE_NASO_GASTRIQUE: 'Sonde naso-gastrique', DRAIN_CRANE: 'Drain crâne', DRAIN_THORAX: 'Drain thorax',
+  DRAIN_ABDOMEN: 'Drain abdomen', MEMBRE_SEIN_AUTRES: 'Membre - Sein - Autres',
+}
+const LABEL_MODE_DRAINAGE: Record<string, string> = { SIPHON: 'Siphonnage', ASPIRATION: 'Aspiratif', REDON: 'Redon' }
+const LABEL_COTE: Record<string, string> = { GAUCHE: 'Gauche', DROITE: 'Droite' }
+const LABEL_PERFUSION: Record<string, string> = { perfusionBrasGauche: 'Bras gauche', perfusionBrasDroit: 'Bras droit', voieCentrale: 'Voie centrale' }
+
+// Détail des Instructions post-opératoires (Surveillance / Drainages / Prescription à suivre),
+// communes au chirurgien et à l'anesthésiste — voir InstructionsPostOpForm côté formulaire.
+function InstructionsPostOpDetail({ protocole: pr }: { protocole: any }) {
+  const surveillanceActive = Object.entries(pr.surveillance || {}).filter(([, v]: any) => v && typeof v === 'object' ? v.coche : v)
+  const drainages: any[] = Array.isArray(pr.drainages) ? pr.drainages : []
+  const perfusions = Object.entries(pr.prescriptions || {}).filter(([cle, v]: any) => LABEL_PERFUSION[cle] && (v?.valeur || v?.enY))
+  const traitements = ['antibiotiques', 'antalgiques', 'autres'].filter((cle) => pr.prescriptions?.[cle])
+
+  if (!surveillanceActive.length && !drainages.length && !perfusions.length && !traitements.length) return null
+
+  return (
+    <div className="bg-surface-container-lowest rounded-xl p-4 space-y-3">
+      <p className="text-[10px] font-bold text-violet-700 uppercase tracking-wide">Instructions post-opératoires</p>
+      {surveillanceActive.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {surveillanceActive.map(([cle, v]: any) => (
+            <span key={cle} className="px-2 py-1 bg-white border border-violet-100 rounded-full text-[11px] font-semibold text-on-surface">
+              {LABEL_SURVEILLANCE[cle] || cle}{v?.valeur ? ` : ${v.valeur}` : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {drainages.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {drainages.map((d: any) => (
+            <span key={d.id} className="px-2 py-1 bg-white border border-violet-100 rounded-full text-[11px] font-semibold text-on-surface">
+              {LABEL_TYPE_DRAINAGE[d.type] || d.type}{d.cote ? ` (${LABEL_COTE[d.cote] || d.cote})` : ''} — {LABEL_MODE_DRAINAGE[d.mode] || d.mode}
+            </span>
+          ))}
+        </div>
+      )}
+      {(perfusions.length > 0 || traitements.length > 0) && (
+        <div className="text-xs text-on-surface-variant space-y-1">
+          {perfusions.map(([cle, v]: any) => (
+            <p key={cle}><strong>{LABEL_PERFUSION[cle]}</strong> : {v.valeur || '—'}{v.enY ? ` (En Y : ${v.enY})` : ''}</p>
+          ))}
+          {traitements.map((cle) => (
+            <p key={cle}><strong>{cle.charAt(0).toUpperCase() + cle.slice(1)}</strong> : {pr.prescriptions[cle]}</p>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

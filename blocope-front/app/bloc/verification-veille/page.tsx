@@ -11,6 +11,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import { libelleAnesthesie } from '@/lib/export/dossier-patient'
 
 export default function VerificationVeillePage() {
   return (
@@ -174,7 +175,7 @@ function VerificationVeillePageContent() {
               </div>
               <div className="bg-white p-5 rounded-lg shadow-sm">
                 <p className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Protocole retenu</p>
-                <p className="text-sm font-semibold text-on-surface leading-relaxed">{cpa.typeAnesthesie || '—'}{cpa.techniqueIntubation ? ` — ${cpa.techniqueIntubation}` : ''}</p>
+                <p className="text-sm font-semibold text-on-surface leading-relaxed">{libelleAnesthesie(cpa)}{cpa.techniqueIntubation ? ` — ${cpa.techniqueIntubation}` : ''}</p>
               </div>
               <div className="bg-white p-5 rounded-lg shadow-sm">
                 <p className="text-[9px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Décision</p>

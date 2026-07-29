@@ -289,6 +289,12 @@ export class CPA {
   @Column({ type: 'date', nullable: true })
   dateVerificationVeille: Date;
 
+  // Pièces jointes (résultats d'examens scannés, autorisation d'opérer signée...) — stockées sur
+  // le service externe générique "Upload" (POST/GET /files/{filename}), seul le nom de fichier
+  // retourné est conservé ici, associé à un libellé libre choisi par l'anesthésiste.
+  @Column({ type: 'simple-json', nullable: true })
+  piecesJointes: { label: string; nomFichier: string }[] | null;
+
   @Column({ type: 'enum', enum: StatutCPA, default: StatutCPA.EN_ATTENTE })
   statut: StatutCPA;
 

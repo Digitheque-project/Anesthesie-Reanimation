@@ -14,6 +14,7 @@ import { RoleClinique } from '@/lib/auth/role-clinique';
 import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
 import BackButton from '@/components/bloc/layout/BackButton';
 import { exporterFichePdf } from '@/lib/export/export';
+import PiecesJointesUploader from '@/components/bloc/pieces-jointes/PiecesJointesUploader';
 import { formaterNomPatient } from '@/lib/patient';
 
 export default function ConsultationCpaPage() {
@@ -78,6 +79,7 @@ const DEFAULT_FORM = {
   echographie: '',
   scanner: '',
   autresExamensParacliniques: '',
+  piecesJointes: [] as { label: string; nomFichier: string }[],
   // Aucune valeur pré-cochée : l'utilisateur doit choisir activement (voir aussi
   // antecedentsAnesthesie/scoreMallampati/scoreASA plus bas, gérés en state séparé).
   typeAnesthesie: '',
@@ -273,6 +275,7 @@ function ConsultationCpaPageContent() {
       echographie: c.echographie || '',
       scanner: c.scanner || '',
       autresExamensParacliniques: c.autresExamensParacliniques || '',
+      piecesJointes: c.piecesJointes || [],
       typeAnesthesie: c.typeAnesthesie || f.typeAnesthesie,
       sousTypeAnesthesie: c.sousTypeAnesthesie || '',
       techniqueIntubation: c.techniqueIntubation || f.techniqueIntubation,
@@ -480,6 +483,7 @@ function ConsultationCpaPageContent() {
           echographie: form.echographie || undefined,
           scanner: form.scanner || undefined,
           autresExamensParacliniques: form.autresExamensParacliniques || undefined,
+          piecesJointes: form.piecesJointes.length ? form.piecesJointes : undefined,
           scoreASA: typeof scoreASA === 'string' ? scoreASA : Number(scoreASA),
           decision,
           decisionOperation: (decision === 'APTE' || decision === 'INAPTE') ? (decisionOperation || undefined) : undefined,
@@ -1136,6 +1140,10 @@ function ConsultationCpaPageContent() {
               <label className="text-sm font-semibold text-on-surface-variant block">Autres examens</label>
               <textarea disabled={!peutEditerExamenEtDecision} value={form.autresExamensParacliniques} onChange={setField('autresExamensParacliniques')} className="w-full h-16 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea>
             </div>
+            <div className="space-y-2 border-t border-outline-variant/20 pt-3">
+              <label className="text-sm font-semibold text-on-surface-variant block">Pièces jointes (résultats scannés, documents...)</label>
+              <PiecesJointesUploader value={form.piecesJointes} onChange={(v) => setForm(f => ({ ...f, piecesJointes: v }))} disabled={!peutEditerExamenEtDecision} />
+            </div>
           </section>
         </div>
 
@@ -1143,7 +1151,7 @@ function ConsultationCpaPageContent() {
             (Score ASA et Protocole retenu sont désormais en bas de page, juste avant la
             décision finale). */}
         <div className="w-full lg:w-80 space-y-2">
-          <section className={`rounded-2xl p-5 shadow-lg overflow-hidden ${peutDeciderAptitudeCpa ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-amber-500/40' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
+          <section className={`rounded-2xl p-5 shadow-lg overflow-hidden ${peutDeciderAptitudeCpa ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-500/40' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-2xl" style={peutDeciderAptitudeCpa ? { fontVariationSettings: "'FILL' 1" } : undefined}>edit_note</span>
               <h2 className="text-lg font-bold font-headline">Prescription</h2>
@@ -1158,7 +1166,7 @@ function ConsultationCpaPageContent() {
                   Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
                 </p>
                 <button type="button" onClick={() => setShowPrescriptionModal(true)}
-                  className="w-full flex items-center justify-center gap-2 p-3.5 bg-white text-orange-600 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+                  className="w-full flex items-center justify-center gap-2 p-3.5 bg-white text-indigo-600 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
                   <span className="material-symbols-outlined">edit_note</span> Prescrire
                 </button>
               </>

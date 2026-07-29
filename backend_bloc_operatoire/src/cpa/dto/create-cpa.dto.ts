@@ -35,6 +35,10 @@ class MedicamentAnesthesieReanimationDto {
   @IsOptional() @IsString() dosage?: string;
   @IsOptional() @IsNumber() nombre?: number;
 }
+class PieceJointeDto {
+  @IsString() label: string;
+  @IsString() nomFichier: string;
+}
 
 export class CreateCPADto {
   @IsString() patientId: string;
@@ -124,4 +128,9 @@ export class CreateCPADto {
   @IsEnum(DecisionOperation)
   decisionOperation?: DecisionOperation;
   @IsOptional() @IsString() validationProfInformelle?: string;
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PieceJointeDto)
+  piecesJointes?: PieceJointeDto[];
 }
