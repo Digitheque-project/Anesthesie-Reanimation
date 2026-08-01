@@ -44,6 +44,12 @@ export default function ModalPlanifierRDV({
                 }`}>
                 CPA (Consultation Pré-Anesthésique)
               </button>
+              <button onClick={() => setTypeRDV('VERIFICATION_VEILLE')}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${
+                  typeRDV === 'VERIFICATION_VEILLE' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                }`}>
+                Vérification veille
+              </button>
             </div>
           </div>
 

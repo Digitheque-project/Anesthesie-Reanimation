@@ -7,6 +7,8 @@ import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
 import { useRole } from '@/lib/hooks/useRole'
+import RoleGate from '@/components/bloc/auth/RoleGate'
+import { RoleClinique } from '@/lib/auth/role-clinique'
 import { patientService } from '@/lib/api'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
@@ -14,9 +16,11 @@ import InstructionsPostOpForm, { DEFAULT_INSTRUCTIONS_POST_OP, InstructionsPostO
 
 export default function ProtocoleOperatoirePage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <ProtocoleOperatoirePageContent />
-    </Suspense>
+    <RoleGate allowedRoles={[RoleClinique.CHIRURGIEN, RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA]} message="Vous n'avez pas accès au protocole opératoire.">
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ProtocoleOperatoirePageContent />
+      </Suspense>
+    </RoleGate>
   );
   }
 

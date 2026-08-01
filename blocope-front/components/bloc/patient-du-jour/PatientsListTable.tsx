@@ -42,14 +42,20 @@ export default function PatientsListTable({ patients }: PatientsListTableProps) 
     const cleanId = patient.realId || patient.id.replace("#", "");
     const nom = encodeURIComponent(formaterNomPatient(patient));
     const intervention = encodeURIComponent(patient.operation || '');
-    // Le chirurgien n'a rien à faire sur l'arrivée en salle / installation (réservé à
-    // l'anesthésiste) : "Démarrer" l'amène directement sur le protocole opératoire, qui
-    // regroupe déjà le compte-rendu et les instructions post-opératoires sur un seul écran.
-    // L'IBODE non plus : il n'a ni arrivée à déclarer ni checklist à remplir (les 3
-    // check-lists Sign In/Time Out/Sign Out sont toutes réservées à l'anesthésiste) — il va
-    // directement à l'écran per-opératoire, où il ne voit que les boutons de ses catégories
-    // (Chirurgie/Divers), jamais un formulaire de checklist.
-    const cible = estChirurgien
+    // Cette liste mélange des patients PRET_POUR_BLOC (pas encore commencés) et
+    // EN_COURS_OPERATION (déjà en salle) — pour ces derniers, "Démarrer" doit reprendre
+    // l'écran per-opératoire en cours, quel que soit le rôle, jamais renvoyer vers l'arrivée /
+    // Sign-in comme si l'opération n'avait pas commencé.
+    const cible = patient.statut === 'EN_COURS_OPERATION'
+      ? `/bloc/activite-pendant-operation?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`
+      // Le chirurgien n'a rien à faire sur l'arrivée en salle / installation (réservé à
+      // l'anesthésiste) : "Démarrer" l'amène directement sur le protocole opératoire, qui
+      // regroupe déjà le compte-rendu et les instructions post-opératoires sur un seul écran.
+      // L'IBODE non plus : il n'a ni arrivée à déclarer ni checklist à remplir (les 3
+      // check-lists Sign In/Time Out/Sign Out sont toutes réservées à l'anesthésiste) — il va
+      // directement à l'écran per-opératoire, où il ne voit que les boutons de ses catégories
+      // (Chirurgie/Divers), jamais un formulaire de checklist.
+      : estChirurgien
       ? `/bloc/protocole-operatoire?patientId=${cleanId}&patientNom=${nom}`
       : estIbode
       ? `/bloc/activite-pendant-operation?patientId=${cleanId}&patientNom=${nom}&intervention=${intervention}`

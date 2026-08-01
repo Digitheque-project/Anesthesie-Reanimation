@@ -35,7 +35,8 @@ function DossierPatientPageContent() {
   // de prescription elle-même — sans cette fiche, ces deux champs (et le repli de la date
   // d'opération prévue si elle n'a pas été synchronisée sur PatientBloc) restaient vides.
   const [notification, setNotification] = useState<any>(null)
-  const { peutPlanifierCpa, roleName } = useRole()
+  const { peutPlanifierCpa, estResponsableCpa, roleName } = useRole()
+  const [reprisEnCours, setReprisEnCours] = useState(false)
 
   const charger = () => {
     setLoading(true)
@@ -94,6 +95,20 @@ function DossierPatientPageContent() {
       alert('❌ Erreur : ' + (err.response?.data?.message || err.message || 'Erreur inconnue'))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleReprendreCircuitCpa = async () => {
+    if (!confirm('Remettre ce patient en attente de CPA (annule le refus précédent) ?')) return
+    setReprisEnCours(true)
+    try {
+      await patientService.marquerApteCpa(patientId)
+      alert('✅ Patient remis en attente de CPA.')
+      await charger()
+    } catch (err: any) {
+      alert('❌ Erreur : ' + (err.response?.data?.message || err.message || 'Erreur inconnue'))
+    } finally {
+      setReprisEnCours(false)
     }
   }
 
@@ -207,6 +222,15 @@ function DossierPatientPageContent() {
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm font-bold text-red-700">❌ Patient inapte pour le CPA</p>
             {p.motifRefusCpa && <p className="text-sm text-red-800 mt-1">Motif : {p.motifRefusCpa}</p>}
+            {estResponsableCpa ? (
+              <button onClick={handleReprendreCircuitCpa} disabled={reprisEnCours}
+                className="mt-3 px-4 py-2 bg-red-700 text-white rounded-lg text-xs font-bold hover:bg-red-800 disabled:opacity-50 flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">restart_alt</span>
+                {reprisEnCours ? 'Reprise...' : 'Reprendre le circuit CPA'}
+              </button>
+            ) : (
+              <p className="text-xs text-red-700/80 mt-2">Seul le Responsable CPA peut remettre ce patient dans le circuit{roleName ? ` (votre rôle : ${roleName})` : ''}.</p>
+            )}
           </div>
         ) : p.statut === 'CPA_REALISE' ? (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg">

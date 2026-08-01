@@ -18,6 +18,8 @@ import {
 import { BonCommandeService } from './bon-commande.service';
 import { CreateBonCommandeDto } from './dto/create-bon-commande.dto';
 import { UpdateBonCommandeDto } from './dto/update-bon-commande.dto';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Bons Commande')
 @ApiBearerAuth('JWT-auth')
@@ -26,7 +28,8 @@ export class BonCommandeController {
   constructor(private readonly service: BonCommandeService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Créer un bon de commande' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN)
+  @ApiOperation({ summary: 'Créer un bon de commande (Anesthésiste, Chirurgien)' })
   create(@Body() dto: CreateBonCommandeDto) {
     return this.service.create(dto);
   }
@@ -46,7 +49,8 @@ export class BonCommandeController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Modifier un bon' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN)
+  @ApiOperation({ summary: 'Modifier un bon (Anesthésiste, Chirurgien)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateBonCommandeDto,
@@ -55,7 +59,8 @@ export class BonCommandeController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer un bon' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN)
+  @ApiOperation({ summary: 'Supprimer un bon (Anesthésiste, Chirurgien)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.remove(id);
   }

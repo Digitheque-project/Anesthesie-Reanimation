@@ -16,6 +16,7 @@ import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
 import { StatutDemandeCpaPubliqueDto } from './dto/statut-demande-cpa-publique.dto';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { AccueilClient } from '../external/accueil.client';
+import { PatientBlocService } from '../patient-bloc/patient-bloc.service';
 
 @Injectable()
 export class DemandeCpaExterneService {
@@ -31,6 +32,7 @@ export class DemandeCpaExterneService {
     private http: HttpService,
     private notificationBackClient: NotificationBackClient,
     private accueilClient: AccueilClient,
+    private patientBlocService: PatientBlocService,
   ) {
     this.blocServiceId =
       this.config.get<string>('externalServices.serviceId') ?? '';
@@ -50,6 +52,18 @@ export class DemandeCpaExterneService {
     this.logger.log(
       `📋 Demande de CPA externe reçue pour patient ${dto.patientId} (source: ${dto.sourceServiceName || dto.sourceServiceId})`,
     );
+
+    // Sans ceci, aucun PatientBloc n'existait jamais pour un patient venu par une demande CPA
+    // externe : niveauUrgence restait introuvable côté /bloc/consultation-cpa (patient.getById
+    // renvoyait null), donc un patient très urgent n'était jamais réellement basculé en VPA —
+    // seul le badge "urgent" de la notification s'affichait, sans effet sur le parcours réel.
+    try {
+      await this.patientBlocService.creerDepuisPrescription(saved.id);
+    } catch (err) {
+      this.logger.error(
+        `❌ Échec création PatientBloc depuis la demande CPA externe ${saved.id}: ${(err as Error).message}`,
+      );
+    }
 
     // Pousse la même notification temps réel que les prescriptions internes (voir
     // PrescriptionService.ingerer) — sans ça, cette demande n'apparaît que si l'utilisateur

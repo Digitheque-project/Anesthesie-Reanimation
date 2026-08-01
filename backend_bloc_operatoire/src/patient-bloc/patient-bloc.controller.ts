@@ -49,17 +49,20 @@ export class PatientBlocController {
   }
 
   @Post('admit')
+  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
   @ApiOperation({
-    summary: 'Admettre au bloc un patient déjà enregistré dans Accueil',
+    summary:
+      'Admettre au bloc un patient déjà enregistré dans Accueil (Major, Responsable CPA)',
   })
   admitExisting(@Body() dto: AdmitExistingPatientDto) {
     return this.patientBlocService.admitExisting(dto);
   }
 
   @Post('register-and-admit')
+  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
   @ApiOperation({
     summary:
-      "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc",
+      "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc (Major, Responsable CPA)",
   })
   registerAndAdmit(
     @Body() dto: RegisterAndAdmitPatientDto,
@@ -134,7 +137,8 @@ export class PatientBlocController {
   }
 
   @Patch(':patientId')
-  @ApiOperation({ summary: 'Modifier une fiche de suivi bloc' })
+  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Modifier une fiche de suivi bloc (Major, Responsable CPA)' })
   update(
     @Param('patientId') patientId: string,
     @Body() dto: UpdatePatientBlocDto,
@@ -192,7 +196,8 @@ export class PatientBlocController {
   }
 
   @Delete(':patientId')
-  @ApiOperation({ summary: 'Supprimer une fiche de suivi bloc' })
+  @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
+  @ApiOperation({ summary: 'Supprimer une fiche de suivi bloc (Major, Responsable CPA)' })
   remove(@Param('patientId') patientId: string) {
     return this.patientBlocService.remove(patientId);
   }

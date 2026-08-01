@@ -106,18 +106,23 @@ export class CPAService {
     }
 
     if (dto.patientId) {
-      // REPORT = consultation faite mais décision remise à plus tard : le patient retourne
-      // en attente de CPA, ce n'est ni une aptitude ni une inaptitude définitive.
+      // REPORT = consultation faite mais décision remise à plus tard : le patient reste
+      // EN_ATTENTE_CPA — ce n'est pas une transition réelle (changerStatut rejetterait un
+      // "changement" vers l'état déjà courant), donc aucun appel de transition dans ce cas.
       const nouveauStatut =
         dto.decision === DecisionCPA.INAPTE
           ? PatientStatut.CPA_INAPTE
           : dto.decision === DecisionCPA.REPORT
-            ? PatientStatut.EN_ATTENTE_CPA
+            ? null
             : PatientStatut.CPA_REALISE;
 
-      await this.patientBlocRepo.update(dto.patientId, {
-        statut: nouveauStatut,
-      });
+      if (nouveauStatut) {
+        await this.patientBlocStatutService.changerStatut(
+          dto.patientId,
+          nouveauStatut,
+          centralUser.userId,
+        );
+      }
 
       // Patient urgent/très urgent déclaré APTE : pas de "vérification la veille" à attendre,
       // l'opération peut avoir lieu le jour même — bascule directe vers PRET_POUR_BLOC pour

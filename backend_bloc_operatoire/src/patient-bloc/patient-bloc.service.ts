@@ -31,6 +31,14 @@ export class PatientBlocService {
     });
     if (!demande) throw new Error('Demande non trouvée');
 
+    // Idempotent : patientId est la clé primaire de PatientBloc, un second appel (nouvelle
+    // demande externe pour un patient déjà suivi au bloc) ne doit pas planter sur un conflit de
+    // clé — on renvoie simplement la fiche existante plutôt que d'échouer.
+    const existant = await this.patientRepo.findOne({
+      where: { patientId: demande.patientId },
+    });
+    if (existant) return existant;
+
     const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
     const niveauUrgence = estUrgence
       ? NiveauUrgence.TRES_URGENT

@@ -3,7 +3,14 @@ export { authFetch } from '@/features/prescription/lib/auth';
 
 // Ne PAS retomber sur NEXT_PUBLIC_API_URL : dans blocope-front, cette variable pointe déjà
 // vers le backend propre du bloc opératoire (backend_bloc_operatoire), un service distinct.
-const RAW_API_URL = process.env.NEXT_PUBLIC_PRESCRIPTION_API_URL || 'http://localhost:3001';
+// Repli localhost réservé au dev (comme lib/api/client.ts) : en production, si la variable
+// d'env manque, mieux vaut pointer vers le vrai backend de prod que vers un localhost qui
+// échouerait silencieusement pour tout le monde.
+const RAW_API_URL =
+  process.env.NEXT_PUBLIC_PRESCRIPTION_API_URL ||
+  (process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3001'
+    : 'https://prescriptionback-production.up.railway.app');
 // Chaque endpoint ci-dessous ajoute deja le prefixe "/prescriptions". Si l'URL
 // configuree (NEXT_PUBLIC_PRESCRIPTION_API_URL) se termine deja par
 // "/prescriptions" (ou par un "/"), on la normalise pour eviter le doublon
@@ -437,7 +444,6 @@ export async function creerPrescriptionImagerie(data: unknown) {
   const body = data as Record<string, unknown>;
   const endpoint = resolveImagerieEndpoint(body, 'prescriptions/imagerie');
   const mappedData = normalizePayloadForEndpoint(endpoint, data);
-  console.log("SENDING IMAGERIE PAYLOAD:", JSON.stringify(mappedData, null, 2));
   const res = await fetch(`${API_URL}/${endpoint}`, {
     method: 'POST', headers: headers(), body: JSON.stringify(mappedData),
   });

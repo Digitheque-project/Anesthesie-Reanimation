@@ -5,9 +5,6 @@ import { authFetch } from '@/features/prescription/lib/auth';
 import { getHistoriquePatient } from '@/features/prescription/lib/api';
 import { getDirectoryUser, formatDirectoryUserName } from '@/lib/clinical/user-directory-api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const USER_SERVICE_URL = process.env.NEXT_PUBLIC_USER_SERVICE_API_URL || 'https://user-services-1sm6.onrender.com/users';
-
 const FILTRES = [
   { id: 'all',   label: 'Tout',             icon: 'list' },
   { id: 'med',   label: 'Médicamenteuse',   icon: 'medication' },

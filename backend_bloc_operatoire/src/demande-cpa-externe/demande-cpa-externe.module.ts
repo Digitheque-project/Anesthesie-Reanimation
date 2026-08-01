@@ -6,11 +6,13 @@ import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
 import { DemandeCpaExterneService } from './demande-cpa-externe.service';
 import { DemandeCpaExterneController } from './demande-cpa-externe.controller';
+import { PatientBlocModule } from '../patient-bloc/patient-bloc.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DemandeCpaExterne, CreneauBloc, CPA]),
     HttpModule.register({ timeout: 45000 }),
+    PatientBlocModule,
   ],
   controllers: [DemandeCpaExterneController],
   providers: [DemandeCpaExterneService],

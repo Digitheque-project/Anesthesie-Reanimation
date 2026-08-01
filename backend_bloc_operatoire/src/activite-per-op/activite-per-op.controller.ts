@@ -29,8 +29,17 @@ import { RoleClinique } from '../central-auth/role-clinique';
 export class ActivitePerOpController {
   constructor(private readonly service: ActivitePerOpService) {}
 
+  // MAJOR inclus : les écrans arrivee-bloc et activite-pendant-operation créent cet
+  // enregistrement automatiquement au chargement (dès qu'un rôle autorisé à *consulter* la page
+  // l'ouvre), pas seulement au moment d'un acte clinique — voir le commentaire "Le Major a accès
+  // à l'interface pour consulter, mais n'enregistre pas les actes" dans arrivee-bloc/page.tsx.
   @Post()
-  @ApiOperation({ summary: 'Créer une activité per-op' })
+  @RequireRoleClinique(
+    RoleClinique.ANESTHESISTE,
+    RoleClinique.IBODE,
+    RoleClinique.MAJOR,
+  )
+  @ApiOperation({ summary: 'Créer une activité per-op (Anesthésiste, IBODE, Major)' })
   create(@Body() dto: CreateActivitePerOpDto) {
     return this.service.create(dto);
   }
@@ -55,7 +64,8 @@ export class ActivitePerOpController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Modifier une activité' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
+  @ApiOperation({ summary: 'Modifier une activité (Anesthésiste, IBODE)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateActivitePerOpDto,
@@ -78,7 +88,8 @@ export class ActivitePerOpController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer une activité' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Supprimer une activité (Anesthésiste)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.remove(id);
   }

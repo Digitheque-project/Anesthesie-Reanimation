@@ -55,9 +55,32 @@ export class VerificationVeilleService {
     const savedResult = await this.repo.save(this.repo.create(dto as any));
     const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
 
-    await this.patientBlocRepo.update(dto.patientId, {
-      statut: PatientStatut.VERIFICATION_VEILLE_REALISEE,
-    });
+    // Passe par le point de passage unique changerStatut (validation + traçabilité) au lieu
+    // d'une écriture directe — en franchissant l'état intermédiaire officiel de la machine à
+    // états (CPA_REALISE → EN_ATTENTE_VERIFICATION_VEILLE → VERIFICATION_VEILLE_REALISEE), sinon
+    // ignoré en pratique par ce flux. Tolérant à un statut de départ inattendu (double soumission,
+    // etc.) : averti mais non bloquant, comme pour la transition PRET_POUR_BLOC ci-dessous.
+    try {
+      const patientAvant = await this.patientBlocRepo.findOne({
+        where: { patientId: dto.patientId },
+      });
+      if (patientAvant?.statut === PatientStatut.CPA_REALISE) {
+        await this.patientBlocStatutService.changerStatut(
+          dto.patientId,
+          PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+          utilisateurId,
+        );
+      }
+      await this.patientBlocStatutService.changerStatut(
+        dto.patientId,
+        PatientStatut.VERIFICATION_VEILLE_REALISEE,
+        utilisateurId,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Transition VERIFICATION_VEILLE_REALISEE impossible pour ${dto.patientId}: ${(err as Error).message}`,
+      );
+    }
     await this.tracabiliteService.log(
       'VerificationVeille',
       saved.id,

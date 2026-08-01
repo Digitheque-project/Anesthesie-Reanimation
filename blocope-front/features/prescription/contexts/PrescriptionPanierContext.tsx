@@ -35,9 +35,15 @@ const ENDPOINT_MAP: Record<PanierItemType, string> = {
   transfusion: "prescriptions/transfusion",
 };
 
+// Repli utilisé uniquement si NEXT_PUBLIC_PHARMACY_SERVICE_ID n'est pas défini.
+const PHARMACY_SERVICE_ID_FALLBACK = "b0e542b2-4005-4518-bf75-37e6b39a2213";
+const PHARMACY_SERVICE_ID = process.env.NEXT_PUBLIC_PHARMACY_SERVICE_ID || PHARMACY_SERVICE_ID_FALLBACK;
+
+// surveillance/transfusion n'ont pas de service de destination connu (aucun serviceId de
+// dépôt de sang configuré à ce jour) — laissé vide plutôt qu'une valeur inventée.
 const SERVICE_DEST_MAP: Record<PanierItemType, { serviceId: string; serviceName: string }> = {
-  medicale:   { serviceId: process.env.NEXT_PUBLIC_PHARMACY_SERVICE_ID  || "b0e542b2-4005-4518-bf75-37e6b39a2213", serviceName: "Pharmacie" },
-  "non-medicale": { serviceId: process.env.NEXT_PUBLIC_PHARMACY_SERVICE_ID || "b0e542b2-4005-4518-bf75-37e6b39a2213", serviceName: "Pharmacie" },
+  medicale:       { serviceId: PHARMACY_SERVICE_ID, serviceName: "Pharmacie" },
+  "non-medicale": { serviceId: PHARMACY_SERVICE_ID, serviceName: "Pharmacie" },
   surveillance:   { serviceId: "", serviceName: "" },
   transfusion:    { serviceId: "", serviceName: "Dépôt de sang" },
 };
@@ -67,7 +73,12 @@ const LABEL_MAP: Record<PanierItemType, string> = {
   transfusion: "Transfusion",
 };
 
-const RAW_API_URL = process.env.NEXT_PUBLIC_PRESCRIPTION_API_URL || "http://localhost:3001";
+// Repli localhost réservé au dev (voir features/prescription/lib/api.ts, même logique).
+const RAW_API_URL =
+  process.env.NEXT_PUBLIC_PRESCRIPTION_API_URL ||
+  (process.env.NODE_ENV === "development"
+    ? "http://localhost:3001"
+    : "https://prescriptionback-production.up.railway.app");
 // Meme normalisation que dans lib/api.ts : on retire un eventuel suffixe
 // "/prescriptions" pour eviter le doublon "/prescriptions/prescriptions" (404).
 const API_URL = RAW_API_URL.replace(/\/+$/, "").replace(/\/prescriptions$/, "");

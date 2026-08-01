@@ -13,6 +13,8 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { NotificationCPAService } from './notification-cpa.service';
 import { CreateNotificationCPADto } from './dto/create-notification-cpa.dto';
 import { UpdateNotificationCPADto } from './dto/update-notification-cpa.dto';
+import { RequireRoleClinique } from '../central-auth/require-role.decorator';
+import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Notifications')
 @Controller('notifications-cpa')
@@ -56,7 +58,8 @@ export class NotificationCPAController {
   }
 
   @Patch(':id/planifier')
-  @ApiOperation({ summary: 'Planifier un RDV' })
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Planifier un RDV (Responsable CPA, Major)' })
   planifier(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.service.planifierRDV(id, dto);
   }

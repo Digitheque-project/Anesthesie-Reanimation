@@ -159,9 +159,11 @@ export default function NotificationCPAPage() {
     const intervention = notif.intervention || notif.motif || ''
 
     // Patient urgent : pas de CPA planifiée à l'avance, la consultation a lieu immédiatement —
-    // même interface que la CPA, étiquetée VPA le temps de la consultation.
+    // même interface que la CPA, étiquetée VPA le temps de la consultation. Le statut VPA est
+    // déterminé côté page par patient.niveauUrgence (pas par un paramètre d'URL) : voir
+    // consultation-cpa/page.tsx.
     router.push(
-      `/bloc/consultation-cpa?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}&statut=STAT`
+      `/bloc/consultation-cpa?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`
     )
   }
 

@@ -207,7 +207,9 @@ export default function HistoriqueTab({ patientId }: Props) {
               </div>
               <div className="text-xs text-gray-400 flex items-center gap-1">
                 <Clock size={12} />
-                {new Date(entry.dateAction).toLocaleString()}
+                {entry.dateAction
+                  ? new Date(entry.dateAction).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                  : '—'}
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-700">

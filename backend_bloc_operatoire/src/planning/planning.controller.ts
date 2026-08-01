@@ -63,44 +63,4 @@ export class PlanningController {
   urgences() {
     return this.service.getUrgencesEnAttente();
   }
-
-  // Transférer CPA → Vérification veille
-  @Post('transferer-cpa-vers-verification-veille')
-  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
-  @ApiOperation({
-    summary:
-      'Transférer un patient de CPA vers Vérification veille (Responsable CPA)',
-  })
-  transfererCpaVersVerificationVeille(
-    @Body()
-    dto: {
-      patientId: string;
-      chirurgienId: string;
-      dateVerificationVeille: string;
-      heureDebut: string;
-      salle: string;
-    },
-  ) {
-    return this.service.transfererCpaVersVerificationVeille(dto);
-  }
-
-  // Transférer Vérification veille → Patient du jour
-  @Post('transferer-verification-veille-vers-patient-jour')
-  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
-  @ApiOperation({
-    summary:
-      'Transférer un patient de Vérification veille vers Patient du jour (Responsable CPA)',
-  })
-  transfererVerificationVeilleVersPatientJour(
-    @Body()
-    dto: {
-      patientId: string;
-      chirurgienId: string;
-      date: string;
-      heureDebut: string;
-      salle: string;
-    },
-  ) {
-    return this.service.transfererVerificationVeilleVersPatientJour(dto);
-  }
 }

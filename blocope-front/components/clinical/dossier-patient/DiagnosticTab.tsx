@@ -114,8 +114,12 @@ const emptyForm = {
   ecarteCar: "",
   graviteStade: "",
   etiologicalHypotheses: "",
-  medecinResponsable: "Dr. Jean Pierre",
+  // Volontairement vide : mieux vaut afficher "Identité non résolue" (voir resolvedMedecinNom)
+  // qu'un nom plausible mais faux enregistré comme si c'était le vrai médecin responsable.
+  medecinResponsable: "",
 };
+
+const MEDECIN_INCONNU = "Identité non résolue";
 
 function isArchived(d: { isArchived?: boolean; archived?: boolean }): boolean {
   return d.isArchived === true || d.archived === true;
@@ -138,12 +142,12 @@ function ReadField({ label, value }: { label: string; value?: string }) {
 
 export function DiagnosticTab({
   patientId,
-  medecinNom = "Dr. Jean Pierre",
+  medecinNom = "",
   chuId,
   serviceId,
 }: Props) {
   // Identite du medecin courant, derivee du token JWT si le portail
-  // ne renseigne pas d'objet `medecin` local (fallback sur medecinNom).
+  // ne renseigne pas d'objet `medecin` local (fallback sur medecinNom, jamais un nom inventé).
   const currentMedecin = useCurrentMedecin();
   const session = useSession();
   const { canDo } = usePermissions();
@@ -486,7 +490,7 @@ export function DiagnosticTab({
                     <div>
                       <p style={miniLabel}>Médecin responsable</p>
                       <p style={medecinName}>
-                        {current.medecinResponsable || resolvedMedecinNom}
+                        {current.medecinResponsable || resolvedMedecinNom || MEDECIN_INCONNU}
                       </p>
                     </div>
                   </div>
@@ -654,7 +658,7 @@ export function DiagnosticTab({
                 <div style={footerRow}>
                   <div style={formMedecinBox}>
                     <User size={16} />
-                    <span>{form.medecinResponsable || resolvedMedecinNom}</span>
+                    <span>{form.medecinResponsable || resolvedMedecinNom || MEDECIN_INCONNU}</span>
                   </div>
                   <div style={actionsRow}>
                     <button

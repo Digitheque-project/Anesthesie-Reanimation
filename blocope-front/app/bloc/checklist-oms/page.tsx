@@ -87,8 +87,7 @@ function ChecklistAvantOpPageContent() {
     try {
       // Envoyer la checklist au backend
       await apiClient.post('/checklists-avant-op', { patientId, ...form })
-      console.log('✅ Checklist avant opération validée')
-      
+
       // Rediriger vers le Time Out (dernière pause d'équipe avant incision)
       router.push(`/bloc/verification-post-op?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
       

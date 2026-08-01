@@ -53,7 +53,8 @@ export class ScoreSCCREController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Modifier un score' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier un score (Anesthésiste)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateScoreSCCREDto,
@@ -62,7 +63,8 @@ export class ScoreSCCREController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer un score' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Supprimer un score (Anesthésiste)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.remove(id);
   }
