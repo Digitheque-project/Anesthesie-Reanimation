@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import CalendrierAgenda from '@/components/bloc/planning/CalendrierAgenda'
 
 interface ModalPlanifierRDVProps {
   isOpen: boolean
@@ -55,7 +56,10 @@ export default function ModalPlanifierRDV({
 
           {/* Date */}
           <div>
-            <label className="text-xs font-bold text-gray-600 block mb-1">Date *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-gray-600 block">Date *</label>
+              <CalendrierAgenda type={typeRDV} onSelectDate={setDateRDV} />
+            </div>
             <input type="date" value={dateRDV} onChange={e => setDateRDV(e.target.value)} min={new Date().toISOString().split('T')[0]}
               className="w-full border rounded-lg p-2 text-sm" required />
           </div>

@@ -211,6 +211,28 @@ export class PatientBlocStatutService {
       { champ: 'dateIntervention', ancienneValeur: ancienneDate, nouvelleValeur: patient.dateIntervention },
       utilisateurId,
     );
+
+    // Toute modification de la date d'opération (ex. report décidé pendant la CPA) doit être
+    // répercutée sans délai vers le service demandeur — sinon il continue de prévoir l'ancienne
+    // date de son côté.
+    if (patient.serviceOrigineId && patient.serviceOrigine) {
+      try {
+        await this.notificationOutgoing.notifyOriginService({
+          patientId,
+          type: 'DATE_OPERATION_MODIFIEE',
+          serviceOrigineId: patient.serviceOrigineId,
+          serviceOrigineName: patient.serviceOrigine,
+          payload: {
+            ancienneDate,
+            nouvelleDate: patient.dateIntervention,
+          },
+        });
+      } catch (err) {
+        this.logger.error(
+          `Erreur notification service origine après modification date opération: ${(err as Error).message}`,
+        );
+      }
+    }
     return saved;
   }
 }

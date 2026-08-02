@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CPA, DecisionCPA } from '../entities/cpa.entity';
+import { CPA, DecisionCPA, StatutValidationProf } from '../entities/cpa.entity';
 import {
   PatientBloc,
   PatientStatut,
@@ -88,10 +88,21 @@ export class CPAService {
       anesthesisteId = null;
     }
 
+    // Anesthésiste ou Major (qui cumule les deux rôles, voir StatutValidationProf) réalisant la
+    // CPA seul : sa décision engage sa propre responsabilité, ce qui vaut validation immédiate.
+    // Un Responsable CPA seul (sans Major) doit encore passer la main à un anesthésiste pour les
+    // médicaments et la vérification veille — tant que ce n'est pas fait, en attente.
+    const statutValidationProf =
+      roleUtilisateur === RoleClinique.ANESTHESISTE ||
+      roleUtilisateur === RoleClinique.MAJOR
+        ? StatutValidationProf.VALIDE
+        : StatutValidationProf.EN_ATTENTE_VALIDATION;
+
     const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto as any;
     const cpa = this.cpaRepository.create({
       ...cpaData,
       anesthesisteId,
+      statutValidationProf,
       saisiParId: centralUser.userId,
       saisiParRole: centralUser.role,
     });
@@ -129,12 +140,12 @@ export class CPAService {
       // de son côté, jamais au bloc. Le parcours s'arrête donc à la CPA pour ces patients — urgent
       // ou non — sans bascule automatique vers PRET_POUR_BLOC (qui les ferait apparaître à tort
       // dans le programme opératoire du bloc).
-      const demande =
-        dto.decision !== DecisionCPA.REPORT
-          ? await this.demandeCpaExterneService.trouverDemandeOuverte(
-              dto.patientId,
-            )
-          : null;
+      // Recherché même pour REPORT désormais : le service demandeur doit être notifié que la CPA
+      // est reportée (à refaire), pas seulement quand elle est finalisée (APTE/INAPTE) — voir plus
+      // bas, où seul le cas REPORT évite marquerCpaRealisee (la demande externe n'est pas close).
+      const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(
+        dto.patientId,
+      );
 
       // Patient interne urgent/très urgent déclaré APTE : pas de "vérification la veille" à
       // attendre, l'opération peut avoir lieu le jour même — bascule directe vers PRET_POUR_BLOC
@@ -155,7 +166,7 @@ export class CPAService {
         }
       }
 
-      if (demande) {
+      if (demande && dto.decision !== DecisionCPA.REPORT) {
         const apte = saved.decision === DecisionCPA.APTE;
         await this.demandeCpaExterneService.marquerCpaRealisee(
           demande,
@@ -170,6 +181,7 @@ export class CPAService {
             'CPA_RESULTAT',
             {
               decision: saved.decision,
+              decisionOperation: saved.decisionOperation,
               dateCpa: saved.dateConsultation,
               observations: saved.notesIncidents,
               motifRefus: saved.motifRefus,
@@ -189,6 +201,24 @@ export class CPAService {
         } catch (err) {
           this.logger.error(
             `Erreur notification résultat CPA au service demandeur: ${(err as Error).message}`,
+          );
+        }
+      } else if (demande && dto.decision === DecisionCPA.REPORT) {
+        // La CPA elle-même est reportée (à refaire) — la demande externe reste ouverte (pas de
+        // marquerCpaRealisee), mais le service demandeur doit tout de même être averti plutôt que
+        // de rester sans nouvelles jusqu'à la prochaine tentative.
+        try {
+          await this.demandeCpaExterneService.notifierResultat(
+            demande,
+            'CPA_REPORT',
+            {
+              motifRefus: saved.motifRefus,
+              dateReport: saved.dateVerificationVeille,
+            },
+          );
+        } catch (err) {
+          this.logger.error(
+            `Erreur notification report CPA au service demandeur: ${(err as Error).message}`,
           );
         }
       }
@@ -276,6 +306,21 @@ export class CPAService {
     const cpa = await this.cpaRepository.findOne({ where: { id } });
     if (!cpa) throw new NotFoundException(`CPA ${id} non trouvée`);
     Object.assign(cpa, dto);
+
+    // Le Responsable CPA seul (sans Major) avait posé la décision sans encore passer par
+    // l'anesthésiste (médicaments + vérification veille) — cette mise à jour EST ce passage : la
+    // boucle est bouclée, la CPA devient validée.
+    const roleUtilisateur = centralUser
+      ? matchRoleClinique(centralUser.role)
+      : null;
+    if (
+      cpa.statutValidationProf === StatutValidationProf.EN_ATTENTE_VALIDATION &&
+      (roleUtilisateur === RoleClinique.ANESTHESISTE ||
+        roleUtilisateur === RoleClinique.MAJOR)
+    ) {
+      cpa.statutValidationProf = StatutValidationProf.VALIDE;
+    }
+
     const updated = await this.cpaRepository.save(cpa);
     await this.tracabiliteService.log(
       'CPA',

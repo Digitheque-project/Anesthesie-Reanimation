@@ -16,6 +16,7 @@ const STATUT_STYLE: Record<string, string> = {
   EN_SALLE_REVEIL: 'bg-cyan-100 text-cyan-700',
   EN_COURS_OPERATION: 'bg-rose-100 text-rose-700',
   PRET_POUR_BLOC: 'bg-blue-100 text-blue-700',
+  CPA_INAPTE: 'bg-red-100 text-red-700',
 }
 
 // Le parcours "demande CPA externe" (avis demandé par un autre service, patient non opéré ici)
@@ -70,18 +71,36 @@ export default function ArchivesPage() {
     return filtered
   }
 
+  // Patients dont la CPA a conclu à une inaptitude définitive (opération refusée, ou reportée
+  // sans qu'une nouvelle date ne soit encore retenue) — fin de parcours au bloc sans jamais
+  // passer par SORTI. Chargés à part (liste courte, pas de pagination) et fusionnés avec les
+  // patients sortis pour qu'ils restent consultables/exportables comme n'importe quel dossier
+  // archivé, plutôt que de disparaître silencieusement de l'app.
+  const chargerPatientsInaptes = async () => {
+    try {
+      const data = await patientService.getAll({ statut: 'CPA_INAPTE', page: 1, limite: 200 })
+      return data.data || []
+    } catch (err) {
+      console.error('Erreur:', err)
+      return []
+    }
+  }
+
   const chargerPatients = async () => {
     setLoadingPatients(true)
     try {
-      const data = await patientService.getAll({
-        statut: 'SORTI',
-        page: 1,
-        limite: LIMITE_PATIENTS,
-        recherche: recherche || undefined,
-      })
+      const [data, inaptes] = await Promise.all([
+        patientService.getAll({
+          statut: 'SORTI',
+          page: 1,
+          limite: LIMITE_PATIENTS,
+          recherche: recherche || undefined,
+        }),
+        chargerPatientsInaptes(),
+      ])
       const lignes = data.data || []
-      setPatients(filtresActifsPatients(lignes))
-      setTotal(data.total || 0)
+      setPatients(filtresActifsPatients([...inaptes, ...lignes]))
+      setTotal((data.total || 0) + inaptes.length)
       setPageActuelle(1)
       setHasMore(lignes.length < (data.total || 0))
     } catch (err) {
@@ -151,8 +170,11 @@ export default function ArchivesPage() {
   // Récupère l'ensemble des patients archivés correspondant aux filtres (pas seulement la page
   // affichée), pour les exports Excel/CSV/PDF/impression du tableau complet.
   const chargerTousLesPatients = async () => {
-    const data = await patientService.getAll({ statut: 'SORTI', page: 1, limite: 1000, recherche: recherche || undefined })
-    return filtresActifsPatients(data.data || [])
+    const [data, inaptes] = await Promise.all([
+      patientService.getAll({ statut: 'SORTI', page: 1, limite: 1000, recherche: recherche || undefined }),
+      chargerPatientsInaptes(),
+    ])
+    return filtresActifsPatients([...inaptes, ...(data.data || [])])
   }
 
   const colonnesListe: Colonne[] = [

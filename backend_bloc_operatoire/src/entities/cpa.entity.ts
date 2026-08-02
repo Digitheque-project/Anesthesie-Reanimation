@@ -40,6 +40,17 @@ export enum StatutCPA {
   REALISE = 'REALISE',
 }
 
+// Distinct de validationProfInformelle (simple mention texte) : ce statut trace si la boucle est
+// bouclée. Un Anesthésiste (ou Major, qui cumule les deux rôles) réalisant seul sa CPA de bout en
+// bout (décision + médicaments + vérification veille) engage sa responsabilité propre, ce qui
+// vaut validation — VALIDE dès la création. Quand un Responsable CPA/Major pose seulement la
+// décision, l'anesthésiste doit encore compléter médicaments/vérification veille : EN_ATTENTE_
+// VALIDATION jusqu'à ce qu'il le fasse (CPAService.update).
+export enum StatutValidationProf {
+  VALIDE = 'VALIDE',
+  EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+}
+
 @Entity('cpa')
 export class CPA {
   @PrimaryGeneratedColumn('uuid')
@@ -228,6 +239,13 @@ export class CPA {
   // bloque ni ne conditionne rien.
   @Column({ type: 'text', nullable: true })
   validationProfInformelle: string;
+
+  @Column({
+    type: 'enum',
+    enum: StatutValidationProf,
+    default: StatutValidationProf.EN_ATTENTE_VALIDATION,
+  })
+  statutValidationProf: StatutValidationProf;
 
   // Conclusion — section 4 de la fiche papier.
   @Column({ type: 'text', nullable: true })

@@ -17,6 +17,7 @@ import { exporterFichePdf } from '@/lib/export/export';
 import PiecesJointesUploader from '@/components/bloc/pieces-jointes/PiecesJointesUploader';
 import { formaterNomPatient } from '@/lib/patient';
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader';
+import CalendrierAgenda from '@/components/bloc/planning/CalendrierAgenda';
 
 export default function ConsultationCpaPage() {
   return (
@@ -143,6 +144,12 @@ function ConsultationCpaPageContent() {
   // l'anesthésiste rouvrant une CPA déjà validée.
   const [dateReportCpa, setDateReportCpa] = useState('');
   const [heureReportCpa, setHeureReportCpa] = useState('09:00');
+  // Nouvelle date d'opération (decisionOperation === REPORTEE, APTE ou INAPTE) — distincte de
+  // dateReportCpa (report de la CPA elle-même) : ici l'aptitude est tranchée, seule la date de
+  // l'opération change. Répercutée sur PatientBloc.dateIntervention + notification du service
+  // source dès la validation (voir handleValider).
+  const [dateOperationReportee, setDateOperationReportee] = useState('');
+  const [heureOperationReportee, setHeureOperationReportee] = useState('09:00');
   const [validationProfInformelle, setValidationProfInformelle] = useState('');
   const [dateVPA, setDateVPA] = useState('');
   const [heureVPA, setHeureVPA] = useState('08:00');
@@ -319,7 +326,10 @@ function ConsultationCpaPageContent() {
   // les droits de bout en bout, comme avant.
   const cpaDejaRemplie = !!cpaExistante;
   const peutEditerExamenEtDecision = !cpaDejaRemplie && (estResponsableOuMajor || estAnesthesisteConnecte);
-  const peutEditerMedicamentsEtVpa = estAnesthesisteConnecte;
+  // Le Major cumule les deux rôles (Responsable CPA + Anesthésiste) : contrairement à un
+  // Responsable CPA seul, il peut aussi compléter les médicaments d'anesthésie/réanimation et
+  // planifier la vérification veille — jamais bloqué en attente d'un vrai anesthésiste.
+  const peutEditerMedicamentsEtVpa = estAnesthesisteConnecte || estMajor;
 
   const handleEnregistrerDateIntervention = async () => {
     const patientIdFinal = patientId || patient?.id;
@@ -542,9 +552,39 @@ function ConsultationCpaPageContent() {
         // Date de report : posée par qui décide le REPORT (Respo CPA/Major ou l'anesthésiste
         // solo), pas réservée à l'anesthésiste — contrairement à la vérification veille.
         await planifierReportCpa(patientIdFinal);
+        // Opération reportée (APTE ou INAPTE) : répercute la nouvelle date sur la fiche patient
+        // et notifie le service demandeur (voir PatientBlocStatutService.modifierDateIntervention).
+        if (decisionOperation === 'REPORTEE' && dateOperationReportee) {
+          try {
+            await patientService.modifierDateIntervention(
+              patientIdFinal,
+              new Date(`${dateOperationReportee}T${heureOperationReportee || '09:00'}`).toISOString(),
+            );
+          } catch (err: any) {
+            console.error(err);
+            alert('⚠️ CPA enregistrée, mais la mise à jour de la date d\'opération a échoué : ' + (err.response?.data?.message || err.message || 'erreur inconnue'));
+          }
+        }
 
-        alert(estUrgent ? '✅ VPA validée avec succès !' : '✅ CPA validée avec succès !');
-        router.push('/bloc/rendez-vous');
+        if (estUrgent) {
+          // Urgent/très urgent APTE : le patient bascule directement dans le programme
+          // opératoire du jour (voir CPAService.create, bascule PRET_POUR_BLOC), jamais dans le
+          // Fil de travail — proposer à l'anesthésiste d'enchaîner directement sur sa prise en
+          // charge plutôt que de le renvoyer vers un écran où ce patient n'apparaît pas.
+          const proposerRaccourci = decision === 'APTE' && estAnesthesisteConnecte;
+          const allerDirectement = proposerRaccourci && confirm(
+            '✅ VPA validée — patient prêt à opérer.\n\nContinuer directement vers sa prise en charge (arrivée au bloc) ?'
+          );
+          if (allerDirectement) {
+            router.push(`/bloc/arrivee-bloc?patientId=${patientIdFinal}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`);
+          } else {
+            if (!proposerRaccourci) alert('✅ VPA validée avec succès !');
+            router.push('/bloc/patient-du-jour');
+          }
+        } else {
+          alert('✅ CPA validée avec succès !');
+          router.push('/bloc/rendez-vous');
+        }
       } else {
         // Deuxième étape : l'anesthésiste complète la CPA déjà remplie par le Major/Responsable
         // CPA — uniquement les médicaments d'anesthésie/réanimation et la vérification veille.
@@ -1439,13 +1479,24 @@ function ConsultationCpaPageContent() {
                     Décision réservée au responsable CPA, au major, ou à l'anesthésiste s'il réalise seul sa CPA{roleName ? ` (votre rôle : ${roleName})` : ''}.
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {estUrgent && (
+                  <p className="text-[11px] text-red-700 font-semibold mb-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">bolt</span>
+                    Patient urgent — pas de report possible : apte (à opérer directement) ou inapte.
+                  </p>
+                )}
+                <div className={`grid grid-cols-1 gap-2 ${estUrgent ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                   {[
                     { key: 'APTE', label: "Apte à l'anesthésie", icon: 'check_circle', activeClass: 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30' },
                     { key: 'INAPTE', label: 'Inapte à ce jour', icon: 'cancel', activeClass: 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/30' },
-                    { key: 'REPORT', label: 'CPA à reporter', sousLabel: '(pas l\'opération — à refaire après examens)', icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' },
+                    ...(estUrgent ? [] : [{ key: 'REPORT', label: 'CPA à reporter', sousLabel: '(pas l\'opération — à refaire après examens)', icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' }]),
                   ].map(opt => (
-                    <button key={opt.key} onClick={() => { setDecision(opt.key as any); setDecisionOperation(''); }} disabled={!peutEditerExamenEtDecision}
+                    <button key={opt.key} onClick={() => {
+                        setDecision(opt.key as any);
+                        // Urgent : binaire, pas de sous-choix "devenir de l'opération" à afficher —
+                        // apte = à opérer directement (RETENUE), inapte = non opérable (REFUSEE).
+                        setDecisionOperation(estUrgent ? (opt.key === 'APTE' ? 'RETENUE' : opt.key === 'INAPTE' ? 'REFUSEE' : '') : '');
+                      }} disabled={!peutEditerExamenEtDecision}
                       className={`w-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed ${
                         decision === opt.key ? opt.activeClass + ' scale-[1.02]' : 'border-outline-variant bg-white text-on-surface-variant hover:border-amber-300 hover:bg-amber-50'
                       }`}>
@@ -1460,7 +1511,7 @@ function ConsultationCpaPageContent() {
                     Distinct du bouton "CPA à reporter" ci-dessus : ici la CPA est terminée, on
                     statue sur l'opération elle-même. Le rendez-vous n'est pas obligatoire en cas
                     de report. */}
-                {(decision === 'APTE' || decision === 'INAPTE') && (
+                {!estUrgent && (decision === 'APTE' || decision === 'INAPTE') && (
                   <div className="mt-3 pt-3 border-t border-amber-200/60">
                     <label className="text-xs font-bold text-amber-900 uppercase tracking-wide block mb-2">Devenir de l'opération</label>
                     <div className="grid grid-cols-2 gap-2">
@@ -1484,7 +1535,16 @@ function ConsultationCpaPageContent() {
                       ))}
                     </div>
                     {decisionOperation === 'REPORTEE' && (
-                      <p className="text-[11px] text-orange-700 mt-2">La prise de rendez-vous pour la nouvelle date n'est pas obligatoire à cette étape — elle pourra être planifiée plus tard.</p>
+                      <div className="mt-2">
+                        <label className="text-xs font-bold text-orange-700 block mb-1">Nouvelle date et heure d'opération</label>
+                        <div className="flex flex-col md:flex-row md:items-center gap-2">
+                          <input disabled={!peutEditerExamenEtDecision} className="flex-1 bg-orange-50 border border-orange-200 rounded-lg p-2 text-sm disabled:opacity-60" type="date"
+                            value={dateOperationReportee} onChange={e => setDateOperationReportee(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+                          <input disabled={!peutEditerExamenEtDecision} className="flex-none w-32 bg-orange-50 border border-orange-200 rounded-lg p-2 text-sm disabled:opacity-60" type="time"
+                            value={heureOperationReportee} onChange={e => setHeureOperationReportee(e.target.value)} />
+                        </div>
+                        <p className="text-[11px] text-orange-700 mt-1">Dès la validation, la date en haut de page est mise à jour et le service demandeur est notifié. Facultatif : laissez vide si la nouvelle date n'est pas encore connue.</p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1558,8 +1618,11 @@ function ConsultationCpaPageContent() {
               la date de report ci-dessus) ou INAPTE. */}
           {(peutEditerExamenEtDecision || peutEditerMedicamentsEtVpa) && !estUrgent && decision === 'APTE' && (
             <div className="mt-4 p-4 bg-surface-container-low rounded-xl border space-y-2">
-              <label className="text-sm font-bold block">Planification de la vérification à la veille de l'opération</label>
-              <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-bold block">Planification de la vérification à la veille de l'opération</label>
+                <CalendrierAgenda type="VERIFICATION_VEILLE" onSelectDate={setDateVPA} />
+              </div>
+              <p className="text-xs text-on-surface-variant mb-1">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc. L'icône calendrier montre les jours déjà chargés pour vous aider à choisir.</p>
               <div className="flex flex-col md:flex-row md:items-center gap-2">
                 <input className="flex-1 bg-white border-none rounded-lg p-2 text-sm" type="date" value={dateVPA} onChange={e => setDateVPA(e.target.value)} min={new Date().toISOString().split('T')[0]} />
                 <input className="flex-none w-32 bg-white border-none rounded-lg p-2 text-sm" type="time" value={heureVPA} onChange={e => setHeureVPA(e.target.value)} />
