@@ -29,16 +29,18 @@ export default function NotificationCPAPage() {
   const [filtreActif, setFiltreActif] = useState('EN_ATTENTE')
   const [showModal, setShowModal] = useState(false)
   const [selectedNotif, setSelectedNotif] = useState<any>(null)
-  const [stats, setStats] = useState({ enAttente: 0, prioriteHaute: 0, rdvFixes24h: 0 })
+  const [stats, setStats] = useState({ total: 0, enAttente: 0, prioriteHaute: 0, rdvFixes24h: 0 })
   // IDs déjà vus, pour ne jouer un son que sur une VRAIE nouvelle arrivée détectée entre deux
   // rafraîchissements — jamais au premier chargement de la page (sinon un carillon à chaque
   // ouverture, même quand rien de nouveau ne s'est passé depuis la dernière visite).
   const idsConnus = useRef<Set<string> | null>(null)
 
+  // Pas d'actualisation automatique périodique : chargement au montage seulement, et via le
+  // bouton "Actualiser" du header (onActualiser={charger} ci-dessous) ou en revenant sur la
+  // page — un rafraîchissement toutes les 20s réordonnait/faisait clignoter la liste sans que
+  // l'utilisateur l'ait demandé.
   useEffect(() => {
     charger()
-    const intervalle = setInterval(charger, 20000)
-    return () => clearInterval(intervalle)
   }, [])
 
   const determinerSon = (n: any): TypeNotificationSon =>
@@ -72,6 +74,7 @@ export default function NotificationCPAPage() {
 
       setNotifications(toutes)
       setStats({
+        total: toutes.length,
         enAttente: toutes.filter((n: any) => n.statut === 'EN_ATTENTE').length,
         prioriteHaute: toutes.filter((n: any) => n.estUrgent).length,
         rdvFixes24h: notifs.filter((n: any) => n.statut === 'RDV_PLANIFIE').length,

@@ -188,6 +188,13 @@ export class PatientBlocStatutService {
     dateIntervention: string,
     utilisateurId?: string,
   ): Promise<PatientBloc> {
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    if (new Date(dateIntervention).toISOString().split('T')[0] < aujourdhui) {
+      throw new BadRequestException(
+        "Impossible de planifier l'opération à une date passée.",
+      );
+    }
+
     const patient = await this.patientBlocRepo.findOne({
       where: { patientId },
     });

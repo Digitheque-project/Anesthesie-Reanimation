@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
@@ -51,12 +51,17 @@ export class PatientBlocService {
     patient.patientId = demande.patientId;
     patient.chuId = demande.chuId;
     patient.idDossier = `CHU-${Date.now()}`;
-    patient.groupeSanguin = 'A+';
+    // Jamais un groupe inventé : un groupe sanguin faux est plus dangereux qu'une case vide.
+    patient.groupeSanguin = 'INCONNU';
     patient.niveauUrgence = niveauUrgence;
     patient.statut = PatientStatut.EN_ATTENTE_CPA;
     patient.prescripteurId = demande.sourceServiceId;
     patient.serviceOrigine = demande.sourceServiceName || null;
     patient.serviceOrigineId = demande.sourceServiceId || null;
+    // Sans ceci, "Date et heure prévues de l'opération" restait vide pour tout patient venu
+    // d'une demande CPA externe — la seule date connue à ce stade est celle souhaitée par le
+    // service demandeur, transmise dès la demande.
+    patient.dateIntervention = demande.dateExamenSouhaitee || null;
 
     const saved = await this.patientRepo.save(patient);
     return Array.isArray(saved) ? saved[0] : saved;
@@ -219,7 +224,18 @@ export class PatientBlocService {
     return null;
   }
 
+  private verifierDateInterventionValide(dateIntervention?: string) {
+    if (!dateIntervention) return;
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    if (new Date(dateIntervention).toISOString().split('T')[0] < aujourdhui) {
+      throw new BadRequestException(
+        "Impossible de planifier l'opération à une date passée.",
+      );
+    }
+  }
+
   async admitExisting(dto: any): Promise<PatientBloc> {
+    this.verifierDateInterventionValide(dto?.dateIntervention);
     const patient = this.patientRepo.create({
       ...dto,
       chuId: dto.chuId || this.config.get<string>('externalServices.chuId'),
@@ -231,6 +247,7 @@ export class PatientBlocService {
   }
 
   async registerAndAdmit(dto: any, createdBy: string): Promise<PatientBloc> {
+    this.verifierDateInterventionValide(dto?.dateIntervention);
     const patient = this.patientRepo.create({
       ...dto,
       chuId: dto.chuId || this.config.get<string>('externalServices.chuId'),

@@ -63,4 +63,13 @@ export class PlanningController {
   urgences() {
     return this.service.getUrgencesEnAttente();
   }
+
+  @Get('cpa-a-venir')
+  @ApiOperation({
+    summary:
+      'Rendez-vous CPA à venir (bannière du Fil de travail — patients déjà planifiés)',
+  })
+  cpaAVenir() {
+    return this.service.getProchainsRdvCpa();
+  }
 }

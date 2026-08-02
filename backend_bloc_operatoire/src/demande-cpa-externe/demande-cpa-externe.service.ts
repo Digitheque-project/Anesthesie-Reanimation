@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -17,6 +22,7 @@ import { StatutDemandeCpaPubliqueDto } from './dto/statut-demande-cpa-publique.d
 import { NotificationBackClient } from '../external/notification-back.client';
 import { AccueilClient } from '../external/accueil.client';
 import { PatientBlocService } from '../patient-bloc/patient-bloc.service';
+import { verifierCreneauValide } from '../planning/creneau-validation.util';
 
 @Injectable()
 export class DemandeCpaExterneService {
@@ -117,6 +123,16 @@ export class DemandeCpaExterneService {
     id: string,
     dto: UpdateDemandeCpaDto,
   ): Promise<DemandeCpaExterne> {
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    for (const champ of ['dateCpaPlanifiee', 'dateVpaPlanifiee'] as const) {
+      const valeur = (dto as any)[champ];
+      if (valeur && new Date(valeur).toISOString().split('T')[0] < aujourdhui) {
+        throw new BadRequestException(
+          'Impossible de planifier un rendez-vous à une date passée.',
+        );
+      }
+    }
+
     const demande = await this.findOne(id);
     Object.assign(demande, {
       ...dto,
@@ -137,6 +153,8 @@ export class DemandeCpaExterneService {
     id: string,
     dto: PlanifierDemandeCpaDto,
   ): Promise<DemandeCpaExterne> {
+    await verifierCreneauValide(this.creneauRepo, dto.date, dto.heureDebut);
+
     const demande = await this.findOne(id);
     const type = dto.type ?? TypeRDV.CPA;
 
@@ -179,6 +197,15 @@ export class DemandeCpaExterneService {
       },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // Marque la demande comme vue/écartée dans la cloche de notifications — indépendant du
+  // traitement (statut). Voir NotificationCPAService.marquerLu pour l'équivalent interne.
+  async marquerLu(id: string): Promise<DemandeCpaExterne> {
+    const demande = await this.findOne(id);
+    demande.lu = true;
+    demande.luLe = new Date();
+    return this.repo.save(demande);
   }
 
   async marquerCpaRealisee(

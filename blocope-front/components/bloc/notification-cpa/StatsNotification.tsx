@@ -2,6 +2,7 @@
 
 interface StatsNotificationProps {
   stats: {
+    total: number
     enAttente: number
     prioriteHaute: number
     rdvFixes24h: number
@@ -10,7 +11,19 @@ interface StatsNotificationProps {
 
 export default function StatsNotification({ stats }: StatsNotificationProps) {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+      <div className="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-2">
+        <span className="text-on-surface-variant text-xs font-bold uppercase tracking-widest">
+          Total
+        </span>
+        <div className="flex items-end justify-between gap-4">
+          <span className="text-3xl font-extrabold text-on-surface font-headline">
+            {stats.total}
+          </span>
+          <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
+        </div>
+      </div>
+
       <div className="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-2">
         <span className="text-on-surface-variant text-xs font-bold uppercase tracking-widest">
           En attente

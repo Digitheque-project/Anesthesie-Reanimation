@@ -9,7 +9,7 @@ interface NotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   notifications: any[];
-  onMarkAsRead?: (notificationId: string) => void; // ← Appelé quand une notif est lue
+  onMarkAsRead?: (notification: any) => void; // ← Appelé quand une notif est lue
   onNotificationRead?: (notificationId: string) => void; // ← NOUVEAU
 }
 
@@ -99,11 +99,10 @@ export default function NotificationModal({
       newRead.add(notification.id);
       setReadNotifications(newRead);
 
-      // Persisté en base uniquement pour les notifications internes (NotificationCPA) — une
-      // demande de CPA externe n'a pas de champ `lu`, seul son `statut` fait foi (voir la liste
-      // /bloc/notification-cpa, qui l'exclut déjà une fois planifiée).
-      if (onMarkAsRead && !notification.origineExterne) {
-        onMarkAsRead(notification.id);
+      // Persisté en base pour les deux origines — voir TopBar.handleMarkAsRead, qui route vers
+      // la bonne route selon `notification.origineExterne`.
+      if (onMarkAsRead) {
+        onMarkAsRead(notification);
       }
 
       // ← NOUVEAU: Notifier le parent que la notification a été lue
@@ -129,8 +128,8 @@ export default function NotificationModal({
     notifications.forEach(n => {
       if (n.id && !newRead.has(n.id)) {
         newRead.add(n.id);
-        if (onMarkAsRead && !n.origineExterne) {
-          onMarkAsRead(n.id);
+        if (onMarkAsRead) {
+          onMarkAsRead(n);
         }
         if (onNotificationRead) {
           onNotificationRead(n.id);
@@ -248,8 +247,8 @@ export default function NotificationModal({
                     <div>
                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Reçue le</p>
                       <p className="text-sm font-medium text-gray-800">
-                        {notification.receivedAt
-                          ? new Date(notification.receivedAt).toLocaleString('fr-FR', {
+                        {(notification.receivedAt || notification.createdAt)
+                          ? new Date(notification.receivedAt || notification.createdAt).toLocaleString('fr-FR', {
                               day: '2-digit',
                               month: 'short',
                               year: 'numeric',

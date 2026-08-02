@@ -42,7 +42,6 @@ export default function TableauNotifications({
               <th className="px-4 py-3 text-left">Intervention</th>
               <th className="px-4 py-3 text-left">Opération prévue</th>
               <th className="px-4 py-3 text-left">Service source</th>
-              <th className="px-4 py-3 text-left">Responsable</th>
               <th className="px-4 py-3 text-left">Urgent</th>
               <th className="px-4 py-3 text-left">Action</th>
             </tr>
@@ -99,7 +98,6 @@ export default function TableauNotifications({
                       <span className="text-xs text-on-surface-variant italic">Non communiqué</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-on-surface-variant">{n.prescripteur || n.chirurgienNom || n.professeurCPA || '-'}</td>
                   <td className="px-4 py-3">
                     <span className={`px-3 py-1 text-xs font-bold rounded-full ${styleUrgence(niveau).badge} ${niveau === 'TRES_URGENT' ? 'animate-pulse' : ''}`}>
                       {libelleUrgence(niveau)}

@@ -26,13 +26,36 @@ export default function RendezVousPage() {
   // veut pouvoir se limiter aux patients opérés tel jour, sans devoir chercher parmi tous les
   // patients CPA validée en attente de vérification.
   const [filtreDateVerif, setFiltreDateVerif] = useState('');
+  // Patients déjà planifiés (retirés du fil de prescription dès qu'un créneau CPA leur est
+  // réservé, voir PlanningService.reserverCreneau) : sans cette alerte, il fallait parcourir le
+  // calendrier jour par jour pour se rendre compte qu'un RDV existait déjà à une autre date.
+  const [alerteCpa, setAlerteCpa] = useState<{ total: number; prochaine: string | null } | null>(null);
+  const [voirTousCpa, setVoirTousCpa] = useState(false);
 
-  useEffect(() => { charger(); }, [selectedDate, onglet]);
+  useEffect(() => {
+    if (onglet !== 'CPA') return;
+    planningService.getCpaAVenir()
+      .then((data: any[]) => {
+        const rows = (Array.isArray(data) ? data : []).filter((c: any) =>
+          (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut === 'EN_ATTENTE_CPA'
+        );
+        setAlerteCpa({ total: rows.length, prochaine: rows[0]?.date || null });
+      })
+      .catch(console.error);
+  }, [onglet]);
+
+  useEffect(() => { charger(); }, [selectedDate, onglet, voirTousCpa]);
 
   const charger = async () => {
     setLoading(true);
     try {
-      if (onglet === 'VERIFICATION_VEILLE') {
+      if (onglet === 'CPA' && voirTousCpa) {
+        const data = await planningService.getCpaAVenir();
+        const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
+          (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut === 'EN_ATTENTE_CPA'
+        );
+        setCreneaux(filtres);
+      } else if (onglet === 'VERIFICATION_VEILLE') {
         // La vérification veille ne dépend plus d'un créneau planifié à une date précise : tout
         // patient dont la CPA vient d'être validée (statut CPA_REALISE, apte, non urgent — sans
         // objet pour une VPA en urgence) doit y être visible tant qu'il n'a pas été vérifié,
@@ -92,12 +115,12 @@ export default function RendezVousPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-on-surface font-headline tracking-tight">Fil de travail</h1>
           <p className="text-sm text-on-surface-variant mt-1 capitalize">
-            {onglet === 'VERIFICATION_VEILLE' ? 'Tous les patients CPA validée, en attente de vérification' : formaterDate(selectedDate)}
+            {onglet === 'VERIFICATION_VEILLE' ? 'Tous les patients CPA validée, en attente de vérification' : voirTousCpa ? 'Tous les rendez-vous CPA à venir' : formaterDate(selectedDate)}
           </p>
         </div>
         {onglet === 'CPA' ? (
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit" />
+          <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setVoirTousCpa(false); }} disabled={voirTousCpa}
+            className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed" />
         ) : (
           <div className="flex items-center gap-2">
             <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
@@ -114,6 +137,22 @@ export default function RendezVousPage() {
           </div>
         )}
       </div>
+
+      {/* Alerte RDV CPA déjà planifiés (patients retirés du fil de prescription dès la réservation) */}
+      {onglet === 'CPA' && alerteCpa && alerteCpa.total > 0 && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex flex-wrap items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">event_available</span>
+            {alerteCpa.total} rendez-vous CPA planifié{alerteCpa.total > 1 ? 's' : ''} à venir
+            {alerteCpa.prochaine && ` — le prochain est le ${new Date(alerteCpa.prochaine).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`}
+            {voirTousCpa ? '.' : `. Changez le calendrier ci-dessus pour le voir, ou :`}
+          </span>
+          <button onClick={() => setVoirTousCpa(v => !v)}
+            className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
+            {voirTousCpa ? 'Revenir à la date sélectionnée' : 'Voir tous les rendez-vous CPA'}
+          </button>
+        </div>
+      )}
 
       {/* Tableau */}
       <div className="bg-white border border-outline-variant/30 rounded-2xl overflow-hidden shadow-sm flex flex-col">

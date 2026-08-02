@@ -30,4 +30,9 @@ export const planningService = {
     const { data } = await apiClient.delete(`/planning/${id}`)
     return data
   },
+
+  getCpaAVenir: async () => {
+    const { data } = await apiClient.get('/planning/cpa-a-venir')
+    return data
+  },
 }

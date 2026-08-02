@@ -11,8 +11,13 @@ import {
   TypeRDV,
 } from '../entities/creneau-bloc.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
+import {
+  NotificationCPA,
+  StatutNotificationCPA,
+} from '../entities/notification-cpa.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
+import { verifierCreneauValide } from './creneau-validation.util';
 
 @Injectable()
 export class PlanningService {
@@ -20,6 +25,8 @@ export class PlanningService {
     @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
     @InjectRepository(PatientBloc)
     private patientBlocRepo: Repository<PatientBloc>,
+    @InjectRepository(NotificationCPA)
+    private notificationRepo: Repository<NotificationCPA>,
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
   ) {}
@@ -84,11 +91,29 @@ export class PlanningService {
   }
 
   async reserverCreneau(dto: any) {
+    await verifierCreneauValide(this.creneauRepo, dto.date, dto.heureDebut);
+
     const creneau = this.creneauRepo.create({
       ...dto,
       type: dto.type || TypeRDV.CPA,
     });
-    return this.creneauRepo.save(creneau);
+    const saved = await this.creneauRepo.save(creneau);
+
+    // Ferme une faille où un RDV réservé directement depuis la fiche patient (au lieu du
+    // bouton "Planifier CPA" de la page Notifications, qui appelle explicitement
+    // NotificationCPAService.planifierRDV) laissait la notification bloquée à EN_ATTENTE pour
+    // toujours — le patient restait donc affiché indéfiniment dans le fil de prescription même
+    // après avoir déjà un rendez-vous. Toute réservation de créneau CPA fait maintenant avancer
+    // la notification correspondante, quel que soit l'écran d'où elle a été créée.
+    const patientId = (saved as any).patientId;
+    if (patientId) {
+      await this.notificationRepo.update(
+        { patientId, statut: StatutNotificationCPA.EN_ATTENTE },
+        { statut: StatutNotificationCPA.RDV_PLANIFIE },
+      );
+    }
+
+    return saved;
   }
 
   async annulerCreneau(id: string) {
@@ -100,6 +125,22 @@ export class PlanningService {
 
   async getUrgencesEnAttente() {
     const data = await this.creneauRepo.find({ where: { estUrgence: true } });
+    return this.enrichCreneaux(data);
+  }
+
+  // Rendez-vous CPA/vérification veille à venir (aujourd'hui inclus, jamais annulés) — utilisé
+  // pour la bannière d'alerte du Fil de travail, qui liste les patients déjà planifiés (retirés
+  // du fil de prescription) sans obliger à parcourir le calendrier jour par jour.
+  async getProchainsRdvCpa() {
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    const data = await this.creneauRepo
+      .createQueryBuilder('c')
+      .where('c.type = :type', { type: TypeRDV.CPA })
+      .andWhere('c.date >= :aujourdhui', { aujourdhui })
+      .andWhere('c.statut != :annule', { annule: StatutCreneau.ANNULE })
+      .orderBy('c.date', 'ASC')
+      .addOrderBy('c.heureDebut', 'ASC')
+      .getMany();
     return this.enrichCreneaux(data);
   }
 }

@@ -85,6 +85,15 @@ export class DemandeCpaExterne {
   @Column({ type: 'jsonb', nullable: true })
   payload: any;
 
+  // Vue/écartée par l'utilisateur dans la cloche de notifications — indépendant de `statut`, qui
+  // suit l'avancement du traitement (planifié, réalisé...). Même principe que
+  // NotificationCPA.lu/luLe : une demande peut être vue sans être traitée.
+  @Column({ default: false })
+  lu: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  luLe: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

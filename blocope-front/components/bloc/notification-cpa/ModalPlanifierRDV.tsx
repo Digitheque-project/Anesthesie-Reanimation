@@ -56,7 +56,7 @@ export default function ModalPlanifierRDV({
           {/* Date */}
           <div>
             <label className="text-xs font-bold text-gray-600 block mb-1">Date *</label>
-            <input type="date" value={dateRDV} onChange={e => setDateRDV(e.target.value)}
+            <input type="date" value={dateRDV} onChange={e => setDateRDV(e.target.value)} min={new Date().toISOString().split('T')[0]}
               className="w-full border rounded-lg p-2 text-sm" required />
           </div>
 

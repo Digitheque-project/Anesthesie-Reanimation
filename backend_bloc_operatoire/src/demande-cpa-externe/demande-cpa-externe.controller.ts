@@ -106,6 +106,13 @@ export class DemandeCpaExterneController {
     return this.service.update(id, dto);
   }
 
+  @Patch(':id/lu')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Marquer une demande comme vue dans la cloche de notifications' })
+  marquerLu(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.marquerLu(id);
+  }
+
   @Patch(':id/planifier')
   @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
   @ApiBearerAuth('JWT-auth')

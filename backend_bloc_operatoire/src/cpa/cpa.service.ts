@@ -124,10 +124,22 @@ export class CPAService {
         );
       }
 
-      // Patient urgent/très urgent déclaré APTE : pas de "vérification la veille" à attendre,
-      // l'opération peut avoir lieu le jour même — bascule directe vers PRET_POUR_BLOC pour
-      // qu'il apparaisse immédiatement dans la liste des patients à opérer aujourd'hui.
-      if (nouveauStatut === PatientStatut.CPA_REALISE) {
+      // Une demande de CPA externe ouverte signifie que ce patient n'est suivi ici QUE pour la
+      // CPA elle-même : le service demandeur gère seul la suite (vérification veille, opération)
+      // de son côté, jamais au bloc. Le parcours s'arrête donc à la CPA pour ces patients — urgent
+      // ou non — sans bascule automatique vers PRET_POUR_BLOC (qui les ferait apparaître à tort
+      // dans le programme opératoire du bloc).
+      const demande =
+        dto.decision !== DecisionCPA.REPORT
+          ? await this.demandeCpaExterneService.trouverDemandeOuverte(
+              dto.patientId,
+            )
+          : null;
+
+      // Patient interne urgent/très urgent déclaré APTE : pas de "vérification la veille" à
+      // attendre, l'opération peut avoir lieu le jour même — bascule directe vers PRET_POUR_BLOC
+      // pour qu'il apparaisse immédiatement dans la liste des patients à opérer aujourd'hui.
+      if (nouveauStatut === PatientStatut.CPA_REALISE && !demande) {
         const patientUrgence = await this.patientBlocRepo.findOne({
           where: { patientId: dto.patientId },
         });
@@ -143,47 +155,41 @@ export class CPAService {
         }
       }
 
-      if (dto.decision !== DecisionCPA.REPORT) {
-        const demande =
-          await this.demandeCpaExterneService.trouverDemandeOuverte(
-            dto.patientId,
-          );
-        if (demande) {
-          const apte = saved.decision === DecisionCPA.APTE;
-          await this.demandeCpaExterneService.marquerCpaRealisee(
+      if (demande) {
+        const apte = saved.decision === DecisionCPA.APTE;
+        await this.demandeCpaExterneService.marquerCpaRealisee(
+          demande,
+          saved.id,
+          apte,
+        );
+        try {
+          // Canal standard (service Notification, + sourceCallbackUrl si fournie) — toujours
+          // envoyé, quel que soit le service demandeur.
+          await this.demandeCpaExterneService.notifierResultat(
             demande,
-            saved.id,
-            apte,
+            'CPA_RESULTAT',
+            {
+              decision: saved.decision,
+              dateCpa: saved.dateConsultation,
+              observations: saved.notesIncidents,
+              motifRefus: saved.motifRefus,
+            },
           );
-          try {
-            // Canal standard (service Notification, + sourceCallbackUrl si fournie) — toujours
-            // envoyé, quel que soit le service demandeur.
-            await this.demandeCpaExterneService.notifierResultat(
+          if (!demande.sourceCallbackUrl) {
+            // Intégration historique Endoscopie, en plus (n'a jamais fourni d'URL de rappel).
+            await this.endoscopieClient.notifyCpaResultat(
               demande,
-              'CPA_RESULTAT',
+              saved.decision,
               {
-                decision: saved.decision,
                 dateCpa: saved.dateConsultation,
                 observations: saved.notesIncidents,
-                motifRefus: saved.motifRefus,
               },
             );
-            if (!demande.sourceCallbackUrl) {
-              // Intégration historique Endoscopie, en plus (n'a jamais fourni d'URL de rappel).
-              await this.endoscopieClient.notifyCpaResultat(
-                demande,
-                saved.decision,
-                {
-                  dateCpa: saved.dateConsultation,
-                  observations: saved.notesIncidents,
-                },
-              );
-            }
-          } catch (err) {
-            this.logger.error(
-              `Erreur notification résultat CPA au service demandeur: ${(err as Error).message}`,
-            );
           }
+        } catch (err) {
+          this.logger.error(
+            `Erreur notification résultat CPA au service demandeur: ${(err as Error).message}`,
+          );
         }
       }
 

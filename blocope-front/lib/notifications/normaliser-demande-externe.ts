@@ -15,8 +15,16 @@ export const normaliserDemandeExterne = (d: any) => ({
   prescripteur: d.sourceServiceName || d.sourceServiceId,
   sourceServiceName: d.sourceServiceName || d.sourceServiceId,
   heure: d.createdAt ? new Date(d.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+  // Sans ces deux champs, la cloche de notifications ne pouvait ni trier les demandes externes
+  // avec les autres sources (aucune date exploitable), ni afficher "Reçue le" (toujours N/A).
+  createdAt: d.createdAt,
+  receivedAt: d.createdAt,
   dateIntervention: d.dateExamenSouhaitee,
   urgence: d.urgence,
   estUrgent: (d.urgence ?? 0) >= 4,
   statut: 'EN_ATTENTE',
+  // Lecture persistée côté backend (voir DemandeCpaExterneService.marquerLu) — sans ça, une
+  // demande externe réapparaissait indéfiniment dans la cloche même après avoir été "vue".
+  lu: d.lu ?? false,
+  luLe: d.luLe ?? null,
 })

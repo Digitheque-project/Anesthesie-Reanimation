@@ -32,6 +32,14 @@ export default function TopBar() {
       ]);
       const demandesExternes = (Array.isArray(demandesExternesRes.data) ? demandesExternesRes.data : []).map(normaliserDemandeExterne);
       const notifs = dedupeParPatient([...(notifsRes.data || []), ...demandesExternes]);
+      // Les deux sources sont chacune déjà triées par date décroissante côté backend, mais leur
+      // fusion ici (+ dedupeParPatient, qui ne retrie pas) ne garantit plus cet ordre global —
+      // sans ce tri, une demande externe récente pouvait apparaître sous une prescription plus
+      // ancienne.
+      notifs.sort((a, b) => {
+        const dateOf = (n: any) => new Date(n.createdAt || n.receivedAt || 0).getTime();
+        return dateOf(b) - dateOf(a);
+      });
       setNotifications(notifs);
 
       // Compter les notifications non lues — ni traitées (statut) ni déjà écartées (lu)
@@ -80,13 +88,16 @@ export default function TopBar() {
 
   if (pathname === '/login') return null;
 
-  // Marquer une notification comme lue — persisté en base pour les notifications internes
-  // (voir notificationService.marquerLu), l'état local ci-dessous ne sert qu'à mettre à jour
-  // le compteur/la liste immédiatement, sans attendre le prochain rafraîchissement périodique.
-  const handleMarkAsRead = (notificationId: string) => {
-    notificationService.marquerLu(notificationId).catch((err) =>
-      console.error('Erreur marquage notification lue:', err)
-    );
+  // Marquer une notification comme lue — persisté en base pour les deux origines (voir
+  // notificationService.marquerLu pour les prescriptions internes, et le PATCH dédié pour les
+  // demandes de CPA externes, qui n'ont pas la même route), l'état local ci-dessous ne sert
+  // qu'à mettre à jour le compteur/la liste immédiatement, sans attendre le prochain
+  // rafraîchissement périodique.
+  const handleMarkAsRead = (notification: { id: string; origineExterne?: boolean }) => {
+    const requete = notification.origineExterne
+      ? apiClient.patch(`/demandes-cpa-externes/${notification.id}/lu`)
+      : notificationService.marquerLu(notification.id);
+    requete.catch((err) => console.error('Erreur marquage notification lue:', err));
   };
 
   const handleNotificationRead = (notificationId: string) => {
