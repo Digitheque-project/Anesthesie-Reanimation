@@ -120,7 +120,20 @@ export class PlanningService {
     const creneau = await this.creneauRepo.findOne({ where: { id } });
     if (!creneau) throw new NotFoundException('Créneau non trouvé');
     creneau.statut = StatutCreneau.ANNULE;
-    return this.creneauRepo.save(creneau);
+    const saved = await this.creneauRepo.save(creneau);
+
+    // Symétrique du basculement fait dans reserverCreneau : sans ça, annuler un RDV CPA laissait
+    // la notification bloquée à RDV_PLANIFIE pour toujours — le patient disparaissait du fil de
+    // prescription alors qu'il n'a plus aucun rendez-vous réel. On ne touche pas à REALISE (CPA
+    // déjà faite : annuler un créneau obsolète après coup ne doit pas rouvrir le dossier).
+    if (creneau.type === TypeRDV.CPA && creneau.patientId) {
+      await this.notificationRepo.update(
+        { patientId: creneau.patientId, statut: StatutNotificationCPA.RDV_PLANIFIE },
+        { statut: StatutNotificationCPA.EN_ATTENTE },
+      );
+    }
+
+    return saved;
   }
 
   async getUrgencesEnAttente() {

@@ -44,6 +44,10 @@ export default function ArchivesPage() {
   const [loadingPatients, setLoadingPatients] = useState(true)
   const [loadingPlus, setLoadingPlus] = useState(false)
   const [total, setTotal] = useState(0)
+  // Compte des patients CPA_INAPTE déjà fusionnés dans `patients` — nécessaire pour que le total
+  // affiché reste cohérent quand chargerPlusPatients recalcule sa propre part (SORTI uniquement),
+  // sinon le total "oubliait" ce compte dès le premier scroll (page suivante).
+  const [totalInaptes, setTotalInaptes] = useState(0)
   const [pageActuelle, setPageActuelle] = useState(1)
   const [hasMore, setHasMore] = useState(true)
 
@@ -101,6 +105,7 @@ export default function ArchivesPage() {
       const lignes = data.data || []
       setPatients(filtresActifsPatients([...inaptes, ...lignes]))
       setTotal((data.total || 0) + inaptes.length)
+      setTotalInaptes(inaptes.length)
       setPageActuelle(1)
       setHasMore(lignes.length < (data.total || 0))
     } catch (err) {
@@ -125,7 +130,7 @@ export default function ArchivesPage() {
       })
       const lignes = data.data || []
       setPatients(prev => [...prev, ...filtresActifsPatients(lignes)])
-      setTotal(data.total || 0)
+      setTotal((data.total || 0) + totalInaptes)
       setPageActuelle(pageSuivante)
       setHasMore(pageSuivante * LIMITE_PATIENTS < (data.total || 0))
     } catch (err) {

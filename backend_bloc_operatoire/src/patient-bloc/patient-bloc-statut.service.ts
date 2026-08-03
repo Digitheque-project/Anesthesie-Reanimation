@@ -202,6 +202,9 @@ export class PatientBlocStatutService {
       throw new NotFoundException(`Patient ${patientId} non trouvé`);
 
     const ancienneDate = patient.dateIntervention;
+    const dateInchangee =
+      ancienneDate &&
+      new Date(ancienneDate).getTime() === new Date(dateIntervention).getTime();
     patient.dateIntervention = new Date(dateIntervention);
     const saved = await this.patientBlocRepo.save(patient);
     await this.tracabiliteService.log(
@@ -212,10 +215,11 @@ export class PatientBlocStatutService {
       utilisateurId,
     );
 
-    // Toute modification de la date d'opération (ex. report décidé pendant la CPA) doit être
-    // répercutée sans délai vers le service demandeur — sinon il continue de prévoir l'ancienne
-    // date de son côté.
-    if (patient.serviceOrigineId && patient.serviceOrigine) {
+    // Toute modification RÉELLE de la date d'opération (ex. report décidé pendant la CPA) doit
+    // être répercutée sans délai vers le service demandeur — mais pas un simple ré-enregistrement
+    // de la même date (ex. re-soumission du formulaire), qui déclenchait une alerte "date
+    // modifiée" trompeuse sans rien de changé.
+    if (!dateInchangee && patient.serviceOrigineId && patient.serviceOrigine) {
       try {
         await this.notificationOutgoing.notifyOriginService({
           patientId,

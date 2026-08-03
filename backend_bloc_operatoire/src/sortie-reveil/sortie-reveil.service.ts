@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SortieReveil } from '../entities/sortie-reveil.entity';
+import { ScoreSCCRE } from '../entities/score-sccre.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
@@ -19,6 +20,7 @@ import { UpdateSortieReveilDto } from './dto/update-sortie-reveil.dto';
 export class SortieReveilService {
   constructor(
     @InjectRepository(SortieReveil) private repo: Repository<SortieReveil>,
+    @InjectRepository(ScoreSCCRE) private scoreRepo: Repository<ScoreSCCRE>,
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
     private patientBlocStatutService: PatientBlocStatutService,
@@ -44,6 +46,28 @@ export class SortieReveilService {
         `Checklist de sortie incomplète — items non confirmés : ${itemsNonConfirmes.map(([cle]) => cle).join(', ')}`,
       );
     }
+
+    // Le seuil "score >= 9" n'était vérifié que côté frontend (bouton désactivé) — un appel API
+    // direct pouvait autoriser la sortie d'un patient au réveil non stabilisé. On revérifie ici
+    // le score réellement enregistré, et qu'il appartient bien à CE patient (pas un scoreSCCREId
+    // d'un autre patient envoyé par erreur ou de façon malveillante).
+    const score = await this.scoreRepo.findOne({
+      where: { id: dto.scoreSCCREId },
+    });
+    if (!score) {
+      throw new BadRequestException('Score de réveil (SCCRE) introuvable.');
+    }
+    if (score.patientId !== dto.patientId) {
+      throw new BadRequestException(
+        "Ce score de réveil n'appartient pas à ce patient.",
+      );
+    }
+    if (score.scoreTotal < 9) {
+      throw new BadRequestException(
+        `Score de réveil insuffisant (${score.scoreTotal}/10) — la sortie nécessite un score ≥ 9.`,
+      );
+    }
+
     const saved = await this.repo.save(
       this.repo.create({ ...(dto as any), medecinId: centralUser.userId }),
     );

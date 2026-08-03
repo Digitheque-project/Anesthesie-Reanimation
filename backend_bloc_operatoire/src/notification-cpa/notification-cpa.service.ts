@@ -37,12 +37,15 @@ export class NotificationCPAService {
   }
 
   async findAll(page = 1, limite = 10) {
-    const [internalDataRaw, internalTotal] =
-      await this.notificationRepo.findAndCount({
-        skip: (page - 1) * limite,
-        take: limite,
-        order: { createdAt: 'DESC' },
-      });
+    // Fusionner deux sources paginées séparément (internes + externes) puis ne trancher que la
+    // page demandée sur le résultat déjà tronqué produisait une pagination fausse : la page 2+
+    // réaffichait les mêmes notifications externes qu'en page 1 (jamais de `skip` côté webhook),
+    // et `total`/`pages` ne reflétaient que les lots déjà limités, pas le nombre réel. On
+    // récupère donc l'intégralité des deux sources (volumes hospitaliers, pas internet-scale) et
+    // on ne pagine qu'une fois, sur la liste fusionnée et triée.
+    const internalDataRaw = await this.notificationRepo.find({
+      order: { createdAt: 'DESC' },
+    });
     const identities =
       await this.accueilClient.enrichWithIdentity(internalDataRaw);
     const avecChirurgien = await this.medecinIdentiteService.enrichir(
@@ -78,7 +81,6 @@ export class NotificationCPAService {
 
     const externalData = await this.webhookRepo.find({
       order: { receivedAt: 'DESC' },
-      take: limite,
     });
 
     const merged = [...internalData, ...externalData];

@@ -18,6 +18,8 @@ import { AccueilClient } from '../external/accueil.client';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
+import { CreateChecklistAvantOpDto } from './dto/create-checklist-avant-op.dto';
+import { UpdateChecklistAvantOpDto } from './dto/update-checklist-avant-op.dto';
 
 // Items obligatoires : les 4 items Oui/Non de la phase 1, les 2 confirmations de matériel
 // (doivent être cochées) et les 3 points de vérification croisée (allergie/intubation/
@@ -62,7 +64,7 @@ export class ChecklistAvantOpController {
   @ApiOperation({
     summary: 'Créer une checklist avant opération (Anesthésiste)',
   })
-  async create(@Body() dto: any, @Request() req: any) {
+  async create(@Body() dto: CreateChecklistAvantOpDto, @Request() req: any) {
     verifierChecklistComplete(dto);
     const centralUser = req.centralUser;
     const savedResult = await this.repo.save(
@@ -110,7 +112,7 @@ export class ChecklistAvantOpController {
   @ApiOperation({
     summary: 'Modifier une checklist avant opération (Anesthésiste)',
   })
-  async update(@Param('id') id: string, @Body() dto: any, @Request() req: any) {
+  async update(@Param('id') id: string, @Body() dto: UpdateChecklistAvantOpDto, @Request() req: any) {
     const result = await this.repo.update(id, dto);
     await this.tracabiliteService.log(
       'ChecklistAvantOp',

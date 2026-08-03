@@ -44,9 +44,29 @@ export class ProtocoleOperatoireService {
     if (role === RoleClinique.CHIRURGIEN) data.chirurgienId = centralUser!.userId;
     else if (role === RoleClinique.ANESTHESISTE)
       data.anesthesisteId = centralUser!.userId;
-    const proto = this.repo.create(data);
-    const protoSaved = await this.repo.save(proto);
-    const saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;
+
+    // Chirurgien et anesthésiste partagent un seul enregistrement par patient/jour d'opération
+    // (Instructions Post-Opératoires communes, voir l'entité) : le frontend préremplit son
+    // formulaire depuis un GET puis PATCH s'il trouve déjà une ligne — mais si les deux ouvrent
+    // leur page avant que l'un ait sauvegardé, chacun POST et crée sa propre ligne. findOne()
+    // trie par date de création et ne renvoie que la plus récente : le compte-rendu de celui qui
+    // a sauvegardé en premier redevenait alors invisible. On fusionne donc dans la ligne
+    // existante plutôt que d'en créer une seconde.
+    const existant = data.patientId && data.dateOperation
+      ? await this.repo.findOne({
+          where: { patientId: data.patientId, dateOperation: data.dateOperation },
+        })
+      : null;
+
+    let saved: ProtocoleOperatoire;
+    if (existant) {
+      saved = await this.repo.save(Object.assign(existant, data));
+    } else {
+      const proto = this.repo.create(data);
+      const protoSaved = await this.repo.save(proto);
+      saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;
+    }
+
     if (drainages?.length)
       await this.drainageRepo.save(
         drainages.map((d: any) =>

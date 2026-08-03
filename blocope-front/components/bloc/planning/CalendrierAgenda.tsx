@@ -36,8 +36,13 @@ export default function CalendrierAgenda({ type, onSelectDate }: CalendrierAgend
   useEffect(() => {
     if (!ouvert) return
     setChargement(true)
-    const debut = mois.toISOString().split('T')[0]
-    const fin = new Date(mois.getFullYear(), mois.getMonth() + 1, 0).toISOString().split('T')[0]
+    // Construit la date locale "YYYY-MM-DD" à la main plutôt que via toISOString() (conversion
+    // UTC) : dans un fuseau en avance sur UTC (ex. Madagascar, UTC+3), minuit local convertit en
+    // UTC retombe sur la veille — le dernier jour du mois (voire tout le mois selon l'heure)
+    // disparaissait silencieusement de l'agenda.
+    const versISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const debut = versISO(mois)
+    const fin = versISO(new Date(mois.getFullYear(), mois.getMonth() + 1, 0))
     planningService.getPlanningSemaine(debut, fin, type)
       .then((data: any) => setCreneaux(Array.isArray(data) ? data : []))
       .catch(() => setCreneaux([]))

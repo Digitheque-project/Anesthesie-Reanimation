@@ -82,8 +82,12 @@ export class DemandeCpaExterneController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Lister les demandes de CPA externes' })
   @ApiQuery({ name: 'statut', required: false, enum: StatutDemandeCpaExterne })
-  findAll(@Query('statut') statut?: StatutDemandeCpaExterne) {
-    return this.service.findAll(statut);
+  @ApiQuery({ name: 'patientId', required: false })
+  findAll(
+    @Query('statut') statut?: StatutDemandeCpaExterne,
+    @Query('patientId') patientId?: string,
+  ) {
+    return this.service.findAll(statut, patientId);
   }
 
   @Get(':id')

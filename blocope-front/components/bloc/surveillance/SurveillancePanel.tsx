@@ -41,6 +41,18 @@ export default function SurveillancePanel({ patientId, activiteId }: { patientId
   const alarme = useSurveillanceAlarm(5)
   const { on } = useOperationRealtime(patientId)
 
+  // Sans ce chargement initial, l'historique paraissait vide à chaque rechargement de page ou en
+  // passant de l'écran per-opératoire à la salle de réveil (même activiteId réutilisé pour une
+  // chronologie continue) — alors que des mesures existaient déjà en base pour ce patient.
+  useEffect(() => {
+    if (!activiteId) { setConstantes([]); return }
+    let annule = false
+    apiClient.get(`/activites-per-op/${activiteId}`)
+      .then(({ data }) => { if (!annule) setConstantes(Array.isArray(data?.constantes) ? data.constantes : []) })
+      .catch(console.error)
+    return () => { annule = true }
+  }, [activiteId])
+
   useEffect(() => on('constante:ajoutee', (payload: any) => {
     if (payload?.patientId !== patientId || !payload?.constante) return
     setConstantes(prev => (prev.some(c => c.id === payload.constante.id) ? prev : [...prev, payload.constante]))

@@ -96,9 +96,12 @@ export class DemandeCpaExterneService {
   // L'identité (nom/prénom) vit dans le service Accueil, jamais dans cette table — le front ne
   // doit jamais afficher patientId à la place (interdit) : sans cet enrichissement, il n'a que
   // l'ID à se mettre sous la dent.
-  async findAll(statut?: StatutDemandeCpaExterne) {
+  async findAll(statut?: StatutDemandeCpaExterne, patientId?: string) {
+    const where: Record<string, unknown> = {};
+    if (statut) where.statut = statut;
+    if (patientId) where.patientId = patientId;
     const demandes = await this.repo.find({
-      where: statut ? { statut } : {},
+      where,
       order: { createdAt: 'DESC' },
     });
     try {
@@ -213,10 +216,14 @@ export class DemandeCpaExterneService {
     cpaId: string,
     apte: boolean,
   ): Promise<DemandeCpaExterne> {
+    // Appelé uniquement pour une décision APTE ou INAPTE (voir CPAService.create, qui exclut
+    // explicitement REPORT de cet appel — REPORT passe par un tout autre canal, notifierResultat
+    // 'CPA_REPORT', sans jamais toucher `statut`). `apte` ne distingue donc jamais "réalisée" de
+    // "à refaire" : INAPTE reste une CPA bel et bien réalisée, pas un report — utiliser REPORTEE
+    // ici la confondait avec un vrai report aux yeux de tout service demandeur ne regardant que
+    // ce champ. La décision fine (APTE/INAPTE) reste récupérable via cpaId (voir findStatutPublic).
     demande.cpaId = cpaId;
-    demande.statut = apte
-      ? StatutDemandeCpaExterne.CPA_REALISEE
-      : StatutDemandeCpaExterne.REPORTEE;
+    demande.statut = StatutDemandeCpaExterne.CPA_REALISEE;
     return this.repo.save(demande);
   }
 

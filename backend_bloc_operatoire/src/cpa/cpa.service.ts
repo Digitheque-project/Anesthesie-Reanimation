@@ -5,13 +5,17 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CPA, DecisionCPA, StatutValidationProf } from '../entities/cpa.entity';
 import {
   PatientBloc,
   PatientStatut,
   NiveauUrgence,
 } from '../entities/patient-bloc.entity';
+import {
+  NotificationCPA,
+  StatutNotificationCPA,
+} from '../entities/notification-cpa.entity';
 import { Premedicament } from '../entities/premedicament.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { EndoscopieClient } from '../external/endoscopie.client';
@@ -37,6 +41,8 @@ export class CPAService {
     private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(Premedicament)
     private premedRepository: Repository<Premedicament>,
+    @InjectRepository(NotificationCPA)
+    private notificationCpaRepo: Repository<NotificationCPA>,
     private accueilClient: AccueilClient,
     private endoscopieClient: EndoscopieClient,
     private notificationOutgoing: NotificationOutgoingService,
@@ -132,6 +138,25 @@ export class CPAService {
           dto.patientId,
           nouveauStatut,
           centralUser.userId,
+        );
+      }
+
+      // Une décision APTE/INAPTE ferme réellement le dossier de prescription : la notification
+      // CPA correspondante ne doit plus apparaître dans le fil "Prescription" (EN_ATTENTE), qu'un
+      // RDV ait été planifié via ce fil ou non (cas patient urgent en VPA directe, ou CPA réalisée
+      // en accédant au dossier patient sans passer par la planification) — sans cette bascule, ces
+      // patients pourtant déjà traités restaient indéfiniment visibles comme "en attente".
+      // REPORT est exclu : la CPA elle-même reste à refaire, le patient doit rester actionnable.
+      if (dto.decision !== DecisionCPA.REPORT) {
+        await this.notificationCpaRepo.update(
+          {
+            patientId: dto.patientId,
+            statut: In([
+              StatutNotificationCPA.EN_ATTENTE,
+              StatutNotificationCPA.RDV_PLANIFIE,
+            ]),
+          },
+          { statut: StatutNotificationCPA.REALISE },
         );
       }
 
@@ -309,14 +334,21 @@ export class CPAService {
 
     // Le Responsable CPA seul (sans Major) avait posé la décision sans encore passer par
     // l'anesthésiste (médicaments + vérification veille) — cette mise à jour EST ce passage : la
-    // boucle est bouclée, la CPA devient validée.
+    // boucle est bouclée, la CPA devient validée. Pour une décision APTE, on exige que ce
+    // contenu soit réellement fourni (pas juste n'importe quelle mise à jour du même rôle) ;
+    // pour INAPTE/REPORT, ces deux champs sont sans objet (voir consultation-cpa/page.tsx, qui ne
+    // les envoie jamais hors APTE) donc le simple passage de l'anesthésiste/major suffit.
     const roleUtilisateur = centralUser
       ? matchRoleClinique(centralUser.role)
       : null;
+    const contientSuiviAnesthesiste =
+      (dto as any).medicamentsAnesthesieReanimation !== undefined ||
+      (dto as any).dateVerificationVeille !== undefined;
     if (
       cpa.statutValidationProf === StatutValidationProf.EN_ATTENTE_VALIDATION &&
       (roleUtilisateur === RoleClinique.ANESTHESISTE ||
-        roleUtilisateur === RoleClinique.MAJOR)
+        roleUtilisateur === RoleClinique.MAJOR) &&
+      (cpa.decision !== DecisionCPA.APTE || contientSuiviAnesthesiste)
     ) {
       cpa.statutValidationProf = StatutValidationProf.VALIDE;
     }

@@ -184,6 +184,11 @@ function ConsultationCpaPageContent() {
   const [chargementCpa, setChargementCpa] = useState(true);
   const [historiqueCpa, setHistoriqueCpa] = useState<any[]>([]);
   const [ongletHistorique, setOngletHistorique] = useState(false);
+  // Patient suivi ici uniquement pour sa CPA/VPA, à la demande d'un service externe (autre CHU) :
+  // son parcours s'arrête à la décision, il ne rejoint jamais le Fil de travail ni le programme
+  // opératoire du bloc — voir le branchement post-validation dans handleValider.
+  const [estDemandeExterne, setEstDemandeExterne] = useState(false);
+  const [termine, setTermine] = useState(false);
 
   const estResponsableOuMajor = estResponsableCpa || estMajor;
 
@@ -204,6 +209,13 @@ function ConsultationCpaPageContent() {
     if (patientId) {
       patientService.getById(patientId).then(setPatient).catch(console.error);
     }
+  }, [patientId]);
+
+  useEffect(() => {
+    if (!patientId) return;
+    apiClient.get('/demandes-cpa-externes', { params: { patientId } })
+      .then(({ data }) => setEstDemandeExterne(Array.isArray(data) && data.length > 0))
+      .catch(() => setEstDemandeExterne(false));
   }, [patientId]);
 
   // Le Major/Responsable CPA remplit et valide la CPA en premier ; l'anesthésiste rouvre
@@ -324,7 +336,11 @@ function ConsultationCpaPageContent() {
   // ajouter les médicaments d'anesthésie/réanimation et planifier la vérification veille. Un
   // anesthésiste réalisant seul sa propre CPA (aucun Major/Responsable CPA impliqué) garde tous
   // les droits de bout en bout, comme avant.
-  const cpaDejaRemplie = !!cpaExistante;
+  // Une CPA existante dont la décision est REPORT signifie "à refaire" (voir CPAService.create) —
+  // sans cette exclusion, le patient restait bloqué indéfiniment en lecture seule sur l'examen/la
+  // décision (seuls médicaments + vérification veille restaient éditables), sans aucun moyen de
+  // reposer une vraie décision APTE/INAPTE.
+  const cpaDejaRemplie = !!cpaExistante && cpaExistante.decision !== 'REPORT';
   const peutEditerExamenEtDecision = !cpaDejaRemplie && (estResponsableOuMajor || estAnesthesisteConnecte);
   // Le Major cumule les deux rôles (Responsable CPA + Anesthésiste) : contrairement à un
   // Responsable CPA seul, il peut aussi compléter les médicaments d'anesthésie/réanimation et
@@ -566,7 +582,12 @@ function ConsultationCpaPageContent() {
           }
         }
 
-        if (estUrgent) {
+        if (estDemandeExterne) {
+          // Patient d'un service externe : son parcours s'arrête à cette décision (voir
+          // CPAService.create, qui ne le fait jamais basculer vers le programme du bloc) — ni le
+          // Fil de travail ni "patient du jour"/l'arrivée au bloc ne le montreront jamais.
+          setTermine(true);
+        } else if (estUrgent) {
           // Urgent/très urgent APTE : le patient bascule directement dans le programme
           // opératoire du jour (voir CPAService.create, bascule PRET_POUR_BLOC), jamais dans le
           // Fil de travail — proposer à l'anesthésiste d'enchaîner directement sur sa prise en
@@ -604,8 +625,12 @@ function ConsultationCpaPageContent() {
         });
         await planifierVerificationVeille(patientIdFinal);
 
-        alert('✅ Médicaments et vérification veille enregistrés !');
-        router.push('/bloc/rendez-vous');
+        if (estDemandeExterne) {
+          setTermine(true);
+        } else {
+          alert('✅ Médicaments et vérification veille enregistrés !');
+          router.push('/bloc/rendez-vous');
+        }
       }
     } catch (err: any) {
       console.error('❌ Erreur validation:', err);
@@ -862,6 +887,36 @@ function ConsultationCpaPageContent() {
     `w-full bg-surface-container-low border-2 rounded-xl p-3 text-sm ${base} transition-colors focus:ring-2 focus:ring-primary/30 outline-none disabled:opacity-60 ${
       valeur ? 'border-transparent' : 'border-amber-300/70'
     }`;
+
+  // Patient suivi ici uniquement pour sa CPA/VPA (demande d'un service externe) : une fois la
+  // décision prise, son parcours s'arrête — pas de Fil de travail ni de programme opératoire du
+  // bloc où il apparaîtrait. Plutôt que de le rediriger vers un écran qui ne le montrera jamais,
+  // on propose directement les deux seules destinations pertinentes.
+  if (termine) {
+    return (
+      <main className="p-4">
+        <div className="max-w-md mx-auto mt-16 bg-surface-container-lowest rounded-2xl shadow-lg p-8 text-center space-y-5">
+          <span className="material-symbols-outlined text-5xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
+          <div>
+            <h1 className="text-lg font-bold font-headline">{estUrgent ? 'VPA' : 'CPA'} enregistrée</h1>
+            <p className="text-sm text-on-surface-variant mt-1">
+              La décision pour {patientNom} a été transmise au service demandeur. Ce dossier ne relève plus du programme du bloc.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button type="button" onClick={() => router.push('/bloc')}
+              className="w-full flex items-center justify-center gap-2 p-3 bg-primary text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity">
+              <span className="material-symbols-outlined text-lg">home</span> Retour à l'accueil
+            </button>
+            <button type="button" onClick={() => router.push(`/bloc/dossier-patient/${patientId}/complet`)}
+              className="w-full flex items-center justify-center gap-2 p-3 bg-surface-container-low text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container transition-colors">
+              <span className="material-symbols-outlined text-lg">folder_open</span> Voir l'archive
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="p-4 space-y-2">

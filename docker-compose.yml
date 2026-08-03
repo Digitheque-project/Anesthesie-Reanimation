@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bloc_operatoire
+      POSTGRES_USER: bloc_operatoire
+      POSTGRES_PASSWORD: bloc_operatoire
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloc_operatoire"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend_bloc_operatoire
+    restart: unless-stopped
+    env_file:
+      - ./backend_bloc_operatoire/.env
+    environment:
+      # Écrase la valeur du .env (pointant vers Render en prod) par la base locale du compose —
+      # les autres variables (services externes multi-CHU, JWT...) restent celles du .env.
+      DATABASE_URL: postgresql://bloc_operatoire:bloc_operatoire@postgres:5432/bloc_operatoire
+      PORT: 3333
+    ports:
+      - "3333:3333"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./blocope-front
+      args:
+        # Passés en --build-arg (figés dans le bundle Next.js) : voir blocope-front/Dockerfile —
+        # renseigner ./blocope-front/.env.local pour que docker-compose les injecte ici.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+        NEXT_PUBLIC_CENTRAL_LOGIN_URL: ${NEXT_PUBLIC_CENTRAL_LOGIN_URL:-}
+        NEXT_PUBLIC_DOSSIER_PATIENT_API_URL: ${NEXT_PUBLIC_DOSSIER_PATIENT_API_URL:-}
+        NEXT_PUBLIC_HOSPITALISATION_API_URL: ${NEXT_PUBLIC_HOSPITALISATION_API_URL:-}
+        NEXT_PUBLIC_NOTIFICATION_WS_URL: ${NEXT_PUBLIC_NOTIFICATION_WS_URL:-}
+        NEXT_PUBLIC_PRESCRIPTION_API_URL: ${NEXT_PUBLIC_PRESCRIPTION_API_URL:-}
+        NEXT_PUBLIC_PRISE_EN_CHARGE_API_URL: ${NEXT_PUBLIC_PRISE_EN_CHARGE_API_URL:-}
+        NEXT_PUBLIC_SERVICE_CHU_API_BASE_URL: ${NEXT_PUBLIC_SERVICE_CHU_API_BASE_URL:-}
+        NEXT_PUBLIC_SERVICE_ID: ${NEXT_PUBLIC_SERVICE_ID:-}
+        NEXT_PUBLIC_UPLOAD_API_URL: ${NEXT_PUBLIC_UPLOAD_API_URL:-}
+    restart: unless-stopped
+    env_file:
+      - ./blocope-front/.env.local
+    environment:
+      # Variables serveur (lues à l'exécution, pas figées au build) — voir lib/api routes proxy.
+      ACCUEIL_API_URL: ${ACCUEIL_API_URL:-}
+      USER_SERVICE_API_URL: ${USER_SERVICE_API_URL:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

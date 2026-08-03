@@ -70,7 +70,19 @@ export class BonCommandeService {
   ): Promise<BonCommandeAnesthesie> {
     const bon = await this.bonRepo.findOne({ where: { id } });
     if (!bon) throw new NotFoundException(`Bon ${id} non trouvé`);
-    return this.bonRepo.save(Object.assign(bon, dto));
+    const { items, ...data } = dto as any;
+    const updated = await this.bonRepo.save(Object.assign(bon, data));
+    // Remplacement complet du set d'items à chaque sauvegarde — sans ce nettoyage préalable,
+    // TypeORM (relation en cascade, sans orphanedRowAction) insère les nouveaux items reçus (sans
+    // id) en plus des anciens au lieu de les remplacer, doublant la liste à chaque modification.
+    if (items !== undefined) {
+      await this.itemRepo.delete({ bonCommande: { id } as any });
+      if (items.length)
+        await this.itemRepo.save(
+          items.map((i: any) => this.itemRepo.create({ ...i, bonCommande: updated })),
+        );
+    }
+    return this.findOne(updated.id);
   }
   async remove(id: string): Promise<{ message: string }> {
     const bon = await this.bonRepo.findOne({ where: { id } });
