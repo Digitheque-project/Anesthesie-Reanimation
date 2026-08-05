@@ -24,6 +24,10 @@ const navItems: NavItemColore[] = [
   { label: 'Prescription', href: '/bloc/notification-cpa', icon: 'mark_email_unread', couleur: { bg: 'bg-amber-100', texte: 'text-amber-600' }, rolesExclus: [RoleClinique.CHIRURGIEN, RoleClinique.IBODE] },
   { label: 'Fil de travail', href: '/bloc/rendez-vous', icon: 'event_note', couleur: { bg: 'bg-violet-100', texte: 'text-violet-600' }, rolesExclus: [RoleClinique.CHIRURGIEN, RoleClinique.IBODE] },
   { label: 'Programme opératoire', href: '/bloc/patient-du-jour', icon: 'medical_services', couleur: { bg: 'bg-teal-100', texte: 'text-teal-600' }, rolesExclus: [RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA] },
+  // Patients venus par une demande de CPA externe d'un service qui n'opère pas au Bloc
+  // (Imagerie, Endoscopie, Urgence...) : mêmes checklists que le Programme opératoire, mêmes
+  // rôles concernés — seule la liste de patients diffère (voir lib/programme-non-operatoire.ts).
+  { label: 'Programme non-opératoire', href: '/bloc/programme-non-operatoire', icon: 'move_up', couleur: { bg: 'bg-cyan-100', texte: 'text-cyan-600' }, rolesExclus: [RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA] },
   { label: 'Salle de réveil', href: '/bloc/salle-de-reveil', icon: 'king_bed', couleur: { bg: 'bg-rose-100', texte: 'text-rose-600' }, rolesExclus: [RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA, RoleClinique.CHIRURGIEN, RoleClinique.IBODE] },
   { label: 'Archives', href: '/bloc/archives', icon: 'folder_special', couleur: { bg: 'bg-indigo-100', texte: 'text-indigo-600' } },
   { label: 'Rapport', href: '/bloc/rapport', icon: 'monitoring', couleur: { bg: 'bg-emerald-100', texte: 'text-emerald-600' } },

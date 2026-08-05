@@ -2,13 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import PatientStatsCards from '@/components/bloc/patient-du-jour/PatientStatsCards'
-import PatientFilters from '@/components/bloc/patient-du-jour/PatientFilters'
-import PatientsListTable from '@/components/bloc/patient-du-jour/PatientsListTable'
+import PatientFiltersNonOp from '@/components/bloc/programme-non-operatoire/PatientFiltersNonOp'
+import PatientsListTableNonOp from '@/components/bloc/programme-non-operatoire/PatientsListTableNonOp'
 import { patientService, notificationService } from '@/lib/api'
-import type { FiltresPatient } from '@/types/bloc'
 import { estServiceNonOperatoire } from '@/lib/programme-non-operatoire'
+import type { FiltresPatient } from '@/types/bloc'
 
-export default function PatientDuJourPage() {
+// Miroir de app/bloc/patient-du-jour/page.tsx (Programme opératoire) : même mécanique, mêmes
+// statuts (PRET_POUR_BLOC, EN_COURS_OPERATION), mêmes checklists — seule différence, les patients
+// listés ici viennent d'une demande de CPA externe d'un service qui n'opère jamais au Bloc
+// (Imagerie/scanner, Endoscopie, Urgence...) : l'anesthésiste du Bloc se déplace vers eux, mais
+// utilise cette même interface. Voir patient-du-jour/page.tsx pour le filtre symétrique qui les
+// exclut du programme opératoire classique.
+export default function ProgrammeNonOperatoirePage() {
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filtres, setFiltres] = useState<FiltresPatient>({ statut: '', specialite: '', recherche: '', sexe: '', heureDebut: '', heureFin: '' })
@@ -19,9 +25,6 @@ export default function PatientDuJourPage() {
   const charger = async () => {
     try {
       setLoading(true)
-      // Le programme opératoire n'est plus figé sur "aujourd'hui" : on peut naviguer vers
-      // n'importe quelle date. Les patients prêts/en cours dont l'intervention est prévue ce
-      // jour-là (ou sans date renseignée, à traiter en priorité) y apparaissent.
       const [pretRes, encoursRes, notifsRes] = await Promise.all([
         patientService.getAll({ statut: 'PRET_POUR_BLOC', limite: 100 }),
         patientService.getAll({ statut: 'EN_COURS_OPERATION', limite: 100 }),
@@ -29,15 +32,10 @@ export default function PatientDuJourPage() {
       ])
       const notifsData = notifsRes.data || []
       const estDateSelectionnee = (p: any) => !p.dateIntervention || new Date(p.dateIntervention).toISOString().split('T')[0] === selectedDate
-      // Les patients venus par une demande de CPA externe d'un service qui n'opère pas au Bloc
-      // (Imagerie, Endoscopie, Urgence...) ne font pas partie du programme opératoire du Bloc —
-      // ils vivent dans une liste séparée, "Programme non-opératoire" (voir
-      // app/bloc/programme-non-operatoire), avec le même traitement mais jamais mélangés ici.
       const data = [...(pretRes.data || []), ...(encoursRes.data || [])]
         .filter(estDateSelectionnee)
-        .filter((p: any) => !estServiceNonOperatoire(p.serviceOrigine))
+        .filter((p: any) => estServiceNonOperatoire(p.serviceOrigine))
 
-      // Fusionner : associer chaque patient à sa notification (si existe)
       const liste = data.map((p: any) => {
         const notif = notifsData.find((n: any) => n.patientId === p.id || n.patient?.id === p.id)
         return {
@@ -47,7 +45,7 @@ export default function PatientDuJourPage() {
           sexe: p.sexe || '',
           dateNaissance: p.dateNaissance || null,
           operation: notif?.intervention || p.libelle || 'Non spécifiée',
-          typeChirurgie: p.typeChirurgie || '',
+          serviceOrigine: p.serviceOrigine || '',
           etat: p.niveauUrgence === 'TRES_URGENT' ? 'TRES_URGENT' : p.niveauUrgence === 'URGENT' ? 'URGENT' : 'NORMAL',
           statut: p.statut || '',
           chirurgien: notif?.chirurgien?.nom || p.chirurgien_nom || '',
@@ -64,12 +62,8 @@ export default function PatientDuJourPage() {
     }
   }
 
-  // Tous les filtres (urgence, spécialité, recherche nom, sexe, plage horaire) s'appliquent
-  // côté client : le paramètre `recherche` du backend ne filtre que l'idDossier
-  // (patient-bloc.controller.ts), et /patients/search est un stub qui renvoie toujours [].
   const patientsFiltres = patients.filter(p => {
     if (filtres.statut && p.etat !== filtres.statut) return false
-    if (filtres.specialite && p.typeChirurgie !== filtres.specialite) return false
     if (filtres.sexe && p.sexe !== filtres.sexe) return false
     if (filtres.recherche) {
       const q = filtres.recherche.trim().toLowerCase()
@@ -95,15 +89,15 @@ export default function PatientDuJourPage() {
     <div className="p-8 flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-extrabold text-on-surface font-headline tracking-tight">
-          Programme Opératoire
+          Programme Non-Opératoire
         </h1>
         <p className="text-on-surface-variant text-sm font-medium mt-1">
-          Liste des patients à opérer — {new Date(selectedDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          Patients pris en charge par l'anesthésiste hors du Bloc (Imagerie, Endoscopie, Urgence...) — {new Date(selectedDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
       <PatientStatsCards stats={stats} />
-      <PatientFilters
+      <PatientFiltersNonOp
         date={selectedDate}
         onDateChange={setSelectedDate}
         onFilterChange={setFiltres}
@@ -112,7 +106,7 @@ export default function PatientDuJourPage() {
       {loading ? (
         <div className="text-center py-12 text-gray-500">🔄 Chargement des patients...</div>
       ) : (
-        <PatientsListTable patients={patientsFiltres} />
+        <PatientsListTableNonOp patients={patientsFiltres} />
       )}
     </div>
   )

@@ -24,9 +24,13 @@ export function useRole() {
     estChirurgien: role === RoleClinique.CHIRURGIEN,
     estIbode: role === RoleClinique.IBODE,
     estMajor: role === RoleClinique.MAJOR,
-    // Planifier un RDV CPA : Responsable CPA ou Major (miroir de @RequireRoleClinique sur
-    // POST /planning/reserver côté backend).
-    peutPlanifierCpa: role === RoleClinique.RESPONSABLE_CPA || role === RoleClinique.MAJOR,
+    // Planifier un RDV CPA : Responsable CPA, Major ou Anesthésiste (miroir de
+    // @RequireRoleClinique sur POST /planning/reserver, PATCH /notifications-cpa/:id/planifier
+    // et PATCH /demandes-cpa-externes/:id/planifier côté backend).
+    peutPlanifierCpa:
+      role === RoleClinique.RESPONSABLE_CPA ||
+      role === RoleClinique.MAJOR ||
+      role === RoleClinique.ANESTHESISTE,
     peutGererCreneaux: role === RoleClinique.MAJOR,
     peutValiderSortieReveil: role === RoleClinique.ANESTHESISTE,
     // Check-list après intervention (Sign Out OMS) : réservée à l'anesthésiste, miroir de

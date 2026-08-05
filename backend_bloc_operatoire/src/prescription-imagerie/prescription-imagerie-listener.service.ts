@@ -18,6 +18,7 @@ import {
 } from '../external/prescription-imagerie.client';
 import { PrescriptionService } from '../prescription/prescription.service';
 import { ServiceRegistryClient } from '../external/service-registry.client';
+import { NotificationBackClient } from '../external/notification-back.client';
 
 // Ni le service Prescription (bloc), ni le service Prescription (imagerie) ne nous poussent
 // jamais la donnée directement : ils créent une prescription puis avertissent le service
@@ -48,6 +49,7 @@ export class PrescriptionImagerieListenerService
     private readonly prescriptionImagerieClient: PrescriptionImagerieClient,
     private readonly prescriptionService: PrescriptionService,
     private readonly serviceRegistryClient: ServiceRegistryClient,
+    private readonly notificationBackClient: NotificationBackClient,
     @InjectRepository(NotificationCPA)
     private readonly notificationRepo: Repository<NotificationCPA>,
   ) {
@@ -174,7 +176,7 @@ export class PrescriptionImagerieListenerService
       prescription.serviceIdSource,
     );
 
-    await this.notificationRepo.save(
+    const notif = await this.notificationRepo.save(
       this.notificationRepo.create({
         heurePrescription: new Date().toTimeString().substring(0, 5),
         patientId: prescription.patientId,
@@ -190,5 +192,25 @@ export class PrescriptionImagerieListenerService
     this.logger.log(
       `📋 Prescription imagerie ingérée pour le patient ${prescription.patientId} (${prescription.type || 'examen'})`,
     );
+
+    // Sans ceci, cette notification n'était poussée à personne en temps réel : elle restait
+    // invisible côté TopBar (pas de bip, pas de badge) jusqu'au prochain rafraîchissement
+    // périodique (10s) — contrairement aux prescriptions bloc et aux demandes de CPA externes,
+    // qui repoussent bien leur propre évènement après ingestion (voir PrescriptionService.ingerer
+    // et DemandeCpaExterneService.create).
+    await this.notificationBackClient.notifyService({
+      serviceId: this.serviceId,
+      title: estUrgent
+        ? '🔴 Prescription imagerie urgente reçue'
+        : '📋 Nouvelle prescription imagerie reçue',
+      message: `${prescription.type || 'Examen imagerie'} — patient ${prescription.patientId}`,
+      type: 'new_prescription',
+      source: 'bloc-operatoire',
+      data: {
+        patientId: prescription.patientId,
+        notificationId: notif.id,
+        urgence: prescription.urgence,
+      },
+    });
   }
 }

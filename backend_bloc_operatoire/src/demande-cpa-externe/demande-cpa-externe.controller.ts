@@ -118,11 +118,15 @@ export class DemandeCpaExterneController {
   }
 
   @Patch(':id/planifier')
-  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
+  @RequireRoleClinique(
+    RoleClinique.RESPONSABLE_CPA,
+    RoleClinique.MAJOR,
+    RoleClinique.ANESTHESISTE,
+  )
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary:
-      'Planifier le rendez-vous CPA/VPA pour cette demande externe (Responsable CPA, Major)',
+      'Planifier le rendez-vous CPA/VPA pour cette demande externe (Responsable CPA, Major, Anesthésiste)',
   })
   planifier(
     @Param('id', ParseUUIDPipe) id: string,

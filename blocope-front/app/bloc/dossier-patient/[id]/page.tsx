@@ -248,7 +248,7 @@ function DossierPatientPageContent() {
             </p>
             {!peutPlanifierCpa && (
               <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Planification réservée au Responsable CPA ou au Major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+                Planification réservée au Responsable CPA, au Major ou à l'Anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}.
               </div>
             )}
             <button onClick={() => setShowPlanifier(true)} disabled={submitting || !peutPlanifierCpa}

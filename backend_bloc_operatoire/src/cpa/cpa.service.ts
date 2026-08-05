@@ -160,22 +160,23 @@ export class CPAService {
         );
       }
 
-      // Une demande de CPA externe ouverte signifie que ce patient n'est suivi ici QUE pour la
-      // CPA elle-même : le service demandeur gère seul la suite (vérification veille, opération)
-      // de son côté, jamais au bloc. Le parcours s'arrête donc à la CPA pour ces patients — urgent
-      // ou non — sans bascule automatique vers PRET_POUR_BLOC (qui les ferait apparaître à tort
-      // dans le programme opératoire du bloc).
-      // Recherché même pour REPORT désormais : le service demandeur doit être notifié que la CPA
-      // est reportée (à refaire), pas seulement quand elle est finalisée (APTE/INAPTE) — voir plus
+      // Recherché pour REPORT aussi : le service demandeur doit être notifié que la CPA est
+      // reportée (à refaire), pas seulement quand elle est finalisée (APTE/INAPTE) — voir plus
       // bas, où seul le cas REPORT évite marquerCpaRealisee (la demande externe n'est pas close).
       const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(
         dto.patientId,
       );
 
-      // Patient interne urgent/très urgent déclaré APTE : pas de "vérification la veille" à
-      // attendre, l'opération peut avoir lieu le jour même — bascule directe vers PRET_POUR_BLOC
-      // pour qu'il apparaisse immédiatement dans la liste des patients à opérer aujourd'hui.
-      if (nouveauStatut === PatientStatut.CPA_REALISE && !demande) {
+      // Patient urgent/très urgent déclaré APTE : pas de "vérification la veille" à attendre,
+      // l'opération (ou l'acte réalisé avec l'anesthésiste du Bloc) peut avoir lieu le jour même —
+      // bascule directe vers PRET_POUR_BLOC pour qu'il apparaisse immédiatement dans la liste des
+      // patients programmés du jour. S'applique aussi aux patients venus par demande de CPA
+      // externe (Endoscopie, Imagerie, Urgence...) : ils atterrissent alors dans le Programme
+      // non-opératoire (jamais dans le Programme opératoire — voir la distinction par
+      // serviceOrigine dans patient-bloc.service.ts), pas dans le programme du Bloc lui-même.
+      // Un patient non urgent, lui, reste à CPA_REALISE jusqu'à la vérification veille (même
+      // écran, même mécanique, que la demande soit externe ou non — voir VerificationVeilleService).
+      if (nouveauStatut === PatientStatut.CPA_REALISE) {
         const patientUrgence = await this.patientBlocRepo.findOne({
           where: { patientId: dto.patientId },
         });

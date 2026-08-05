@@ -84,7 +84,7 @@ export default function NotificationCPAPage() {
   }
 
   const handlePlanifier = (notif: any) => {
-    if (!peutPlanifierCpa) { alert('❌ Planification réservée au Responsable CPA ou au Major'); return }
+    if (!peutPlanifierCpa) { alert('❌ Planification réservée au Responsable CPA, au Major ou à l\'Anesthésiste'); return }
     setSelectedNotif(notif)
     setShowModal(true)
   }
@@ -197,7 +197,7 @@ export default function NotificationCPAPage() {
 
       {!peutPlanifierCpa && (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-          La planification d'un RDV CPA est réservée au Responsable CPA ou au Major{roleName ? ` (votre rôle : ${roleName})` : ''}. Vous pouvez consulter la liste et ouvrir les dossiers.
+          La planification d'un RDV CPA est réservée au Responsable CPA, au Major ou à l'Anesthésiste{roleName ? ` (votre rôle : ${roleName})` : ''}. Vous pouvez consulter la liste et ouvrir les dossiers.
         </div>
       )}
 

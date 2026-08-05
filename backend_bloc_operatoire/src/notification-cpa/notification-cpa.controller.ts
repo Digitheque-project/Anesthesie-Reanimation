@@ -58,8 +58,14 @@ export class NotificationCPAController {
   }
 
   @Patch(':id/planifier')
-  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
-  @ApiOperation({ summary: 'Planifier un RDV (Responsable CPA, Major)' })
+  @RequireRoleClinique(
+    RoleClinique.RESPONSABLE_CPA,
+    RoleClinique.MAJOR,
+    RoleClinique.ANESTHESISTE,
+  )
+  @ApiOperation({
+    summary: 'Planifier un RDV (Responsable CPA, Major, Anesthésiste)',
+  })
   planifier(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.service.planifierRDV(id, dto);
   }
