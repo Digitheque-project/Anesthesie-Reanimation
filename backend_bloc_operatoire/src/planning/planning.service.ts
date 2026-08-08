@@ -50,12 +50,35 @@ export class PlanningService {
         })
       : [];
     const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+
+    // CreneauBloc.chirurgienId n'est renseigné que si un Medecin local a été explicitement
+    // désigné — jamais le cas pour une CPA planifiée depuis le fil de prescription, où seul un
+    // nom libre (chirurgienNom) est connu, transmis par le service Prescriptions et déjà stocké
+    // sur la notification d'origine. Sans ce repli, la colonne "Chirurgien" du Fil de travail
+    // restait vide pour la quasi-totalité des rendez-vous CPA.
+    const notifs = patientIds.length
+      ? await this.notificationRepo.find({
+          where: { patientId: In(patientIds) },
+          order: { createdAt: 'DESC' },
+        })
+      : [];
+    const chirurgienNomParPatient = new Map<string, string>();
+    for (const n of notifs) {
+      if (n.chirurgienNom && !chirurgienNomParPatient.has(n.patientId)) {
+        chirurgienNomParPatient.set(n.patientId, n.chirurgienNom);
+      }
+    }
+
     return data.map((c, idx) => {
       const identity = identities[idx] || {};
       const pb = patientMap.get(c.patientId);
+      const chirurgienResolu = avecChirurgien[idx]?.chirurgien;
+      const chirurgienNomLibre = chirurgienNomParPatient.get(c.patientId);
       return {
         ...c,
-        chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
+        chirurgien:
+          chirurgienResolu ??
+          (chirurgienNomLibre ? { nom: chirurgienNomLibre } : null),
         patient: {
           id: c.patientId,
           nom: identity.nom,

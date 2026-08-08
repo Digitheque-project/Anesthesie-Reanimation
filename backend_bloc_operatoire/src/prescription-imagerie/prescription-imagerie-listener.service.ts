@@ -13,6 +13,11 @@ import {
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
 import {
+  PatientBloc,
+  PatientStatut,
+  NiveauUrgence,
+} from '../entities/patient-bloc.entity';
+import {
   PrescriptionImagerieClient,
   PrescriptionImagerieExterne,
 } from '../external/prescription-imagerie.client';
@@ -52,6 +57,8 @@ export class PrescriptionImagerieListenerService
     private readonly notificationBackClient: NotificationBackClient,
     @InjectRepository(NotificationCPA)
     private readonly notificationRepo: Repository<NotificationCPA>,
+    @InjectRepository(PatientBloc)
+    private readonly patientBlocRepo: Repository<PatientBloc>,
   ) {
     this.serviceId =
       this.config.get<string>('externalServices.serviceId') ?? '';
@@ -149,6 +156,16 @@ export class PrescriptionImagerieListenerService
     }
   }
 
+  // Même vocabulaire que PrescriptionService.mapUrgence (bloc) — dupliqué ici plutôt
+  // qu'exposé publiquement sur l'autre service pour une correspondance à 3 niveaux qui
+  // n'était pas nécessaire ici.
+  private mapUrgence(urgence: string): NiveauUrgence {
+    const u = (urgence || '').toUpperCase();
+    if (u === 'TRES_URGENT' || u === 'STAT') return NiveauUrgence.TRES_URGENT;
+    if (u === 'URGENT' || u === 'URGENTE') return NiveauUrgence.URGENT;
+    return NiveauUrgence.NORMAL;
+  }
+
   private async ingerer(
     prescription: PrescriptionImagerieExterne,
   ): Promise<void> {
@@ -175,6 +192,43 @@ export class PrescriptionImagerieListenerService
     const serviceSourceNom = await this.serviceRegistryClient.getServiceName(
       prescription.serviceIdSource,
     );
+
+    // Sans ceci, aucun PatientBloc n'existait jamais pour un patient venu d'une prescription
+    // imagerie (contrairement aux prescriptions chirurgicales, voir PrescriptionService.ingerer) :
+    // "Voir prescription" depuis la notification atterrissait sur "Patient introuvable"
+    // (patientService.getById renvoyait null), et le patient n'apparaissait dans aucune liste du
+    // bloc (Fil de travail...), toutes basées sur patients_bloc. Idempotent par patientId, comme
+    // PatientBlocService.creerDepuisPrescription : un patient déjà suivi n'est jamais écrasé par
+    // une prescription imagerie ultérieure (le circuit CPA/chirurgical prime).
+    try {
+      const dejaSuivi = await this.patientBlocRepo.findOne({
+        where: { patientId: prescription.patientId },
+      });
+      if (!dejaSuivi) {
+        await this.patientBlocRepo.save(
+          this.patientBlocRepo.create({
+            patientId: prescription.patientId,
+            chuId:
+              prescription.chuId ||
+              this.config.get<string>('externalServices.chuId') ||
+              undefined,
+            idDossier: `CHU-${Date.now()}`,
+            groupeSanguin: 'INCONNU',
+            libelle: prescription.type || 'Prescription imagerie',
+            alertes: prescription.alertes || undefined,
+            prescripteurId: prescription.prescripteurId,
+            statut: PatientStatut.EN_ATTENTE_CPA,
+            niveauUrgence: this.mapUrgence(prescription.urgence),
+            serviceOrigineId: prescription.serviceIdSource || undefined,
+            serviceOrigine: serviceSourceNom || undefined,
+          }),
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        `❌ Échec création PatientBloc depuis la prescription imagerie pour ${prescription.patientId}: ${(err as Error).message}`,
+      );
+    }
 
     const notif = await this.notificationRepo.save(
       this.notificationRepo.create({

@@ -27,10 +27,12 @@ import { SortieTab } from "@/components/clinical/dossier-patient/SortieTab";
 import HistoriqueTab from "@/components/clinical/dossier-patient/HistoriqueTab";
 import ResultatsParacliniquesTab from "@/components/clinical/dossier-patient/ResultatsParacliniquesTab";
 import { PrescriptionAccueilTab } from "@/components/clinical/dossier-patient/PrescriptionAccueilTab";
-import type { ServiceDestOverride } from "@/features/prescription/contexts/PrescriptionPanierContext";
 import { cn } from "@/lib/utils";
 import { accueilApiService } from "@/lib/clinical/accueil-api";
+import { hospitalisationService } from "@/lib/clinical/hospitalisation-service";
+import { obtenirSessionValide } from "@/lib/auth/central-session";
 import { patientService } from "@/lib/api";
+import { apiClient } from "@/lib/api/client";
 import { libelleStatutPatient, styleStatutPatient } from "@/lib/statut";
 import { usePriseEnChargeName } from "@/components/clinical/bed-cards/usePriseEnChargeName";
 import { pickPriseEnChargeId } from "@/components/clinical/shared/utils";
@@ -223,33 +225,102 @@ function DossierPatientCompletPageContent() {
     };
   }, [patientId, urlChuId]);
 
-  // Fiche PatientBloc du bloc (distincte de l'identité Accueil ci-dessus) — fournit le service
-  // d'origine (sans lui, toute prescription "surveillance"/"transfusion" créée depuis cet onglet
-  // partait avec un service destinataire vide, voir PrescriptionPanierContext.SERVICE_DEST_MAP)
-  // et surtout le vrai statut de parcours du patient (CPA, VPA, en attente, ...), affiché dans
-  // l'en-tête ci-dessous : ce dossier "intégré" doit refléter le statut à jour, pas seulement
-  // l'identité brute renvoyée par le service Accueil.
+  // Fiche PatientBloc du bloc (distincte de l'identité Accueil ci-dessus) — fournit surtout le
+  // vrai statut de parcours du patient (CPA, VPA, en attente, ...), affiché dans l'en-tête
+  // ci-dessous : ce dossier "intégré" doit refléter le statut à jour, pas seulement l'identité
+  // brute renvoyée par le service Accueil.
   const [blocPatient, setBlocPatient] = useState<any>(null);
-  const [serviceDestOverride, setServiceDestOverride] = useState<ServiceDestOverride | undefined>(undefined);
   useEffect(() => {
-    if (!patientId) { setServiceDestOverride(undefined); setBlocPatient(null); return; }
+    if (!patientId) { setBlocPatient(null); return; }
     let active = true;
     patientService.getById(patientId).then((p: any) => {
       if (!active) return;
       setBlocPatient(p ?? null);
-      setServiceDestOverride(
-        p?.serviceOrigineId && p?.serviceOrigine
-          ? { serviceId: p.serviceOrigineId, serviceName: p.serviceOrigine }
-          : undefined,
-      );
-    }).catch(() => { if (active) { setServiceDestOverride(undefined); setBlocPatient(null); } });
+    }).catch(() => { if (active) { setBlocPatient(null); } });
     return () => { active = false; };
   }, [patientId]);
 
-  const resolvedChuId = prefill?.chuId || urlChuId || undefined;
-  const resolvedServiceId = prefill?.serviceId || urlServiceId || undefined;
+  // Groupe sanguin réellement fiable : le service Accueil n'en transmet pas (identité
+  // administrative seulement — nom/prénom/naissance/sexe/contact, jamais de donnée clinique), et
+  // PatientBloc.groupeSanguin vaut le texte littéral "INCONNU" pour tout patient venu d'une
+  // demande de CPA externe (jamais une vraie valeur). La seule source réellement clinique est le
+  // groupage saisi par l'anesthésiste pendant la CPA elle-même (Groupe/Phénotype/RAI).
+  const [groupeSanguinCpa, setGroupeSanguinCpa] = useState<string | null>(null);
+  useEffect(() => {
+    if (!patientId) { setGroupeSanguinCpa(null); return; }
+    let active = true;
+    apiClient.get('/cpa', { params: { patientId, limite: 1 } })
+      .then(({ data }) => {
+        if (!active) return;
+        setGroupeSanguinCpa(data?.data?.[0]?.groupeSanguinCpa?.groupe || null);
+      })
+      .catch(() => { if (active) setGroupeSanguinCpa(null); });
+    return () => { active = false; };
+  }, [patientId]);
+
+  // Filet de sécurité identique à celui déjà utilisé par SortieTab : depuis une navigation qui
+  // n'a ni prefill ni chuId/serviceId en query (ex. "Voir dossier" depuis la CPA, "Voir
+  // prescription" depuis une notification), on retombe sur le CHU/service de la session
+  // connectée plutôt que de laisser ces onglets sans contexte.
+  const resolvedChuId =
+    prefill?.chuId || urlChuId || obtenirSessionValide()?.acces.chu?.id || undefined;
+  const resolvedServiceId =
+    prefill?.serviceId || urlServiceId || obtenirSessionValide()?.acces.serviceId || undefined;
   const resolvedEpisodeId =
     prefill?.hospitalisationId || urlHospitalisationId || undefined;
+
+  // Chambre réelle : PatientBloc.chambre n'est jamais renseignée côté bloc (colonne jamais écrite
+  // en base), et prefill.chambreNumero/codeLit n'est écrit par aucun flux d'entrée sur cette page
+  // (CPA, notification, etc.) — juste un champ mort. La seule source fiable est l'épisode
+  // d'hospitalisation actif du service Hospitalisation : on récupère le lit occupé (litCode), puis
+  // on le résout en numéro de chambre via le plan de lits du service. Si le patient n'a aucun
+  // épisode ADMIS/EN_COURS, rien n'est affiché — un patient non hospitalisé n'a pas de chambre.
+  const [numeroChambreReel, setNumeroChambreReel] = useState<string | number | null>(null);
+  useEffect(() => {
+    if (!patientId || !resolvedServiceId || !resolvedChuId) {
+      setNumeroChambreReel(null);
+      return;
+    }
+    let active = true;
+    hospitalisationService
+      .getByPatient(patientId, resolvedServiceId, resolvedChuId)
+      .then(async (response: any) => {
+        if (!active) return;
+        const episodes = Array.isArray(response) ? response : (response?.data ?? []);
+        // Un patient peut avoir plusieurs épisodes (hospitalisations passées + éventuellement
+        // actuelle) — on ne garde que ceux réellement en cours, et parmi eux le plus récent (par
+        // date d'admission), plutôt que le premier trouvé dans un ordre non garanti par l'API.
+        const actifs = episodes
+          .filter((ep: any) => ["ADMIS", "EN_COURS"].includes(ep.statut))
+          .sort((a: any, b: any) => {
+            const da = new Date(a.dateAdmission ?? a.dateEntrer ?? 0).getTime();
+            const db = new Date(b.dateAdmission ?? b.dateEntrer ?? 0).getTime();
+            return db - da;
+          });
+        const episode = actifs[0];
+        if (!episode?.litCode) {
+          setNumeroChambreReel(null);
+          return;
+        }
+        try {
+          const plan: any = await hospitalisationService.planLits(resolvedServiceId, resolvedChuId);
+          const chambres = Array.isArray(plan?.chambres) ? plan.chambres : (plan?.data?.chambres ?? []);
+          const chambre = chambres.find((c: any) =>
+            c.lits?.some((l: any) => l.codeLit === episode.litCode),
+          );
+          if (!active) return;
+          setNumeroChambreReel(chambre?.numeroChambre ?? episode.litCode);
+        } catch {
+          if (active) setNumeroChambreReel(episode.litCode);
+        }
+      })
+      .catch(() => {
+        if (active) setNumeroChambreReel(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [patientId, resolvedServiceId, resolvedChuId]);
 
   // apiPatient (fetch direct Accueil, dépend d'un chuId de session/URL) échoue silencieusement
   // pour tout patient arrivé par un flux interne au bloc (CPA, prescription...) qui n'a jamais
@@ -268,22 +339,24 @@ function DossierPatientCompletPageContent() {
 
   const nom = pickStr(patient, ["nom", "lastName", "familyName", "name"]) ?? "";
   const prenom = pickStr(patient, ["prenom", "firstName", "givenName"]) ?? "";
+  const groupeSanguinPatientBloc = pickStr(patient, [
+    "groupeSanguin",
+    "groupe_sanguin",
+    "bloodGroup",
+    "groupageSanguin",
+    "groupage",
+  ]);
   const groupeSanguin =
-    pickStr(patient, [
-      "groupeSanguin",
-      "groupe_sanguin",
-      "bloodGroup",
-      "groupageSanguin",
-      "groupage",
-    ]) ?? "—";
+    groupeSanguinCpa ||
+    (groupeSanguinPatientBloc && groupeSanguinPatientBloc.toUpperCase() !== "INCONNU"
+      ? groupeSanguinPatientBloc
+      : null) ||
+    "—";
   const age = computeAgeYears(patient);
   const sexeRaw = pickStr(patient, ["sexe", "gender"]);
   const sexeLabel = formatSexeLabel(sexeRaw);
   const allergies = pickAllergiesText(patient);
-  const chambreLit =
-    prefill?.chambreNumero != null && prefill?.codeLit
-      ? `Chambre ${prefill.chambreNumero} – ${prefill.codeLit}`
-      : pickStr(patient, ["chambreLit", "chambre", "lit", "roomLabel"]) ?? "—";
+  const chambreLit = numeroChambreReel != null ? `${numeroChambreReel}` : null;
 
   const priseEnChargeId = pickPriseEnChargeId(patient ?? undefined);
   const { name: priseEnChargeResolved } = usePriseEnChargeName(
@@ -330,10 +403,12 @@ function DossierPatientCompletPageContent() {
               <span className="font-semibold text-slate-500">Âge / Sexe :</span>
               <span className="font-bold text-slate-800">{age != null ? `${age} ans` : "—"} / {sexeLabel}</span>
             </span>
-            <span className="inline-flex items-baseline gap-1 rounded-md bg-slate-100 px-2 py-1">
-              <span className="font-semibold text-slate-500">Chambre :</span>
-              <span className="font-bold text-slate-800">{chambreLit}</span>
-            </span>
+            {chambreLit ? (
+              <span className="inline-flex items-baseline gap-1 rounded-md bg-slate-100 px-2 py-1">
+                <span className="font-semibold text-slate-500">Chambre :</span>
+                <span className="font-bold text-slate-800">{chambreLit}</span>
+              </span>
+            ) : null}
             {priseEnChargeLabel && priseEnChargeLabel !== "—" ? (
               <span className="inline-flex items-baseline gap-1 rounded-md bg-slate-100 px-2 py-1">
                 <span className="font-semibold text-slate-500">Prise en charge :</span>
@@ -419,7 +494,7 @@ function DossierPatientCompletPageContent() {
                   serviceId={resolvedServiceId}
                 />
               ) : activeTab === "prescription" && patientId ? (
-                <PrescriptionAccueilTab patientId={patientId} serviceDestOverride={serviceDestOverride} />
+                <PrescriptionAccueilTab patientId={patientId} />
               ) : activeTab === "cr_operatoire" && patientId ? (
                 <CrOperatoireTab patientId={patientId} />
               ) : activeTab === "sortie" && patientId ? (

@@ -22,6 +22,7 @@ import { StatutDemandeCpaPubliqueDto } from './dto/statut-demande-cpa-publique.d
 import { NotificationBackClient } from '../external/notification-back.client';
 import { AccueilClient } from '../external/accueil.client';
 import { PatientBlocService } from '../patient-bloc/patient-bloc.service';
+import { ServiceRegistryClient } from '../external/service-registry.client';
 import { verifierCreneauValide } from '../planning/creneau-validation.util';
 
 @Injectable()
@@ -39,14 +40,25 @@ export class DemandeCpaExterneService {
     private notificationBackClient: NotificationBackClient,
     private accueilClient: AccueilClient,
     private patientBlocService: PatientBlocService,
+    private serviceRegistryClient: ServiceRegistryClient,
   ) {
     this.blocServiceId =
       this.config.get<string>('externalServices.serviceId') ?? '';
   }
 
   async receive(dto: ReceiveDemandeCpaDto): Promise<DemandeCpaExterne> {
+    // Le nom du service source n'est jamais fiable tel que transmis (souvent absent, parfois
+    // périmé) — résolu en direct auprès du registre central des services à partir du seul
+    // identifiant transmis, plutôt que stocké quelque part. N'importe quel service peut être à
+    // l'origine d'une demande (Endoscopie, Imagerie, Urgence...), pas seulement ceux connus
+    // d'avance : jamais de liste ou d'id figé en dur ici ou en configuration.
+    const sourceServiceName =
+      (await this.serviceRegistryClient.getServiceName(dto.sourceServiceId)) ||
+      dto.sourceServiceName;
+
     const demande = this.repo.create({
       ...dto,
+      sourceServiceName,
       dateExamenSouhaitee: dto.dateExamenSouhaitee
         ? new Date(dto.dateExamenSouhaitee)
         : undefined,
