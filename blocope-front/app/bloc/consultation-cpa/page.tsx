@@ -238,8 +238,20 @@ function ConsultationCpaPageContent() {
 
   // Pré-remplit tout le formulaire avec la CPA déjà enregistrée, pour que l'anesthésiste voie
   // exactement ce que le Major/Responsable CPA a saisi.
+  // Même garde-fou que `cpaDejaRemplie` ci-dessus : `cpaExistante` peut être la CPA d'un épisode
+  // chirurgical précédent, déjà close, pour un patient revenu avec une nouvelle prescription
+  // (statut remis à EN_ATTENTE_CPA). Dans ce cas précis, ne pas pré-remplir — sinon l'anesthésiste
+  // voit les constatations d'un ancien épisode comme si elles s'appliquaient au nouveau. Exception :
+  // une CPA à REPORT ne touche jamais patient.statut (voir CPAService.create), donc reste
+  // pertinente même si le statut est EN_ATTENTE_CPA — c'est la même CPA à reprendre, pas une autre.
+  const cpaStalePourEpisodeActuel = !!cpaExistante && !!patient
+    && patient.statut === 'EN_ATTENTE_CPA' && cpaExistante.decision !== 'REPORT';
   useEffect(() => {
-    if (!cpaExistante) return;
+    // On attend que `patient` soit chargé avant de pré-remplir quoi que ce soit : sans cette
+    // attente, un premier passage avec `patient` encore null (fetch en cours) pré-remplissait le
+    // formulaire avant même de savoir si cette CPA était pertinente pour l'épisode en cours — et
+    // rien ne revenait ensuite l'effacer une fois `patient` chargé et le cas stale détecté.
+    if (!cpaExistante || !patient || cpaStalePourEpisodeActuel) return;
     const c = cpaExistante;
     setForm(f => ({
       ...f,
@@ -318,7 +330,12 @@ function ConsultationCpaPageContent() {
     }
     setMedicamentsAnesthesieRows(restaurerMedicamentsAnesthesieRows(c.medicamentsAnesthesieReanimation));
     if (c.dateVerificationVeille) setDateVPA(formatDateInput(c.dateVerificationVeille));
-  }, [cpaExistante]);
+    // Dépend de `patient?.statut` plutôt que de `patient` en entier : `patient` change de
+    // référence à chaque modification de la date d'intervention (voir
+    // handleEnregistrerDateIntervention plus bas) — en dépendre entièrement aurait redéclenché ce
+    // pré-remplissage et effacé toute saisie du formulaire déjà en cours à chaque fois que la
+    // date d'intervention est modifiée depuis cette même page.
+  }, [cpaExistante, patient?.statut, cpaStalePourEpisodeActuel]);
 
   // Pré-remplit le champ éditable avec la date/heure d'intervention actuellement enregistrée
   useEffect(() => {
@@ -340,7 +357,16 @@ function ConsultationCpaPageContent() {
   // sans cette exclusion, le patient restait bloqué indéfiniment en lecture seule sur l'examen/la
   // décision (seuls médicaments + vérification veille restaient éditables), sans aucun moyen de
   // reposer une vraie décision APTE/INAPTE.
-  const cpaDejaRemplie = !!cpaExistante && cpaExistante.decision !== 'REPORT';
+  // `/cpa?patientId=` renvoie TOUT l'historique de ce patient (une fiche patient est réutilisée
+  // d'un épisode chirurgical à l'autre — voir PrescriptionService.ingerer, qui remet son statut à
+  // EN_ATTENTE_CPA à chaque nouvelle prescription) : sans le garde-fou `patient.statut`, la CPA
+  // déjà validée d'un épisode précédent bloquait à tort la CPA du nouvel épisode ("CPA déjà
+  // remplie et validée" alors qu'aucune CPA n'existe pour CET épisode) — le patient restait alors
+  // figé à EN_ATTENTE_CPA pour toujours, visible indéfiniment dans le Fil de travail au lieu de
+  // progresser vers le Programme opératoire. Tant que le statut courant est EN_ATTENTE_CPA, la
+  // CPA de l'épisode en cours reste à faire, quelle que soit l'ancienneté de la dernière CPA.
+  const cpaDejaRemplie = !!cpaExistante && cpaExistante.decision !== 'REPORT'
+    && !!patient && patient.statut !== 'EN_ATTENTE_CPA';
   const peutEditerExamenEtDecision = !cpaDejaRemplie && (estResponsableOuMajor || estAnesthesisteConnecte);
   // Le Major cumule les deux rôles (Responsable CPA + Anesthésiste) : contrairement à un
   // Responsable CPA seul, il peut aussi compléter les médicaments d'anesthésie/réanimation et
