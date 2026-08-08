@@ -18,6 +18,7 @@ import PiecesJointesUploader from '@/components/bloc/pieces-jointes/PiecesJointe
 import { formaterNomPatient } from '@/lib/patient';
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader';
 import CalendrierAgenda from '@/components/bloc/planning/CalendrierAgenda';
+import SommaireCpa from '@/components/bloc/consultation-cpa/SommaireCpa';
 
 export default function ConsultationCpaPage() {
   return (
@@ -1036,12 +1037,14 @@ function ConsultationCpaPageContent() {
         </div>
       )}
 
+      <SommaireCpa />
+
       {/* CONTENU PRINCIPAL */}
       <div className="flex flex-col lg:flex-row gap-2">
         {/* COLONNE GAUCHE */}
         <div className={`flex-1 space-y-2 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
           {/* Antécédents — section 1 de la fiche papier "Fiche d'Anesthésie – Réanimation" */}
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4">
+          <section id="cpa-antecedents" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4 scroll-mt-32">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history_edu</span>
               <h2 className="text-lg font-bold font-headline text-primary">Antécédents</h2>
@@ -1182,7 +1185,7 @@ function ConsultationCpaPageContent() {
           </section>
 
           {/* Examen clinique */}
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
+          <section id="cpa-examen" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm scroll-mt-32">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-primary">stethoscope</span>
               <h2 className="text-lg font-bold font-headline text-primary">Examen clinique</h2>
@@ -1220,7 +1223,7 @@ function ConsultationCpaPageContent() {
           </section>
 
           {/* Voies aériennes */}
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
+          <section id="cpa-voies-aeriennes" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm scroll-mt-32">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-primary">air</span>
               <h2 className="text-lg font-bold font-headline text-primary">Voies aériennes</h2>
@@ -1260,7 +1263,7 @@ function ConsultationCpaPageContent() {
           </section>
 
           {/* Bilan biologique / paraclinique — section 3 de la fiche papier */}
-          <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4">
+          <section id="cpa-bilan" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4 scroll-mt-32">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">biotech</span>
               <h2 className="text-lg font-bold font-headline text-primary">Bilan biologique / paraclinique</h2>
@@ -1346,7 +1349,7 @@ function ConsultationCpaPageContent() {
       </div>
 
       {/* Conclusion — section 4 de la fiche papier */}
-      <section className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+      <section id="cpa-conclusion" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">summarize</span>
           <h2 className="text-lg font-bold font-headline text-primary">Conclusion</h2>
@@ -1362,7 +1365,7 @@ function ConsultationCpaPageContent() {
       </section>
 
       {/* Instructions & Prescription */}
-      <div className="rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-blue-50/80 to-white shadow-md overflow-hidden">
+      <div id="cpa-instructions" className="rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-blue-50/80 to-white shadow-md overflow-hidden scroll-mt-32">
         <div className="px-4 py-3 bg-blue-100/70 border-b border-blue-200 flex items-center gap-2">
           <span className="material-symbols-outlined text-blue-600">assignment</span>
           <h2 className="text-sm font-extrabold text-blue-900 uppercase tracking-widest">Instructions Pré-opératoires</h2>
@@ -1465,7 +1468,7 @@ function ConsultationCpaPageContent() {
 
           {/* Score ASA + Protocole retenu — déplacés en bas de page, juste avant la décision
               finale (la prescription, elle, est montée en haut à droite). */}
-          <div className={`mt-4 pt-4 border-t border-surface-container grid grid-cols-1 lg:grid-cols-2 gap-4 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+          <div id="cpa-protocole" className={`mt-4 pt-4 border-t border-surface-container grid grid-cols-1 lg:grid-cols-2 gap-4 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
             <section className="bg-primary-container text-on-primary rounded-2xl p-4 shadow-lg shadow-primary/20">
               <h2 className="text-lg font-bold font-headline mb-2 flex items-center gap-2">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>award_star</span> Score ASA<Requis />
@@ -1547,7 +1550,7 @@ function ConsultationCpaPageContent() {
 
           {/* Décision Finale — seul champ réellement obligatoire de la consultation : mise en
               évidence forte (cadre doré) pour la distinguer de tous les autres champs libres */}
-          <div className="mt-4 pt-4 border-t border-surface-container">
+          <div id="cpa-decision" className="mt-4 pt-4 border-t border-surface-container scroll-mt-32">
             <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-amber-50/80 to-white shadow-md overflow-hidden">
               <div className="px-4 py-3 bg-amber-100/70 border-b border-amber-200 flex items-center gap-2">
                 <span className="material-symbols-outlined text-amber-600">gavel</span>

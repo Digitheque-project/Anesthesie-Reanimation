@@ -166,8 +166,13 @@ export default function TopBar() {
               {session?.acces.roleName || ''}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-primary-container overflow-hidden ring-2 ring-primary/10">
-            <Image src="/images/avatar-default.png" alt="Avatar" width={40} height={40} className="object-cover" />
+          {/* Avatar par initiales — /images/avatar-default.png n'a jamais existé dans public/images/
+              (fichier manquant, jamais commité), ce qui faisait échouer l'optimiseur d'image
+              Next.js sur CHAQUE page (erreur 400) et laissait un mot tronqué "Avata" à la place.
+              Même langage visuel que les initiales patient de PatientsListTable, sans dépendance
+              à un fichier qui peut manquer. */}
+          <div className="w-10 h-10 rounded-full bg-primary-container overflow-hidden ring-2 ring-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+            {session ? `${session.payload.firstname?.charAt(0) || ''}${session.payload.name?.charAt(0) || ''}`.toUpperCase() : ''}
           </div>
         </div>
       </div>
