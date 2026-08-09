@@ -6,21 +6,52 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
+import { NotificationBackClient } from '../external/notification-back.client';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 
 @Injectable()
 export class PatientBlocStatutService {
   private readonly logger = new Logger(PatientBlocStatutService.name);
+  private readonly blocServiceId: string;
 
   constructor(
     @InjectRepository(PatientBloc)
     private patientBlocRepo: Repository<PatientBloc>,
     private notificationOutgoing: NotificationOutgoingService,
+    private notificationBackClient: NotificationBackClient,
     private tracabiliteService: TracabiliteService,
-  ) {}
+    private config: ConfigService,
+  ) {
+    this.blocServiceId =
+      this.config.get<string>('externalServices.serviceId') ?? '';
+  }
+
+  // Diffuse un évènement temps réel (même canal WebSocket que les nouvelles prescriptions/
+  // demandes) à tous les postes connectés du bloc, pour qu'une liste "à traiter" (Fil de
+  // travail, Programme opératoire...) se retire l'élément qui vient d'avancer sans attendre un
+  // rechargement manuel. Type ignoré par TopBar (pas d'alerte sonore/visuelle parasite) — seules
+  // les pages qui écoutent explicitement ce type y réagissent (voir useRefetchOnRealtimeUpdate).
+  // Best-effort : ne doit jamais faire échouer la transition elle-même.
+  private diffuserChangementStatut(
+    patientId: string,
+    ancienStatut: string,
+    nouveauStatut: string,
+  ): void {
+    this.notificationBackClient
+      .notifyService({
+        serviceId: this.blocServiceId,
+        title: 'Statut patient mis à jour',
+        message: `${patientId} : ${ancienStatut} → ${nouveauStatut}`,
+        type: 'patient_statut_change',
+        source: 'bloc-operatoire',
+        data: { patientId, ancienStatut, nouveauStatut },
+      })
+      .catch(() => {});
+  }
 
   // Point de passage unique de TOUTE transition de statut patient dans l'application (CPA,
   // per-opératoire, réveil, sortie...) — y journaliser suffit à tracer l'ensemble du parcours
@@ -79,6 +110,7 @@ export class PatientBlocStatutService {
       { ancienStatut, nouveauStatut },
       utilisateurId,
     );
+    this.diffuserChangementStatut(patientId, ancienStatut, nouveauStatut);
     return saved;
   }
 
@@ -138,6 +170,13 @@ export class PatientBlocStatutService {
         'STATUT_CHANGE',
         { ancienStatut: PatientStatut.CPA_INAPTE, nouveauStatut: PatientStatut.EN_ATTENTE_CPA },
         utilisateurId,
+      );
+      // Contourne changerStatut (CPA_INAPTE → EN_ATTENTE_CPA n'est pas une transition normale
+      // de la machine à états, voir sa table plus haut) — la diffusion doit donc être répétée ici.
+      this.diffuserChangementStatut(
+        patientId,
+        PatientStatut.CPA_INAPTE,
+        PatientStatut.EN_ATTENTE_CPA,
       );
     }
     return patient;

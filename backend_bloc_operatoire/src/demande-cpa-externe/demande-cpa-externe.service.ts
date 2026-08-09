@@ -193,7 +193,20 @@ export class DemandeCpaExterneService {
       demande.statut = StatutDemandeCpaExterne.CPA_PLANIFIEE;
       demande.dateCpaPlanifiee = new Date(dto.date);
     }
-    return this.repo.save(demande);
+    const saved = await this.repo.save(demande);
+    // Retire cette demande de la liste "à planifier" sur tous les postes connectés du bloc,
+    // sans attendre un rechargement manuel — voir NotificationCPAService.planifierRDV.
+    this.notificationBackClient
+      .notifyService({
+        serviceId: this.blocServiceId,
+        title: 'Demande CPA externe planifiée',
+        message: `Demande ${id} planifiée`,
+        type: 'patient_statut_change',
+        source: 'bloc-operatoire',
+        data: { demandeId: id, patientId: demande.patientId },
+      })
+      .catch(() => {});
+    return saved;
   }
 
   // Utilisée par les hooks CPA/VPA : trouve une demande externe encore ouverte pour ce patient.

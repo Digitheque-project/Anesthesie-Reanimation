@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { In, Repository } from 'typeorm';
 import {
   NotificationCPA,
@@ -10,12 +11,14 @@ import { PatientBloc } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
+import { NotificationBackClient } from '../external/notification-back.client';
 import { CreateNotificationCPADto } from './dto/create-notification-cpa.dto';
 import { UpdateNotificationCPADto } from './dto/update-notification-cpa.dto';
 
 @Injectable()
 export class NotificationCPAService {
   private readonly logger = new Logger(NotificationCPAService.name);
+  private readonly blocServiceId: string;
 
   constructor(
     @InjectRepository(NotificationCPA)
@@ -27,7 +30,12 @@ export class NotificationCPAService {
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
     private notificationOutgoing: NotificationOutgoingService,
-  ) {}
+    private notificationBackClient: NotificationBackClient,
+    private config: ConfigService,
+  ) {
+    this.blocServiceId =
+      this.config.get<string>('externalServices.serviceId') ?? '';
+  }
 
   async create(dto: CreateNotificationCPADto): Promise<NotificationCPA> {
     const saved = await this.notificationRepo.save(
@@ -146,7 +154,21 @@ export class NotificationCPAService {
       );
     }
 
-    return this.notificationRepo.save(n);
+    const saved = await this.notificationRepo.save(n);
+    // Retire cette notification de la liste "à planifier" sur tous les postes connectés du
+    // bloc, sans attendre un rechargement manuel — même canal que les nouvelles prescriptions,
+    // type ignoré par TopBar (voir PatientBlocStatutService.diffuserChangementStatut).
+    this.notificationBackClient
+      .notifyService({
+        serviceId: this.blocServiceId,
+        title: 'RDV CPA planifié',
+        message: `Notification ${id} planifiée`,
+        type: 'patient_statut_change',
+        source: 'bloc-operatoire',
+        data: { notificationId: id, patientId: n.patientId },
+      })
+      .catch(() => {});
+    return saved;
   }
 
   async update(
