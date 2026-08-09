@@ -700,7 +700,6 @@ function ConsultationCpaPageContent() {
       {
         titre: 'Protocole retenu',
         champs: [
-          { label: 'Score ASA', valeur: scoreASA != null ? `ASA ${scoreASA}` : '' },
           { label: 'Type d\'anesthésie', valeur: form.typeAnesthesie },
           { label: 'Technique', valeur: form.sousTypeAnesthesie },
           { label: 'Technique d\'intubation', valeur: form.techniqueIntubation },
@@ -717,10 +716,16 @@ function ConsultationCpaPageContent() {
         ],
       },
       {
-        titre: 'Conclusion',
+        titre: 'Traitement médicamenteux',
         champs: [
           { label: 'Traitement en cours', valeur: form.traitementEnCours },
           { label: 'Traitement à suivre', valeur: form.traitementASuivre },
+        ],
+      },
+      {
+        titre: 'Conclusion',
+        champs: [
+          { label: 'Score ASA', valeur: scoreASA != null ? `ASA ${scoreASA}` : '' },
           { label: 'Conclusion', valeur: form.conclusion },
           { label: 'Décision', valeur: decision ? decisionLabel[decision] : '' },
           { label: 'Motif', valeur: motifRefus },
@@ -958,10 +963,9 @@ function ConsultationCpaPageContent() {
 
       <SommaireCpa />
 
-      {/* CONTENU PRINCIPAL */}
-      <div className="flex flex-col lg:flex-row gap-2">
-        {/* COLONNE GAUCHE */}
-        <div className={`flex-1 space-y-2 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+      {/* CONTENU PRINCIPAL — Antécédents, Examen, Voies aériennes (pleine largeur : la carte
+          Prescription, elle, est désormais plus bas, à côté de la Conclusion — voir plus loin). */}
+      <div className={`space-y-2 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
           {/* Antécédents — section 1 de la fiche papier "Fiche d'Anesthésie – Réanimation" */}
           <section id="cpa-antecedents" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4 scroll-mt-32">
             <div className="flex items-center gap-2">
@@ -1187,52 +1191,52 @@ function ConsultationCpaPageContent() {
               </div>
             </div>
           </section>
-
-        </div>
-
-        {/* COLONNE DROITE — l'action de prescription, mise bien en évidence en haut à droite
-            (Score ASA et Protocole retenu sont désormais en bas de page, juste avant la
-            décision finale). */}
-        <div className="w-full lg:w-80 space-y-2">
-          <section className={`rounded-2xl p-5 shadow-lg overflow-hidden ${peutDeciderAptitudeCpa ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-500/40' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="material-symbols-outlined text-2xl" style={peutDeciderAptitudeCpa ? { fontVariationSettings: "'FILL' 1" } : undefined}>edit_note</span>
-              <h2 className="text-lg font-bold font-headline">Prescription</h2>
-            </div>
-            {!peutDeciderAptitudeCpa ? (
-              <p className="text-xs">
-                Prescrire pendant la CPA est réservé à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
-              </p>
-            ) : (
-              <>
-                <p className="text-xs text-white/90 mb-3">
-                  Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
-                </p>
-                <button type="button" onClick={() => setShowPrescriptionModal(true)}
-                  className="w-full flex items-center justify-center gap-2 p-3.5 bg-white text-indigo-600 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
-                  <span className="material-symbols-outlined">edit_note</span> Prescrire
-                </button>
-              </>
-            )}
-            <PrescriptionCpaModal
-              open={showPrescriptionModal}
-              onClose={() => setShowPrescriptionModal(false)}
-              patientId={patientId || patient?.id || ''}
-              serviceDestOverride={
-                patient?.serviceOrigineId && patient?.serviceOrigine
-                  ? { serviceId: patient.serviceOrigineId, serviceName: patient.serviceOrigine }
-                  : undefined
-              }
-            />
-          </section>
-        </div>
       </div>
 
-      {/* Conclusion — section 4 de la fiche papier */}
+      {/* Conclusion + carte Prescription : à partir d'ici, la carte Prescription passe à droite,
+          collée (sticky) pendant que Conclusion / Traitement médicamenteux / Instructions /
+          Protocole / Décision défilent à côté — c'est le moment de la CPA où une prescription
+          complémentaire est le plus susceptible d'être nécessaire, donc l'action doit rester
+          visible tout du long plutôt que de disparaître en haut de page au premier scroll. */}
+      <div className="flex flex-col lg:flex-row gap-2 items-start">
+        <div className="flex-1 space-y-2 min-w-0">
+      {/* Conclusion — section 4 de la fiche papier. Score ASA amené ici, aligné avec le champ
+          Conclusion (déplacé depuis le bloc ASA & Protocole plus bas) et réduit à la même taille
+          que le sélecteur Mallampati (Voies aériennes) pour bien s'aligner à côté du texte. */}
       <section id="cpa-conclusion" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">summarize</span>
           <h2 className="text-lg font-bold font-headline text-primary">Conclusion</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-semibold text-on-surface-variant block">Conclusion</label>
+            <textarea disabled={!peutEditerExamenEtDecision} value={form.conclusion} onChange={setField('conclusion')} className="w-full h-28 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold block">Score ASA</label>
+            <div className="grid grid-cols-4 gap-2">
+              {[1, 2, 3, 4, 5, 6].map((score) => (
+                <button key={score} onClick={() => setScoreASA(score)} disabled={!peutEditerExamenEtDecision}
+                  className={`p-4 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
+                  {score}
+                </button>
+              ))}
+              <button onClick={() => setScoreASA('E')} disabled={!peutEditerExamenEtDecision}
+                className={`col-span-2 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === 'E' ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
+                E
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Traitement médicamenteux — sorti de la Conclusion (qui mélangeait jugement clinique et
+          traitement en cours du patient), section à part entière. */}
+      <section id="cpa-traitement" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary">pill</span>
+          <h2 className="text-lg font-bold font-headline text-primary">Traitement médicamenteux</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Traitement en cours</label>
@@ -1240,8 +1244,6 @@ function ConsultationCpaPageContent() {
           <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Traitement à suivre</label>
             <textarea disabled={!peutEditerExamenEtDecision} value={form.traitementASuivre} onChange={setField('traitementASuivre')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea></div>
         </div>
-        <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Conclusion</label>
-          <textarea disabled={!peutEditerExamenEtDecision} value={form.conclusion} onChange={setField('conclusion')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60"></textarea></div>
       </section>
 
       {/* Instructions & Prescription */}
@@ -1346,28 +1348,8 @@ function ConsultationCpaPageContent() {
             </div>
           </div>
 
-          {/* Score ASA + Protocole retenu — déplacés en bas de page, juste avant la décision
-              finale (la prescription, elle, est montée en haut à droite). */}
-          <div id="cpa-protocole" className={`mt-4 pt-4 border-t border-surface-container grid grid-cols-1 lg:grid-cols-2 gap-4 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
-            <section className="bg-primary-container text-on-primary rounded-2xl p-4 shadow-lg shadow-primary/20">
-              <h2 className="text-lg font-bold font-headline mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>award_star</span> Score ASA
-              </h2>
-              <div className="grid grid-cols-4 gap-2 mb-2">
-                {[1, 2, 3, 4, 5, 6].map((score) => (
-                  <button key={score} onClick={() => setScoreASA(score)} disabled={!peutEditerExamenEtDecision}
-                    className={`aspect-square rounded-xl font-bold text-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === score ? 'bg-white text-primary shadow-md scale-105' : 'bg-white/20 hover:bg-white/40'}`}>
-                    {score}
-                  </button>
-                ))}
-                <button onClick={() => setScoreASA('E')} disabled={!peutEditerExamenEtDecision}
-                  className={`col-span-2 aspect-[2/1] rounded-xl font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === 'E' ? 'bg-white text-primary shadow-md scale-105' : 'bg-tertiary-container/40 hover:bg-tertiary-container/60'}`}>
-                  ASA E
-                </button>
-              </div>
-              <p className="text-[10px] text-white/70 uppercase font-bold text-center">Patient avec pathologie systémique sévère</p>
-            </section>
-
+          {/* Protocole retenu — Score ASA déplacé plus haut, aligné avec la Conclusion. */}
+          <div id="cpa-protocole" className={`mt-4 pt-4 border-t border-surface-container scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
             <section className="bg-white rounded-2xl shadow-md border-2 border-secondary/20 overflow-hidden">
               <div className="bg-gradient-to-r from-secondary to-secondary/80 px-4 py-3 flex items-center gap-2">
                 <span className="material-symbols-outlined text-white">vaccines</span>
@@ -1680,6 +1662,45 @@ function ConsultationCpaPageContent() {
               );
             })()}
           </div>
+        </div>
+      </div>
+        </div>
+
+        {/* Carte Prescription — collée (sticky) pendant que le reste défile. top-32 (128px) pour
+            rester sous le TopBar fixe (80px) ET le sommaire sticky de la CPA (~50px), même valeur
+            que le scroll-mt-32 déjà utilisé sur toutes les ancres de section de cette page. */}
+        <div className="w-full lg:w-80 lg:sticky lg:top-32 space-y-2">
+          <section className={`rounded-2xl p-5 shadow-lg overflow-hidden ${peutDeciderAptitudeCpa ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-500/40' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-2xl" style={peutDeciderAptitudeCpa ? { fontVariationSettings: "'FILL' 1" } : undefined}>edit_note</span>
+              <h2 className="text-lg font-bold font-headline">Prescription</h2>
+            </div>
+            {!peutDeciderAptitudeCpa ? (
+              <p className="text-xs">
+                Prescrire pendant la CPA est réservé à l'anesthésiste, au responsable CPA ou au major{roleName ? ` (votre rôle : ${roleName})` : ''}.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-white/90 mb-3">
+                  Au cas où une prescription est nécessaire pendant la CPA{patient?.serviceOrigine ? ` — sera envoyée à ${patient.serviceOrigine}` : ''}.
+                </p>
+                <button type="button" onClick={() => setShowPrescriptionModal(true)}
+                  className="w-full flex items-center justify-center gap-2 p-3.5 bg-white text-indigo-600 rounded-xl font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+                  <span className="material-symbols-outlined">edit_note</span> Prescrire
+                </button>
+              </>
+            )}
+            <PrescriptionCpaModal
+              open={showPrescriptionModal}
+              onClose={() => setShowPrescriptionModal(false)}
+              patientId={patientId || patient?.id || ''}
+              serviceDestOverride={
+                patient?.serviceOrigineId && patient?.serviceOrigine
+                  ? { serviceId: patient.serviceOrigineId, serviceName: patient.serviceOrigine }
+                  : undefined
+              }
+            />
+          </section>
         </div>
       </div>
     </main>
