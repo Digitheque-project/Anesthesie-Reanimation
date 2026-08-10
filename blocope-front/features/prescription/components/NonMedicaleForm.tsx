@@ -272,7 +272,7 @@ export default function NonMedicaleForm({ patient, prescripteur, patientType }: 
 
       {/* === ONGLET NOUVELLE PRESCRIPTION === */}
       {activeTab === 'nouvelle' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 16, alignItems: 'start' }}>
           {/* COLONNE GAUCHE */}
           <div>
             <div className="card mb12" style={{ padding: 12 }}>

@@ -36,7 +36,10 @@ export default function PrescriptionCpaModal({ open, onClose, patientId, service
           </button>
         </div>
 
-        <div className="overflow-y-auto p-5 bg-surface-container-lowest/40 flex-1">
+        {/* min-h-0 est indispensable : sans lui, le flex-1 ne peut pas rétrécir sous la
+            hauteur de son contenu et la zone se fait rogner par le overflow-hidden de la modale
+            (infos masquées, pire en zoom) au lieu de défiler. */}
+        <div className="overflow-auto p-5 bg-surface-container-lowest/40 flex-1 min-h-0">
           <PrescriptionModule patientId={patientId} serviceDestOverride={serviceDestOverride} />
         </div>
       </div>
