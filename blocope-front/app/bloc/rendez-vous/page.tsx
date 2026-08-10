@@ -56,18 +56,40 @@ export default function RendezVousPage() {
   const charger = async () => {
     setLoading(true);
     try {
-      if (onglet === 'CPA' && voirTousCpa) {
-        const data = await planningService.getCpaAVenir();
-        const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
+      if (onglet === 'CPA') {
+        // Rendez-vous CPA planifiés : patient normal dont la CPA reste réellement à faire
+        // (statut EN_ATTENTE_CPA) — date sélectionnée, ou "tous les rendez-vous à venir" quand
+        // voirTousCpa est actif.
+        const data = voirTousCpa
+          ? await planningService.getCpaAVenir()
+          : await planningService.getJour(selectedDate, onglet);
+        const rows = (Array.isArray(data) ? data : []).filter((c: any) =>
           (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut === 'EN_ATTENTE_CPA'
         );
-        setCreneaux(filtres);
+        // CPA déjà validée par le Responsable CPA (décision APTE), médicaments d'anesthésie
+        // encore à compléter/vérifier par l'anesthésiste — statut CPA_REALISE, non urgent. Ce
+        // sont ces patients qui déclenchent le bouton "Vérifier médicament" : toujours visibles,
+        // quelle que soit la date sélectionnée (pas de créneau planifié à une date précise).
+        const { data: medData } = await patientService.getAll({ statut: 'CPA_REALISE', niveauUrgence: 'NORMAL', limite: 200 });
+        const medRows = (Array.isArray(medData) ? medData : []).map((p: any) => ({
+          id: p.patientId,
+          heureDebut: null,
+          dateIntervention: p.dateIntervention || null,
+          patient: { id: p.patientId, nom: p.nom, prenom: p.prenom, niveauUrgence: p.niveauUrgence, statut: p.statut },
+          type: 'VERIFICATION_MEDICAMENTS',
+          chirurgien: p.chirurgien_nom ? { nom: p.chirurgien_nom } : null,
+          estUrgence: false,
+          sousType: 'VERIF_MEDICAMENT',
+          statut: 'VERIF_MEDICAMENT',
+        }));
+        setCreneaux([...medRows, ...rows]);
       } else if (onglet === 'VERIFICATION_VEILLE') {
         // La vérification veille ne dépend plus d'un créneau planifié à une date précise : tout
-        // patient dont la CPA vient d'être validée (statut CPA_REALISE, apte, non urgent — sans
-        // objet pour une VPA en urgence) doit y être visible tant qu'il n'a pas été vérifié,
-        // qu'une date ait été posée ou non.
-        const { data } = await patientService.getAll({ statut: 'CPA_REALISE', niveauUrgence: 'NORMAL', limite: 200 });
+        // patient dont la CPA a été validée ET dont les médicaments ont été vérifiés par
+        // l'anesthésiste (statut EN_ATTENTE_VERIFICATION_VEILLE, apte, non urgent — sans objet
+        // pour une VPA en urgence) doit y être visible tant qu'il n'a pas été vérifié, qu'une
+        // date ait été posée ou non.
+        const { data } = await patientService.getAll({ statut: 'EN_ATTENTE_VERIFICATION_VEILLE', niveauUrgence: 'NORMAL', limite: 200 });
         const rows = (Array.isArray(data) ? data : []).map((p: any) => ({
           id: p.patientId,
           heureDebut: null,
@@ -79,16 +101,6 @@ export default function RendezVousPage() {
           statut: 'EN_ATTENTE',
         }));
         setCreneaux(rows);
-      } else {
-        const data = await planningService.getJour(selectedDate, onglet);
-        // Patient normal, dont la CPA reste réellement à faire — un créneau CPA planifié pour
-        // un patient déjà CPA_REALISE/CPA_INAPTE (ou plus loin dans le parcours) ne doit plus
-        // apparaître ici : sans ce filtre, valider une CPA renvoyait l'utilisateur directement
-        // sur cet onglet où le patient qu'il venait de traiter réapparaissait aussitôt.
-        const filtres = (Array.isArray(data) ? data : []).filter((c: any) =>
-          (c.patient?.niveauUrgence ?? 'NORMAL') === 'NORMAL' && c.patient?.statut === 'EN_ATTENTE_CPA'
-        );
-        setCreneaux(filtres);
       }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -137,7 +149,7 @@ export default function RendezVousPage() {
   };
 
   const ongletActif = ONGLETS.find(o => o.type === onglet)!;
-  const TYPE_LABELS: Record<string, string> = { CPA: 'CPA', VERIFICATION_VEILLE: 'Vérif. veille' };
+  const TYPE_LABELS: Record<string, string> = { CPA: 'CPA', VERIFICATION_VEILLE: 'Vérif. veille', VERIFICATION_MEDICAMENTS: 'Vérif. médicaments' };
 
   return (
     <div className="p-6 flex flex-col gap-6">
@@ -296,8 +308,9 @@ export default function RendezVousPage() {
                       <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${
                         c.statut === 'PLANIFIE' ? 'bg-blue-100 text-blue-700' :
                         c.statut === 'TERMINE' ? 'bg-green-100 text-green-700' :
+                        c.statut === 'VERIF_MEDICAMENT' ? 'bg-amber-100 text-amber-700' :
                         c.statut === 'EN_ATTENTE' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
-                      }`}>{c.statut === 'EN_ATTENTE' ? 'En attente' : (c.statut || '—')}</span>
+                      }`}>{c.statut === 'VERIF_MEDICAMENT' ? 'Médicaments à vérifier' : c.statut === 'EN_ATTENTE' ? 'En attente' : (c.statut || '—')}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -305,7 +318,7 @@ export default function RendezVousPage() {
                           onClick={() => router.push(`${ongletActif.cible}?patientId=${c.patient?.id}&patientNom=${encodeURIComponent(nom)}`)}
                           className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors whitespace-nowrap"
                         >
-                          {ongletActif.actionLabel}
+                          {c.sousType === 'VERIF_MEDICAMENT' ? 'Vérifier médicament' : ongletActif.actionLabel}
                         </button>
                         <VoirDossierButton patientId={c.patient?.id} variant="icon" />
                       </div>

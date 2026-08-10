@@ -127,12 +127,17 @@ let CPAService = CPAService_1 = class CPAService {
             }
             const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
             if (nouveauStatut === patient_bloc_entity_1.PatientStatut.CPA_REALISE) {
-                const patientUrgence = await this.patientBlocRepo.findOne({
+                const patientApresCpa = await this.patientBlocRepo.findOne({
                     where: { patientId: dto.patientId },
                 });
-                if (patientUrgence?.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.URGENT ||
-                    patientUrgence?.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.TRES_URGENT) {
+                if (patientApresCpa?.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.URGENT ||
+                    patientApresCpa?.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.TRES_URGENT) {
                     await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC, centralUser.userId);
+                }
+                else if (statutValidationProf === cpa_entity_1.StatutValidationProf.VALIDE &&
+                    Array.isArray(dto.medicamentsAnesthesieReanimation) &&
+                    dto.medicamentsAnesthesieReanimation.length > 0) {
+                    await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE, centralUser.userId);
                 }
             }
             if (demande && dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
@@ -238,6 +243,18 @@ let CPAService = CPAService_1 = class CPAService {
                 roleUtilisateur === role_clinique_1.RoleClinique.MAJOR) &&
             (cpa.decision !== cpa_entity_1.DecisionCPA.APTE || contientSuiviAnesthesiste)) {
             cpa.statutValidationProf = cpa_entity_1.StatutValidationProf.VALIDE;
+        }
+        const patientApresCpa = cpa.patientId
+            ? await this.patientBlocRepo.findOne({
+                where: { patientId: cpa.patientId },
+            })
+            : null;
+        if (patientApresCpa?.statut === patient_bloc_entity_1.PatientStatut.CPA_REALISE &&
+            cpa.decision === cpa_entity_1.DecisionCPA.APTE &&
+            (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE ||
+                roleUtilisateur === role_clinique_1.RoleClinique.MAJOR) &&
+            contientSuiviAnesthesiste) {
+            await this.patientBlocStatutService.changerStatut(cpa.patientId, patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE, centralUser?.userId);
         }
         const updated = await this.cpaRepository.save(cpa);
         await this.tracabiliteService.log('CPA', id, 'UPDATE', { patientId: cpa.patientId }, centralUser?.userId);

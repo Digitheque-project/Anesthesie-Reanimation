@@ -190,16 +190,30 @@ export class CPAService {
       // Un patient non urgent, lui, reste à CPA_REALISE jusqu'à la vérification veille (même
       // écran, même mécanique, que la demande soit externe ou non — voir VerificationVeilleService).
       if (nouveauStatut === PatientStatut.CPA_REALISE) {
-        const patientUrgence = await this.patientBlocRepo.findOne({
+        const patientApresCpa = await this.patientBlocRepo.findOne({
           where: { patientId: dto.patientId },
         });
         if (
-          patientUrgence?.niveauUrgence === NiveauUrgence.URGENT ||
-          patientUrgence?.niveauUrgence === NiveauUrgence.TRES_URGENT
+          patientApresCpa?.niveauUrgence === NiveauUrgence.URGENT ||
+          patientApresCpa?.niveauUrgence === NiveauUrgence.TRES_URGENT
         ) {
           await this.patientBlocStatutService.changerStatut(
             dto.patientId,
             PatientStatut.PRET_POUR_BLOC,
+            centralUser.userId,
+          );
+        } else if (
+          // L'anesthésiste (ou le Major qui cumule les deux rôles) réalisant seul sa propre CPA
+          // a déjà complété les médicaments d'anesthésie dans la foulée : inutile de le renvoyer
+          // vers l'étape "Vérifier médicament" du Fil de travail — le patient bascule
+          // directement dans la liste Vérification veille (CPA_REALISE → EN_ATTENTE_VERIFICATION_VEILLE).
+          statutValidationProf === StatutValidationProf.VALIDE &&
+          Array.isArray(dto.medicamentsAnesthesieReanimation) &&
+          dto.medicamentsAnesthesieReanimation.length > 0
+        ) {
+          await this.patientBlocStatutService.changerStatut(
+            dto.patientId,
+            PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
             centralUser.userId,
           );
         }
@@ -365,6 +379,33 @@ export class CPAService {
       (cpa.decision !== DecisionCPA.APTE || contientSuiviAnesthesiste)
     ) {
       cpa.statutValidationProf = StatutValidationProf.VALIDE;
+    }
+
+    // Deuxième étape du flux CPA : l'anesthésiste (ou le Major) vient de compléter les
+    // médicaments d'anesthésie/réanimation et la date de vérification veille d'une CPA posée par
+    // le Responsable CPA. Le patient a alors franchi l'étape "Vérifier médicament" du Fil de
+    // travail : il bascule automatiquement dans la liste Vérification veille
+    // (CPA_REALISE → EN_ATTENTE_VERIFICATION_VEILLE), même si la date d'intervention a été
+    // reportée pendant la CPA. Vérifie l'état courant du patient (non urgent déclaré APTE =
+    // statut CPA_REALISE) : idempotent, ne re-bascule jamais un patient déjà en veille, et sans
+    // effet pour INAPTE (CPA_INAPTE) ou REPORT (resté EN_ATTENTE_CPA).
+    const patientApresCpa = cpa.patientId
+      ? await this.patientBlocRepo.findOne({
+          where: { patientId: cpa.patientId },
+        })
+      : null;
+    if (
+      patientApresCpa?.statut === PatientStatut.CPA_REALISE &&
+      cpa.decision === DecisionCPA.APTE &&
+      (roleUtilisateur === RoleClinique.ANESTHESISTE ||
+        roleUtilisateur === RoleClinique.MAJOR) &&
+      contientSuiviAnesthesiste
+    ) {
+      await this.patientBlocStatutService.changerStatut(
+        cpa.patientId,
+        PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+        centralUser?.userId,
+      );
     }
 
     const updated = await this.cpaRepository.save(cpa);
