@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import PrescriptionModule from '@/features/prescription/PrescriptionModule'
 import type { ServiceDestOverride } from '@/features/prescription/contexts/PrescriptionPanierContext'
 
@@ -14,10 +16,24 @@ interface PrescriptionCpaModalProps {
 // bloc opératoire — pour que l'anesthésiste/responsable CPA/major puisse prescrire au cas où
 // il en a besoin, avant la décision finale, sans quitter la page de consultation.
 export default function PrescriptionCpaModal({ open, onClose, patientId, serviceDestOverride }: PrescriptionCpaModalProps) {
+  // La modale est rendue dans un portail attaché à <body> : le composant est posé dans un
+  // conteneur `lg:sticky` de la CPA, et `position: sticky` crée un stacking context qui
+  // piégeait le z-index de la modale (effectivement 0) — la Sidebar (z-50), la TopBar (z-40)
+  // et le sommaire sticky (z-30) passaient donc au-dessus et masquaient la fenêtre.
+  // Portée à la racine du document, elle couvre tout le viewport et domine tous ces éléments.
+  useEffect(() => {
+    if (!open) return
+    const precedent = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = precedent
+    }
+  }, [open])
+
   if (!open) return null
 
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-5 bg-gradient-to-r from-primary to-secondary shrink-0">
           <div className="flex items-center gap-3">
@@ -43,6 +59,7 @@ export default function PrescriptionCpaModal({ open, onClose, patientId, service
           <PrescriptionModule patientId={patientId} serviceDestOverride={serviceDestOverride} />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
