@@ -63,7 +63,10 @@ export default function SommaireCpa() {
       // en dessous.
       className="sticky top-24 z-30 -mx-4 px-4 py-2 bg-surface-container-lowest/95 backdrop-blur-sm border-b border-outline-variant/20 shadow-sm"
     >
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+      {/* Les onglets passent à la ligne suivante dès qu'ils ne tiennent plus (flex-wrap) au lieu
+          de défiler sur une seule ligne à scrollbar masquée : tous les onglets restent visibles
+          quel que soit le zoom de l'écran. */}
+      <div className="flex flex-wrap gap-1.5">
         {SECTIONS.map((s) => {
           const estActif = s.id === actif;
           return (
