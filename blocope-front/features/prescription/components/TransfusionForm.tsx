@@ -46,7 +46,7 @@ export default function TransfusionForm({ patient, prescripteur }: Props) {
   const [incident, setIncident] = useState('');
   const [groupage, setGroupage] = useState('');
   const [hb, setHb] = useState('');
-  const [produits, setProduits] = useState<Produit[]>([{ id: '1', produit: 'cgr', quantite: '', datePrevue: '', plaquettes: '' }]);
+  const [produits, setProduits] = useState<Produit[]>([{ id: '1', produit: 'cgr', quantite: '', datePrevue: new Date().toISOString().split('T')[0], plaquettes: '' }]);
   const [notes, setNotes] = useState('');
   const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(false);

@@ -106,7 +106,7 @@ export default function NonMedicaleForm({ patient, prescripteur, patientType }: 
   const [dureeJours, setDureeJours] = useState<number>(0);
   const [frequenceType, setFrequenceType] = useState('');
   const [frequenceValeur, setFrequenceValeur] = useState<number>(0);
-  const [dateDebut, setDateDebut] = useState('');
+  const [dateDebut, setDateDebut] = useState(new Date().toISOString().split('T')[0]);
   const [heureDebut, setHeureDebut] = useState('');
   const [instructions, setInstructions] = useState('');
   const [urgence, setUrgence] = useState<'NORMAL'|'URGENT'|'TRES_URGENT'>('NORMAL');

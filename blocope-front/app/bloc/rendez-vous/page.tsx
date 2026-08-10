@@ -27,12 +27,17 @@ export default function RendezVousPage() {
   // uniquement — cette liste n'est plus liée à un créneau à date fixe (voir plus bas), mais on
   // veut pouvoir se limiter aux patients opérés tel jour, sans devoir chercher parmi tous les
   // patients CPA validée en attente de vérification.
-  const [filtreDateVerif, setFiltreDateVerif] = useState('');
+  const [filtreDateVerif, setFiltreDateVerif] = useState(new Date().toISOString().split('T')[0]);
   // Patients déjà planifiés (retirés du fil de prescription dès qu'un créneau CPA leur est
   // réservé, voir PlanningService.reserverCreneau) : sans cette alerte, il fallait parcourir le
   // calendrier jour par jour pour se rendre compte qu'un RDV existait déjà à une autre date.
   const [alerteCpa, setAlerteCpa] = useState<{ total: number; prochaine: string | null } | null>(null);
   const [voirTousCpa, setVoirTousCpa] = useState(false);
+  // Même mécanique côté « Vérification veille » : le calendrier ci-dessus démarre sur la date du
+  // jour, or les vérifications à faire peuvent être échelonnées sur d'autres jours (la veille de
+  // chaque intervention) — on prévient du total + de la prochaine, avec un bouton pour tout
+  // afficher d'un coup (voirTousVerif), exactement comme l'alerte RDV CPA.
+  const [voirTousVerif, setVoirTousVerif] = useState(false);
 
   useEffect(() => {
     if (onglet !== 'CPA') return;
@@ -101,7 +106,7 @@ export default function RendezVousPage() {
   // app/bloc/rapports/page.tsx.
   const creneauxFiltres = useMemo(() => {
     let filtres = creneaux;
-    if (onglet === 'VERIFICATION_VEILLE' && filtreDateVerif) {
+    if (onglet === 'VERIFICATION_VEILLE' && !voirTousVerif && filtreDateVerif) {
       filtres = filtres.filter((c: any) => c.dateIntervention && new Date(c.dateIntervention).toISOString().split('T')[0] === filtreDateVerif);
     }
     const q = recherche.trim().toLowerCase();
@@ -109,7 +114,23 @@ export default function RendezVousPage() {
     return filtres.filter((c: any) =>
       [formaterNomPatient(c.patient), c.type, c.chirurgien?.nom].some((v) => String(v || '').toLowerCase().includes(q))
     );
-  }, [creneaux, recherche, onglet, filtreDateVerif]);
+  }, [creneaux, recherche, onglet, filtreDateVerif, voirTousVerif]);
+
+  // Alerte « vérifications la veille à faire » : calculée à partir de la liste déjà chargée
+  // (tous les patients CPA validée, non urgents, en attente de vérification) — le total, et la
+  // prochaine (date d'intervention la plus proche, aujourd'hui ou plus tard).
+  const alerteVerif = useMemo(() => {
+    if (onglet !== 'VERIFICATION_VEILLE') return null;
+    const total = creneaux.length;
+    if (total === 0) return null;
+    const aujourdhui = new Date().toISOString().split('T')[0];
+    const dates = creneaux
+      .map((c: any) => (c.dateIntervention ? new Date(c.dateIntervention).toISOString().split('T')[0] : null))
+      .filter((d: string | null): d is string => d !== null)
+      .sort();
+    const prochaine = dates.find((d) => d >= aujourdhui) ?? dates[0] ?? null;
+    return { total, prochaine };
+  }, [creneaux, onglet]);
 
   const formaterDate = (d: string) => {
     return new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -137,9 +158,9 @@ export default function RendezVousPage() {
               <span className="material-symbols-outlined text-lg">filter_alt</span>
               Filtrer par date d'intervention
             </label>
-            <input type="date" value={filtreDateVerif} onChange={(e) => setFiltreDateVerif(e.target.value)}
-              className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit" />
-            {filtreDateVerif && (
+            <input type="date" value={filtreDateVerif} onChange={(e) => setFiltreDateVerif(e.target.value)} disabled={voirTousVerif}
+              className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed" />
+            {filtreDateVerif && !voirTousVerif && (
               <button onClick={() => setFiltreDateVerif('')} className="text-xs font-bold text-primary hover:underline">
                 Effacer
               </button>
@@ -160,6 +181,25 @@ export default function RendezVousPage() {
           <button onClick={() => setVoirTousCpa(v => !v)}
             className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
             {voirTousCpa ? 'Revenir à la date sélectionnée' : 'Voir tous les rendez-vous CPA'}
+          </button>
+        </div>
+      )}
+
+      {/* Alerte vérifications la veille à faire (patients CPA validée en attente de vérification) —
+          même mécanique que l'alerte RDV CPA : le calendrier démarre sur la date du jour, or les
+          vérifications peuvent être échelonnées sur d'autres jours (la veille de chaque opération) ;
+          on affiche le total + la prochaine, avec un bouton pour tout voir d'un coup. */}
+      {onglet === 'VERIFICATION_VEILLE' && alerteVerif && alerteVerif.total > 0 && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex flex-wrap items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">event_available</span>
+            {alerteVerif.total} vérification{alerteVerif.total > 1 ? 's' : ''} la veille à faire
+            {alerteVerif.prochaine && ` — la prochaine est le ${new Date(alerteVerif.prochaine + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`}
+            {voirTousVerif ? '.' : `. Changez le calendrier ci-dessus pour la voir, ou :`}
+          </span>
+          <button onClick={() => setVoirTousVerif(v => !v)}
+            className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
+            {voirTousVerif ? 'Revenir à la date sélectionnée' : 'Voir tous les vérifications à faire'}
           </button>
         </div>
       )}
