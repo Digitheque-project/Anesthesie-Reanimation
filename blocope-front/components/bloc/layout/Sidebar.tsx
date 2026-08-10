@@ -42,7 +42,7 @@ export default function Sidebar() {
   const itemsVisibles = navItems.filter((item) => !role || !item.rolesExclus?.includes(role));
 
   return (
-    <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 bg-[#1675F5]">
+    <aside className="w-64 fixed left-0 top-0 bottom-0 flex flex-col z-50 bg-[#82C8E5]">
       {/* Logo and Brand */}
       <div className="px-6 py-4 flex flex-col items-center shrink-0">
         <div className="relative w-14 h-14 mb-2">
@@ -53,10 +53,10 @@ export default function Sidebar() {
           height={56}
           className="rounded-full object-cover border-2 border-white shadow-md bg-white" />
         </div>
-        <h1 className="font-headline font-extrabold text-white text-center text-sm tracking-tight leading-tight">
+        <h1 className="font-headline font-extrabold text-primary text-center text-sm tracking-tight leading-tight">
           Service Anesthésie-Réanimation
         </h1>
-        <p className="text-[9px] font-bold tracking-[0.15em] text-white/70 uppercase mt-0.5">
+        <p className="text-[9px] font-bold tracking-[0.15em] text-primary/70 uppercase mt-0.5">
           PLATEFORME MÉDICALE
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${
                 isActive
                   ? "bg-white text-primary font-bold shadow-sm"
-                  : "text-white/90 hover:bg-white/15 font-medium"
+                  : "text-primary/90 hover:bg-white/40 font-medium"
               }`}
             >
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.couleur.bg} ${item.couleur.texte} group-hover:scale-110 transition-transform`}>
@@ -89,9 +89,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="mt-auto p-3 border-t border-white/20 space-y-1 shrink-0">
+      <div className="mt-auto p-3 border-t border-primary/20 space-y-1 shrink-0">
         <button
-          className="w-full flex items-center gap-3 px-4 py-2 text-white/90 hover:text-red-200 transition-all group"
+          className="w-full flex items-center gap-3 px-4 py-2 text-primary/90 hover:text-red-600 transition-all group"
           onClick={() => { effacerSession(); redirigerVersLogin(); }}
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>
