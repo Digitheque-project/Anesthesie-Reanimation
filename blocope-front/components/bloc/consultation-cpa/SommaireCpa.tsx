@@ -57,11 +57,11 @@ export default function SommaireCpa() {
   return (
     <nav
       aria-label="Sections de la consultation"
-      // top-20 (80px) reprend exactement le pt-20 du <main> dans app/bloc/layout.tsx, qui
-      // compense la hauteur du TopBar fixe — sans ce raccord, le sommaire se collait 12px trop
-      // haut et se faisait à moitié recouvrir par le TopBar (z-40) au lieu de se loger juste en
-      // dessous.
-      className="sticky top-20 z-30 -mx-4 px-4 py-2 bg-surface-container-lowest/95 backdrop-blur-sm border-b border-outline-variant/20 shadow-sm"
+      // top-24 (96px) reprend exactement le pt-24 du <main> dans app/bloc/layout.tsx, qui
+      // compense la hauteur du TopBar fixe — sans ce raccord, le sommaire se collait trop
+      // haut et se faisait à moitié recouvrir par le TopBar (z-40) au lieu de se loger juste
+      // en dessous.
+      className="sticky top-24 z-30 -mx-4 px-4 py-2 bg-surface-container-lowest/95 backdrop-blur-sm border-b border-outline-variant/20 shadow-sm"
     >
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
         {SECTIONS.map((s) => {

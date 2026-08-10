@@ -505,15 +505,15 @@ function ConsultationCpaPageContent() {
         // Première étape : le Major/Responsable CPA (ou l'anesthésiste s'il réalise seul sa
         // propre CPA) remplit l'examen et pose la décision.
         if (!peutEditerExamenEtDecision) { alert('❌ Seul un anesthésiste, un responsable CPA ou un major peut remplir et valider la CPA'); setLoading(false); return; }
-        // Aucune valeur n'étant plus pré-cochée par défaut, ces champs cliniquement
-        // structurants doivent être activement choisis avant de pouvoir valider — plutôt que de
-        // silencieusement retomber sur une valeur jamais vraiment observée.
-        const champsManquants: string[] = [];
-        // Seuls ces deux champs restent obligatoires sur toute la fiche — tous les autres
-        // (examen clinique, voies aériennes, ASA, protocole, instructions...) sont volontairement
-        // laissés libres, la décision finale ci-dessous mise à part.
-        if (form.patientMineur === null) champsManquants.push('Patient mineur (OUI/NON)');
-        if (form.autorisationOpererSignee === null) champsManquants.push("Autorisation d'opérer signée (OUI/NON)");
+          // Aucune valeur n'étant plus pré-cochée par défaut, ce champ cliniquement structurant
+          // doit être activement choisi avant de pouvoir valider — plutôt que de silencieusement
+          // retomber sur une valeur jamais vraiment observée.
+          const champsManquants: string[] = [];
+          // Seuls « Patient mineur » (choix majeur/mineur) et la décision finale ci-dessous
+          // restent obligatoires sur toute la fiche — tous les autres champs (autorisation
+          // signée, examen clinique, voies aériennes, ASA, protocole, instructions...) sont
+          // volontairement laissés libres.
+          if (form.patientMineur === null) champsManquants.push('Patient mineur (OUI/NON)');
         if (champsManquants.length) {
           alert('❌ Complétez ces champs avant de valider :\n— ' + champsManquants.join('\n— '));
           setLoading(false);
@@ -910,8 +910,9 @@ function ConsultationCpaPageContent() {
         : 'bg-white border-outline-variant/50 text-on-surface-variant'
     } ${editable ? 'cursor-pointer hover:border-primary/60' : 'cursor-not-allowed opacity-70'}`;
 
-  // Champ libre (ni obligatoire ni signalé visuellement) — seuls Patient mineur et Autorisation
-  // d'opérer signée le sont encore sur toute la fiche, avec leur propre style de pastille OUI/NON.
+  // Champ libre (ni obligatoire ni signalé visuellement) — seul Patient mineur (choix
+  // majeur/mineur) le reste encore sur la fiche avec sa pastille OUI/NON, la décision finale
+  // en bas de page mise à part.
   const texteRequisClass = (_valeur: string, base = 'h-20') =>
     `w-full bg-surface-container-low border-2 border-transparent rounded-xl p-3 text-sm ${base} transition-colors focus:ring-2 focus:ring-primary/30 outline-none disabled:opacity-60`;
 
@@ -1040,7 +1041,7 @@ function ConsultationCpaPageContent() {
       <div className="flex flex-col lg:flex-row gap-2 items-start">
         <div className={`flex-1 space-y-2 min-w-0 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
           {/* Antécédents — section 1 de la fiche papier "Fiche d'Anesthésie – Réanimation" */}
-          <section id="cpa-antecedents" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4 scroll-mt-32">
+          <section id="cpa-antecedents" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4 scroll-mt-36">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history_edu</span>
               <h2 className="text-lg font-bold font-headline text-primary">Antécédents</h2>
@@ -1068,7 +1069,7 @@ function ConsultationCpaPageContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant">Autorisation d'opérer signée ?<Requis /></label>
+                <label className="block text-sm font-semibold text-on-surface-variant">Autorisation d'opérer signée ?</label>
                 <div className="flex gap-2">
                   <label className={pilleClass(form.autorisationOpererSignee === true, peutEditerExamenEtDecision)}>
                     <input disabled={!peutEditerExamenEtDecision} checked={form.autorisationOpererSignee === true} onChange={() => setForm(f => ({ ...f, autorisationOpererSignee: true }))} className="hidden" name="autorisationOpererSignee" type="radio" />OUI
@@ -1190,7 +1191,7 @@ function ConsultationCpaPageContent() {
           </section>
 
           {/* Examen clinique */}
-          <section id="cpa-examen" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm scroll-mt-32">
+          <section id="cpa-examen" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm scroll-mt-36">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-primary">stethoscope</span>
               <h2 className="text-lg font-bold font-headline text-primary">Examen clinique</h2>
@@ -1226,19 +1227,27 @@ function ConsultationCpaPageContent() {
           </section>
 
           {/* Voies aériennes */}
-          <section id="cpa-voies-aeriennes" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm scroll-mt-32">
+          <section id="cpa-voies-aeriennes" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm scroll-mt-36">
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-primary">air</span>
               <h2 className="text-lg font-bold font-headline text-primary">Voies aériennes</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <div className="space-y-2">
-                <label className="text-sm font-semibold block">Mallampati Score</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[1, 2, 3, 4].map((score) => (
+                <label className="text-sm font-semibold block">Mallampati</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { score: 1, desc: 'Tout le voile + luette' },
+                    { score: 2, desc: 'Voile + luette partielle' },
+                    { score: 3, desc: 'Base de la luette' },
+                    { score: 4, desc: 'Seul le palais dur' },
+                  ].map(({ score, desc }) => (
                     <button key={score} onClick={() => setScoreMallampati(score)} disabled={!peutEditerExamenEtDecision}
-                      className={`p-4 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreMallampati === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
-                      {score}
+                      className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border text-center transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                        scoreMallampati === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low'
+                      }`}>
+                      <span className="text-lg font-bold leading-none">{score}</span>
+                      <span className="text-[10px] font-medium leading-tight">{desc}</span>
                     </button>
                   ))}
                 </div>
@@ -1269,7 +1278,7 @@ function ConsultationCpaPageContent() {
               Conclusion (déplacé depuis le bloc ASA & Protocole plus bas) et réduit à la même
               taille que le sélecteur Mallampati (Voies aériennes) pour bien s'aligner à côté du
               texte. */}
-          <section id="cpa-conclusion" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+          <section id="cpa-conclusion" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-36 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">summarize</span>
           <h2 className="text-lg font-bold font-headline text-primary">Conclusion</h2>
@@ -1281,16 +1290,29 @@ function ConsultationCpaPageContent() {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold block">Score ASA</label>
-            <div className="grid grid-cols-4 gap-2">
-              {[1, 2, 3, 4, 5, 6].map((score) => (
-                <button key={score} onClick={() => setScoreASA(score)} disabled={!peutEditerExamenEtDecision}
-                  className={`p-4 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
-                  {score}
+            <div className="space-y-1.5">
+              {[
+                { s: 1, d: 'Patient sain' },
+                { s: 2, d: 'Maladie systémique légère' },
+                { s: 3, d: 'Maladie systémique sévère' },
+                { s: 4, d: 'Sévère, pronostic vital en jeu' },
+                { s: 5, d: 'Moribond, survie improbable' },
+                { s: 6, d: "Donneur d'organes" },
+              ].map(({ s, d }) => (
+                <button key={s} onClick={() => setScoreASA(s)} disabled={!peutEditerExamenEtDecision}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                    scoreASA === s ? 'border-primary bg-primary-fixed text-primary font-bold' : 'border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low'
+                  }`}>
+                  <span className="font-bold">ASA {s}</span>
+                  <span className="text-xs text-right">{d}</span>
                 </button>
               ))}
               <button onClick={() => setScoreASA('E')} disabled={!peutEditerExamenEtDecision}
-                className={`col-span-2 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === 'E' ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
-                E
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                  scoreASA === 'E' ? 'border-primary bg-primary-fixed text-primary font-bold' : 'border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low'
+                }`}>
+                <span className="font-bold">ASA E</span>
+                <span className="text-xs text-right">Urgence</span>
               </button>
             </div>
           </div>
@@ -1300,9 +1322,9 @@ function ConsultationCpaPageContent() {
 
         {/* Carte Prescription — collée (sticky) le long d'Antécédents / Examen / Voies aériennes /
             Conclusion, là où une prescription complémentaire est le plus susceptible d'être
-            nécessaire. top-32 (128px) pour rester sous le TopBar fixe (80px) ET le sommaire
-            sticky de la CPA (~50px), même valeur que le scroll-mt-32 utilisé sur les ancres. */}
-        <div className="w-full lg:w-80 lg:sticky lg:top-32 space-y-2">
+            nécessaire. top-36 (144px) pour rester sous le TopBar fixe (~96px) ET le sommaire
+            sticky de la CPA (~50px), même valeur que le scroll-mt-36 utilisé sur les ancres. */}
+        <div className="w-full lg:w-80 lg:sticky lg:top-36 space-y-2">
           <section className={`rounded-2xl p-5 shadow-lg overflow-hidden ${peutDeciderAptitudeCpa ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-500/40' : 'bg-surface-container-lowest text-on-surface-variant'}`}>
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-2xl" style={peutDeciderAptitudeCpa ? { fontVariationSettings: "'FILL' 1" } : undefined}>edit_note</span>
@@ -1340,7 +1362,7 @@ function ConsultationCpaPageContent() {
       {/* Traitement médicamenteux — sorti de la Conclusion (qui mélangeait jugement clinique et
           traitement en cours du patient), section à part entière (pleine largeur, en dehors de la
           colonne collée à la carte Prescription). */}
-      <section id="cpa-traitement" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+      <section id="cpa-traitement" className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3 scroll-mt-36 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">pill</span>
           <h2 className="text-lg font-bold font-headline text-primary">Traitement médicamenteux</h2>
@@ -1354,7 +1376,7 @@ function ConsultationCpaPageContent() {
       </section>
 
       {/* Instructions & Prescription */}
-      <div id="cpa-instructions" className="rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-blue-50/80 to-white shadow-md overflow-hidden scroll-mt-32">
+      <div id="cpa-instructions" className="rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-blue-50/80 to-white shadow-md overflow-hidden scroll-mt-36">
         <div className="px-4 py-3 bg-blue-100/70 border-b border-blue-200 flex items-center gap-2">
           <span className="material-symbols-outlined text-blue-600">assignment</span>
           <h2 className="text-sm font-extrabold text-blue-900 uppercase tracking-widest">Instructions Pré-opératoires</h2>
@@ -1363,7 +1385,7 @@ function ConsultationCpaPageContent() {
           {/* Rangée 1 : Protocole opératoire + Jeûne, côte à côte et à la même hauteur (le
               protocole retenu conditionne les règles de jeûne à observer — les deux se lisent
               ensemble, en premier). */}
-          <div id="cpa-protocole" className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch scroll-mt-32 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
+          <div id="cpa-protocole" className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch scroll-mt-36 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
             <div>
               <section className="h-full bg-white rounded-2xl shadow-md border-2 border-secondary/20 overflow-hidden">
                 <div className="bg-gradient-to-r from-secondary to-secondary/80 px-4 py-3 flex items-center gap-2">
@@ -1536,7 +1558,7 @@ function ConsultationCpaPageContent() {
 
           {/* Décision Finale — seul champ réellement obligatoire de la consultation : mise en
               évidence forte (cadre doré) pour la distinguer de tous les autres champs libres */}
-          <div id="cpa-decision" className="mt-4 pt-4 border-t border-surface-container scroll-mt-32">
+          <div id="cpa-decision" className="mt-4 pt-4 border-t border-surface-container scroll-mt-36">
             <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-amber-50/80 to-white shadow-md overflow-hidden">
               <div className="px-4 py-3 bg-amber-100/70 border-b border-amber-200 flex items-center gap-2">
                 <span className="material-symbols-outlined text-amber-600">gavel</span>
