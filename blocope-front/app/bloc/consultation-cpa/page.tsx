@@ -1234,20 +1234,12 @@ function ConsultationCpaPageContent() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <div className="space-y-2">
-                <label className="text-sm font-semibold block">Mallampati</label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { score: 1, desc: 'Tout le voile + luette' },
-                    { score: 2, desc: 'Voile + luette partielle' },
-                    { score: 3, desc: 'Base de la luette' },
-                    { score: 4, desc: 'Seul le palais dur' },
-                  ].map(({ score, desc }) => (
+                <label className="text-sm font-semibold block">Mallampati Score</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map((score) => (
                     <button key={score} onClick={() => setScoreMallampati(score)} disabled={!peutEditerExamenEtDecision}
-                      className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border text-center transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                        scoreMallampati === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low'
-                      }`}>
-                      <span className="text-lg font-bold leading-none">{score}</span>
-                      <span className="text-[10px] font-medium leading-tight">{desc}</span>
+                      className={`p-4 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreMallampati === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
+                      {score}
                     </button>
                   ))}
                 </div>
@@ -1290,29 +1282,16 @@ function ConsultationCpaPageContent() {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold block">Score ASA</label>
-            <div className="space-y-1.5">
-              {[
-                { s: 1, d: 'Patient sain' },
-                { s: 2, d: 'Maladie systémique légère' },
-                { s: 3, d: 'Maladie systémique sévère' },
-                { s: 4, d: 'Sévère, pronostic vital en jeu' },
-                { s: 5, d: 'Moribond, survie improbable' },
-                { s: 6, d: "Donneur d'organes" },
-              ].map(({ s, d }) => (
-                <button key={s} onClick={() => setScoreASA(s)} disabled={!peutEditerExamenEtDecision}
-                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                    scoreASA === s ? 'border-primary bg-primary-fixed text-primary font-bold' : 'border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low'
-                  }`}>
-                  <span className="font-bold">ASA {s}</span>
-                  <span className="text-xs text-right">{d}</span>
+            <div className="grid grid-cols-4 gap-2">
+              {[1, 2, 3, 4, 5, 6].map((score) => (
+                <button key={score} onClick={() => setScoreASA(score)} disabled={!peutEditerExamenEtDecision}
+                  className={`p-4 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === score ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
+                  {score}
                 </button>
               ))}
               <button onClick={() => setScoreASA('E')} disabled={!peutEditerExamenEtDecision}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                  scoreASA === 'E' ? 'border-primary bg-primary-fixed text-primary font-bold' : 'border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low'
-                }`}>
-                <span className="font-bold">ASA E</span>
-                <span className="text-xs text-right">Urgence</span>
+                className={`col-span-2 rounded-lg border-2 font-bold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed ${scoreASA === 'E' ? 'border-primary bg-primary-fixed text-primary' : 'border-outline-variant bg-white hover:bg-primary-fixed'}`}>
+                E
               </button>
             </div>
           </div>
