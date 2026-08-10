@@ -1,6 +1,7 @@
 import { Repository } from 'typeorm';
 import { CPA } from '../entities/cpa.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
+import { NotificationCPA } from '../entities/notification-cpa.entity';
 import { Premedicament } from '../entities/premedicament.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { EndoscopieClient } from '../external/endoscopie.client';
@@ -17,6 +18,7 @@ export declare class CPAService {
     private cpaRepository;
     private patientBlocRepo;
     private premedRepository;
+    private notificationCpaRepo;
     private accueilClient;
     private endoscopieClient;
     private notificationOutgoing;
@@ -26,7 +28,7 @@ export declare class CPAService {
     private tracabiliteService;
     private patientBlocStatutService;
     private readonly logger;
-    constructor(cpaRepository: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, premedRepository: Repository<Premedicament>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, notificationOutgoing: NotificationOutgoingService, demandeCpaExterneService: DemandeCpaExterneService, medecinService: MedecinService, medecinIdentiteService: MedecinIdentiteService, tracabiliteService: TracabiliteService, patientBlocStatutService: PatientBlocStatutService);
+    constructor(cpaRepository: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, premedRepository: Repository<Premedicament>, notificationCpaRepo: Repository<NotificationCPA>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, notificationOutgoing: NotificationOutgoingService, demandeCpaExterneService: DemandeCpaExterneService, medecinService: MedecinService, medecinIdentiteService: MedecinIdentiteService, tracabiliteService: TracabiliteService, patientBlocStatutService: PatientBlocStatutService);
     create(dto: CreateCPADto, centralUser: CentralUser): Promise<CPA>;
     findAll(page?: number, limite?: number, patientId?: string): Promise<{
         data: Record<string, any>[];

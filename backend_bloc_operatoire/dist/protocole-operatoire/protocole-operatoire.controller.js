@@ -28,7 +28,7 @@ let ProtocoleOperatoireController = class ProtocoleOperatoireController {
         this.service = service;
     }
     create(dto, req) {
-        return this.service.create(dto, req.centralUser?.userId);
+        return this.service.create(dto, req.centralUser);
     }
     findAll(p, l, patientId) {
         return this.service.findAll(p, l, patientId);
@@ -37,7 +37,7 @@ let ProtocoleOperatoireController = class ProtocoleOperatoireController {
         return this.service.findOne(id);
     }
     update(id, dto, req) {
-        return this.service.update(id, dto, req.centralUser?.userId);
+        return this.service.update(id, dto, req.centralUser);
     }
     remove(id) {
         return this.service.remove(id);
@@ -46,8 +46,10 @@ let ProtocoleOperatoireController = class ProtocoleOperatoireController {
 exports.ProtocoleOperatoireController = ProtocoleOperatoireController;
 __decorate([
     (0, common_1.Post)(),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN),
-    (0, swagger_1.ApiOperation)({ summary: 'Creer un protocole operatoire (Chirurgien)' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN, role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Creer un protocole operatoire / protocole anesthesique (Chirurgien ou Anesthesiste)',
+    }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -83,8 +85,8 @@ __decorate([
 ], ProtocoleOperatoireController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier un protocole (Chirurgien)' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN, role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier un protocole (Chirurgien ou Anesthesiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),

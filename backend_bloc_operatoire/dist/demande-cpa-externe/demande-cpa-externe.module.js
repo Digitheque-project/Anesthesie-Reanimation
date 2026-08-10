@@ -15,6 +15,7 @@ const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const demande_cpa_externe_service_1 = require("./demande-cpa-externe.service");
 const demande_cpa_externe_controller_1 = require("./demande-cpa-externe.controller");
+const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
 let DemandeCpaExterneModule = class DemandeCpaExterneModule {
 };
 exports.DemandeCpaExterneModule = DemandeCpaExterneModule;
@@ -23,6 +24,7 @@ exports.DemandeCpaExterneModule = DemandeCpaExterneModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([demande_cpa_externe_entity_1.DemandeCpaExterne, creneau_bloc_entity_1.CreneauBloc, cpa_entity_1.CPA]),
             axios_1.HttpModule.register({ timeout: 45000 }),
+            patient_bloc_module_1.PatientBlocModule,
         ],
         controllers: [demande_cpa_externe_controller_1.DemandeCpaExterneController],
         providers: [demande_cpa_externe_service_1.DemandeCpaExterneService],

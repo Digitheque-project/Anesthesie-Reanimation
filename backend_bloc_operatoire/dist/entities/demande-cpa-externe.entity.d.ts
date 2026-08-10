@@ -27,6 +27,8 @@ export declare class DemandeCpaExterne {
     cpaId: string;
     vpaId: string;
     payload: any;
+    lu: boolean;
+    luLe: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }

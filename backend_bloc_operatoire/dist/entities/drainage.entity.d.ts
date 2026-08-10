@@ -3,7 +3,8 @@ export declare enum TypeDrainage {
     SONDE_NASO_GASTRIQUE = "SONDE_NASO_GASTRIQUE",
     DRAIN_CRANE = "DRAIN_CRANE",
     DRAIN_THORAX = "DRAIN_THORAX",
-    DRAIN_ABDOMEN = "DRAIN_ABDOMEN"
+    DRAIN_ABDOMEN = "DRAIN_ABDOMEN",
+    MEMBRE_SEIN_AUTRES = "MEMBRE_SEIN_AUTRES"
 }
 export declare enum ModeDrainage {
     SIPHON = "SIPHON",

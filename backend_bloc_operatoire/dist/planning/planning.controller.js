@@ -39,11 +39,8 @@ let PlanningController = class PlanningController {
     urgences() {
         return this.service.getUrgencesEnAttente();
     }
-    transfererCpaVersVerificationVeille(dto) {
-        return this.service.transfererCpaVersVerificationVeille(dto);
-    }
-    transfererVerificationVeilleVersPatientJour(dto) {
-        return this.service.transfererVerificationVeilleVersPatientJour(dto);
+    cpaAVenir() {
+        return this.service.getProchainsRdvCpa();
     }
 };
 exports.PlanningController = PlanningController;
@@ -95,27 +92,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PlanningController.prototype, "urgences", null);
 __decorate([
-    (0, common_1.Post)('transferer-cpa-vers-verification-veille'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, common_1.Get)('cpa-a-venir'),
     (0, swagger_1.ApiOperation)({
-        summary: 'Transférer un patient de CPA vers Vérification veille (Responsable CPA)',
+        summary: 'Rendez-vous CPA à venir (bannière du Fil de travail — patients déjà planifiés)',
     }),
-    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], PlanningController.prototype, "transfererCpaVersVerificationVeille", null);
-__decorate([
-    (0, common_1.Post)('transferer-verification-veille-vers-patient-jour'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Transférer un patient de Vérification veille vers Patient du jour (Responsable CPA)',
-    }),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
-], PlanningController.prototype, "transfererVerificationVeilleVersPatientJour", null);
+], PlanningController.prototype, "cpaAVenir", null);
 exports.PlanningController = PlanningController = __decorate([
     (0, swagger_1.ApiTags)('Planning'),
     (0, common_1.Controller)('planning'),

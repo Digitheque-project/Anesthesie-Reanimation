@@ -19,5 +19,6 @@ export declare class PrescriptionService {
     processPrescription(dto: ReceivePrescriptionDto): Promise<boolean>;
     pollPrescriptionsBloc(): Promise<void>;
     private mapUrgence;
+    private extraireDateIntervention;
     private ingerer;
 }

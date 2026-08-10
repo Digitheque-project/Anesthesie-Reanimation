@@ -72,7 +72,14 @@ let BonCommandeService = class BonCommandeService {
         const bon = await this.bonRepo.findOne({ where: { id } });
         if (!bon)
             throw new common_1.NotFoundException(`Bon ${id} non trouvé`);
-        return this.bonRepo.save(Object.assign(bon, dto));
+        const { items, ...data } = dto;
+        const updated = await this.bonRepo.save(Object.assign(bon, data));
+        if (items !== undefined) {
+            await this.itemRepo.delete({ bonCommande: { id } });
+            if (items.length)
+                await this.itemRepo.save(items.map((i) => this.itemRepo.create({ ...i, bonCommande: updated })));
+        }
+        return this.findOne(updated.id);
     }
     async remove(id) {
         const bon = await this.bonRepo.findOne({ where: { id } });

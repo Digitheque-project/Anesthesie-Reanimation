@@ -41,6 +41,8 @@ let DemandeCpaExterne = class DemandeCpaExterne {
     cpaId;
     vpaId;
     payload;
+    lu;
+    luLe;
     createdAt;
     updatedAt;
 };
@@ -122,6 +124,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
     __metadata("design:type", Object)
 ], DemandeCpaExterne.prototype, "payload", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], DemandeCpaExterne.prototype, "lu", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
+], DemandeCpaExterne.prototype, "luLe", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

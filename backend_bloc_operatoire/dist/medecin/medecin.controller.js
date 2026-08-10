@@ -18,6 +18,8 @@ const swagger_1 = require("@nestjs/swagger");
 const medecin_service_1 = require("./medecin.service");
 const create_medecin_dto_1 = require("./dto/create-medecin.dto");
 const update_medecin_dto_1 = require("./dto/update-medecin.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let MedecinController = class MedecinController {
     service;
     constructor(service) {
@@ -42,7 +44,8 @@ let MedecinController = class MedecinController {
 exports.MedecinController = MedecinController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un médecin' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer un médecin (Major, Responsable CPA)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_medecin_dto_1.CreateMedecinDto]),
@@ -67,7 +70,8 @@ __decorate([
 ], MedecinController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier un médecin' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier un médecin (Major, Responsable CPA)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -76,7 +80,8 @@ __decorate([
 ], MedecinController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un médecin' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un médecin (Major, Responsable CPA)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

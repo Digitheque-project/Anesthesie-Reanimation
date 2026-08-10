@@ -57,9 +57,18 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         }
         const savedResult = await this.repo.save(this.repo.create(dto));
         const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
-        await this.patientBlocRepo.update(dto.patientId, {
-            statut: patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
-        });
+        try {
+            const patientAvant = await this.patientBlocRepo.findOne({
+                where: { patientId: dto.patientId },
+            });
+            if (patientAvant?.statut === patient_bloc_entity_1.PatientStatut.CPA_REALISE) {
+                await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE, utilisateurId);
+            }
+            await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE, utilisateurId);
+        }
+        catch (err) {
+            this.logger.warn(`Transition VERIFICATION_VEILLE_REALISEE impossible pour ${dto.patientId}: ${err.message}`);
+        }
         await this.tracabiliteService.log('VerificationVeille', saved.id, 'CREATE', { patientId: dto.patientId }, utilisateurId);
         try {
             await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC, utilisateurId);

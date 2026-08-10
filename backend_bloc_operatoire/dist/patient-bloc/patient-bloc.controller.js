@@ -101,8 +101,9 @@ __decorate([
 ], PatientBlocController.prototype, "getExternal", null);
 __decorate([
     (0, common_1.Post)('admit'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
     (0, swagger_1.ApiOperation)({
-        summary: 'Admettre au bloc un patient déjà enregistré dans Accueil',
+        summary: 'Admettre au bloc un patient déjà enregistré dans Accueil (Major, Responsable CPA)',
     }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -111,8 +112,9 @@ __decorate([
 ], PatientBlocController.prototype, "admitExisting", null);
 __decorate([
     (0, common_1.Post)('register-and-admit'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
     (0, swagger_1.ApiOperation)({
-        summary: "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc",
+        summary: "Enregistrer un nouveau patient dans Accueil puis l'admettre au bloc (Major, Responsable CPA)",
     }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
@@ -175,7 +177,8 @@ __decorate([
 ], PatientBlocController.prototype, "getDossierComplet", null);
 __decorate([
     (0, common_1.Patch)(':patientId'),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une fiche de suivi bloc' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une fiche de suivi bloc (Major, Responsable CPA)' }),
     __param(0, (0, common_1.Param)('patientId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -222,7 +225,8 @@ __decorate([
 ], PatientBlocController.prototype, "modifierDateIntervention", null);
 __decorate([
     (0, common_1.Delete)(':patientId'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une fiche de suivi bloc' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une fiche de suivi bloc (Major, Responsable CPA)' }),
     __param(0, (0, common_1.Param)('patientId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

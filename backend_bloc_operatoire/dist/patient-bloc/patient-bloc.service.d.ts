@@ -54,6 +54,7 @@ export declare class PatientBlocService {
     }>;
     search(q?: string): Promise<any[]>;
     getExternal(externalId: string): Promise<any>;
+    private verifierDateInterventionValide;
     admitExisting(dto: any): Promise<PatientBloc>;
     registerAndAdmit(dto: any, createdBy: string): Promise<PatientBloc>;
 }

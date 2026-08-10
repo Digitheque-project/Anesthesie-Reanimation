@@ -43,6 +43,11 @@ let PatientBlocService = class PatientBlocService {
         });
         if (!demande)
             throw new Error('Demande non trouvée');
+        const existant = await this.patientRepo.findOne({
+            where: { patientId: demande.patientId },
+        });
+        if (existant)
+            return existant;
         const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
         const niveauUrgence = estUrgence
             ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT
@@ -51,12 +56,13 @@ let PatientBlocService = class PatientBlocService {
         patient.patientId = demande.patientId;
         patient.chuId = demande.chuId;
         patient.idDossier = `CHU-${Date.now()}`;
-        patient.groupeSanguin = 'A+';
+        patient.groupeSanguin = 'INCONNU';
         patient.niveauUrgence = niveauUrgence;
         patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
         patient.prescripteurId = demande.sourceServiceId;
         patient.serviceOrigine = demande.sourceServiceName || null;
         patient.serviceOrigineId = demande.sourceServiceId || null;
+        patient.dateIntervention = demande.dateExamenSouhaitee || null;
         const saved = await this.patientRepo.save(patient);
         return Array.isArray(saved) ? saved[0] : saved;
     }
@@ -164,7 +170,16 @@ let PatientBlocService = class PatientBlocService {
     async getExternal(externalId) {
         return null;
     }
+    verifierDateInterventionValide(dateIntervention) {
+        if (!dateIntervention)
+            return;
+        const aujourdhui = new Date().toISOString().split('T')[0];
+        if (new Date(dateIntervention).toISOString().split('T')[0] < aujourdhui) {
+            throw new common_1.BadRequestException("Impossible de planifier l'opération à une date passée.");
+        }
+    }
     async admitExisting(dto) {
+        this.verifierDateInterventionValide(dto?.dateIntervention);
         const patient = this.patientRepo.create({
             ...dto,
             chuId: dto.chuId || this.config.get('externalServices.chuId'),
@@ -175,6 +190,7 @@ let PatientBlocService = class PatientBlocService {
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async registerAndAdmit(dto, createdBy) {
+        this.verifierDateInterventionValide(dto?.dateIntervention);
         const patient = this.patientRepo.create({
             ...dto,
             chuId: dto.chuId || this.config.get('externalServices.chuId'),

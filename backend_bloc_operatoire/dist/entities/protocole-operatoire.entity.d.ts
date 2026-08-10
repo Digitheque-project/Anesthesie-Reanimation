@@ -7,20 +7,48 @@ export declare class ProtocoleOperatoire {
     anesthesisteId: string | null;
     infirmiereId: string | null;
     aideOperatoireId: string | null;
-    compteRenduIntervention: string;
+    compteRenduIntervention: string | null;
+    compteRenduAnesthesique: string | null;
     surveillance: {
-        ta: string;
-        pouls: string;
-        fr: string;
-        temperature: string;
-        diurèse: string;
-        autres: string;
+        ta: {
+            coche: boolean;
+            valeur: string;
+        };
+        pouls: {
+            coche: boolean;
+            valeur: string;
+        };
+        fr: {
+            coche: boolean;
+            valeur: string;
+        };
+        temperature: {
+            coche: boolean;
+            valeur: string;
+        };
+        diurese: {
+            coche: boolean;
+            valeur: string;
+        };
+        autres: {
+            coche: boolean;
+            valeur: string;
+        };
     };
     drainages: Drainage[];
     prescriptions: {
-        perfusionBrasGauche: boolean;
-        perfusionBrasDroit: boolean;
-        voieCentrale: boolean;
+        perfusionBrasGauche: {
+            valeur: string;
+            enY: string;
+        };
+        perfusionBrasDroit: {
+            valeur: string;
+            enY: string;
+        };
+        voieCentrale: {
+            valeur: string;
+            enY: string;
+        };
         antibiotiques: string;
         antalgiques: string;
         autres: string;

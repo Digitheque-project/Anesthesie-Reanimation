@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const sortie_reveil_entity_1 = require("../entities/sortie-reveil.entity");
+const score_sccre_entity_1 = require("../entities/score-sccre.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
@@ -24,18 +25,36 @@ const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let SortieReveilService = class SortieReveilService {
     repo;
+    scoreRepo;
     accueilClient;
     medecinIdentiteService;
     patientBlocStatutService;
     tracabiliteService;
-    constructor(repo, accueilClient, medecinIdentiteService, patientBlocStatutService, tracabiliteService) {
+    constructor(repo, scoreRepo, accueilClient, medecinIdentiteService, patientBlocStatutService, tracabiliteService) {
         this.repo = repo;
+        this.scoreRepo = scoreRepo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
         this.patientBlocStatutService = patientBlocStatutService;
         this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
+        const itemsNonConfirmes = Object.entries(dto.checklistSortie ?? {}).filter(([, valeur]) => valeur !== true);
+        if (itemsNonConfirmes.length) {
+            throw new common_1.BadRequestException(`Checklist de sortie incomplète — items non confirmés : ${itemsNonConfirmes.map(([cle]) => cle).join(', ')}`);
+        }
+        const score = await this.scoreRepo.findOne({
+            where: { id: dto.scoreSCCREId },
+        });
+        if (!score) {
+            throw new common_1.BadRequestException('Score de réveil (SCCRE) introuvable.');
+        }
+        if (score.patientId !== dto.patientId) {
+            throw new common_1.BadRequestException("Ce score de réveil n'appartient pas à ce patient.");
+        }
+        if (score.scoreTotal < 9) {
+            throw new common_1.BadRequestException(`Score de réveil insuffisant (${score.scoreTotal}/10) — la sortie nécessite un score ≥ 9.`);
+        }
         const saved = await this.repo.save(this.repo.create({ ...dto, medecinId: centralUser.userId }));
         const sortie = Array.isArray(saved) ? saved[0] : saved;
         await this.tracabiliteService.log('SortieReveil', sortie.id, 'CREATE', { patientId: sortie.patientId }, centralUser.userId);
@@ -84,7 +103,9 @@ exports.SortieReveilService = SortieReveilService;
 exports.SortieReveilService = SortieReveilService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(sortie_reveil_entity_1.SortieReveil)),
+    __param(1, (0, typeorm_1.InjectRepository)(score_sccre_entity_1.ScoreSCCRE)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         medecin_identite_service_1.MedecinIdentiteService,
         patient_bloc_statut_service_1.PatientBlocStatutService,

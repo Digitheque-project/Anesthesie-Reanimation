@@ -15,6 +15,7 @@ export declare class NotificationCPAController {
                 idDossier: any;
                 statut: import("../entities").PatientStatut | undefined;
                 niveauUrgence: import("../entities").NiveauUrgence | undefined;
+                dateIntervention: Date | null;
             };
             id: string;
             heurePrescription: string;

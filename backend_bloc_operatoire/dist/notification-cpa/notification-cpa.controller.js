@@ -18,6 +18,8 @@ const swagger_1 = require("@nestjs/swagger");
 const notification_cpa_service_1 = require("./notification-cpa.service");
 const create_notification_cpa_dto_1 = require("./dto/create-notification-cpa.dto");
 const update_notification_cpa_dto_1 = require("./dto/update-notification-cpa.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let NotificationCPAController = class NotificationCPAController {
     service;
     constructor(service) {
@@ -95,7 +97,10 @@ __decorate([
 ], NotificationCPAController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)(':id/planifier'),
-    (0, swagger_1.ApiOperation)({ summary: 'Planifier un RDV' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Planifier un RDV (Responsable CPA, Major, Anesthésiste)',
+    }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

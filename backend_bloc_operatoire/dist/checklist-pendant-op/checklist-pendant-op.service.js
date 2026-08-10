@@ -21,6 +21,16 @@ const accueil_client_1 = require("../external/accueil.client");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
+const ITEMS_OBLIGATOIRES = [
+    'identiteUltimeConfirmee',
+    'interventionConfirmee',
+    'siteOperatoireConfirme',
+    'installationCorrecte',
+    'documentsDisponibles',
+    'antibioprophylaxieFaite',
+    'constantesStables',
+    'ventilationOK',
+];
 let ChecklistPendantOpService = class ChecklistPendantOpService {
     repo;
     accueilClient;
@@ -35,6 +45,10 @@ let ChecklistPendantOpService = class ChecklistPendantOpService {
         this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
+        const manquants = ITEMS_OBLIGATOIRES.filter((cle) => dto[cle] === null || dto[cle] === undefined);
+        if (manquants.length) {
+            throw new common_1.BadRequestException(`Checklist incomplète — items manquants : ${manquants.join(', ')}`);
+        }
         const saved = await this.repo.save(this.repo.create({
             ...dto,
             validateurId: centralUser.userId,

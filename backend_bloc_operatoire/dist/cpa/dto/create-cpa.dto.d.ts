@@ -13,6 +13,10 @@ declare class MedicamentAnesthesieReanimationDto {
     dosage?: string;
     nombre?: number;
 }
+declare class PieceJointeDto {
+    label: string;
+    nomFichier: string;
+}
 export declare class CreateCPADto {
     patientId: string;
     anesthesisteId?: string;
@@ -21,7 +25,7 @@ export declare class CreateCPADto {
     dernierRepasBoisson?: string;
     patientMineur?: boolean;
     autorisationOpererSignee?: boolean;
-    antecedentsAnesthesie: boolean;
+    antecedentsAnesthesie?: boolean;
     atcdMedicaux?: string;
     atcdChirurgicaux?: string;
     notesIncidents?: string;
@@ -69,7 +73,7 @@ export declare class CreateCPADto {
     echographie?: string;
     scanner?: string;
     autresExamensParacliniques?: string;
-    scoreASA: ScoreASA;
+    scoreASA?: ScoreASA;
     decision: DecisionCPA;
     traitementEnCours?: string;
     traitementASuivre?: string;
@@ -88,5 +92,6 @@ export declare class CreateCPADto {
     motifRefus?: string;
     decisionOperation?: DecisionOperation;
     validationProfInformelle?: string;
+    piecesJointes?: PieceJointeDto[];
 }
 export {};

@@ -18,6 +18,8 @@ const swagger_1 = require("@nestjs/swagger");
 const bon_commande_service_1 = require("./bon-commande.service");
 const create_bon_commande_dto_1 = require("./dto/create-bon-commande.dto");
 const update_bon_commande_dto_1 = require("./dto/update-bon-commande.dto");
+const require_role_decorator_1 = require("../central-auth/require-role.decorator");
+const role_clinique_1 = require("../central-auth/role-clinique");
 let BonCommandeController = class BonCommandeController {
     service;
     constructor(service) {
@@ -42,7 +44,8 @@ let BonCommandeController = class BonCommandeController {
 exports.BonCommandeController = BonCommandeController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un bon de commande' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.CHIRURGIEN),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer un bon de commande (Anesthésiste, Chirurgien)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_bon_commande_dto_1.CreateBonCommandeDto]),
@@ -69,7 +72,8 @@ __decorate([
 ], BonCommandeController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier un bon' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.CHIRURGIEN),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier un bon (Anesthésiste, Chirurgien)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -78,7 +82,8 @@ __decorate([
 ], BonCommandeController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un bon' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.CHIRURGIEN),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un bon (Anesthésiste, Chirurgien)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

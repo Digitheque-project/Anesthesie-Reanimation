@@ -10,8 +10,9 @@ export declare class DemandeCpaExterneController {
     constructor(service: DemandeCpaExterneService);
     receive(dto: ReceiveDemandeCpaDto): Promise<ReceiveDemandeCpaResponseDto>;
     getStatutPublic(id: string): Promise<StatutDemandeCpaPubliqueDto>;
-    findAll(statut?: StatutDemandeCpaExterne): Promise<any>;
+    findAll(statut?: StatutDemandeCpaExterne, patientId?: string): Promise<any>;
     findOne(id: string): Promise<import("../entities/demande-cpa-externe.entity").DemandeCpaExterne>;
     update(id: string, dto: UpdateDemandeCpaDto): Promise<import("../entities/demande-cpa-externe.entity").DemandeCpaExterne>;
+    marquerLu(id: string): Promise<import("../entities/demande-cpa-externe.entity").DemandeCpaExterne>;
     planifier(id: string, dto: PlanifierDemandeCpaDto): Promise<import("../entities/demande-cpa-externe.entity").DemandeCpaExterne>;
 }

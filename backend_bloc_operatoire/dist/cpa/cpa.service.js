@@ -19,6 +19,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const premedicament_entity_1 = require("../entities/premedicament.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const endoscopie_client_1 = require("../external/endoscopie.client");
@@ -34,6 +35,7 @@ let CPAService = CPAService_1 = class CPAService {
     cpaRepository;
     patientBlocRepo;
     premedRepository;
+    notificationCpaRepo;
     accueilClient;
     endoscopieClient;
     notificationOutgoing;
@@ -43,10 +45,11 @@ let CPAService = CPAService_1 = class CPAService {
     tracabiliteService;
     patientBlocStatutService;
     logger = new common_1.Logger(CPAService_1.name);
-    constructor(cpaRepository, patientBlocRepo, premedRepository, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService, medecinIdentiteService, tracabiliteService, patientBlocStatutService) {
+    constructor(cpaRepository, patientBlocRepo, premedRepository, notificationCpaRepo, accueilClient, endoscopieClient, notificationOutgoing, demandeCpaExterneService, medecinService, medecinIdentiteService, tracabiliteService, patientBlocStatutService) {
         this.cpaRepository = cpaRepository;
         this.patientBlocRepo = patientBlocRepo;
         this.premedRepository = premedRepository;
+        this.notificationCpaRepo = notificationCpaRepo;
         this.accueilClient = accueilClient;
         this.endoscopieClient = endoscopieClient;
         this.notificationOutgoing = notificationOutgoing;
@@ -79,10 +82,15 @@ let CPAService = CPAService_1 = class CPAService {
         else {
             anesthesisteId = null;
         }
+        const statutValidationProf = roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE ||
+            roleUtilisateur === role_clinique_1.RoleClinique.MAJOR
+            ? cpa_entity_1.StatutValidationProf.VALIDE
+            : cpa_entity_1.StatutValidationProf.EN_ATTENTE_VALIDATION;
         const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto;
         const cpa = this.cpaRepository.create({
             ...cpaData,
             anesthesisteId,
+            statutValidationProf,
             saisiParId: centralUser.userId,
             saisiParRole: centralUser.role,
         });
@@ -96,11 +104,28 @@ let CPAService = CPAService_1 = class CPAService {
             const nouveauStatut = dto.decision === cpa_entity_1.DecisionCPA.INAPTE
                 ? patient_bloc_entity_1.PatientStatut.CPA_INAPTE
                 : dto.decision === cpa_entity_1.DecisionCPA.REPORT
-                    ? patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA
+                    ? null
                     : patient_bloc_entity_1.PatientStatut.CPA_REALISE;
-            await this.patientBlocRepo.update(dto.patientId, {
-                statut: nouveauStatut,
-            });
+            if (nouveauStatut) {
+                await this.patientBlocStatutService.changerStatut(dto.patientId, nouveauStatut, centralUser.userId);
+            }
+            if (dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
+                await this.notificationCpaRepo.update({
+                    patientId: dto.patientId,
+                    statut: (0, typeorm_2.In)([
+                        notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+                        notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
+                    ]),
+                }, { statut: notification_cpa_entity_1.StatutNotificationCPA.REALISE });
+            }
+            else {
+                await this.notificationCpaRepo.update({
+                    patientId: dto.patientId,
+                    statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+                    lu: false,
+                }, { lu: true, luLe: new Date() });
+            }
+            const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
             if (nouveauStatut === patient_bloc_entity_1.PatientStatut.CPA_REALISE) {
                 const patientUrgence = await this.patientBlocRepo.findOne({
                     where: { patientId: dto.patientId },
@@ -110,28 +135,37 @@ let CPAService = CPAService_1 = class CPAService {
                     await this.patientBlocStatutService.changerStatut(dto.patientId, patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC, centralUser.userId);
                 }
             }
-            if (dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
-                const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
-                if (demande) {
-                    const apte = saved.decision === cpa_entity_1.DecisionCPA.APTE;
-                    await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
-                    try {
-                        await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_RESULTAT', {
-                            decision: saved.decision,
+            if (demande && dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
+                const apte = saved.decision === cpa_entity_1.DecisionCPA.APTE;
+                await this.demandeCpaExterneService.marquerCpaRealisee(demande, saved.id, apte);
+                try {
+                    await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_RESULTAT', {
+                        decision: saved.decision,
+                        decisionOperation: saved.decisionOperation,
+                        dateCpa: saved.dateConsultation,
+                        observations: saved.notesIncidents,
+                        motifRefus: saved.motifRefus,
+                    });
+                    if (!demande.sourceCallbackUrl) {
+                        await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
                             dateCpa: saved.dateConsultation,
                             observations: saved.notesIncidents,
-                            motifRefus: saved.motifRefus,
                         });
-                        if (!demande.sourceCallbackUrl) {
-                            await this.endoscopieClient.notifyCpaResultat(demande, saved.decision, {
-                                dateCpa: saved.dateConsultation,
-                                observations: saved.notesIncidents,
-                            });
-                        }
                     }
-                    catch (err) {
-                        this.logger.error(`Erreur notification résultat CPA au service demandeur: ${err.message}`);
-                    }
+                }
+                catch (err) {
+                    this.logger.error(`Erreur notification résultat CPA au service demandeur: ${err.message}`);
+                }
+            }
+            else if (demande && dto.decision === cpa_entity_1.DecisionCPA.REPORT) {
+                try {
+                    await this.demandeCpaExterneService.notifierResultat(demande, 'CPA_REPORT', {
+                        motifRefus: saved.motifRefus,
+                        dateReport: saved.dateVerificationVeille,
+                    });
+                }
+                catch (err) {
+                    this.logger.error(`Erreur notification report CPA au service demandeur: ${err.message}`);
                 }
             }
             try {
@@ -194,6 +228,17 @@ let CPAService = CPAService_1 = class CPAService {
         if (!cpa)
             throw new common_1.NotFoundException(`CPA ${id} non trouvée`);
         Object.assign(cpa, dto);
+        const roleUtilisateur = centralUser
+            ? (0, role_clinique_1.matchRoleClinique)(centralUser.role)
+            : null;
+        const contientSuiviAnesthesiste = dto.medicamentsAnesthesieReanimation !== undefined ||
+            dto.dateVerificationVeille !== undefined;
+        if (cpa.statutValidationProf === cpa_entity_1.StatutValidationProf.EN_ATTENTE_VALIDATION &&
+            (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE ||
+                roleUtilisateur === role_clinique_1.RoleClinique.MAJOR) &&
+            (cpa.decision !== cpa_entity_1.DecisionCPA.APTE || contientSuiviAnesthesiste)) {
+            cpa.statutValidationProf = cpa_entity_1.StatutValidationProf.VALIDE;
+        }
         const updated = await this.cpaRepository.save(cpa);
         await this.tracabiliteService.log('CPA', id, 'UPDATE', { patientId: cpa.patientId }, centralUser?.userId);
         return updated;
@@ -212,7 +257,9 @@ exports.CPAService = CPAService = CPAService_1 = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
     __param(1, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(2, (0, typeorm_1.InjectRepository)(premedicament_entity_1.Premedicament)),
+    __param(3, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,

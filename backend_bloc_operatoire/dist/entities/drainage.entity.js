@@ -18,6 +18,7 @@ var TypeDrainage;
     TypeDrainage["DRAIN_CRANE"] = "DRAIN_CRANE";
     TypeDrainage["DRAIN_THORAX"] = "DRAIN_THORAX";
     TypeDrainage["DRAIN_ABDOMEN"] = "DRAIN_ABDOMEN";
+    TypeDrainage["MEMBRE_SEIN_AUTRES"] = "MEMBRE_SEIN_AUTRES";
 })(TypeDrainage || (exports.TypeDrainage = TypeDrainage = {}));
 var ModeDrainage;
 (function (ModeDrainage) {

@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
@@ -5,6 +6,7 @@ import { PatientBloc } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
+import { NotificationBackClient } from '../external/notification-back.client';
 import { CreateNotificationCPADto } from './dto/create-notification-cpa.dto';
 import { UpdateNotificationCPADto } from './dto/update-notification-cpa.dto';
 export declare class NotificationCPAService {
@@ -14,8 +16,11 @@ export declare class NotificationCPAService {
     private accueilClient;
     private medecinIdentiteService;
     private notificationOutgoing;
+    private notificationBackClient;
+    private config;
     private readonly logger;
-    constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService);
+    private readonly blocServiceId;
+    constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService, notificationBackClient: NotificationBackClient, config: ConfigService);
     create(dto: CreateNotificationCPADto): Promise<NotificationCPA>;
     findAll(page?: number, limite?: number): Promise<{
         data: (WebhookNotification | {
@@ -27,6 +32,7 @@ export declare class NotificationCPAService {
                 idDossier: any;
                 statut: import("../entities/patient-bloc.entity").PatientStatut | undefined;
                 niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence | undefined;
+                dateIntervention: Date | null;
             };
             id: string;
             heurePrescription: string;

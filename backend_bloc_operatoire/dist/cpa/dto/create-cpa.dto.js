@@ -82,6 +82,18 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], MedicamentAnesthesieReanimationDto.prototype, "nombre", void 0);
+class PieceJointeDto {
+    label;
+    nomFichier;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PieceJointeDto.prototype, "label", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PieceJointeDto.prototype, "nomFichier", void 0);
 class CreateCPADto {
     patientId;
     anesthesisteId;
@@ -145,6 +157,7 @@ class CreateCPADto {
     motifRefus;
     decisionOperation;
     validationProfInformelle;
+    piecesJointes;
 }
 exports.CreateCPADto = CreateCPADto;
 __decorate([
@@ -181,6 +194,8 @@ __decorate([
     __metadata("design:type", Boolean)
 ], CreateCPADto.prototype, "autorisationOpererSignee", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === 0 || value === '0' || value == null ? undefined : value)),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateCPADto.prototype, "antecedentsAnesthesie", void 0);
@@ -352,6 +367,8 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "autresExamensParacliniques", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => (value === 0 || value === '0' || value == null ? undefined : value)),
     (0, class_validator_1.IsEnum)(cpa_entity_1.ScoreASA),
     __metadata("design:type", Object)
 ], CreateCPADto.prototype, "scoreASA", void 0);
@@ -443,4 +460,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateCPADto.prototype, "validationProfInformelle", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => PieceJointeDto),
+    __metadata("design:type", Array)
+], CreateCPADto.prototype, "piecesJointes", void 0);
 //# sourceMappingURL=create-cpa.dto.js.map

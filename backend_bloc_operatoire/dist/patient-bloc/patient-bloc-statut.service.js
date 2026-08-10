@@ -16,19 +16,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PatientBlocStatutService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
 const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
+const notification_back_client_1 = require("../external/notification-back.client");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocStatutService {
     patientBlocRepo;
     notificationOutgoing;
+    notificationBackClient;
     tracabiliteService;
+    config;
     logger = new common_1.Logger(PatientBlocStatutService_1.name);
-    constructor(patientBlocRepo, notificationOutgoing, tracabiliteService) {
+    blocServiceId;
+    constructor(patientBlocRepo, notificationOutgoing, notificationBackClient, tracabiliteService, config) {
         this.patientBlocRepo = patientBlocRepo;
         this.notificationOutgoing = notificationOutgoing;
+        this.notificationBackClient = notificationBackClient;
         this.tracabiliteService = tracabiliteService;
+        this.config = config;
+        this.blocServiceId =
+            this.config.get('externalServices.serviceId') ?? '';
+    }
+    diffuserChangementStatut(patientId, ancienStatut, nouveauStatut) {
+        this.notificationBackClient
+            .notifyService({
+            serviceId: this.blocServiceId,
+            title: 'Statut patient mis à jour',
+            message: `${patientId} : ${ancienStatut} → ${nouveauStatut}`,
+            type: 'patient_statut_change',
+            source: 'bloc-operatoire',
+            data: { patientId, ancienStatut, nouveauStatut },
+        })
+            .catch(() => { });
     }
     async changerStatut(patientId, nouveauStatut, utilisateurId) {
         const patient = await this.patientBlocRepo.findOne({
@@ -64,6 +85,7 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         patient.statut = nouveauStatut;
         const saved = await this.patientBlocRepo.save(patient);
         await this.tracabiliteService.log('PatientBloc', patientId, 'STATUT_CHANGE', { ancienStatut, nouveauStatut }, utilisateurId);
+        this.diffuserChangementStatut(patientId, ancienStatut, nouveauStatut);
         return saved;
     }
     async avancerVersEnCoursOperation(patientId, utilisateurId) {
@@ -91,6 +113,7 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
             patient.motifRefusCpa = null;
             await this.patientBlocRepo.save(patient);
             await this.tracabiliteService.log('PatientBloc', patientId, 'STATUT_CHANGE', { ancienStatut: patient_bloc_entity_1.PatientStatut.CPA_INAPTE, nouveauStatut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA }, utilisateurId);
+            this.diffuserChangementStatut(patientId, patient_bloc_entity_1.PatientStatut.CPA_INAPTE, patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA);
         }
         return patient;
     }
@@ -118,15 +141,38 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         return patient;
     }
     async modifierDateIntervention(patientId, dateIntervention, utilisateurId) {
+        const aujourdhui = new Date().toISOString().split('T')[0];
+        if (new Date(dateIntervention).toISOString().split('T')[0] < aujourdhui) {
+            throw new common_1.BadRequestException("Impossible de planifier l'opération à une date passée.");
+        }
         const patient = await this.patientBlocRepo.findOne({
             where: { patientId },
         });
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
         const ancienneDate = patient.dateIntervention;
+        const dateInchangee = ancienneDate &&
+            new Date(ancienneDate).getTime() === new Date(dateIntervention).getTime();
         patient.dateIntervention = new Date(dateIntervention);
         const saved = await this.patientBlocRepo.save(patient);
         await this.tracabiliteService.log('PatientBloc', patientId, 'UPDATE', { champ: 'dateIntervention', ancienneValeur: ancienneDate, nouvelleValeur: patient.dateIntervention }, utilisateurId);
+        if (!dateInchangee && patient.serviceOrigineId && patient.serviceOrigine) {
+            try {
+                await this.notificationOutgoing.notifyOriginService({
+                    patientId,
+                    type: 'DATE_OPERATION_MODIFIEE',
+                    serviceOrigineId: patient.serviceOrigineId,
+                    serviceOrigineName: patient.serviceOrigine,
+                    payload: {
+                        ancienneDate,
+                        nouvelleDate: patient.dateIntervention,
+                    },
+                });
+            }
+            catch (err) {
+                this.logger.error(`Erreur notification service origine après modification date opération: ${err.message}`);
+            }
+        }
         return saved;
     }
 };
@@ -136,6 +182,8 @@ exports.PatientBlocStatutService = PatientBlocStatutService = PatientBlocStatutS
     __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         notification_outgoing_service_1.NotificationOutgoingService,
-        tracabilite_service_1.TracabiliteService])
+        notification_back_client_1.NotificationBackClient,
+        tracabilite_service_1.TracabiliteService,
+        config_1.ConfigService])
 ], PatientBlocStatutService);
 //# sourceMappingURL=patient-bloc-statut.service.js.map

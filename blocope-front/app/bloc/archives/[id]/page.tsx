@@ -157,7 +157,7 @@ export default function ArchiveDetailPage() {
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge texte={dossier.cpa.decision} couleur={dossier.cpa.decision === 'APTE' ? 'emerald' : dossier.cpa.decision === 'INAPTE' ? 'red' : 'orange'} />
-                  <Badge texte={`ASA ${dossier.cpa.scoreASA}`} couleur="amber" />
+                  {dossier.cpa.scoreASA != null && <Badge texte={`ASA ${dossier.cpa.scoreASA}`} couleur="amber" />}
                   <Badge texte={libelleAnesthesie(dossier.cpa)} couleur="sky" />
                   <span className="text-xs text-on-surface-variant ml-auto">{fmtDate(dossier.cpa.dateConsultation)}</span>
                 </div>

@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm';
 import { SortieReveil } from '../entities/sortie-reveil.entity';
+import { ScoreSCCRE } from '../entities/score-sccre.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
@@ -9,11 +10,12 @@ import { CreateSortieReveilDto } from './dto/create-sortie-reveil.dto';
 import { UpdateSortieReveilDto } from './dto/update-sortie-reveil.dto';
 export declare class SortieReveilService {
     private repo;
+    private scoreRepo;
     private accueilClient;
     private medecinIdentiteService;
     private patientBlocStatutService;
     private tracabiliteService;
-    constructor(repo: Repository<SortieReveil>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, patientBlocStatutService: PatientBlocStatutService, tracabiliteService: TracabiliteService);
+    constructor(repo: Repository<SortieReveil>, scoreRepo: Repository<ScoreSCCRE>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, patientBlocStatutService: PatientBlocStatutService, tracabiliteService: TracabiliteService);
     create(dto: CreateSortieReveilDto, centralUser: CentralUser): Promise<SortieReveil>;
     findAll(page?: number, limite?: number): Promise<{
         data: Record<string, any>[];

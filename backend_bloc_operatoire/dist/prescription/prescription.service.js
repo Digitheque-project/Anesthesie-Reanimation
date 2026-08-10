@@ -76,6 +76,16 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             return patient_bloc_entity_1.NiveauUrgence.URGENT;
         return patient_bloc_entity_1.NiveauUrgence.NORMAL;
     }
+    extraireDateIntervention(acte) {
+        if (!acte?.dateIntervention)
+            return undefined;
+        const base = new Date(acte.dateIntervention);
+        const heure = acte.heureIntervention;
+        const [h, m] = (heure || '').split(':').map(Number);
+        if (isNaN(h))
+            return base;
+        return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate(), h, isNaN(m) ? 0 : m, 0, 0));
+    }
     async ingerer(p, serviceId) {
         const dejaIngeree = await this.patientBlocRepo.findOne({
             where: { prescriptionExterneId: p.id },
@@ -90,8 +100,16 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         });
         if (notificationDejaEnAttente)
             return;
-        const acte = p.actes?.[0];
+        const patientDejaTraite = await this.patientBlocRepo.findOne({
+            where: { patientId: p.patientId },
+        });
+        if (patientDejaTraite &&
+            patientDejaTraite.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
+            return;
+        }
+        const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
         const niveauUrgence = this.mapUrgence(p.urgence);
+        const dateIntervention = this.extraireDateIntervention(acte);
         const serviceSourceNom = await this.serviceRegistryClient.getServiceName(p.serviceIdSource);
         let patient = await this.patientBlocRepo.findOne({
             where: { patientId: p.patientId },
@@ -105,12 +123,10 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             risqueHemorragique: acte?.risqueHemorragique || undefined,
             typeChirurgie: acte?.typeChirurgie || undefined,
             consignes: p.consignes || undefined,
-            dateIntervention: p.dateIntervention
-                ? new Date(p.dateIntervention)
-                : undefined,
+            dateIntervention,
             alertes: p.alertes || undefined,
             prescripteurId: p.prescripteurId,
-            chirurgien_nom: p.chirurgien || undefined,
+            chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
             statut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA,
             niveauUrgence,
             serviceOrigineId: p.serviceIdSource || undefined,
@@ -126,13 +142,11 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         }
         const notif = await this.notificationRepo.save(this.notificationRepo.create({
             heurePrescription: new Date().toTimeString().substring(0, 5),
-            dateIntervention: p.dateIntervention
-                ? new Date(p.dateIntervention)
-                : undefined,
+            dateIntervention,
             patientId: p.patientId,
             intervention: acte?.libelle || 'Intervention',
             chirurgienId: undefined,
-            chirurgienNom: p.chirurgien || undefined,
+            chirurgienNom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
             professeurCPA: undefined,
             serviceSourceId: p.serviceIdSource || undefined,
             serviceSourceNom: serviceSourceNom || undefined,

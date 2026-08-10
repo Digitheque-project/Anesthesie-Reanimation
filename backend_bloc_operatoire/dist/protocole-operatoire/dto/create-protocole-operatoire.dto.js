@@ -39,6 +39,7 @@ class CreateProtocoleOperatoireDto {
     infirmiereId;
     aideOperatoireId;
     compteRenduIntervention;
+    compteRenduAnesthesique;
     surveillance;
     drainages;
     prescriptions;
@@ -74,9 +75,15 @@ __decorate([
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "aideOperatoireId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProtocoleOperatoireDto.prototype, "compteRenduIntervention", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateProtocoleOperatoireDto.prototype, "compteRenduAnesthesique", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Object)
@@ -93,6 +100,7 @@ __decorate([
     __metadata("design:type", Object)
 ], CreateProtocoleOperatoireDto.prototype, "prescriptions", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateProtocoleOperatoireDto.prototype, "prescriptionsConjointes", void 0);

@@ -11,10 +11,11 @@ export declare class CreateProtocoleOperatoireDto {
     anesthesisteId?: string;
     infirmiereId?: string;
     aideOperatoireId?: string;
-    compteRenduIntervention: string;
+    compteRenduIntervention?: string;
+    compteRenduAnesthesique?: string;
     surveillance?: any;
     drainages?: DrainageDto[];
     prescriptions?: any;
-    prescriptionsConjointes: boolean;
+    prescriptionsConjointes?: boolean;
 }
 export {};

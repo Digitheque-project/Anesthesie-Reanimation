@@ -2,22 +2,27 @@ import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { NotificationCPA } from '../entities/notification-cpa.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { PrescriptionImagerieClient } from '../external/prescription-imagerie.client';
 import { PrescriptionService } from '../prescription/prescription.service';
 import { ServiceRegistryClient } from '../external/service-registry.client';
+import { NotificationBackClient } from '../external/notification-back.client';
 export declare class PrescriptionImagerieListenerService implements OnModuleInit, OnModuleDestroy {
     private readonly config;
     private readonly prescriptionImagerieClient;
     private readonly prescriptionService;
     private readonly serviceRegistryClient;
+    private readonly notificationBackClient;
     private readonly notificationRepo;
+    private readonly patientBlocRepo;
     private readonly logger;
     private socket;
     private readonly serviceId;
-    constructor(config: ConfigService, prescriptionImagerieClient: PrescriptionImagerieClient, prescriptionService: PrescriptionService, serviceRegistryClient: ServiceRegistryClient, notificationRepo: Repository<NotificationCPA>);
+    constructor(config: ConfigService, prescriptionImagerieClient: PrescriptionImagerieClient, prescriptionService: PrescriptionService, serviceRegistryClient: ServiceRegistryClient, notificationBackClient: NotificationBackClient, notificationRepo: Repository<NotificationCPA>, patientBlocRepo: Repository<PatientBloc>);
     onModuleInit(): void;
     onModuleDestroy(): void;
     private estNotificationPrescription;
     private traiterNotification;
+    private mapUrgence;
     private ingerer;
 }

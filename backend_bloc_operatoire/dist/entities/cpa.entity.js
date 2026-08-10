@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CPA = exports.StatutCPA = exports.DecisionOperation = exports.DecisionCPA = exports.ScoreASA = void 0;
+exports.CPA = exports.StatutValidationProf = exports.StatutCPA = exports.DecisionOperation = exports.DecisionCPA = exports.ScoreASA = void 0;
 const typeorm_1 = require("typeorm");
 const premedicament_entity_1 = require("./premedicament.entity");
 var ScoreASA;
@@ -39,6 +39,11 @@ var StatutCPA;
     StatutCPA["EN_ATTENTE"] = "EN_ATTENTE";
     StatutCPA["REALISE"] = "REALISE";
 })(StatutCPA || (exports.StatutCPA = StatutCPA = {}));
+var StatutValidationProf;
+(function (StatutValidationProf) {
+    StatutValidationProf["VALIDE"] = "VALIDE";
+    StatutValidationProf["EN_ATTENTE_VALIDATION"] = "EN_ATTENTE_VALIDATION";
+})(StatutValidationProf || (exports.StatutValidationProf = StatutValidationProf = {}));
 let CPA = class CPA {
     id;
     patientId;
@@ -91,6 +96,7 @@ let CPA = class CPA {
     motifRefus;
     decisionOperation;
     validationProfInformelle;
+    statutValidationProf;
     traitementEnCours;
     traitementASuivre;
     conclusion;
@@ -104,6 +110,7 @@ let CPA = class CPA {
     preparationPhysique;
     tachesInfirmieres;
     dateVerificationVeille;
+    piecesJointes;
     statut;
     createdAt;
     updatedAt;
@@ -295,7 +302,7 @@ __decorate([
     __metadata("design:type", Object)
 ], CPA.prototype, "autresExamensParacliniques", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: ScoreASA }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: ScoreASA, nullable: true }),
     __metadata("design:type", Object)
 ], CPA.prototype, "scoreASA", void 0);
 __decorate([
@@ -314,6 +321,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], CPA.prototype, "validationProfInformelle", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: StatutValidationProf,
+        default: StatutValidationProf.EN_ATTENTE_VALIDATION,
+    }),
+    __metadata("design:type", String)
+], CPA.prototype, "statutValidationProf", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", Object)
@@ -366,6 +381,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'date', nullable: true }),
     __metadata("design:type", Date)
 ], CPA.prototype, "dateVerificationVeille", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Object)
+], CPA.prototype, "piecesJointes", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: StatutCPA, default: StatutCPA.EN_ATTENTE }),
     __metadata("design:type", String)

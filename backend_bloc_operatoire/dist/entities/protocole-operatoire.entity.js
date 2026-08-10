@@ -21,6 +21,7 @@ let ProtocoleOperatoire = class ProtocoleOperatoire {
     infirmiereId;
     aideOperatoireId;
     compteRenduIntervention;
+    compteRenduAnesthesique;
     surveillance;
     drainages;
     prescriptions;
@@ -59,9 +60,13 @@ __decorate([
     __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "aideOperatoireId", void 0);
 __decorate([
-    (0, typeorm_1.Column)('text'),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)('text', { nullable: true }),
+    __metadata("design:type", Object)
 ], ProtocoleOperatoire.prototype, "compteRenduIntervention", void 0);
+__decorate([
+    (0, typeorm_1.Column)('text', { nullable: true }),
+    __metadata("design:type", Object)
+], ProtocoleOperatoire.prototype, "compteRenduAnesthesique", void 0);
 __decorate([
     (0, typeorm_1.Column)('simple-json'),
     __metadata("design:type", Object)

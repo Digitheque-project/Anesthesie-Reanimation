@@ -530,12 +530,14 @@ function ConsultationCpaPageContent() {
           histoireActuelle: form.histoireActuelle || undefined,
           dernierRepasBoisson: form.dernierRepasBoisson || undefined,
           patientMineur: form.patientMineur,
-          autorisationOpererSignee: form.autorisationOpererSignee,
-          antecedentsAnesthesie: form.antecedentsAnesthesie,
+          // Champs facultatifs : envoyer undefined (clé omise du JSON) plutôt que null — sinon le
+          // backend refuserait (booléen/enum requis) ou la colonne NOT NULL échouerait à l'insert.
+          autorisationOpererSignee: form.autorisationOpererSignee ?? undefined,
+          antecedentsAnesthesie: form.antecedentsAnesthesie ?? undefined,
           atcdMedicaux: form.atcdMedicaux || undefined,
           atcdChirurgicaux: form.atcdChirurgicaux || undefined,
           notesIncidents: form.notesIncidents || undefined,
-          asthme: form.asthme,
+          asthme: form.asthme ?? undefined,
           tempsSaignement: form.tempsSaignement || undefined,
           atcdObstetricaux: (form.atcdObstetricauxG || form.atcdObstetricauxP || form.atcdObstetricauxA || form.atcdObstetricauxDdr)
             ? { g: form.atcdObstetricauxG || undefined, p: form.atcdObstetricauxP || undefined, a: form.atcdObstetricauxA || undefined, ddr: form.atcdObstetricauxDdr || undefined }
@@ -547,7 +549,7 @@ function ConsultationCpaPageContent() {
             ? { groupe: form.groupeSanguinCpaGroupe || undefined, phenotype: form.groupeSanguinCpaPhenotype || undefined, rai: form.groupeSanguinCpaRai || undefined }
             : undefined,
           atcdFamiliaux: form.atcdFamiliaux || undefined,
-          transfusionsAnterieures: form.transfusionsAnterieures,
+          transfusionsAnterieures: form.transfusionsAnterieures ?? undefined,
           transfusionsIncidents: form.transfusionsIncidents || undefined,
           frequenceCardiaque: versNombre(form.frequenceCardiaque),
           tensionArterielle: (form.taSystolique !== '' && form.taDiastolique !== '')
@@ -561,7 +563,7 @@ function ConsultationCpaPageContent() {
           colorationConjonctivale: form.colorationConjonctivale,
           abordVeineux: form.abordVeineux,
           rachis: form.rachis,
-          mallampati: scoreMallampati as number,
+          mallampati: scoreMallampati ?? undefined,
           ouvertureBuccale: versNombre(form.ouvertureBuccale),
           distanceMentoThyroidienne: versNombre(form.distanceMentoThyroidienne),
           dents: form.dents,
@@ -583,7 +585,7 @@ function ConsultationCpaPageContent() {
           scanner: form.scanner || undefined,
           autresExamensParacliniques: form.autresExamensParacliniques || undefined,
           piecesJointes: form.piecesJointes.length ? form.piecesJointes : undefined,
-          scoreASA: typeof scoreASA === 'string' ? scoreASA : Number(scoreASA),
+          scoreASA: scoreASA == null ? undefined : (typeof scoreASA === 'string' ? scoreASA : Number(scoreASA)),
           decision,
           decisionOperation: (decision === 'APTE' || decision === 'INAPTE') ? (decisionOperation || undefined) : undefined,
           motifRefus: (decision === 'INAPTE' || decision === 'REPORT') ? motifRefus.trim() : undefined,

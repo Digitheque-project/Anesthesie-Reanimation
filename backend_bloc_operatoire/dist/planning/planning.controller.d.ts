@@ -8,18 +8,5 @@ export declare class PlanningController {
     reserver(dto: any): Promise<import("../entities/creneau-bloc.entity").CreneauBloc[]>;
     annuler(id: string): Promise<import("../entities/creneau-bloc.entity").CreneauBloc>;
     urgences(): Promise<any[]>;
-    transfererCpaVersVerificationVeille(dto: {
-        patientId: string;
-        chirurgienId: string;
-        dateVerificationVeille: string;
-        heureDebut: string;
-        salle: string;
-    }): Promise<import("../entities/creneau-bloc.entity").CreneauBloc>;
-    transfererVerificationVeilleVersPatientJour(dto: {
-        patientId: string;
-        chirurgienId: string;
-        date: string;
-        heureDebut: string;
-        salle: string;
-    }): Promise<import("../entities/creneau-bloc.entity").CreneauBloc>;
+    cpaAVenir(): Promise<any[]>;
 }

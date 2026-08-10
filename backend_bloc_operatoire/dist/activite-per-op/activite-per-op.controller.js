@@ -48,7 +48,8 @@ let ActivitePerOpController = class ActivitePerOpController {
 exports.ActivitePerOpController = ActivitePerOpController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer une activité per-op' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.IBODE, role_clinique_1.RoleClinique.MAJOR),
+    (0, swagger_1.ApiOperation)({ summary: 'Créer une activité per-op (Anesthésiste, IBODE, Major)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_activite_per_op_dto_1.CreateActivitePerOpDto]),
@@ -77,7 +78,8 @@ __decorate([
 ], ActivitePerOpController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier une activité' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.IBODE),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier une activité (Anesthésiste, IBODE)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
@@ -99,7 +101,8 @@ __decorate([
 ], ActivitePerOpController.prototype, "ajouterConstante", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une activité' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une activité (Anesthésiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

@@ -22,6 +22,7 @@ const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const operation_gateway_1 = require("../operation-gateway/operation.gateway");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
+const role_clinique_1 = require("../central-auth/role-clinique");
 const INTERVENANTS = [
     ['chirurgienId', 'chirurgien'],
     ['anesthesisteId', 'anesthesiste'],
@@ -43,17 +44,31 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         this.gateway = gateway;
         this.tracabiliteService = tracabiliteService;
     }
-    async create(dto, utilisateurId) {
+    async create(dto, centralUser) {
         const { drainages, ...data } = dto;
-        if (utilisateurId)
-            data.chirurgienId = utilisateurId;
-        const proto = this.repo.create(data);
-        const protoSaved = await this.repo.save(proto);
-        const saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;
+        const role = centralUser ? (0, role_clinique_1.matchRoleClinique)(centralUser.role) : null;
+        if (role === role_clinique_1.RoleClinique.CHIRURGIEN)
+            data.chirurgienId = centralUser.userId;
+        else if (role === role_clinique_1.RoleClinique.ANESTHESISTE)
+            data.anesthesisteId = centralUser.userId;
+        const existant = data.patientId && data.dateOperation
+            ? await this.repo.findOne({
+                where: { patientId: data.patientId, dateOperation: data.dateOperation },
+            })
+            : null;
+        let saved;
+        if (existant) {
+            saved = await this.repo.save(Object.assign(existant, data));
+        }
+        else {
+            const proto = this.repo.create(data);
+            const protoSaved = await this.repo.save(proto);
+            saved = Array.isArray(protoSaved) ? protoSaved[0] : protoSaved;
+        }
         if (drainages?.length)
             await this.drainageRepo.save(drainages.map((d) => this.drainageRepo.create({ ...d, protocole: saved })));
         const complet = await this.findOne(saved.id);
-        await this.tracabiliteService.log('ProtocoleOperatoire', saved.id, 'CREATE', { patientId: complet.patientId }, utilisateurId);
+        await this.tracabiliteService.log('ProtocoleOperatoire', saved.id, 'CREATE', { patientId: complet.patientId }, centralUser?.userId);
         this.gateway.emitToOperation(complet.patientId, 'protocole-operatoire:maj', { patientId: complet.patientId, protocole: complet });
         return complet;
     }
@@ -80,14 +95,26 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
         const [enriched] = await this.medecinIdentiteService.enrichirPlusieurs([enrichedPatient], INTERVENANTS);
         return enriched;
     }
-    async update(id, dto, utilisateurId) {
+    async update(id, dto, centralUser) {
         const p = await this.repo.findOne({ where: { id } });
         if (!p)
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
-        const updated = await this.repo.save(Object.assign(p, dto));
-        await this.tracabiliteService.log('ProtocoleOperatoire', id, 'UPDATE', { patientId: updated.patientId }, utilisateurId);
-        this.gateway.emitToOperation(updated.patientId, 'protocole-operatoire:maj', { patientId: updated.patientId, protocole: updated });
-        return updated;
+        const { drainages, ...data } = dto;
+        const role = centralUser ? (0, role_clinique_1.matchRoleClinique)(centralUser.role) : null;
+        if (role === role_clinique_1.RoleClinique.CHIRURGIEN)
+            data.chirurgienId = centralUser.userId;
+        else if (role === role_clinique_1.RoleClinique.ANESTHESISTE)
+            data.anesthesisteId = centralUser.userId;
+        const updated = await this.repo.save(Object.assign(p, data));
+        if (drainages !== undefined) {
+            await this.drainageRepo.delete({ protocole: { id } });
+            if (drainages.length)
+                await this.drainageRepo.save(drainages.map((d) => this.drainageRepo.create({ ...d, protocole: updated })));
+        }
+        const complet = await this.findOne(updated.id);
+        await this.tracabiliteService.log('ProtocoleOperatoire', id, 'UPDATE', { patientId: complet.patientId }, centralUser?.userId);
+        this.gateway.emitToOperation(complet.patientId, 'protocole-operatoire:maj', { patientId: complet.patientId, protocole: complet });
+        return complet;
     }
     async remove(id) {
         const p = await this.repo.findOne({ where: { id } });

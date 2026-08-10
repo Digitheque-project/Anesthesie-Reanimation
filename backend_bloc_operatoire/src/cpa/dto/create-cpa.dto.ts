@@ -9,7 +9,7 @@ import {
   IsObject,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   ScoreASA,
   DecisionCPA,
@@ -54,7 +54,12 @@ export class CreateCPADto {
   @IsOptional() @IsString() dernierRepasBoisson?: string;
   @IsOptional() @IsBoolean() patientMineur?: boolean;
   @IsOptional() @IsBoolean() autorisationOpererSignee?: boolean;
-  @IsBoolean() antecedentsAnesthesie: boolean;
+  // Facultatif — mais tolérant : un client plus ancien peut encore envoyer 0/null pour un champ
+  // non renseigné (valeur sans sens clinique) ; on l'ignore plutôt que de rejeter la fiche.
+  @IsOptional()
+  @Transform(({ value }) => (value === 0 || value === '0' || value == null ? undefined : value))
+  @IsBoolean()
+  antecedentsAnesthesie?: boolean;
   @IsOptional() @IsString() atcdMedicaux?: string;
   @IsOptional() @IsString() atcdChirurgicaux?: string;
   @IsOptional() @IsString() notesIncidents?: string;
@@ -98,7 +103,12 @@ export class CreateCPADto {
   @IsOptional() @IsString() echographie?: string;
   @IsOptional() @IsString() scanner?: string;
   @IsOptional() @IsString() autresExamensParacliniques?: string;
-  @IsEnum(ScoreASA) scoreASA: ScoreASA;
+  // Facultatif — tolérant de la même façon (0/null/chaîne "0" ignorés) : on ne force jamais
+  // l'utilisateur à renseigner le score ASA pour valider la CPA.
+  @IsOptional()
+  @Transform(({ value }) => (value === 0 || value === '0' || value == null ? undefined : value))
+  @IsEnum(ScoreASA)
+  scoreASA?: ScoreASA;
   @IsEnum(DecisionCPA) decision: DecisionCPA;
   // Conclusion (section 4 de la fiche papier).
   @IsOptional() @IsString() traitementEnCours?: string;

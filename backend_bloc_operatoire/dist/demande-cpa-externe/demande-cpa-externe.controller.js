@@ -42,14 +42,17 @@ let DemandeCpaExterneController = class DemandeCpaExterneController {
     getStatutPublic(id) {
         return this.service.findStatutPublic(id);
     }
-    findAll(statut) {
-        return this.service.findAll(statut);
+    findAll(statut, patientId) {
+        return this.service.findAll(statut, patientId);
     }
     findOne(id) {
         return this.service.findOne(id);
     }
     update(id, dto) {
         return this.service.update(id, dto);
+    }
+    marquerLu(id) {
+        return this.service.marquerLu(id);
     }
     planifier(id, dto) {
         return this.service.planifier(id, dto);
@@ -92,9 +95,11 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, swagger_1.ApiOperation)({ summary: 'Lister les demandes de CPA externes' }),
     (0, swagger_1.ApiQuery)({ name: 'statut', required: false, enum: demande_cpa_externe_entity_1.StatutDemandeCpaExterne }),
+    (0, swagger_1.ApiQuery)({ name: 'patientId', required: false }),
     __param(0, (0, common_1.Query)('statut')),
+    __param(1, (0, common_1.Query)('patientId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], DemandeCpaExterneController.prototype, "findAll", null);
 __decorate([
@@ -120,11 +125,20 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DemandeCpaExterneController.prototype, "update", null);
 __decorate([
+    (0, common_1.Patch)(':id/lu'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Marquer une demande comme vue dans la cloche de notifications' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], DemandeCpaExterneController.prototype, "marquerLu", null);
+__decorate([
     (0, common_1.Patch)(':id/planifier'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.RESPONSABLE_CPA, role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.ANESTHESISTE),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, swagger_1.ApiOperation)({
-        summary: 'Planifier le rendez-vous CPA/VPA pour cette demande externe (Responsable CPA, Major)',
+        summary: 'Planifier le rendez-vous CPA/VPA pour cette demande externe (Responsable CPA, Major, Anesthésiste)',
     }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),

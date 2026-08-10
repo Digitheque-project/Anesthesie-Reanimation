@@ -25,6 +25,9 @@ const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const notification_back_client_1 = require("../external/notification-back.client");
 const accueil_client_1 = require("../external/accueil.client");
+const patient_bloc_service_1 = require("../patient-bloc/patient-bloc.service");
+const service_registry_client_1 = require("../external/service-registry.client");
+const creneau_validation_util_1 = require("../planning/creneau-validation.util");
 let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExterneService {
     repo;
     creneauRepo;
@@ -33,9 +36,11 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
     http;
     notificationBackClient;
     accueilClient;
+    patientBlocService;
+    serviceRegistryClient;
     logger = new common_1.Logger(DemandeCpaExterneService_1.name);
     blocServiceId;
-    constructor(repo, creneauRepo, cpaRepo, config, http, notificationBackClient, accueilClient) {
+    constructor(repo, creneauRepo, cpaRepo, config, http, notificationBackClient, accueilClient, patientBlocService, serviceRegistryClient) {
         this.repo = repo;
         this.creneauRepo = creneauRepo;
         this.cpaRepo = cpaRepo;
@@ -43,12 +48,17 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         this.http = http;
         this.notificationBackClient = notificationBackClient;
         this.accueilClient = accueilClient;
+        this.patientBlocService = patientBlocService;
+        this.serviceRegistryClient = serviceRegistryClient;
         this.blocServiceId =
             this.config.get('externalServices.serviceId') ?? '';
     }
     async receive(dto) {
+        const sourceServiceName = (await this.serviceRegistryClient.getServiceName(dto.sourceServiceId)) ||
+            dto.sourceServiceName;
         const demande = this.repo.create({
             ...dto,
+            sourceServiceName,
             dateExamenSouhaitee: dto.dateExamenSouhaitee
                 ? new Date(dto.dateExamenSouhaitee)
                 : undefined,
@@ -58,6 +68,12 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         });
         const saved = await this.repo.save(demande);
         this.logger.log(`📋 Demande de CPA externe reçue pour patient ${dto.patientId} (source: ${dto.sourceServiceName || dto.sourceServiceId})`);
+        try {
+            await this.patientBlocService.creerDepuisPrescription(saved.id);
+        }
+        catch (err) {
+            this.logger.error(`❌ Échec création PatientBloc depuis la demande CPA externe ${saved.id}: ${err.message}`);
+        }
         const estUrgent = (dto.urgence ?? 0) >= 4;
         await this.notificationBackClient.notifyService({
             serviceId: this.blocServiceId,
@@ -75,9 +91,14 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         });
         return saved;
     }
-    async findAll(statut) {
+    async findAll(statut, patientId) {
+        const where = {};
+        if (statut)
+            where.statut = statut;
+        if (patientId)
+            where.patientId = patientId;
         const demandes = await this.repo.find({
-            where: statut ? { statut } : {},
+            where,
             order: { createdAt: 'DESC' },
         });
         try {
@@ -99,6 +120,13 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         }
     }
     async update(id, dto) {
+        const aujourdhui = new Date().toISOString().split('T')[0];
+        for (const champ of ['dateCpaPlanifiee', 'dateVpaPlanifiee']) {
+            const valeur = dto[champ];
+            if (valeur && new Date(valeur).toISOString().split('T')[0] < aujourdhui) {
+                throw new common_1.BadRequestException('Impossible de planifier un rendez-vous à une date passée.');
+            }
+        }
         const demande = await this.findOne(id);
         Object.assign(demande, {
             ...dto,
@@ -112,6 +140,7 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         return this.repo.save(demande);
     }
     async planifier(id, dto) {
+        await (0, creneau_validation_util_1.verifierCreneauValide)(this.creneauRepo, dto.date, dto.heureDebut);
         const demande = await this.findOne(id);
         const type = dto.type ?? creneau_bloc_entity_1.TypeRDV.CPA;
         const creneau = this.creneauRepo.create({
@@ -134,7 +163,18 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
             demande.statut = demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_PLANIFIEE;
             demande.dateCpaPlanifiee = new Date(dto.date);
         }
-        return this.repo.save(demande);
+        const saved = await this.repo.save(demande);
+        this.notificationBackClient
+            .notifyService({
+            serviceId: this.blocServiceId,
+            title: 'Demande CPA externe planifiée',
+            message: `Demande ${id} planifiée`,
+            type: 'patient_statut_change',
+            source: 'bloc-operatoire',
+            data: { demandeId: id, patientId: demande.patientId },
+        })
+            .catch(() => { });
+        return saved;
     }
     async trouverDemandeOuverte(patientId) {
         return this.repo.findOne({
@@ -150,11 +190,15 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
             order: { createdAt: 'DESC' },
         });
     }
+    async marquerLu(id) {
+        const demande = await this.findOne(id);
+        demande.lu = true;
+        demande.luLe = new Date();
+        return this.repo.save(demande);
+    }
     async marquerCpaRealisee(demande, cpaId, apte) {
         demande.cpaId = cpaId;
-        demande.statut = apte
-            ? demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_REALISEE
-            : demande_cpa_externe_entity_1.StatutDemandeCpaExterne.REPORTEE;
+        demande.statut = demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CPA_REALISEE;
         return this.repo.save(demande);
     }
     async marquerVpaRealisee(demande, vpaId) {
@@ -251,6 +295,8 @@ exports.DemandeCpaExterneService = DemandeCpaExterneService = DemandeCpaExterneS
         config_1.ConfigService,
         axios_1.HttpService,
         notification_back_client_1.NotificationBackClient,
-        accueil_client_1.AccueilClient])
+        accueil_client_1.AccueilClient,
+        patient_bloc_service_1.PatientBlocService,
+        service_registry_client_1.ServiceRegistryClient])
 ], DemandeCpaExterneService);
 //# sourceMappingURL=demande-cpa-externe.service.js.map

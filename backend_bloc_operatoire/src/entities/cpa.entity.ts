@@ -222,8 +222,10 @@ export class CPA {
   autresExamensParacliniques: string | null;
 
   // Score & Décision
-  @Column({ type: 'enum', enum: ScoreASA })
-  scoreASA: ScoreASA;
+  // Score ASA — facultatif (colonne nullable) : seul la décision finale est bloquante à la
+  // validation, l'anesthésiste peut valider sans avoir noté le score.
+  @Column({ type: 'enum', enum: ScoreASA, nullable: true })
+  scoreASA: ScoreASA | null;
 
   @Column({ type: 'enum', enum: DecisionCPA })
   decision: DecisionCPA;

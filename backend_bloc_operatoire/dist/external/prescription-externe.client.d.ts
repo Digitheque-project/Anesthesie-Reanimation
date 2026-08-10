@@ -7,6 +7,9 @@ export interface ActeBlocExterne {
     cote?: string | null;
     typeChirurgie?: string | null;
     risqueHemorragique?: string | null;
+    dateIntervention?: string | null;
+    heureIntervention?: string | null;
+    nomChirurgien?: string | null;
 }
 export interface PrescriptionBlocExterne {
     id: string;
@@ -21,7 +24,8 @@ export interface PrescriptionBlocExterne {
     chuId: string;
     serviceIdSource?: string | null;
     serviceIdDest: string;
-    actes: ActeBlocExterne[];
+    actes?: ActeBlocExterne[];
+    ActeBloc?: ActeBlocExterne[];
 }
 export declare class PrescriptionExterneClient {
     private readonly http;

@@ -22,6 +22,10 @@ export declare enum StatutCPA {
     EN_ATTENTE = "EN_ATTENTE",
     REALISE = "REALISE"
 }
+export declare enum StatutValidationProf {
+    VALIDE = "VALIDE",
+    EN_ATTENTE_VALIDATION = "EN_ATTENTE_VALIDATION"
+}
 export declare class CPA {
     id: string;
     patientId: string;
@@ -81,11 +85,12 @@ export declare class CPA {
     echographie: string | null;
     scanner: string | null;
     autresExamensParacliniques: string | null;
-    scoreASA: ScoreASA;
+    scoreASA: ScoreASA | null;
     decision: DecisionCPA;
     motifRefus: string;
     decisionOperation: DecisionOperation | null;
     validationProfInformelle: string;
+    statutValidationProf: StatutValidationProf;
     traitementEnCours: string | null;
     traitementASuivre: string | null;
     conclusion: string | null;
@@ -105,6 +110,10 @@ export declare class CPA {
     preparationPhysique: string;
     tachesInfirmieres: string;
     dateVerificationVeille: Date;
+    piecesJointes: {
+        label: string;
+        nomFichier: string;
+    }[] | null;
     statut: StatutCPA;
     createdAt: Date;
     updatedAt: Date;

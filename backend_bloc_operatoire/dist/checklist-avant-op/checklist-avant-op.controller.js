@@ -22,6 +22,25 @@ const accueil_client_1 = require("../external/accueil.client");
 const require_role_decorator_1 = require("../central-auth/require-role.decorator");
 const role_clinique_1 = require("../central-auth/role-clinique");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
+const create_checklist_avant_op_dto_1 = require("./dto/create-checklist-avant-op.dto");
+const update_checklist_avant_op_dto_1 = require("./dto/update-checklist-avant-op.dto");
+const ITEMS_TRI_STATE = [
+    'identiteConfirmee',
+    'interventionSiteConfirmes',
+    'documentationDisponible',
+    'installationConnue',
+    'allergiePatient',
+    'risqueIntubation',
+    'risqueSaignement',
+];
+const ITEMS_COCHES = ['materielChirurgicalVerifie', 'materielAnesthesiqueVerifie'];
+function verifierChecklistComplete(dto) {
+    const manquants = ITEMS_TRI_STATE.filter((cle) => dto[cle] === null || dto[cle] === undefined);
+    const nonCoches = ITEMS_COCHES.filter((cle) => dto[cle] !== true);
+    if (manquants.length || nonCoches.length) {
+        throw new common_1.BadRequestException(`Checklist incomplète — items manquants : ${[...manquants, ...nonCoches].join(', ')}`);
+    }
+}
 let ChecklistAvantOpController = class ChecklistAvantOpController {
     repo;
     accueilClient;
@@ -32,6 +51,7 @@ let ChecklistAvantOpController = class ChecklistAvantOpController {
         this.tracabiliteService = tracabiliteService;
     }
     async create(dto, req) {
+        verifierChecklistComplete(dto);
         const centralUser = req.centralUser;
         const savedResult = await this.repo.save(this.repo.create({
             ...dto,
@@ -76,7 +96,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [create_checklist_avant_op_dto_1.CreateChecklistAvantOpDto, Object]),
     __metadata("design:returntype", Promise)
 ], ChecklistAvantOpController.prototype, "create", null);
 __decorate([
@@ -104,7 +124,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, update_checklist_avant_op_dto_1.UpdateChecklistAvantOpDto, Object]),
     __metadata("design:returntype", Promise)
 ], ChecklistAvantOpController.prototype, "update", null);
 exports.ChecklistAvantOpController = ChecklistAvantOpController = __decorate([

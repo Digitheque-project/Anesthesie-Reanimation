@@ -16,6 +16,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationCPAService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const config_1 = require("@nestjs/config");
 const typeorm_2 = require("typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
@@ -23,6 +24,7 @@ const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
+const notification_back_client_1 = require("../external/notification-back.client");
 let NotificationCPAService = NotificationCPAService_1 = class NotificationCPAService {
     notificationRepo;
     webhookRepo;
@@ -30,23 +32,28 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     accueilClient;
     medecinIdentiteService;
     notificationOutgoing;
+    notificationBackClient;
+    config;
     logger = new common_1.Logger(NotificationCPAService_1.name);
-    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, medecinIdentiteService, notificationOutgoing) {
+    blocServiceId;
+    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, medecinIdentiteService, notificationOutgoing, notificationBackClient, config) {
         this.notificationRepo = notificationRepo;
         this.webhookRepo = webhookRepo;
         this.patientBlocRepo = patientBlocRepo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
         this.notificationOutgoing = notificationOutgoing;
+        this.notificationBackClient = notificationBackClient;
+        this.config = config;
+        this.blocServiceId =
+            this.config.get('externalServices.serviceId') ?? '';
     }
     async create(dto) {
         const saved = await this.notificationRepo.save(this.notificationRepo.create(dto));
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async findAll(page = 1, limite = 10) {
-        const [internalDataRaw, internalTotal] = await this.notificationRepo.findAndCount({
-            skip: (page - 1) * limite,
-            take: limite,
+        const internalDataRaw = await this.notificationRepo.find({
             order: { createdAt: 'DESC' },
         });
         const identities = await this.accueilClient.enrichWithIdentity(internalDataRaw);
@@ -71,12 +78,12 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                     idDossier: identity.idDossier ?? pb?.idDossier,
                     statut: pb?.statut,
                     niveauUrgence: pb?.niveauUrgence,
+                    dateIntervention: pb?.dateIntervention ?? null,
                 },
             };
         });
         const externalData = await this.webhookRepo.find({
             order: { receivedAt: 'DESC' },
-            take: limite,
         });
         const merged = [...internalData, ...externalData];
         merged.sort((a, b) => {
@@ -134,7 +141,18 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         catch (err) {
             this.logger.error(`Erreur notification service origine après planification RDV CPA: ${err.message}`);
         }
-        return this.notificationRepo.save(n);
+        const saved = await this.notificationRepo.save(n);
+        this.notificationBackClient
+            .notifyService({
+            serviceId: this.blocServiceId,
+            title: 'RDV CPA planifié',
+            message: `Notification ${id} planifiée`,
+            type: 'patient_statut_change',
+            source: 'bloc-operatoire',
+            data: { notificationId: id, patientId: n.patientId },
+        })
+            .catch(() => { });
+        return saved;
     }
     async update(id, dto) {
         const n = await this.notificationRepo.findOne({ where: { id } });
@@ -178,6 +196,8 @@ exports.NotificationCPAService = NotificationCPAService = NotificationCPAService
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,
         medecin_identite_service_1.MedecinIdentiteService,
-        notification_outgoing_service_1.NotificationOutgoingService])
+        notification_outgoing_service_1.NotificationOutgoingService,
+        notification_back_client_1.NotificationBackClient,
+        config_1.ConfigService])
 ], NotificationCPAService);
 //# sourceMappingURL=notification-cpa.service.js.map

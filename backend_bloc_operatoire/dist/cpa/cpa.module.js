@@ -12,6 +12,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const premedicament_entity_1 = require("../entities/premedicament.entity");
+const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const demande_cpa_externe_module_1 = require("../demande-cpa-externe/demande-cpa-externe.module");
 const medecin_module_1 = require("../medecin/medecin.module");
 const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
@@ -24,7 +25,7 @@ exports.CPAModule = CPAModule;
 exports.CPAModule = CPAModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc, premedicament_entity_1.Premedicament]),
+            typeorm_1.TypeOrmModule.forFeature([cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc, premedicament_entity_1.Premedicament, notification_cpa_entity_1.NotificationCPA]),
             demande_cpa_externe_module_1.DemandeCpaExterneModule,
             medecin_module_1.MedecinModule,
             tracabilite_module_1.TracabiliteModule,
