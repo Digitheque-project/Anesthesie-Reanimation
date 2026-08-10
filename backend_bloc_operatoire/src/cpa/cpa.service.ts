@@ -158,6 +158,19 @@ export class CPAService {
           },
           { statut: StatutNotificationCPA.REALISE },
         );
+      } else {
+        // REPORT = consultation faite, décision remise à plus tard : la notification reste
+        // EN_ATTENTE (la CPA est à refaire, les statistiques ne doivent pas la perdre), mais on la
+        // marque "lue" pour qu'elle ne trône plus en tête du fil "Prescription" — même mécanique
+        // que la cloche, où un élément lu disparaît de la liste des actions à traiter.
+        await this.notificationCpaRepo.update(
+          {
+            patientId: dto.patientId,
+            statut: StatutNotificationCPA.EN_ATTENTE,
+            lu: false,
+          },
+          { lu: true, luLe: new Date() },
+        );
       }
 
       // Recherché pour REPORT aussi : le service demandeur doit être notifié que la CPA est

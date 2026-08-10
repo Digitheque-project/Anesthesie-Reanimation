@@ -137,6 +137,21 @@ export class PrescriptionService {
     });
     if (notificationDejaEnAttente) return;
 
+    // Un patient déjà traité (CPA réalisée/validée/reportée, ou plus avancé dans le parcours :
+    // vérification veille, prêt pour bloc, opération, réveil, sortie) ne doit pas revenir dans le
+    // fil de prescription : sans ce garde-fou, un nouveau cycle d'ingestion pour le même patient
+    // recréait une notification EN_ATTENTE alors que la CPA avait déjà été prise en charge — le
+    // patient "traité" réapparaissait indéfiniment dans la liste à traiter.
+    const patientDejaTraite = await this.patientBlocRepo.findOne({
+      where: { patientId: p.patientId },
+    });
+    if (
+      patientDejaTraite &&
+      patientDejaTraite.statut !== PatientStatut.EN_ATTENTE_CPA
+    ) {
+      return;
+    }
+
     const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
     const niveauUrgence = this.mapUrgence(p.urgence);
     const dateIntervention = this.extraireDateIntervention(acte);

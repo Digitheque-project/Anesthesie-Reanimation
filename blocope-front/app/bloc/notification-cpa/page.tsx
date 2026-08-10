@@ -19,6 +19,26 @@ import { RoleClinique } from '@/lib/auth/role-clinique'
 import { useRefetchOnFocus } from '@/lib/hooks/useRefetchOnFocus'
 import { useRefetchOnRealtimeUpdate } from '@/lib/hooks/useRefetchOnRealtimeUpdate'
 
+// Un patient dont la CPA a déjà été traitée — validée (CPA_REALISE), inapte, ou plus avancé dans
+// le parcours (vérification veille, prêt pour bloc, opération, réveil, sortie) — ne doit plus
+// apparaître dans le fil "Prescription", même comportement que la cloche qui retire les
+// notifications lues. Les notifications sans PatientBloc (demandes externes) ne sont pas
+// concernées : `patient.statut` y est absent et elles restent actionnables.
+const STATUTS_PATIENT_TRAITES = new Set([
+  'CPA_REALISE',
+  'CPA_INAPTE',
+  'EN_ATTENTE_VERIFICATION_VEILLE',
+  'VERIFICATION_VEILLE_REALISEE',
+  'PRET_POUR_BLOC',
+  'EN_COURS_OPERATION',
+  'EN_SALLE_REVEIL',
+  'SORTI',
+])
+const estPatientTraite = (n: any): boolean => {
+  const statutPatient = n.patient?.statut
+  return Boolean(statutPatient) && STATUTS_PATIENT_TRAITES.has(statutPatient)
+}
+
 export default function NotificationCPAPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const router = useRouter()
@@ -28,6 +48,9 @@ export default function NotificationCPAPage() {
   // Le fil de prescription ne doit montrer que les prescriptions pas encore traitées : une fois
   // le RDV CPA planifié, le patient bascule vers la liste "Rendez-vous CPA" et ne doit plus
   // réapparaître ici par défaut (les autres filtres restent disponibles pour l'historique).
+  // Les notifications lues (`lu`) sont aussi retirées de la vue par défaut "En attente", comme
+  // le fait la cloche (NotificationModal filtre n.lu) — et les patients déjà traités sont exclus
+  // en amont dans `charger` (voir estPatientTraite).
   const [filtreActif, setFiltreActif] = useState('EN_ATTENTE')
   const [showModal, setShowModal] = useState(false)
   const [selectedNotif, setSelectedNotif] = useState<any>(null)
@@ -74,11 +97,16 @@ export default function NotificationCPAPage() {
       }
       idsConnus.current = new Set(toutes.map((n: any) => n.id).filter(Boolean))
 
-      setNotifications(toutes)
+      // Les patients déjà traités (CPA réalisée/inapte ou plus avancé dans le parcours) sont
+      // retirés du fil d'affichage et des statistiques — ils ne doivent plus être "à traiter".
+      // La détection de nouveauté ci-dessus reste basée sur l'ensemble complet (`toutes`).
+      const actionnables = toutes.filter((n: any) => !estPatientTraite(n))
+
+      setNotifications(actionnables)
       setStats({
-        total: toutes.length,
-        enAttente: toutes.filter((n: any) => n.statut === 'EN_ATTENTE').length,
-        prioriteHaute: toutes.filter((n: any) => n.estUrgent).length,
+        total: actionnables.length,
+        enAttente: actionnables.filter((n: any) => n.statut === 'EN_ATTENTE' && !n.lu).length,
+        prioriteHaute: actionnables.filter((n: any) => n.estUrgent).length,
         rdvFixes24h: notifs.filter((n: any) => n.statut === 'RDV_PLANIFIE').length,
       })
     } catch (err) { console.error(err) }
@@ -182,6 +210,7 @@ export default function NotificationCPAPage() {
 
   const notificationsFiltrees = filtreActif === 'tous' ? notifications
     : filtreActif === 'urgent' ? notifications.filter(n => n.estUrgent)
+    : filtreActif === 'EN_ATTENTE' ? notifications.filter(n => n.statut === 'EN_ATTENTE' && !n.lu)
     : notifications.filter(n => n.statut === filtreActif)
 
   return (

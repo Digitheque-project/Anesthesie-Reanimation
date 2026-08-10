@@ -180,6 +180,17 @@ export class PrescriptionImagerieListenerService
     });
     if (dejaEnAttente) return;
 
+    // Même garde-fou que dans PrescriptionService.ingerer : si le patient est déjà suivi et que
+    // sa CPA a été traitée (statut différent de EN_ATTENTE_CPA), on ne recrée plus de notification
+    // pour lui — sans quoi une nouvelle prescription imagerie faisait réapparaître un patient déjà
+    // pris en charge dans le fil "à traiter".
+    const dejaTraite = await this.patientBlocRepo.findOne({
+      where: { patientId: prescription.patientId },
+    });
+    if (dejaTraite && dejaTraite.statut !== PatientStatut.EN_ATTENTE_CPA) {
+      return;
+    }
+
     const urgence = (prescription.urgence || '').toUpperCase();
     const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
     const prescripteurNom = [
