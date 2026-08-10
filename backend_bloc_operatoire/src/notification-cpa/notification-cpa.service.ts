@@ -83,6 +83,7 @@ export class NotificationCPAService {
           idDossier: identity.idDossier ?? pb?.idDossier,
           statut: pb?.statut,
           niveauUrgence: pb?.niveauUrgence,
+          dateIntervention: pb?.dateIntervention ?? null,
         },
       };
     });

@@ -239,8 +239,8 @@ export default function NotificationModal({
                     <div>
                       <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Date et heure prévues de l'opération</p>
                       <p className="text-sm font-bold text-gray-800">
-                        {notification.dateIntervention
-                          ? new Date(notification.dateIntervention).toLocaleString('fr-FR', {
+                        {(notification.dateIntervention || notification.patient?.dateIntervention)
+                          ? new Date(notification.dateIntervention || notification.patient?.dateIntervention).toLocaleString('fr-FR', {
                               day: '2-digit',
                               month: 'short',
                               year: 'numeric',
