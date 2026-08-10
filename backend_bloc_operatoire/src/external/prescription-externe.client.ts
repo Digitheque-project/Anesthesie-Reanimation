@@ -10,6 +10,9 @@ export interface ActeBlocExterne {
   cote?: string | null;
   typeChirurgie?: string | null;
   risqueHemorragique?: string | null;
+  dateIntervention?: string | null;
+  heureIntervention?: string | null;
+  nomChirurgien?: string | null;
 }
 
 export interface PrescriptionBlocExterne {
@@ -25,7 +28,8 @@ export interface PrescriptionBlocExterne {
   chuId: string;
   serviceIdSource?: string | null;
   serviceIdDest: string;
-  actes: ActeBlocExterne[];
+  actes?: ActeBlocExterne[];
+  ActeBloc?: ActeBlocExterne[];
 }
 
 // Client vers le service central "Prescriptions" (multi-service) : c'est lui qui reçoit les

@@ -16,6 +16,7 @@ import {
 import {
   PrescriptionExterneClient,
   PrescriptionBlocExterne,
+  ActeBlocExterne,
 } from '../external/prescription-externe.client';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { ServiceRegistryClient } from '../external/service-registry.client';
@@ -91,6 +92,29 @@ export class PrescriptionService {
     return NiveauUrgence.NORMAL;
   }
 
+  private extraireDateIntervention(acte?: ActeBlocExterne): Date | undefined {
+    // La date et l'heure prévues de l'opération sont fixées par le chirurgien sur l'acte
+    // (Planification et Logistique) — le service Prescriptions les renvoie dans ActeBloc, pas à
+    // la racine de la prescription. La date porte minuit UTC ; on y injecte l'heure "11:05" pour
+    // ne pas stocker une date à 00h00 qui ne reflétait ni la date ni l'heure réelles.
+    if (!acte?.dateIntervention) return undefined;
+    const base = new Date(acte.dateIntervention);
+    const heure = acte.heureIntervention;
+    const [h, m] = (heure || '').split(':').map(Number);
+    if (isNaN(h)) return base;
+    return new Date(
+      Date.UTC(
+        base.getUTCFullYear(),
+        base.getUTCMonth(),
+        base.getUTCDate(),
+        h,
+        isNaN(m) ? 0 : m,
+        0,
+        0,
+      ),
+    );
+  }
+
   private async ingerer(
     p: PrescriptionBlocExterne,
     serviceId: string,
@@ -113,8 +137,9 @@ export class PrescriptionService {
     });
     if (notificationDejaEnAttente) return;
 
-    const acte = p.actes?.[0];
+    const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
     const niveauUrgence = this.mapUrgence(p.urgence);
+    const dateIntervention = this.extraireDateIntervention(acte);
     // Le service Prescriptions ne transmet que l'id du service demandeur, jamais son nom — sans
     // cette résolution, "service source" restait vide partout où ce patient est affiché (fiche
     // patient, prescription au sein de la CPA, notification).
@@ -134,12 +159,10 @@ export class PrescriptionService {
       risqueHemorragique: acte?.risqueHemorragique || undefined,
       typeChirurgie: acte?.typeChirurgie || undefined,
       consignes: p.consignes || undefined,
-      dateIntervention: p.dateIntervention
-        ? new Date(p.dateIntervention)
-        : undefined,
+      dateIntervention,
       alertes: p.alertes || undefined,
       prescripteurId: p.prescripteurId,
-      chirurgien_nom: p.chirurgien || undefined,
+      chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence,
       serviceOrigineId: p.serviceIdSource || undefined,
@@ -159,13 +182,11 @@ export class PrescriptionService {
     const notif = await this.notificationRepo.save(
       this.notificationRepo.create({
         heurePrescription: new Date().toTimeString().substring(0, 5),
-        dateIntervention: p.dateIntervention
-          ? new Date(p.dateIntervention)
-          : undefined,
+        dateIntervention,
         patientId: p.patientId,
         intervention: acte?.libelle || 'Intervention',
         chirurgienId: undefined,
-        chirurgienNom: p.chirurgien || undefined,
+        chirurgienNom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
         professeurCPA: undefined,
         serviceSourceId: p.serviceIdSource || undefined,
         serviceSourceNom: serviceSourceNom || undefined,
