@@ -12,10 +12,10 @@ const SECTIONS: SommaireSection[] = [
   { id: 'cpa-antecedents', label: 'Histoire et Antécédents', icon: 'history_edu' },
   { id: 'cpa-examen', label: 'Examen clinique', icon: 'stethoscope' },
   { id: 'cpa-voies-aeriennes', label: 'Voies aériennes', icon: 'air' },
-  { id: 'cpa-conclusion', label: 'Conclusion', icon: 'summarize' },
   { id: 'cpa-traitement', label: 'Traitement médicamenteux', icon: 'pill' },
-  { id: 'cpa-instructions', label: 'Instructions & médicaments', icon: 'assignment' },
+  { id: 'cpa-conclusion', label: 'Conclusion', icon: 'summarize' },
   { id: 'cpa-protocole', label: 'Protocole', icon: 'vaccines' },
+  { id: 'cpa-instructions', label: 'Instructions & médicaments', icon: 'assignment' },
   { id: 'cpa-decision', label: 'Décision finale', icon: 'gavel' },
 ];
 
