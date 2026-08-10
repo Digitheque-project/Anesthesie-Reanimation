@@ -9,7 +9,7 @@ export interface SommaireSection {
 }
 
 const SECTIONS: SommaireSection[] = [
-  { id: 'cpa-antecedents', label: 'Antécédents', icon: 'history_edu' },
+  { id: 'cpa-antecedents', label: 'Histoire et Antécédents', icon: 'history_edu' },
   { id: 'cpa-examen', label: 'Examen clinique', icon: 'stethoscope' },
   { id: 'cpa-voies-aeriennes', label: 'Voies aériennes', icon: 'air' },
   { id: 'cpa-conclusion', label: 'Conclusion', icon: 'summarize' },

@@ -730,12 +730,17 @@ function ConsultationCpaPageContent() {
         ],
       },
       {
-        titre: 'Antécédents',
+        titre: 'Histoire',
         champs: [
           { label: 'Histoire actuelle', valeur: form.histoireActuelle },
           { label: 'Urgence — Dernier repas / boisson', valeur: form.dernierRepasBoisson },
           { label: 'Patient mineur', valeur: form.patientMineur === true ? 'OUI' : form.patientMineur === false ? 'NON' : '' },
           { label: 'Autorisation d\'opérer signée', valeur: form.autorisationOpererSignee === true ? 'OUI' : form.autorisationOpererSignee === false ? 'NON' : '' },
+        ],
+      },
+      {
+        titre: 'Antécédents',
+        champs: [
           { label: 'ATCD médicaux', valeur: form.atcdMedicaux },
           { label: 'ATCD anesthésiques et chirurgicaux', valeur: form.atcdChirurgicaux },
           { label: 'Incidents', valeur: form.notesIncidents },
@@ -1042,46 +1047,69 @@ function ConsultationCpaPageContent() {
           médicamenteux, Instructions, Protocole, Décision), le contenu repasse pleine largeur. */}
       <div className="flex flex-col lg:flex-row gap-2 items-start">
         <div className={`flex-1 space-y-2 min-w-0 ${!peutEditerExamenEtDecision ? 'opacity-80' : ''}`}>
-          {/* Antécédents — section 1 de la fiche papier "Fiche d'Anesthésie – Réanimation" */}
+          {/* Histoire et Antécédents — section 1 de la fiche papier "Fiche d'Anesthésie –
+              Réanimation", organisée en deux sous-sections : « Histoire » (motif actuel, dernier
+              repas/boisson, patient mineur, autorisation d'opérer) et « Antécédents » (tout le
+              reste de l'ancien bloc). */}
           <section id="cpa-antecedents" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-4 scroll-mt-36">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history_edu</span>
-              <h2 className="text-lg font-bold font-headline text-primary">Antécédents</h2>
+              <h2 className="text-lg font-bold font-headline text-primary">Histoire et Antécédents</h2>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-on-surface-variant">Histoire actuelle</label>
-              <textarea disabled={!peutEditerExamenEtDecision} value={form.histoireActuelle} onChange={setField('histoireActuelle')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/20 disabled:opacity-60" placeholder="Motif de consultation, contexte actuel..."></textarea>
-            </div>
+            <div className="space-y-4">
+              {/* Sous-section « Histoire » — le motif actuel et les renseignements d'urgence
+                  (Histoire actuelle, dernier repas/boisson, patient mineur, autorisation
+                  d'opérer signée). */}
+              <div className="rounded-xl bg-white/70 border border-outline-variant/30 p-4 space-y-4">
+                <h3 className="text-sm font-extrabold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>note_alt</span>
+                  Histoire
+                </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant">Urgence — Dernier repas / Dernière boisson</label>
-                <input disabled={!peutEditerExamenEtDecision} value={form.dernierRepasBoisson} onChange={setField('dernierRepasBoisson')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="ex: repas à 19h, eau à 22h" />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant">Patient mineur ?<Requis /></label>
-                <div className="flex gap-2">
-                  <label className={pilleClass(form.patientMineur === true, peutEditerExamenEtDecision)}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={form.patientMineur === true} onChange={() => setForm(f => ({ ...f, patientMineur: true }))} className="hidden" name="patientMineur" type="radio" />OUI
-                  </label>
-                  <label className={pilleClass(form.patientMineur === false, peutEditerExamenEtDecision)}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={form.patientMineur === false} onChange={() => setForm(f => ({ ...f, patientMineur: false }))} className="hidden" name="patientMineur" type="radio" />NON
-                  </label>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-on-surface-variant">Histoire actuelle</label>
+                  <textarea disabled={!peutEditerExamenEtDecision} value={form.histoireActuelle} onChange={setField('histoireActuelle')} className="w-full h-20 bg-surface-container-low border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/20 disabled:opacity-60" placeholder="Motif de consultation, contexte actuel..."></textarea>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-on-surface-variant">Urgence — Dernier repas / Dernière boisson</label>
+                    <input disabled={!peutEditerExamenEtDecision} value={form.dernierRepasBoisson} onChange={setField('dernierRepasBoisson')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="ex: repas à 19h, eau à 22h" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-on-surface-variant">Patient mineur ?<Requis /></label>
+                    <div className="flex gap-2">
+                      <label className={pilleClass(form.patientMineur === true, peutEditerExamenEtDecision)}>
+                        <input disabled={!peutEditerExamenEtDecision} checked={form.patientMineur === true} onChange={() => setForm(f => ({ ...f, patientMineur: true }))} className="hidden" name="patientMineur" type="radio" />OUI
+                      </label>
+                      <label className={pilleClass(form.patientMineur === false, peutEditerExamenEtDecision)}>
+                        <input disabled={!peutEditerExamenEtDecision} checked={form.patientMineur === false} onChange={() => setForm(f => ({ ...f, patientMineur: false }))} className="hidden" name="patientMineur" type="radio" />NON
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-on-surface-variant">Autorisation d'opérer signée ?</label>
+                    <div className="flex gap-2">
+                      <label className={pilleClass(form.autorisationOpererSignee === true, peutEditerExamenEtDecision)}>
+                        <input disabled={!peutEditerExamenEtDecision} checked={form.autorisationOpererSignee === true} onChange={() => setForm(f => ({ ...f, autorisationOpererSignee: true }))} className="hidden" name="autorisationOpererSignee" type="radio" />OUI
+                      </label>
+                      <label className={pilleClass(form.autorisationOpererSignee === false, peutEditerExamenEtDecision)}>
+                        <input disabled={!peutEditerExamenEtDecision} checked={form.autorisationOpererSignee === false} onChange={() => setForm(f => ({ ...f, autorisationOpererSignee: false }))} className="hidden" name="autorisationOpererSignee" type="radio" />NON
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant">Autorisation d'opérer signée ?</label>
-                <div className="flex gap-2">
-                  <label className={pilleClass(form.autorisationOpererSignee === true, peutEditerExamenEtDecision)}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={form.autorisationOpererSignee === true} onChange={() => setForm(f => ({ ...f, autorisationOpererSignee: true }))} className="hidden" name="autorisationOpererSignee" type="radio" />OUI
-                  </label>
-                  <label className={pilleClass(form.autorisationOpererSignee === false, peutEditerExamenEtDecision)}>
-                    <input disabled={!peutEditerExamenEtDecision} checked={form.autorisationOpererSignee === false} onChange={() => setForm(f => ({ ...f, autorisationOpererSignee: false }))} className="hidden" name="autorisationOpererSignee" type="radio" />NON
-                  </label>
-                </div>
-              </div>
-            </div>
+
+              {/* Sous-section « Antécédents » — tout le reste de l'ancien bloc Antécédents
+                  (antécédents anesthésiques/chirurgicaux, incidents, ATCD médicaux/familiaux,
+                  asthme, temps de saignement, obstétricaux, groupe sanguin, transfusions). */}
+              <div className="rounded-xl bg-white/70 border border-outline-variant/30 p-4 space-y-4">
+                <h3 className="text-sm font-extrabold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>history</span>
+                  Antécédents
+                </h3>
 
             {/* Regroupés ensemble : trois champs directement liés à l'expérience anesthésique/
                 chirurgicale passée du patient (ATCD d'anesthésie, ATCD anesthésiques et
@@ -1189,6 +1217,8 @@ function ConsultationCpaPageContent() {
               </div>
               <div className="space-y-2"><label className="text-sm font-semibold text-on-surface-variant block">Incidents transfusionnels</label>
                 <input disabled={!peutEditerExamenEtDecision} value={form.transfusionsIncidents} onChange={setField('transfusionsIncidents')} className="w-full bg-surface-container-low border-none rounded-xl p-3 text-sm disabled:opacity-60" placeholder="Aucun / préciser..." /></div>
+            </div>
+              </div>
             </div>
           </section>
 
