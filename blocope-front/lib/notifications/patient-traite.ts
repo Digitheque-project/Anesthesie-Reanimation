@@ -16,5 +16,6 @@ export const STATUTS_PATIENT_TRAITES = new Set([
 
 export function estPatientTraite(n: { patient?: { statut?: string } }): boolean {
   const statutPatient = n.patient?.statut
-  return Boolean(statutPatient) && STATUTS_PATIENT_TRAITES.has(statutPatient)
+  if (!statutPatient) return false
+  return STATUTS_PATIENT_TRAITES.has(statutPatient)
 }
