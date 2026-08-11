@@ -16,11 +16,12 @@ type NavItemColore = NavItem & { couleur: { bg: string; texte: string }; rolesEx
 // uniformément grise, et cohérent avec le style d'icônes-dans-pastille déjà utilisé ailleurs
 // dans l'app (cartes KPI des Rapports, en-têtes de section...).
 //
-// rolesExclus : rubriques masquées pour certains rôles cliniques — Major/Responsable CPA ne
-// font pas d'acte chirurgical (pas de Programme opératoire / Salle de réveil), le Chirurgien ne
-// voit que Tableau de bord/Programme opératoire/Archives/Rapport, l'IBODE n'a pas accès à la
+// rolesExclus : rubriques masquées pour certains rôles cliniques — le Responsable CPA ne fait
+// pas d'acte chirurgical (pas de Programme opératoire / Salle de réveil), le Chirurgien ne voit
+// que Tableau de bord/Programme opératoire/Archives/Rapport, l'IBODE n'a pas accès à la
 // prescription ni au suivi de RDV/salle de réveil. L'Anesthésiste n'est jamais exclu : il garde
-// l'accès à tout le menu.
+// l'accès à tout le menu. Le Major remplace totalement l'anesthésiste (même rôle clinique), il
+// garde donc lui aussi l'accès à tout le menu.
 const navItems: NavItemColore[] = [
   { label: 'Tableau de bord', href: '/bloc', icon: 'space_dashboard', couleur: { bg: 'bg-blue-100', texte: 'text-blue-600' } },
   { label: 'Prescription', href: '/bloc/notification-cpa', icon: 'mark_email_unread', couleur: { bg: 'bg-amber-100', texte: 'text-amber-600' }, rolesExclus: [RoleClinique.CHIRURGIEN, RoleClinique.IBODE] },
@@ -30,11 +31,11 @@ const navItems: NavItemColore[] = [
   // (patients venus par une demande de CPA externe d'un service qui n'opère pas au Bloc — Imagerie,
   // Endoscopie, Urgence...). Mêmes checklists, mêmes rôles concernés — seule la liste de patients
   // diffère (voir lib/programme-non-operatoire.ts).
-  { label: 'Programme', href: '/bloc/patient-du-jour', icon: 'medical_services', couleur: { bg: 'bg-teal-100', texte: 'text-teal-600' }, rolesExclus: [RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA], sousMenu: [
+  { label: 'Programme', href: '/bloc/patient-du-jour', icon: 'medical_services', couleur: { bg: 'bg-teal-100', texte: 'text-teal-600' }, rolesExclus: [RoleClinique.RESPONSABLE_CPA], sousMenu: [
     { label: 'Programme opératoire', href: '/bloc/patient-du-jour', icon: 'medical_services', couleur: { bg: 'bg-teal-100', texte: 'text-teal-600' } },
     { label: 'Programmation anesthésique', href: '/bloc/programme-non-operatoire', icon: 'move_up', couleur: { bg: 'bg-cyan-100', texte: 'text-cyan-600' } },
   ] },
-  { label: 'Salle de réveil', href: '/bloc/salle-de-reveil', icon: 'king_bed', couleur: { bg: 'bg-rose-100', texte: 'text-rose-600' }, rolesExclus: [RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA, RoleClinique.CHIRURGIEN, RoleClinique.IBODE] },
+  { label: 'Salle de réveil', href: '/bloc/salle-de-reveil', icon: 'king_bed', couleur: { bg: 'bg-rose-100', texte: 'text-rose-600' }, rolesExclus: [RoleClinique.RESPONSABLE_CPA, RoleClinique.CHIRURGIEN, RoleClinique.IBODE] },
   { label: 'Archives', href: '/bloc/archives', icon: 'folder_special', couleur: { bg: 'bg-indigo-100', texte: 'text-indigo-600' } },
   { label: 'Rapport', href: '/bloc/rapport', icon: 'monitoring', couleur: { bg: 'bg-emerald-100', texte: 'text-emerald-600' } },
 ];

@@ -13,7 +13,7 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { CentralUser } from './central-user.interface';
 import { REQUIRE_ROLE_CLINIQUE_KEY } from './require-role.decorator';
 import { REQUIRE_PERMISSION_KEY } from './require-permission.decorator';
-import { matchRoleClinique } from './role-clinique';
+import { matchRoleClinique, RoleClinique } from './role-clinique';
 import {
   verifyCentralToken,
   NoServiceAccessError,
@@ -92,7 +92,15 @@ export class CentralAuthGuard implements CanActivate {
         );
       }
       const roleUtilisateur = matchRoleClinique(centralUser.role);
-      if (!roleUtilisateur || !rolesRequis.includes(roleUtilisateur)) {
+      // Le Major remplace totalement l'anesthésiste : une route réservée à l'anesthésiste est
+      // aussi ouverte au Major (voir agitCommeAnesthesiste). On évalue l'équivalence ici pour
+      // couvrir toutes les routes @RequireRoleClinique(ANESTHESISTE, ...) sans les modifier.
+      const satisfaitRole =
+        !!roleUtilisateur &&
+        (rolesRequis.includes(roleUtilisateur) ||
+          (roleUtilisateur === RoleClinique.MAJOR &&
+            rolesRequis.includes(RoleClinique.ANESTHESISTE)));
+      if (!satisfaitRole) {
         throw new ForbiddenException(
           `Action reservee au role ${rolesRequis.join(' ou ')} (votre role : ${centralUser.role})`,
         );

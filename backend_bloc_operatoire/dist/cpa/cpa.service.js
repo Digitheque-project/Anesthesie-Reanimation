@@ -70,7 +70,7 @@ let CPAService = CPAService_1 = class CPAService {
         }
         const roleUtilisateur = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
         let anesthesisteId;
-        if (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE) {
+        if ((0, role_clinique_1.agitCommeAnesthesiste)(roleUtilisateur)) {
             anesthesisteId = centralUser.userId;
         }
         else if (dto.anesthesisteId) {
@@ -83,8 +83,7 @@ let CPAService = CPAService_1 = class CPAService {
         else {
             anesthesisteId = null;
         }
-        const statutValidationProf = roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE ||
-            roleUtilisateur === role_clinique_1.RoleClinique.MAJOR
+        const statutValidationProf = (0, role_clinique_1.agitCommeAnesthesiste)(roleUtilisateur)
             ? cpa_entity_1.StatutValidationProf.VALIDE
             : cpa_entity_1.StatutValidationProf.EN_ATTENTE_VALIDATION;
         const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto;
@@ -257,8 +256,7 @@ let CPAService = CPAService_1 = class CPAService {
         const contientSuiviAnesthesiste = dto.medicamentsAnesthesieReanimation !== undefined ||
             dto.dateVerificationVeille !== undefined;
         if (cpa.statutValidationProf === cpa_entity_1.StatutValidationProf.EN_ATTENTE_VALIDATION &&
-            (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE ||
-                roleUtilisateur === role_clinique_1.RoleClinique.MAJOR) &&
+            (0, role_clinique_1.agitCommeAnesthesiste)(roleUtilisateur) &&
             (cpa.decision !== cpa_entity_1.DecisionCPA.APTE || contientSuiviAnesthesiste)) {
             cpa.statutValidationProf = cpa_entity_1.StatutValidationProf.VALIDE;
         }
@@ -269,8 +267,7 @@ let CPAService = CPAService_1 = class CPAService {
             : null;
         if (patientApresCpa?.statut === patient_bloc_entity_1.PatientStatut.CPA_REALISE &&
             cpa.decision === cpa_entity_1.DecisionCPA.APTE &&
-            (roleUtilisateur === role_clinique_1.RoleClinique.ANESTHESISTE ||
-                roleUtilisateur === role_clinique_1.RoleClinique.MAJOR) &&
+            (0, role_clinique_1.agitCommeAnesthesiste)(roleUtilisateur) &&
             contientSuiviAnesthesiste) {
             await this.patientBlocStatutService.changerStatut(cpa.patientId, patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE, centralUser?.userId);
         }

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoleClinique = void 0;
 exports.matchRoleClinique = matchRoleClinique;
+exports.agitCommeAnesthesiste = agitCommeAnesthesiste;
 var RoleClinique;
 (function (RoleClinique) {
     RoleClinique["RESPONSABLE_CPA"] = "RESPONSABLE_CPA";
@@ -29,5 +30,8 @@ function matchRoleClinique(roleName) {
     if (normalise.includes('major'))
         return RoleClinique.MAJOR;
     return null;
+}
+function agitCommeAnesthesiste(role) {
+    return (role === RoleClinique.ANESTHESISTE || role === RoleClinique.MAJOR);
 }
 //# sourceMappingURL=role-clinique.js.map

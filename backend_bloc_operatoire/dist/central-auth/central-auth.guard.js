@@ -61,7 +61,11 @@ let CentralAuthGuard = CentralAuthGuard_1 = class CentralAuthGuard {
                 throw new common_1.ForbiddenException(`Action reservee aux membres du service Bloc Operatoire (role ${rolesRequis.join(' ou ')})`);
             }
             const roleUtilisateur = (0, role_clinique_1.matchRoleClinique)(centralUser.role);
-            if (!roleUtilisateur || !rolesRequis.includes(roleUtilisateur)) {
+            const satisfaitRole = !!roleUtilisateur &&
+                (rolesRequis.includes(roleUtilisateur) ||
+                    (roleUtilisateur === role_clinique_1.RoleClinique.MAJOR &&
+                        rolesRequis.includes(role_clinique_1.RoleClinique.ANESTHESISTE)));
+            if (!satisfaitRole) {
                 throw new common_1.ForbiddenException(`Action reservee au role ${rolesRequis.join(' ou ')} (votre role : ${centralUser.role})`);
             }
         }

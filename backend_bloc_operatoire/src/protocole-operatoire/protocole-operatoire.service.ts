@@ -8,7 +8,7 @@ import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CentralUser } from '../central-auth/central-user.interface';
-import { RoleClinique, matchRoleClinique } from '../central-auth/role-clinique';
+import { agitCommeAnesthesiste, RoleClinique, matchRoleClinique } from '../central-auth/role-clinique';
 import { CreateProtocoleOperatoireDto } from './dto/create-protocole-operatoire.dto';
 import { UpdateProtocoleOperatoireDto } from './dto/update-protocole-operatoire.dto';
 
@@ -37,12 +37,13 @@ export class ProtocoleOperatoireService {
     const { drainages, ...data } = dto as any;
     // Le formulaire ne propose aucun sélecteur pour désigner le chirurgien/l'anesthésiste (voir
     // le commentaire sur l'entité) — cette route est réservée aux rôles Chirurgien et
-    // Anesthésiste (@RequireRoleClinique) : l'utilisateur connecté EST l'un des deux, on
-    // l'auto-renseigne sur le bon champ selon son rôle plutôt que de dépendre d'une saisie
-    // manuelle. Sans identité connectée (jamais en pratique ici), on garde la valeur du DTO.
+    // Anesthésiste (@RequireRoleClinique, ouverte au Major qui le remplace totalement) :
+    // l'utilisateur connecté EST l'un des deux, on l'auto-renseigne sur le bon champ selon son
+    // rôle plutôt que de dépendre d'une saisie manuelle. Sans identité connectée (jamais en
+    // pratique ici), on garde la valeur du DTO.
     const role = centralUser ? matchRoleClinique(centralUser.role) : null;
     if (role === RoleClinique.CHIRURGIEN) data.chirurgienId = centralUser!.userId;
-    else if (role === RoleClinique.ANESTHESISTE)
+    else if (agitCommeAnesthesiste(role))
       data.anesthesisteId = centralUser!.userId;
 
     // Chirurgien et anesthésiste partagent un seul enregistrement par patient/jour d'opération
@@ -126,7 +127,7 @@ export class ProtocoleOperatoireService {
     const { drainages, ...data } = dto as any;
     const role = centralUser ? matchRoleClinique(centralUser.role) : null;
     if (role === RoleClinique.CHIRURGIEN) data.chirurgienId = centralUser!.userId;
-    else if (role === RoleClinique.ANESTHESISTE)
+    else if (agitCommeAnesthesiste(role))
       data.anesthesisteId = centralUser!.userId;
     const updated = await this.repo.save(Object.assign(p, data));
     // Remplacement complet du set de drainages à chaque sauvegarde — pas d'identité stable côté

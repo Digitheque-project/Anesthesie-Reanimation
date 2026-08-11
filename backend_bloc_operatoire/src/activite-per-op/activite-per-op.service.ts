@@ -10,7 +10,7 @@ import { CreateActivitePerOpDto } from './dto/create-activite-per-op.dto';
 import { UpdateActivitePerOpDto } from './dto/update-activite-per-op.dto';
 import { AjouterConstanteDto } from './dto/ajouter-constante.dto';
 import { CentralUser } from '../central-auth/central-user.interface';
-import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
+import { agitCommeAnesthesiste, matchRoleClinique } from '../central-auth/role-clinique';
 
 @Injectable()
 export class ActivitePerOpService {
@@ -97,13 +97,13 @@ export class ActivitePerOpService {
     // chirurgienId sur ProtocoleOperatoire) — le seul appelant réel de cette route est
     // l'anesthésiste connecté (le bouton "Valider" est masqué à l'IBODE côté frontend), donc on
     // s'auto-désigne depuis la session plutôt que de dépendre d'une saisie manuelle inexistante.
-    // Miroir de la logique CPAService.create() : seul un vrai ANESTHESISTE s'auto-attribue,
-    // jamais un autre rôle qui appellerait cette route.
+    // Miroir de la logique CPAService.create() : seuls un vrai ANESTHESISTE ou un Major (qui le
+    // remplace totalement) s'auto-attribuent, jamais un autre rôle qui appellerait cette route.
     const patch: Record<string, any> = { ...dto };
     if (
       !patch.anesthesisteId &&
       centralUser &&
-      matchRoleClinique(centralUser.role) === RoleClinique.ANESTHESISTE
+      agitCommeAnesthesiste(matchRoleClinique(centralUser.role))
     ) {
       patch.anesthesisteId = centralUser.userId;
     }

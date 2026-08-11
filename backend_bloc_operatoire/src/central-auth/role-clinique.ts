@@ -29,3 +29,15 @@ export function matchRoleClinique(
   if (normalise.includes('major')) return RoleClinique.MAJOR;
   return null;
 }
+
+// Le Major remplace totalement l'anesthésiste (même rôle clinique, décision validée) : tout ce
+// qui est réservé à l'anesthésiste est aussi accessible au Major. Garde-fou de traçabilité : on
+// conserve l'identité MAJOR pour l'attribution/affichage, on n'élève jamais le rôle en
+// ANESTHESISTE.
+export function agitCommeAnesthesiste(
+  role: RoleClinique | null | undefined,
+): boolean {
+  return (
+    role === RoleClinique.ANESTHESISTE || role === RoleClinique.MAJOR
+  );
+}

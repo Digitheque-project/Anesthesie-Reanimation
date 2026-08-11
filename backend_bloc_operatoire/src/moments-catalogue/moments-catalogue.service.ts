@@ -45,9 +45,11 @@ const CATALOGUE_INITIAL: Record<CategorieMoment, string[]> = {
 };
 
 // Même séparation stricte par rôle que MomentsOperatoireService : chacun ne peut ajouter un
-// bouton qu'à la/les catégorie(s) qu'il a le droit d'horodater.
+// bouton qu'à la/les catégorie(s) qu'il a le droit d'horodater. Le Major remplace totalement
+// l'anesthésiste (même rôle clinique), il hérite donc des mêmes catégories.
 const CATEGORIES_AUTORISEES: Record<string, CategorieMoment[]> = {
   [RoleClinique.ANESTHESISTE]: [CategorieMoment.ANESTHESIE],
+  [RoleClinique.MAJOR]: [CategorieMoment.ANESTHESIE],
   [RoleClinique.IBODE]: [CategorieMoment.CHIRURGIE, CategorieMoment.DIVERS],
 };
 
