@@ -282,7 +282,6 @@ export default function ArchiveDetailPage() {
               dossier.checklistsApresOp.map((c: any) => (
                 <div key={c.id} className="space-y-1">
                   <LigneDetail gauche={`Sign Out — ${fmtDate(c.dateCreation)}`} droite="" badges={[{ texte: c.statut, couleur: 'blue' }]} personnel={c.validateurNom} />
-                  {c.observationsParticulieres && <p className="text-xs text-on-surface-variant bg-surface-container-low rounded-lg p-2">{c.observationsParticulieres}</p>}
                 </div>
               ))
             )}

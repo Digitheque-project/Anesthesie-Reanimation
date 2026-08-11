@@ -418,17 +418,16 @@ function VerificationVeillePageContent() {
           </section>
         )}
 
-        {/* Pièces jointes — documents importés (PDF, images, Office...) rattachés au patient et
-            enregistrés avec les informations cochées de la vérification la veille */}
+        {/* Autorisation d'anesthésie et d'intervention — fichier (texte, PDF, image...) importé,
+            rattaché au patient et enregistré avec les informations cochées de la vérification */}
         <section className="lg:col-span-12 bg-white rounded-xl p-8 shadow-sm border border-outline-variant/30">
           <div className="flex items-center gap-3 mb-2">
-            <span className="material-symbols-outlined text-primary text-2xl">folder</span>
-            <h3 className="text-lg font-bold text-on-surface">Documents / Pièces jointes</h3>
+            <span className="material-symbols-outlined text-primary text-2xl">assignment</span>
+            <h3 className="text-lg font-bold text-on-surface">Autorisation d&apos;anesthésie et d&apos;intervention</h3>
           </div>
           <p className="text-xs text-on-surface-variant mb-5">
-            Importez ici les documents utiles à la vérification de la veille (consentements, bilans,
-            imagerie, comptes-rendus, ordonnances...). Ils sont enregistrés avec les informations
-            cochées ci-dessus.
+            Importez ici le document signé autorisant l'anesthésie et l'intervention (fichier texte,
+            PDF ou image). Il est enregistré avec les informations cochées ci-dessus.
           </p>
 
           <input
@@ -448,7 +447,7 @@ function VerificationVeillePageContent() {
           >
             <span className="material-symbols-outlined text-4xl">upload_file</span>
             <span className="text-sm font-bold">{uploadEnCours ? 'Import en cours...' : 'Cliquez pour importer un ou plusieurs fichiers'}</span>
-            <span className="text-[11px] text-on-surface-variant">PDF, images, Word, Excel, PowerPoint, texte, CSV... 20 Mo maximum par fichier</span>
+            <span className="text-[11px] text-on-surface-variant">Texte, PDF, image... 20 Mo maximum par fichier</span>
           </button>
 
           {fichiers.length > 0 ? (

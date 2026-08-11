@@ -25,7 +25,6 @@ let ChecklistApresOp = class ChecklistApresOp {
     etiquetageVerifie;
     signalementsEffectues;
     transfertSalleReveil;
-    observationsParticulieres;
     statut;
     validateurId;
     validateurNom;
@@ -67,10 +66,6 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], ChecklistApresOp.prototype, "transfertSalleReveil", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
-    __metadata("design:type", String)
-], ChecklistApresOp.prototype, "observationsParticulieres", void 0);
 __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',

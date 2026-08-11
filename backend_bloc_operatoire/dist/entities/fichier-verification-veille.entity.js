@@ -35,7 +35,7 @@ __decorate([
 ], FichierVerificationVeille.prototype, "patientId", void 0);
 __decorate([
     (0, typeorm_1.Index)(),
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
     __metadata("design:type", Object)
 ], FichierVerificationVeille.prototype, "verificationVeilleId", void 0);
 __decorate([
@@ -55,7 +55,7 @@ __decorate([
     __metadata("design:type", Buffer)
 ], FichierVerificationVeille.prototype, "contenu", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], FichierVerificationVeille.prototype, "telechargeParId", void 0);
 __decorate([

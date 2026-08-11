@@ -15,6 +15,5 @@ export class CreateChecklistApresOpDto {
   @IsOptional() @IsBoolean() etiquetageVerifie?: boolean;
   @IsOptional() @IsBoolean() signalementsEffectues?: boolean;
   @IsOptional() @IsBoolean() transfertSalleReveil?: boolean;
-  @IsOptional() @IsString() observationsParticulieres?: string;
   @IsOptional() @IsEnum(StatutChecklist) statut?: StatutChecklist;
 }

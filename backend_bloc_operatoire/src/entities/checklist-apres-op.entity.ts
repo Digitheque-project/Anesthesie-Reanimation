@@ -25,7 +25,6 @@ export class ChecklistApresOp {
   @Column({ default: false }) etiquetageVerifie: boolean;
   @Column({ default: false }) signalementsEffectues: boolean;
   @Column({ default: false }) transfertSalleReveil: boolean;
-  @Column({ type: 'text', nullable: true }) observationsParticulieres: string;
   @Column({
     type: 'enum',
     enum: StatutChecklist,

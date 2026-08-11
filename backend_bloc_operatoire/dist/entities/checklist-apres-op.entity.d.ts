@@ -11,7 +11,6 @@ export declare class ChecklistApresOp {
     etiquetageVerifie: boolean;
     signalementsEffectues: boolean;
     transfertSalleReveil: boolean;
-    observationsParticulieres: string;
     statut: StatutChecklist;
     validateurId: string | null;
     validateurNom: string | null;

@@ -20,7 +20,6 @@ class CreateChecklistApresOpDto {
     etiquetageVerifie;
     signalementsEffectues;
     transfertSalleReveil;
-    observationsParticulieres;
     statut;
 }
 exports.CreateChecklistApresOpDto = CreateChecklistApresOpDto;
@@ -57,11 +56,6 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateChecklistApresOpDto.prototype, "transfertSalleReveil", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateChecklistApresOpDto.prototype, "observationsParticulieres", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(checklist_apres_op_entity_1.StatutChecklist),

@@ -24,7 +24,7 @@ export class FichierVerificationVeille {
   // dans VerificationVeilleService.create) — les fichiers importés avant validation sont
   // conservés, simplement non encore rattachés à l'enregistrement.
   @Index()
-  @Column({ nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   verificationVeilleId: string | null;
 
   @Column()
@@ -40,7 +40,7 @@ export class FichierVerificationVeille {
   contenu: Buffer;
 
   // userId central (SSO) de la personne ayant importé le fichier.
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   telechargeParId: string | null;
 
   @CreateDateColumn()

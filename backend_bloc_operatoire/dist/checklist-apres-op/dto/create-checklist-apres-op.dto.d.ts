@@ -7,6 +7,5 @@ export declare class CreateChecklistApresOpDto {
     etiquetageVerifie?: boolean;
     signalementsEffectues?: boolean;
     transfertSalleReveil?: boolean;
-    observationsParticulieres?: string;
     statut?: StatutChecklist;
 }
