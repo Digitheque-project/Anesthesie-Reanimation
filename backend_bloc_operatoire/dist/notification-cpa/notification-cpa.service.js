@@ -49,6 +49,15 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             this.config.get('externalServices.serviceId') ?? '';
     }
     async create(dto) {
+        if (!dto.statut || dto.statut === notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE) {
+            const patient = await this.patientBlocRepo.findOne({
+                where: { patientId: dto.patientId },
+            });
+            if (patient && patient.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
+                this.logger.warn(`Création d'une notification EN_ATTENTE refusée : patient ${dto.patientId} déjà traité (statut ${patient.statut})`);
+                throw new common_1.ConflictException(`Patient ${dto.patientId} déjà traité (statut ${patient.statut}) — notification non créée.`);
+            }
+        }
         const saved = await this.notificationRepo.save(this.notificationRepo.create(dto));
         return Array.isArray(saved) ? saved[0] : saved;
     }
@@ -58,13 +67,19 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         });
         const identities = await this.accueilClient.enrichWithIdentity(internalDataRaw);
         const avecChirurgien = await this.medecinIdentiteService.enrichir(internalDataRaw, 'chirurgienId', 'chirurgien');
-        const patientIds = Array.from(new Set(internalDataRaw.map((n) => n.patientId).filter(Boolean)));
+        const externalDataRaw = await this.webhookRepo.find({
+            order: { receivedAt: 'DESC' },
+        });
+        const patientIds = Array.from(new Set([...internalDataRaw, ...externalDataRaw]
+            .map((n) => n.patientId)
+            .filter(Boolean)));
         const patients = patientIds.length
             ? await this.patientBlocRepo.find({
                 where: { patientId: (0, typeorm_2.In)(patientIds) },
             })
             : [];
         const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+        const estPatientTraite = (statut) => !!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
         const internalData = internalDataRaw.map((n, idx) => {
             const identity = identities[idx] || {};
             const pb = patientMap.get(n.patientId);
@@ -82,8 +97,19 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                 },
             };
         });
-        const externalData = await this.webhookRepo.find({
-            order: { receivedAt: 'DESC' },
+        const externalData = externalDataRaw.map((n) => {
+            const pb = patientMap.get(n.patientId);
+            return {
+                ...n,
+                patient: pb
+                    ? {
+                        id: n.patientId,
+                        statut: pb.statut,
+                        niveauUrgence: pb.niveauUrgence,
+                        dateIntervention: pb.dateIntervention ?? null,
+                    }
+                    : undefined,
+            };
         });
         const merged = [...internalData, ...externalData];
         merged.sort((a, b) => {
@@ -96,14 +122,16 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             };
             return getDate(b) - getDate(a);
         });
+        const actionnables = merged.filter((n) => n.statut !== notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE ||
+            !estPatientTraite(n.patient?.statut));
         const start = (page - 1) * limite;
         const end = start + limite;
-        const paginated = merged.slice(start, end);
+        const paginated = actionnables.slice(start, end);
         return {
             data: paginated,
-            total: merged.length,
+            total: actionnables.length,
             page,
-            pages: Math.ceil(merged.length / limite),
+            pages: Math.ceil(actionnables.length / limite),
         };
     }
     async findOne(id) {

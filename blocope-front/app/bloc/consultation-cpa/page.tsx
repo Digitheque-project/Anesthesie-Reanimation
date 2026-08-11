@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { patientService, planningService } from '@/lib/api';
 import { apiClient } from '@/lib/api/client';
@@ -1508,8 +1509,8 @@ function ConsultationCpaPageContent() {
               </div>
               </div>
 
-              {showMedicamentModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+              {showMedicamentModal && createPortal(
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
                   <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
                     <h3 className="text-lg font-extrabold mb-2">Ajouter un médicament</h3>
                     <div className="space-y-3">
@@ -1524,7 +1525,8 @@ function ConsultationCpaPageContent() {
                       <button onClick={ajouterMedicament} className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold">Ajouter</button>
                     </div>
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
@@ -1757,8 +1759,8 @@ function ConsultationCpaPageContent() {
 
           {/* Modale de saisie du destinataire — demandée une seule fois (au premier partage
               WhatsApp/email), puis mémorisée en localStorage pour les partages suivants. */}
-          {showDestinataireModal && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          {showDestinataireModal && createPortal(
+            <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
                 <h3 className="text-lg font-extrabold text-on-surface mb-1">Destinataire du partage CPA</h3>
                 <p className="text-xs text-on-surface-variant mb-4">Coordonnées du professeur responsable de CPA — mémorisées pour les prochains partages.</p>
@@ -1781,7 +1783,8 @@ function ConsultationCpaPageContent() {
                     className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold disabled:opacity-50">Enregistrer</button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Bouton Valider */}

@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
-import { PatientBloc } from '../entities/patient-bloc.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
@@ -23,14 +23,14 @@ export declare class NotificationCPAService {
     constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService, notificationBackClient: NotificationBackClient, config: ConfigService);
     create(dto: CreateNotificationCPADto): Promise<NotificationCPA>;
     findAll(page?: number, limite?: number): Promise<{
-        data: (WebhookNotification | {
+        data: ({
             chirurgien: any;
             patient: {
                 id: string;
                 nom: any;
                 prenom: any;
                 idDossier: any;
-                statut: import("../entities/patient-bloc.entity").PatientStatut | undefined;
+                statut: PatientStatut | undefined;
                 niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence | undefined;
                 dateIntervention: Date | null;
             };
@@ -50,6 +50,26 @@ export declare class NotificationCPAService {
             luLe: Date | null;
             createdAt: Date;
             updatedAt: Date;
+        } | {
+            patient: {
+                id: string;
+                statut: PatientStatut;
+                niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence;
+                dateIntervention: Date;
+            } | undefined;
+            id: string;
+            type: string;
+            motif: string;
+            patientId: string;
+            sourceServiceId: string;
+            sourceServiceName: string;
+            targetServiceId: string;
+            targetServiceName: string;
+            urgence: number;
+            payload: any;
+            channels: string[];
+            processed: boolean;
+            receivedAt: Date;
         })[];
         total: number;
         page: number;
