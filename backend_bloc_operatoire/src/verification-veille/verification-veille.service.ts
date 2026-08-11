@@ -17,6 +17,7 @@ import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.se
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateVerificationVeilleDto } from './dto/create-verification-veille.dto';
 import { UpdateVerificationVeilleDto } from './dto/update-verification-veille.dto';
+import { FichiersVerificationVeilleService } from './fichiers-verification-veille.service';
 
 @Injectable()
 export class VerificationVeilleService {
@@ -34,6 +35,7 @@ export class VerificationVeilleService {
     private demandeCpaExterneService: DemandeCpaExterneService,
     private patientBlocStatutService: PatientBlocStatutService,
     private tracabiliteService: TracabiliteService,
+    private fichiersService: FichiersVerificationVeilleService,
   ) {}
 
   async create(
@@ -54,6 +56,24 @@ export class VerificationVeilleService {
 
     const savedResult = await this.repo.save(this.repo.create(dto as any));
     const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
+
+    // Rattache les fichiers importés sur l'écran avant la validation à l'enregistrement :
+    // les pièces jointes suivent ainsi les informations cochées dans la vérification.
+    try {
+      const rattaches = await this.fichiersService.rattacher(
+        dto.patientId,
+        saved.id,
+      );
+      if (rattaches > 0) {
+        this.logger.log(
+          `${rattaches} pièce(s) jointe(s) rattachée(s) à la vérification ${saved.id}`,
+        );
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Rattachement des fichiers impossible pour ${dto.patientId}: ${(err as Error).message}`,
+      );
+    }
 
     // Passe par le point de passage unique changerStatut (validation + traçabilité) au lieu
     // d'une écriture directe — en franchissant l'état intermédiaire officiel de la machine à

@@ -10,6 +10,7 @@ import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.se
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateVerificationVeilleDto } from './dto/create-verification-veille.dto';
 import { UpdateVerificationVeilleDto } from './dto/update-verification-veille.dto';
+import { FichiersVerificationVeilleService } from './fichiers-verification-veille.service';
 export declare class VerificationVeilleService {
     private repo;
     private patientBlocRepo;
@@ -20,8 +21,9 @@ export declare class VerificationVeilleService {
     private demandeCpaExterneService;
     private patientBlocStatutService;
     private tracabiliteService;
+    private fichiersService;
     private readonly logger;
-    constructor(repo: Repository<VerificationVeille>, patientBlocRepo: Repository<PatientBloc>, cpaRepo: Repository<CPA>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, medecinIdentiteService: MedecinIdentiteService, demandeCpaExterneService: DemandeCpaExterneService, patientBlocStatutService: PatientBlocStatutService, tracabiliteService: TracabiliteService);
+    constructor(repo: Repository<VerificationVeille>, patientBlocRepo: Repository<PatientBloc>, cpaRepo: Repository<CPA>, accueilClient: AccueilClient, endoscopieClient: EndoscopieClient, medecinIdentiteService: MedecinIdentiteService, demandeCpaExterneService: DemandeCpaExterneService, patientBlocStatutService: PatientBlocStatutService, tracabiliteService: TracabiliteService, fichiersService: FichiersVerificationVeilleService);
     create(dto: CreateVerificationVeilleDto, utilisateurId?: string): Promise<VerificationVeille>;
     findAll(page?: number, limite?: number): Promise<{
         data: Record<string, any>[];

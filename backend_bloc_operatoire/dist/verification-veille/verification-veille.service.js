@@ -26,6 +26,7 @@ const medecin_identite_service_1 = require("../medecin/medecin-identite.service"
 const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cpa-externe.service");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
+const fichiers_verification_veille_service_1 = require("./fichiers-verification-veille.service");
 let VerificationVeilleService = VerificationVeilleService_1 = class VerificationVeilleService {
     repo;
     patientBlocRepo;
@@ -36,8 +37,9 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
     demandeCpaExterneService;
     patientBlocStatutService;
     tracabiliteService;
+    fichiersService;
     logger = new common_1.Logger(VerificationVeilleService_1.name);
-    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, medecinIdentiteService, demandeCpaExterneService, patientBlocStatutService, tracabiliteService) {
+    constructor(repo, patientBlocRepo, cpaRepo, accueilClient, endoscopieClient, medecinIdentiteService, demandeCpaExterneService, patientBlocStatutService, tracabiliteService, fichiersService) {
         this.repo = repo;
         this.patientBlocRepo = patientBlocRepo;
         this.cpaRepo = cpaRepo;
@@ -47,6 +49,7 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         this.demandeCpaExterneService = demandeCpaExterneService;
         this.patientBlocStatutService = patientBlocStatutService;
         this.tracabiliteService = tracabiliteService;
+        this.fichiersService = fichiersService;
     }
     async create(dto, utilisateurId) {
         const cpa = await this.cpaRepo.findOne({
@@ -57,6 +60,15 @@ let VerificationVeilleService = VerificationVeilleService_1 = class Verification
         }
         const savedResult = await this.repo.save(this.repo.create(dto));
         const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
+        try {
+            const rattaches = await this.fichiersService.rattacher(dto.patientId, saved.id);
+            if (rattaches > 0) {
+                this.logger.log(`${rattaches} pièce(s) jointe(s) rattachée(s) à la vérification ${saved.id}`);
+            }
+        }
+        catch (err) {
+            this.logger.warn(`Rattachement des fichiers impossible pour ${dto.patientId}: ${err.message}`);
+        }
         try {
             const patientAvant = await this.patientBlocRepo.findOne({
                 where: { patientId: dto.patientId },
@@ -142,6 +154,7 @@ exports.VerificationVeilleService = VerificationVeilleService = VerificationVeil
         medecin_identite_service_1.MedecinIdentiteService,
         demande_cpa_externe_service_1.DemandeCpaExterneService,
         patient_bloc_statut_service_1.PatientBlocStatutService,
-        tracabilite_service_1.TracabiliteService])
+        tracabilite_service_1.TracabiliteService,
+        fichiers_verification_veille_service_1.FichiersVerificationVeilleService])
 ], VerificationVeilleService);
 //# sourceMappingURL=verification-veille.service.js.map

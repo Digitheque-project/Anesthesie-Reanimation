@@ -12,27 +12,38 @@ const typeorm_1 = require("@nestjs/typeorm");
 const verification_veille_entity_1 = require("../entities/verification-veille.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const fichier_verification_veille_entity_1 = require("../entities/fichier-verification-veille.entity");
 const demande_cpa_externe_module_1 = require("../demande-cpa-externe/demande-cpa-externe.module");
 const patient_bloc_module_1 = require("../patient-bloc/patient-bloc.module");
 const medecin_module_1 = require("../medecin/medecin.module");
 const tracabilite_module_1 = require("../tracabilite/tracabilite.module");
 const verification_veille_service_1 = require("./verification-veille.service");
 const verification_veille_controller_1 = require("./verification-veille.controller");
+const fichiers_verification_veille_service_1 = require("./fichiers-verification-veille.service");
+const fichiers_verification_veille_controller_1 = require("./fichiers-verification-veille.controller");
 let VerificationVeilleModule = class VerificationVeilleModule {
 };
 exports.VerificationVeilleModule = VerificationVeilleModule;
 exports.VerificationVeilleModule = VerificationVeilleModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([verification_veille_entity_1.VerificationVeille, cpa_entity_1.CPA, patient_bloc_entity_1.PatientBloc]),
+            typeorm_1.TypeOrmModule.forFeature([
+                verification_veille_entity_1.VerificationVeille,
+                cpa_entity_1.CPA,
+                patient_bloc_entity_1.PatientBloc,
+                fichier_verification_veille_entity_1.FichierVerificationVeille,
+            ]),
             demande_cpa_externe_module_1.DemandeCpaExterneModule,
             patient_bloc_module_1.PatientBlocModule,
             medecin_module_1.MedecinModule,
             tracabilite_module_1.TracabiliteModule,
         ],
-        controllers: [verification_veille_controller_1.VerificationVeilleController],
-        providers: [verification_veille_service_1.VerificationVeilleService],
-        exports: [verification_veille_service_1.VerificationVeilleService],
+        controllers: [
+            verification_veille_controller_1.VerificationVeilleController,
+            fichiers_verification_veille_controller_1.FichiersVerificationVeilleController,
+        ],
+        providers: [verification_veille_service_1.VerificationVeilleService, fichiers_verification_veille_service_1.FichiersVerificationVeilleService],
+        exports: [verification_veille_service_1.VerificationVeilleService, fichiers_verification_veille_service_1.FichiersVerificationVeilleService],
     })
 ], VerificationVeilleModule);
 //# sourceMappingURL=verification-veille.module.js.map
