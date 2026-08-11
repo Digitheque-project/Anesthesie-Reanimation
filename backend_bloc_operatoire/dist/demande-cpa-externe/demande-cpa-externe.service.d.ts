@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { DemandeCpaExterne, StatutDemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
@@ -16,6 +17,7 @@ export declare class DemandeCpaExterneService {
     private repo;
     private creneauRepo;
     private cpaRepo;
+    private patientBlocRepo;
     private config;
     private http;
     private notificationBackClient;
@@ -24,7 +26,7 @@ export declare class DemandeCpaExterneService {
     private serviceRegistryClient;
     private readonly logger;
     private readonly blocServiceId;
-    constructor(repo: Repository<DemandeCpaExterne>, creneauRepo: Repository<CreneauBloc>, cpaRepo: Repository<CPA>, config: ConfigService, http: HttpService, notificationBackClient: NotificationBackClient, accueilClient: AccueilClient, patientBlocService: PatientBlocService, serviceRegistryClient: ServiceRegistryClient);
+    constructor(repo: Repository<DemandeCpaExterne>, creneauRepo: Repository<CreneauBloc>, cpaRepo: Repository<CPA>, patientBlocRepo: Repository<PatientBloc>, config: ConfigService, http: HttpService, notificationBackClient: NotificationBackClient, accueilClient: AccueilClient, patientBlocService: PatientBlocService, serviceRegistryClient: ServiceRegistryClient);
     receive(dto: ReceiveDemandeCpaDto): Promise<DemandeCpaExterne>;
     findAll(statut?: StatutDemandeCpaExterne, patientId?: string): Promise<any>;
     findOne(id: string): Promise<DemandeCpaExterne>;
@@ -34,6 +36,7 @@ export declare class DemandeCpaExterneService {
     marquerLu(id: string): Promise<DemandeCpaExterne>;
     marquerCpaRealisee(demande: DemandeCpaExterne, cpaId: string, apte: boolean): Promise<DemandeCpaExterne>;
     marquerVpaRealisee(demande: DemandeCpaExterne, vpaId: string): Promise<DemandeCpaExterne>;
+    marquerReportee(demande: DemandeCpaExterne): Promise<DemandeCpaExterne>;
     notifierResultat(demande: DemandeCpaExterne, type: string, payload: any): Promise<void>;
     findStatutPublic(id: string): Promise<StatutDemandeCpaPubliqueDto>;
 }

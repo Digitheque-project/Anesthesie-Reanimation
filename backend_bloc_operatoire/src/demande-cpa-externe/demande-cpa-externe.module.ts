@@ -4,13 +4,19 @@ import { HttpModule } from '@nestjs/axios';
 import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { DemandeCpaExterneService } from './demande-cpa-externe.service';
 import { DemandeCpaExterneController } from './demande-cpa-externe.controller';
 import { PatientBlocModule } from '../patient-bloc/patient-bloc.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DemandeCpaExterne, CreneauBloc, CPA]),
+    TypeOrmModule.forFeature([
+      DemandeCpaExterne,
+      CreneauBloc,
+      CPA,
+      PatientBloc,
+    ]),
     HttpModule.register({ timeout: 45000 }),
     PatientBlocModule,
   ],

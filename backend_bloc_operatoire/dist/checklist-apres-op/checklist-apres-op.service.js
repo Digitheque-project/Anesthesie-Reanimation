@@ -54,7 +54,10 @@ let ChecklistApresOpService = class ChecklistApresOpService {
         }));
         await this.tracabiliteService.log('ChecklistApresOp', saved.id, 'CREATE', { patientId: saved.patientId }, centralUser.userId);
         if (dto.transfertSalleReveil) {
-            await this.patientBlocStatutService.changerStatut(saved.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL, centralUser.userId);
+            const transfertEnSalleReveilBloc = !(await this.patientBlocStatutService.provientServiceNonOperatoire(saved.patientId));
+            if (transfertEnSalleReveilBloc) {
+                await this.patientBlocStatutService.changerStatut(saved.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL, centralUser.userId);
+            }
         }
         return saved;
     }
@@ -79,7 +82,10 @@ let ChecklistApresOpService = class ChecklistApresOpService {
         const updated = await this.repo.save(Object.assign(checklist, dto));
         await this.tracabiliteService.log('ChecklistApresOp', updated.id, 'UPDATE', { patientId: updated.patientId }, centralUser?.userId);
         if (transfertVientDEtreConfirme) {
-            await this.patientBlocStatutService.changerStatut(updated.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL, centralUser?.userId);
+            const transfertEnSalleReveilBloc = !(await this.patientBlocStatutService.provientServiceNonOperatoire(updated.patientId));
+            if (transfertEnSalleReveilBloc) {
+                await this.patientBlocStatutService.changerStatut(updated.patientId, patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL, centralUser?.userId);
+            }
         }
         this.gateway.emitToOperation(updated.patientId, 'checklist-apres-op:maj', {
             patientId: updated.patientId,

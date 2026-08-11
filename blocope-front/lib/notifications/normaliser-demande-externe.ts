@@ -27,4 +27,18 @@ export const normaliserDemandeExterne = (d: any) => ({
   // demande externe réapparaissait indéfiniment dans la cloche même après avoir été "vue".
   lu: d.lu ?? false,
   luLe: d.luLe ?? null,
+  // Enrichissement PatientBloc porté par le backend (DemandeCpaExterneService.findAll) : le
+  // statut courant du patient permet à estPatientTraite de retirer une demande dont le patient
+  // a déjà été pris en charge, exactement comme pour les prescriptions internes. cpaFinaleRealisee
+  // couvre le cas d'un patient dont la CPA a été tranchée (APTE/INAPTE) alors que sa fiche
+  // PatientBloc a été supprimée ou est restée bloquée en EN_ATTENTE_CPA.
+  patient: d.patient?.id
+    ? {
+        id: d.patient.id,
+        statut: d.patient.statut,
+        niveauUrgence: d.patient.niveauUrgence,
+        dateIntervention: d.patient.dateIntervention ?? null,
+      }
+    : undefined,
+  cpaFinaleRealisee: Boolean(d.cpaFinaleRealisee),
 })

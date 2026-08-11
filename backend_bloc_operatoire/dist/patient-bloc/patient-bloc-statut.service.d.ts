@@ -19,4 +19,6 @@ export declare class PatientBlocStatutService {
     marquerApteCpa(patientId: string, utilisateurId?: string): Promise<PatientBloc>;
     marquerInapteCpa(patientId: string, motifRefus: string, utilisateurId?: string): Promise<PatientBloc>;
     modifierDateIntervention(patientId: string, dateIntervention: string, utilisateurId?: string): Promise<PatientBloc>;
+    archiverRetourServiceOrigine(patientId: string, utilisateurId?: string, raison?: 'CPA_NON_CONFORME' | 'FIN_ACTE_ANESTHESIQUE'): Promise<PatientBloc>;
+    provientServiceNonOperatoire(patientId: string): Promise<boolean>;
 }

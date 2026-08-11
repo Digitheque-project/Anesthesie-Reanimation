@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
+import { CPA } from '../entities/cpa.entity';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import { NotificationCPAService } from './notification-cpa.service';
 import { NotificationCPAController } from './notification-cpa.controller';
@@ -16,6 +17,7 @@ import { MedecinModule } from '../medecin/medecin.module';
       NotificationCPA,
       WebhookNotification,
       PatientBloc,
+      CPA,
       CreneauBloc,
     ]),
     MedecinModule,

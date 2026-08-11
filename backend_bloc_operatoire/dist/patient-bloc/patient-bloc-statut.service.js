@@ -20,6 +20,7 @@ const config_1 = require("@nestjs/config");
 const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
+const service_non_operatoire_1 = require("./service-non-operatoire");
 const notification_back_client_1 = require("../external/notification-back.client");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
 let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocStatutService {
@@ -62,12 +63,13 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
             [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [
                 patient_bloc_entity_1.PatientStatut.CPA_REALISE,
                 patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
+                patient_bloc_entity_1.PatientStatut.SORTI,
             ],
             [patient_bloc_entity_1.PatientStatut.CPA_REALISE]: [
                 patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
                 patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
             ],
-            [patient_bloc_entity_1.PatientStatut.CPA_INAPTE]: [],
+            [patient_bloc_entity_1.PatientStatut.CPA_INAPTE]: [patient_bloc_entity_1.PatientStatut.SORTI],
             [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [
                 patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
             ],
@@ -75,7 +77,10 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
                 patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
             ],
             [patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC]: [patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION],
-            [patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION]: [patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL],
+            [patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION]: [
+                patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
+                patient_bloc_entity_1.PatientStatut.SORTI,
+            ],
             [patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL]: [patient_bloc_entity_1.PatientStatut.SORTI],
             [patient_bloc_entity_1.PatientStatut.SORTI]: [],
         };
@@ -174,6 +179,35 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
             }
         }
         return saved;
+    }
+    async archiverRetourServiceOrigine(patientId, utilisateurId, raison = 'FIN_ACTE_ANESTHESIQUE') {
+        const patient = await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.SORTI, utilisateurId);
+        if (patient.serviceOrigineId && patient.serviceOrigine) {
+            try {
+                if (raison === 'FIN_ACTE_ANESTHESIQUE') {
+                    await this.notificationOutgoing.notifyOriginService({
+                        patientId,
+                        type: 'RETOUR_SERVICE_ORIGINE',
+                        serviceOrigineId: patient.serviceOrigineId,
+                        serviceOrigineName: patient.serviceOrigine,
+                        payload: {
+                            raison,
+                            retourServiceOrigine: true,
+                        },
+                    });
+                }
+            }
+            catch (err) {
+                this.logger.error(`Erreur notification service origine après retour/archivage patient ${patientId}: ${err.message}`);
+            }
+        }
+        return patient;
+    }
+    async provientServiceNonOperatoire(patientId) {
+        const patient = await this.patientBlocRepo.findOne({
+            where: { patientId },
+        });
+        return (0, service_non_operatoire_1.estServiceNonOperatoire)(patient?.serviceOrigine);
     }
 };
 exports.PatientBlocStatutService = PatientBlocStatutService;

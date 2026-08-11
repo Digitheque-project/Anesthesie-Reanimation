@@ -15,6 +15,7 @@ import {
 } from '../entities/demande-cpa-externe.entity';
 import { CreneauBloc, TypeRDV } from '../entities/creneau-bloc.entity';
 import { CPA } from '../entities/cpa.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { ReceiveDemandeCpaDto } from './dto/receive-demande-cpa.dto';
 import { UpdateDemandeCpaDto } from './dto/update-demande-cpa.dto';
 import { PlanifierDemandeCpaDto } from './dto/planifier-demande-cpa.dto';
@@ -35,6 +36,8 @@ export class DemandeCpaExterneService {
     private repo: Repository<DemandeCpaExterne>,
     @InjectRepository(CreneauBloc) private creneauRepo: Repository<CreneauBloc>,
     @InjectRepository(CPA) private cpaRepo: Repository<CPA>,
+    @InjectRepository(PatientBloc)
+    private patientBlocRepo: Repository<PatientBloc>,
     private config: ConfigService,
     private http: HttpService,
     private notificationBackClient: NotificationBackClient,
@@ -116,10 +119,71 @@ export class DemandeCpaExterneService {
       where,
       order: { createdAt: 'DESC' },
     });
+
+    // Enrichissement PatientBloc + dernière CPA par patient : c'est ce qui permet d'exclure du
+    // fil "à traiter" une demande dont le patient a déjà été pris en charge — même quand la
+    // fiche PatientBloc a été supprimée (un patient dont la CPA a été tranchée APTE/INAPTE ne
+    // doit plus être proposé à la planification).
+    const ids = Array.from(
+      new Set(demandes.map((d) => d.patientId).filter(Boolean)),
+    );
+    const [patients, cpas]: [PatientBloc[], CPA[]] = await Promise.all([
+      ids.length
+        ? this.patientBlocRepo.find({ where: { patientId: In(ids) } })
+        : [],
+      ids.length ? this.cpaRepo.find({ where: { patientId: In(ids) } }) : [],
+    ]);
+    const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+    const derniereCpaParPatient = new Map<string, CPA>();
+    for (const c of cpas) {
+      const existante = derniereCpaParPatient.get(c.patientId);
+      if (
+        !existante ||
+        new Date(c.dateConsultation) > new Date(existante.dateConsultation)
+      ) {
+        derniereCpaParPatient.set(c.patientId, c);
+      }
+    }
+    const cpaTraitee = (c?: CPA): boolean =>
+      !!c &&
+      ['APTE', 'INAPTE'].includes(c.decision) &&
+      c.decisionOperation !== 'REPORTEE';
+
+    const enrichies = demandes.map((d) => {
+      const pb = patientMap.get(d.patientId);
+      const derniereCpa = derniereCpaParPatient.get(d.patientId);
+      return {
+        ...d,
+        patient: {
+          id: d.patientId,
+          statut: pb?.statut ?? null,
+          niveauUrgence: pb?.niveauUrgence ?? null,
+          dateIntervention: pb?.dateIntervention ?? null,
+        },
+        cpaFinaleRealisee: cpaTraitee(derniereCpa),
+      };
+    });
+
+    // Filtre du fil "à traiter" appliqué à la source : une demande encore EN_ATTENTE dont le
+    // patient est déjà traité (statut PatientBloc avancé, ou dernière CPA finale APTE/INAPTE)
+    // ne doit plus réapparaître dans les fils de prescription — même règle que
+    // NotificationCPAService.findAll. Les autres statuts (historique, archives) ne sont pas
+    // touchés.
+    let resultat = enrichies;
+    if (statut === StatutDemandeCpaExterne.EN_ATTENTE) {
+      resultat = enrichies.filter((d: any) => {
+        if (d.patient?.statut && d.patient.statut !== PatientStatut.EN_ATTENTE_CPA) {
+          return false;
+        }
+        if (d.cpaFinaleRealisee) return false;
+        return true;
+      });
+    }
+
     try {
-      return await this.accueilClient.enrichWithIdentity(demandes);
+      return await this.accueilClient.enrichWithIdentity(resultat);
     } catch {
-      return demandes;
+      return resultat;
     }
   }
 
@@ -258,6 +322,16 @@ export class DemandeCpaExterneService {
   ): Promise<DemandeCpaExterne> {
     demande.vpaId = vpaId;
     demande.statut = StatutDemandeCpaExterne.CONFIRMEE;
+    return this.repo.save(demande);
+  }
+
+  // Décision REPORT prise pour un patient non-opératoire (Endoscopie, Urgence, Imagerie) :
+  // le dossier est archivé (SORTI), la demande du service est close ici — pas de "tentative à
+  // reprendre" dans notre circuit. Appelée par CPAService.create uniquement dans ce cas précis.
+  async marquerReportee(
+    demande: DemandeCpaExterne,
+  ): Promise<DemandeCpaExterne> {
+    demande.statut = StatutDemandeCpaExterne.REPORTEE;
     return this.repo.save(demande);
   }
 

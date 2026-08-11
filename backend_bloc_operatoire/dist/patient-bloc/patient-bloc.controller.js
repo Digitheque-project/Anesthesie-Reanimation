@@ -75,6 +75,9 @@ let PatientBlocController = class PatientBlocController {
     modifierDateIntervention(patientId, dto, req) {
         return this.patientBlocStatutService.modifierDateIntervention(patientId, dto.dateIntervention, req.centralUser?.userId);
     }
+    retourServiceOrigine(patientId, req) {
+        return this.patientBlocStatutService.archiverRetourServiceOrigine(patientId, req.centralUser?.userId, 'FIN_ACTE_ANESTHESIQUE');
+    }
     remove(patientId) {
         return this.patientBlocService.remove(patientId);
     }
@@ -223,6 +226,18 @@ __decorate([
     __metadata("design:paramtypes", [String, update_date_intervention_dto_1.UpdateDateInterventionDto, Object]),
     __metadata("design:returntype", void 0)
 ], PatientBlocController.prototype, "modifierDateIntervention", null);
+__decorate([
+    (0, common_1.Patch)(':patientId/retour-service-origine'),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE, role_clinique_1.RoleClinique.MAJOR),
+    (0, swagger_1.ApiOperation)({
+        summary: "Fin d'acte anesthésique hors bloc : retour au service d'origine + archivage du dossier (SORTI) sans passer par la salle de réveil du Bloc (Anesthésiste, Major)",
+    }),
+    __param(0, (0, common_1.Param)('patientId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], PatientBlocController.prototype, "retourServiceOrigine", null);
 __decorate([
     (0, common_1.Delete)(':patientId'),
     (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.MAJOR, role_clinique_1.RoleClinique.RESPONSABLE_CPA),

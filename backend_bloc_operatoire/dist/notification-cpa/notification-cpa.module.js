@@ -12,6 +12,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const cpa_entity_1 = require("../entities/cpa.entity");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const notification_cpa_service_1 = require("./notification-cpa.service");
 const notification_cpa_controller_1 = require("./notification-cpa.controller");
@@ -28,6 +29,7 @@ exports.NotificationCPAModule = NotificationCPAModule = __decorate([
                 notification_cpa_entity_1.NotificationCPA,
                 webhook_notification_entity_1.WebhookNotification,
                 patient_bloc_entity_1.PatientBloc,
+                cpa_entity_1.CPA,
                 creneau_bloc_entity_1.CreneauBloc,
             ]),
             medecin_module_1.MedecinModule,

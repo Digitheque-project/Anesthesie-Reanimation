@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
+import { estServiceNonOperatoire } from './service-non-operatoire';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 
@@ -73,6 +74,10 @@ export class PatientBlocStatutService {
       [PatientStatut.EN_ATTENTE_CPA]: [
         PatientStatut.CPA_REALISE,
         PatientStatut.CPA_INAPTE,
+        // Patient de statut NORMAL venu d'un service non-opératoire (Endoscopie, Urgence,
+        // Imagerie) dont la CPA est refusée ou reportée : retour au service d'origine + archivage
+        // (voir CPAService.create). Les patients urgents, eux, restent suivis (simple notification).
+        PatientStatut.SORTI,
       ],
       [PatientStatut.CPA_REALISE]: [
         PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
@@ -81,7 +86,7 @@ export class PatientBlocStatutService {
         // CPAService.create, qui ne déclenche ce saut que pour niveauUrgence URGENT/TRES_URGENT).
         PatientStatut.PRET_POUR_BLOC,
       ],
-      [PatientStatut.CPA_INAPTE]: [],
+      [PatientStatut.CPA_INAPTE]: [PatientStatut.SORTI],
       [PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [
         PatientStatut.VERIFICATION_VEILLE_REALISEE,
       ],
@@ -89,7 +94,13 @@ export class PatientBlocStatutService {
         PatientStatut.PRET_POUR_BLOC,
       ],
       [PatientStatut.PRET_POUR_BLOC]: [PatientStatut.EN_COURS_OPERATION],
-      [PatientStatut.EN_COURS_OPERATION]: [PatientStatut.EN_SALLE_REVEIL],
+      [PatientStatut.EN_COURS_OPERATION]: [
+        PatientStatut.EN_SALLE_REVEIL,
+        // Acte anesthésique réalisé hors bloc (Endoscopie, Urgence, Imagerie) : le service
+        // d'origine possède sa propre salle de réveil — retour au service + archivage direct,
+        // sans passer par la salle de réveil du Bloc (voir checklist-apres-op / protocole).
+        PatientStatut.SORTI,
+      ],
       [PatientStatut.EN_SALLE_REVEIL]: [PatientStatut.SORTI],
       [PatientStatut.SORTI]: [],
     };
@@ -277,5 +288,58 @@ export class PatientBlocStatutService {
       }
     }
     return saved;
+  }
+
+  // Fin de parcours au Bloc : archivage (SORTI) + retour du patient à son service d'origine,
+  // qui le récupère pour la suite de sa prise en charge (le service d'origine possède sa propre
+  // salle de réveil). Déclenché soit après une CPA non conforme d'un patient non-opératoire
+  // (refusée/reportée), soit après la réalisation de l'acte anesthésique. Notifie le service
+  // d'origine (best-effort, ne doit jamais faire échouer l'archivage).
+  async archiverRetourServiceOrigine(
+    patientId: string,
+    utilisateurId?: string,
+    raison: 'CPA_NON_CONFORME' | 'FIN_ACTE_ANESTHESIQUE' = 'FIN_ACTE_ANESTHESIQUE',
+  ): Promise<PatientBloc> {
+    const patient = await this.changerStatut(
+      patientId,
+      PatientStatut.SORTI,
+      utilisateurId,
+    );
+
+    if (patient.serviceOrigineId && patient.serviceOrigine) {
+      try {
+        // CPA non conforme : pas de notification supplémentaire ici — le service d'origine est
+        // déjà notifié par le flux CPA lui-même (CPA_INAPTE / CPA_REPORT, voir CPAService.create).
+        // Seul le retour après acte anesthésique (aucun autre canal) notifie ici.
+        if (raison === 'FIN_ACTE_ANESTHESIQUE') {
+          await this.notificationOutgoing.notifyOriginService({
+            patientId,
+            type: 'RETOUR_SERVICE_ORIGINE',
+            serviceOrigineId: patient.serviceOrigineId,
+            serviceOrigineName: patient.serviceOrigine,
+            payload: {
+              raison,
+              retourServiceOrigine: true,
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.error(
+          `Erreur notification service origine après retour/archivage patient ${patientId}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    return patient;
+  }
+
+  // Vrai si le patient vient d'un service qui possède sa propre salle de réveil (Endoscopie,
+  // Urgence, Imagerie...) : la check-list après intervention ne doit pas le transférer vers la
+  // salle de réveil du Bloc — il y retournera et sera archivé après le protocole anesthésique.
+  async provientServiceNonOperatoire(patientId: string): Promise<boolean> {
+    const patient = await this.patientBlocRepo.findOne({
+      where: { patientId },
+    });
+    return estServiceNonOperatoire(patient?.serviceOrigine);
   }
 }

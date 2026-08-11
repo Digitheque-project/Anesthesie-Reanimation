@@ -21,6 +21,7 @@ const typeorm_2 = require("typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const cpa_entity_1 = require("../entities/cpa.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
@@ -29,6 +30,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     notificationRepo;
     webhookRepo;
     patientBlocRepo;
+    cpaRepo;
     accueilClient;
     medecinIdentiteService;
     notificationOutgoing;
@@ -36,10 +38,11 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     config;
     logger = new common_1.Logger(NotificationCPAService_1.name);
     blocServiceId;
-    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, medecinIdentiteService, notificationOutgoing, notificationBackClient, config) {
+    constructor(notificationRepo, webhookRepo, patientBlocRepo, cpaRepo, accueilClient, medecinIdentiteService, notificationOutgoing, notificationBackClient, config) {
         this.notificationRepo = notificationRepo;
         this.webhookRepo = webhookRepo;
         this.patientBlocRepo = patientBlocRepo;
+        this.cpaRepo = cpaRepo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
         this.notificationOutgoing = notificationOutgoing;
@@ -73,13 +76,32 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         const patientIds = Array.from(new Set([...internalDataRaw, ...externalDataRaw]
             .map((n) => n.patientId)
             .filter(Boolean)));
-        const patients = patientIds.length
-            ? await this.patientBlocRepo.find({
-                where: { patientId: (0, typeorm_2.In)(patientIds) },
-            })
-            : [];
+        const [patients, cpas] = await Promise.all([
+            patientIds.length
+                ? this.patientBlocRepo.find({
+                    where: { patientId: (0, typeorm_2.In)(patientIds) },
+                })
+                : [],
+            patientIds.length
+                ? this.cpaRepo.find({
+                    where: { patientId: (0, typeorm_2.In)(patientIds) },
+                })
+                : [],
+        ]);
         const patientMap = new Map(patients.map((p) => [p.patientId, p]));
-        const estPatientTraite = (statut) => !!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
+        const derniereCpaParPatient = new Map();
+        for (const c of cpas) {
+            const existante = derniereCpaParPatient.get(c.patientId);
+            if (!existante ||
+                new Date(c.dateConsultation) > new Date(existante.dateConsultation)) {
+                derniereCpaParPatient.set(c.patientId, c);
+            }
+        }
+        const cpaTraitee = (c) => !!c &&
+            ['APTE', 'INAPTE'].includes(c.decision) &&
+            c.decisionOperation !== 'REPORTEE';
+        const estPatientTraite = (statut, cpa) => (!!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) ||
+            cpaTraitee(cpa);
         const internalData = internalDataRaw.map((n, idx) => {
             const identity = identities[idx] || {};
             const pb = patientMap.get(n.patientId);
@@ -94,6 +116,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                     statut: pb?.statut,
                     niveauUrgence: pb?.niveauUrgence,
                     dateIntervention: pb?.dateIntervention ?? null,
+                    cpaFinaleRealisee: cpaTraitee(derniereCpaParPatient.get(n.patientId)),
                 },
             };
         });
@@ -107,6 +130,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                         statut: pb.statut,
                         niveauUrgence: pb.niveauUrgence,
                         dateIntervention: pb.dateIntervention ?? null,
+                        cpaFinaleRealisee: cpaTraitee(derniereCpaParPatient.get(n.patientId)),
                     }
                     : undefined,
             };
@@ -123,7 +147,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             return getDate(b) - getDate(a);
         });
         const actionnables = merged.filter((n) => n.statut !== notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE ||
-            !estPatientTraite(n.patient?.statut));
+            !estPatientTraite(n.patient?.statut, derniereCpaParPatient.get(n.patientId)));
         const start = (page - 1) * limite;
         const end = start + limite;
         const paginated = actionnables.slice(start, end);
@@ -219,7 +243,9 @@ exports.NotificationCPAService = NotificationCPAService = NotificationCPAService
     __param(0, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __param(1, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
     __param(2, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
+    __param(3, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,

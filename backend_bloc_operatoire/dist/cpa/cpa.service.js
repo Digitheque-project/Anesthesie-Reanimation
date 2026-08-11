@@ -28,6 +28,7 @@ const demande_cpa_externe_service_1 = require("../demande-cpa-externe/demande-cp
 const medecin_service_1 = require("../medecin/medecin.service");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const patient_bloc_statut_service_1 = require("../patient-bloc/patient-bloc-statut.service");
+const service_non_operatoire_1 = require("../patient-bloc/service-non-operatoire");
 const role_clinique_1 = require("../central-auth/role-clinique");
 const medecin_entity_1 = require("../entities/medecin.entity");
 const tracabilite_service_1 = require("../tracabilite/tracabilite.service");
@@ -108,6 +109,23 @@ let CPAService = CPAService_1 = class CPAService {
                     : patient_bloc_entity_1.PatientStatut.CPA_REALISE;
             if (nouveauStatut) {
                 await this.patientBlocStatutService.changerStatut(dto.patientId, nouveauStatut, centralUser.userId);
+            }
+            if (dto.decision === cpa_entity_1.DecisionCPA.INAPTE ||
+                dto.decision === cpa_entity_1.DecisionCPA.REPORT) {
+                const patientApresCpa = await this.patientBlocRepo.findOne({
+                    where: { patientId: dto.patientId },
+                });
+                if (patientApresCpa &&
+                    patientApresCpa.niveauUrgence === patient_bloc_entity_1.NiveauUrgence.NORMAL &&
+                    (0, service_non_operatoire_1.estServiceNonOperatoire)(patientApresCpa.serviceOrigine)) {
+                    await this.patientBlocStatutService.archiverRetourServiceOrigine(dto.patientId, centralUser.userId, 'CPA_NON_CONFORME');
+                    if (dto.decision === cpa_entity_1.DecisionCPA.REPORT) {
+                        const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(dto.patientId);
+                        if (demande) {
+                            await this.demandeCpaExterneService.marquerReportee(demande);
+                        }
+                    }
+                }
             }
             if (dto.decision !== cpa_entity_1.DecisionCPA.REPORT) {
                 await this.notificationCpaRepo.update({

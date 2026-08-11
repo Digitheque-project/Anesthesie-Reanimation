@@ -24,6 +24,7 @@ import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-ext
 import { MedecinService } from '../medecin/medecin.service';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
+import { estServiceNonOperatoire } from '../patient-bloc/service-non-operatoire';
 import { CentralUser } from '../central-auth/central-user.interface';
 import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 import { RoleMedecin } from '../entities/medecin.entity';
@@ -139,6 +140,41 @@ export class CPAService {
           nouveauStatut,
           centralUser.userId,
         );
+      }
+
+      // Patient de statut NORMAL venu d'un service non-opératoire (Endoscopie, Urgence, Imagerie)
+      // dont la CPA est refusée ou reportée : fin de parcours au Bloc. Contrairement aux patients
+      // urgents (simplement notifiés, toujours suivis), il ne fera jamais l'acte anesthésique ici —
+      // retour au service d'origine + archivage du dossier (SORTI), sans passer par le programme.
+      if (
+        dto.decision === DecisionCPA.INAPTE ||
+        dto.decision === DecisionCPA.REPORT
+      ) {
+        const patientApresCpa = await this.patientBlocRepo.findOne({
+          where: { patientId: dto.patientId },
+        });
+        if (
+          patientApresCpa &&
+          patientApresCpa.niveauUrgence === NiveauUrgence.NORMAL &&
+          estServiceNonOperatoire(patientApresCpa.serviceOrigine)
+        ) {
+          await this.patientBlocStatutService.archiverRetourServiceOrigine(
+            dto.patientId,
+            centralUser.userId,
+            'CPA_NON_CONFORME',
+          );
+
+          // REPORT : la demande CPA du service est close (reportée) — la décision étant prise, il
+          // ne reste pas de "tentative à reprendre" dans notre circuit (le patient est archivé).
+          if (dto.decision === DecisionCPA.REPORT) {
+            const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(
+              dto.patientId,
+            );
+            if (demande) {
+              await this.demandeCpaExterneService.marquerReportee(demande);
+            }
+          }
+        }
       }
 
       // Une décision APTE/INAPTE ferme réellement le dossier de prescription : la notification

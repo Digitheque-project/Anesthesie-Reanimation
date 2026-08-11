@@ -16,6 +16,7 @@ import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpa
 import BackButton from '@/components/bloc/layout/BackButton';
 import { exporterFichePdf } from '@/lib/export/export';
 import { formaterNomPatient, formaterIdDossier } from '@/lib/patient';
+import { estServiceNonOperatoire } from '@/lib/programme-non-operatoire';
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader';
 import SommaireCpa from '@/components/bloc/consultation-cpa/SommaireCpa';
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave';
@@ -673,8 +674,19 @@ function ConsultationCpaPageContent() {
             router.push('/bloc/patient-du-jour');
           }
         } else {
-          alert('✅ CPA validée avec succès !');
-          router.push('/bloc/rendez-vous');
+          // Patient normal venu d'un service non-opératoire (Endoscopie, Urgence, Imagerie) dont
+          // la CPA est refusée ou reportée : CPAService l'a archivé (SORTI) et notifié son service
+          // d'origine — il n'apparaît plus dans la liste des rendez-vous, le renvoyer aux archives.
+          const retourneServiceOrigine =
+            estServiceNonOperatoire(patient?.serviceOrigine) &&
+            (decision === 'INAPTE' || decision === 'REPORT');
+          if (retourneServiceOrigine) {
+            alert('✅ CPA enregistrée — patient renvoyé à son service d\'origine et dossier archivé.');
+            router.push('/bloc/archives');
+          } else {
+            alert('✅ CPA validée avec succès !');
+            router.push('/bloc/rendez-vous');
+          }
         }
       } else {
         // Deuxième étape : l'anesthésiste complète la CPA déjà remplie par le Major/Responsable

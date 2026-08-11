@@ -13,6 +13,7 @@ import {
 } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
+import { CPA } from '../entities/cpa.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
@@ -32,6 +33,8 @@ export class NotificationCPAService {
     private readonly webhookRepo: Repository<WebhookNotification>,
     @InjectRepository(PatientBloc)
     private readonly patientBlocRepo: Repository<PatientBloc>,
+    @InjectRepository(CPA)
+    private readonly cpaRepo: Repository<CPA>,
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
     private notificationOutgoing: NotificationOutgoingService,
@@ -90,7 +93,11 @@ export class NotificationCPAService {
 
     // Enrichissement PatientBloc partagé entre les deux sources (notifications internes et
     // webhooks externes) : c'est lui qui fournit le statut courant du patient, utilisé plus bas
-    // pour exclure du fil "à traiter" les patients dont la CPA est déjà traitée.
+    // pour exclure du fil "à traiter" les patients dont la CPA est déjà traitée. On récupère
+    // aussi la dernière CPA (par date de consultation) de chaque patient : un patient dont la
+    // CPA a déjà été tranchée (APTE/INAPTE, opération non reportée) est traité même quand son
+    // PatientBloc est resté bloqué sur EN_ATTENTE_CPA — et même si la fiche PatientBloc a été
+    // supprimée.
     const patientIds = Array.from(
       new Set(
         [...internalDataRaw, ...externalDataRaw]
@@ -98,15 +105,40 @@ export class NotificationCPAService {
           .filter(Boolean),
       ),
     );
-    const patients = patientIds.length
-      ? await this.patientBlocRepo.find({
-          where: { patientId: In(patientIds) },
-        })
-      : [];
+    const [patients, cpas]: [PatientBloc[], CPA[]] = await Promise.all([
+      patientIds.length
+        ? this.patientBlocRepo.find({
+            where: { patientId: In(patientIds) },
+          })
+        : [],
+      patientIds.length
+        ? this.cpaRepo.find({
+            where: { patientId: In(patientIds) },
+          })
+        : [],
+    ]);
     const patientMap = new Map(patients.map((p) => [p.patientId, p]));
+    const derniereCpaParPatient = new Map<string, CPA>();
+    for (const c of cpas) {
+      const existante = derniereCpaParPatient.get(c.patientId);
+      if (
+        !existante ||
+        new Date(c.dateConsultation) > new Date(existante.dateConsultation)
+      ) {
+        derniereCpaParPatient.set(c.patientId, c);
+      }
+    }
 
-    const estPatientTraite = (statut?: string) =>
-      !!statut && statut !== PatientStatut.EN_ATTENTE_CPA;
+    // Une CPA "finale" (décision APTE/INAPTE, opération retenue/refusée — pas simplement
+    // reportée) vaut prise en charge : le patient ne doit plus être proposé à la planification.
+    const cpaTraitee = (c?: CPA): boolean =>
+      !!c &&
+      ['APTE', 'INAPTE'].includes(c.decision) &&
+      c.decisionOperation !== 'REPORTEE';
+
+    const estPatientTraite = (statut?: string, cpa?: CPA): boolean =>
+      (!!statut && statut !== PatientStatut.EN_ATTENTE_CPA) ||
+      cpaTraitee(cpa);
 
     const internalData = internalDataRaw.map((n, idx) => {
       const identity = identities[idx] || {};
@@ -122,6 +154,7 @@ export class NotificationCPAService {
           statut: pb?.statut,
           niveauUrgence: pb?.niveauUrgence,
           dateIntervention: pb?.dateIntervention ?? null,
+          cpaFinaleRealisee: cpaTraitee(derniereCpaParPatient.get(n.patientId)),
         },
       };
     });
@@ -140,6 +173,9 @@ export class NotificationCPAService {
               statut: pb.statut,
               niveauUrgence: pb.niveauUrgence,
               dateIntervention: pb.dateIntervention ?? null,
+              cpaFinaleRealisee: cpaTraitee(
+                derniereCpaParPatient.get(n.patientId),
+              ),
             }
           : undefined,
       };
@@ -156,7 +192,8 @@ export class NotificationCPAService {
     });
 
     // Filet de sécurité contre les réapparitions : une notification encore EN_ATTENTE dont le
-    // patient est déjà traité (CPA réalisée/inapte, vérification veille, prêt pour bloc,
+    // patient est déjà traité (CPA réalisée/inapte — y compris via une dernière CPA APTE/INAPTE
+    // alors que le PatientBloc traîne en EN_ATTENTE_CPA —, vérification veille, prêt pour bloc,
     // opération, réveil, sortie) est incohérente — ré-ingestion d'une prescription déjà prise en
     // charge, données héritées d'avant les garde-fous d'ingestion... On l'exclut du fil "à
     // traiter". Les statuts RDV_PLANIFIE / REALISE restent disponibles pour l'historique et les
@@ -164,7 +201,10 @@ export class NotificationCPAService {
     const actionnables = merged.filter(
       (n: any) =>
         n.statut !== StatutNotificationCPA.EN_ATTENTE ||
-        !estPatientTraite(n.patient?.statut),
+        !estPatientTraite(
+          n.patient?.statut,
+          derniereCpaParPatient.get(n.patientId),
+        ),
     );
 
     const start = (page - 1) * limite;
