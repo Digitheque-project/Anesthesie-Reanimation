@@ -15,6 +15,7 @@ import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
+import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { verifierCreneauValide } from './creneau-validation.util';
@@ -27,6 +28,8 @@ export class PlanningService {
     private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(NotificationCPA)
     private notificationRepo: Repository<NotificationCPA>,
+    @InjectRepository(WebhookNotification)
+    private webhookRepo: Repository<WebhookNotification>,
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
   ) {}
@@ -134,6 +137,10 @@ export class PlanningService {
         { patientId, statut: StatutNotificationCPA.EN_ATTENTE },
         { statut: StatutNotificationCPA.RDV_PLANIFIE },
       );
+      // La même prescription peut aussi être arrivée par webhook (ligne processed:false) : sans
+      // cette bascule, après planification la cloche recomptait ce doublon comme non lu — même
+      // symptôme que celui corrigé dans NotificationCPAService.planifierRDV.
+      await this.webhookRepo.update({ patientId }, { processed: true });
     }
 
     return saved;

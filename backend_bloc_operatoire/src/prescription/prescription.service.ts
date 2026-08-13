@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interval } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ReceivePrescriptionDto } from './dto/receive-prescription.dto';
 import {
   PatientBloc,
@@ -127,15 +127,23 @@ export class PrescriptionService {
     // Filet de sécurité complémentaire : le service Prescriptions externe peut renvoyer un `id`
     // différent à chaque interrogation pour ce qui est conceptuellement la même prescription
     // (ex: source de test sans persistance), ce qui rend le dédoublonnage ci-dessus par `p.id`
-    // inefficace et créait une nouvelle notification à chaque cycle de 15s. On refuse aussi de
-    // ré-ingérer si ce patient a déjà une notification de prescription encore en attente.
-    const notificationDejaEnAttente = await this.notificationRepo.findOne({
+    // inefficace et créait une nouvelle notification à chaque cycle de 15s. Filet anti-ré-ingestion
+    // étendu au RDV planifié : une fois le RDV CPA planifié, la notification interne passe
+    // d'EN_ATTENTE à RDV_PLANIFIE — le seul garde-fou EN_ATTENTE ne bloquait donc plus rien, et le
+    // patient était ré-ingéré comme une NOUVELLE prescription (nouveau son + ligne webhook +
+    // réapparition dans la cloche et le fil) juste après la planification. On bloque tant qu'une
+    // prescription reste ouverte pour ce patient (EN_ATTENTE ou RDV_PLANIFIE) ; seul un épisode
+    // terminé (notification REALISE) laisse passer un nouveau séjour.
+    const notificationDejaOuverte = await this.notificationRepo.findOne({
       where: {
         patientId: p.patientId,
-        statut: StatutNotificationCPA.EN_ATTENTE,
+        statut: In([
+          StatutNotificationCPA.EN_ATTENTE,
+          StatutNotificationCPA.RDV_PLANIFIE,
+        ]),
       },
     });
-    if (notificationDejaEnAttente) return;
+    if (notificationDejaOuverte) return;
 
     // Un patient déjà passé par le bloc (statut SORTI, CPA_REALISE, EN_COURS_OPERATION...) peut
     // revenir pour une NOUVELLE prise en charge : cette nouvelle prescription est un nouveau

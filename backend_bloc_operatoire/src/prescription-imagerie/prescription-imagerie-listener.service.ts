@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { io, Socket } from 'socket.io-client';
 import {
   NotificationCPA,
@@ -169,16 +169,21 @@ export class PrescriptionImagerieListenerService
   private async ingerer(
     prescription: PrescriptionImagerieExterne,
   ): Promise<void> {
-    // Même filet anti-doublon que l'ingestion des prescriptions bloc (prescription.service.ts) :
-    // une notification encore EN_ATTENTE pour ce patient suffit, pas besoin de suivre l'ID
-    // externe précisément.
-    const dejaEnAttente = await this.notificationRepo.findOne({
+    // Même filet anti-doublon que l'ingestion des prescriptions bloc (prescription.service.ts),
+    // étendu au RDV planifié : une prescription reste "ouverte" tant que sa notification est
+    // EN_ATTENTE ou RDV_PLANIFIE. Sans ce second statut, une fois le RDV CPA planifié la même
+    // prescription re-poussée par le service était ré-ingérée comme une nouvelle (son + retour
+    // dans la cloche et le fil) — voir le commentaire détaillé côté PrescriptionService.ingerer.
+    const dejaOuverte = await this.notificationRepo.findOne({
       where: {
         patientId: prescription.patientId,
-        statut: StatutNotificationCPA.EN_ATTENTE,
+        statut: In([
+          StatutNotificationCPA.EN_ATTENTE,
+          StatutNotificationCPA.RDV_PLANIFIE,
+        ]),
       },
     });
-    if (dejaEnAttente) return;
+    if (dejaOuverte) return;
 
     // Un patient déjà passé par le bloc (statut SORTI, CPA_REALISE, EN_COURS_OPERATION...) peut
     // revenir pour une NOUVELLE prise en charge : cette prescription imagerie est un nouveau
