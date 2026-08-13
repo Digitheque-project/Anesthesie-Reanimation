@@ -203,11 +203,11 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         }
         return patient;
     }
-    async provientServiceNonOperatoire(patientId) {
+    async aSaPropreSalleDeReveil(patientId) {
         const patient = await this.patientBlocRepo.findOne({
             where: { patientId },
         });
-        return (0, service_non_operatoire_1.estServiceNonOperatoire)(patient?.serviceOrigine);
+        return (0, service_non_operatoire_1.aSaPropreSalleDeReveil)(patient?.serviceOrigine);
     }
 };
 exports.PatientBlocStatutService = PatientBlocStatutService;

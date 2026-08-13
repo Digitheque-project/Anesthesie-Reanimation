@@ -47,6 +47,26 @@ export class DemandeCpaExterneService {
   }
 
   async receive(dto: ReceiveDemandeCpaDto): Promise<DemandeCpaExterne> {
+    // Webhook public → idempotence obligatoire : le service demandeur (ou un middleware de
+    // retry / une ré-émission) peut reposter la même demande pour le même patient. Sans ce
+    // garde, un re-push créait une NOUVELLE ligne EN_ATTENTE (nouveau son + réapparition dans
+    // la cloche), re-basculait le PatientBloc en EN_ATTENTE_CPA et re-poussait l'évènement
+    // temps réel — y compris après planification du rendez-vous.
+    const existante = await this.repo.findOne({
+      where: {
+        patientId: dto.patientId,
+        sourceReferenceType: dto.sourceReferenceType,
+        sourceReferenceId: dto.sourceReferenceId,
+      },
+      order: { createdAt: 'DESC' },
+    });
+    if (existante) {
+      this.logger.log(
+        `↩️ Demande de CPA externe déjà reçue pour le patient ${dto.patientId} (réf. ${dto.sourceReferenceId}) — ignorée (idempotent)`,
+      );
+      return existante;
+    }
+
     // Le nom du service source n'est jamais fiable tel que transmis (souvent absent, parfois
     // périmé) — résolu en direct auprès du registre central des services à partir du seul
     // identifiant transmis, plutôt que stocké quelque part. N'importe quel service peut être à

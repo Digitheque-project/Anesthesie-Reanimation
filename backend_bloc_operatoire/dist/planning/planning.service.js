@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
+const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const creneau_validation_util_1 = require("./creneau-validation.util");
@@ -26,12 +27,14 @@ let PlanningService = class PlanningService {
     creneauRepo;
     patientBlocRepo;
     notificationRepo;
+    webhookRepo;
     accueilClient;
     medecinIdentiteService;
-    constructor(creneauRepo, patientBlocRepo, notificationRepo, accueilClient, medecinIdentiteService) {
+    constructor(creneauRepo, patientBlocRepo, notificationRepo, webhookRepo, accueilClient, medecinIdentiteService) {
         this.creneauRepo = creneauRepo;
         this.patientBlocRepo = patientBlocRepo;
         this.notificationRepo = notificationRepo;
+        this.webhookRepo = webhookRepo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
     }
@@ -110,7 +113,12 @@ let PlanningService = class PlanningService {
         const saved = await this.creneauRepo.save(creneau);
         const patientId = saved.patientId;
         if (patientId) {
-            await this.notificationRepo.update({ patientId, statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE }, { statut: notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE });
+            await this.notificationRepo.update({ patientId, statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE }, {
+                statut: notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
+                lu: true,
+                luLe: new Date(),
+            });
+            await this.webhookRepo.update({ patientId }, { processed: true });
         }
         return saved;
     }
@@ -121,7 +129,7 @@ let PlanningService = class PlanningService {
         creneau.statut = creneau_bloc_entity_1.StatutCreneau.ANNULE;
         const saved = await this.creneauRepo.save(creneau);
         if (creneau.type === creneau_bloc_entity_1.TypeRDV.CPA && creneau.patientId) {
-            await this.notificationRepo.update({ patientId: creneau.patientId, statut: notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE }, { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE });
+            await this.notificationRepo.update({ patientId: creneau.patientId, statut: notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE }, { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, lu: false, luLe: null });
         }
         return saved;
     }
@@ -148,7 +156,9 @@ exports.PlanningService = PlanningService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(2, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
+    __param(3, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,

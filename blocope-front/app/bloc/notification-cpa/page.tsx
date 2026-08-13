@@ -68,7 +68,12 @@ export default function NotificationCPAPage() {
       const toutes = dedupeParPatient([...notifs, ...demandesExternes])
 
       if (idsConnus.current) {
-        const nouvelles = toutes.filter((n: any) => n.id && !idsConnus.current!.has(n.id))
+        // Un patient déjà traité (planifié, CPA réalisée, sorti...) n'est jamais une "nouvelle"
+        // notification à signaler — sans ce filtre, une ré-émission d'une prescription/demande
+        // déjà prise en charge re-déclenchait le son de nouvelle prescription pour un patient qui
+        // a simplement réapparu avec un id inconnu dans la liste (filet de sécurité en plus des
+        // gardes de ré-ingestion côté backend).
+        const nouvelles = toutes.filter((n: any) => n.id && !idsConnus.current!.has(n.id) && !estPatientTraite(n))
         if (nouvelles.length > 0) {
           const son = nouvelles.map(determinerSon).sort((a, b) => PRIORITE_SON[b] - PRIORITE_SON[a])[0]
           jouerSonNotification(son)

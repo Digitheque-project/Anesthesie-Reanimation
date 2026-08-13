@@ -21,6 +21,7 @@ const typeorm_2 = require("typeorm");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const webhook_notification_entity_1 = require("../entities/webhook-notification.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
+const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
 const medecin_identite_service_1 = require("../medecin/medecin-identite.service");
 const notification_outgoing_service_1 = require("../external/notification-outgoing.service");
@@ -29,6 +30,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     notificationRepo;
     webhookRepo;
     patientBlocRepo;
+    creneauRepo;
     accueilClient;
     medecinIdentiteService;
     notificationOutgoing;
@@ -36,10 +38,11 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
     config;
     logger = new common_1.Logger(NotificationCPAService_1.name);
     blocServiceId;
-    constructor(notificationRepo, webhookRepo, patientBlocRepo, accueilClient, medecinIdentiteService, notificationOutgoing, notificationBackClient, config) {
+    constructor(notificationRepo, webhookRepo, patientBlocRepo, creneauRepo, accueilClient, medecinIdentiteService, notificationOutgoing, notificationBackClient, config) {
         this.notificationRepo = notificationRepo;
         this.webhookRepo = webhookRepo;
         this.patientBlocRepo = patientBlocRepo;
+        this.creneauRepo = creneauRepo;
         this.accueilClient = accueilClient;
         this.medecinIdentiteService = medecinIdentiteService;
         this.notificationOutgoing = notificationOutgoing;
@@ -66,6 +69,13 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                 this.logger.warn(`Création d'une notification EN_ATTENTE refusée : patient ${dto.patientId} en cours de prise en charge (statut ${patient.statut})`);
                 throw new common_1.ConflictException(`Patient ${dto.patientId} déjà en cours de prise en charge (statut ${patient.statut}) — notification non créée.`);
             }
+            const creneauDejaPlanifie = await this.creneauRepo.findOne({
+                where: { patientId: dto.patientId, statut: creneau_bloc_entity_1.StatutCreneau.PLANIFIE },
+            });
+            if (creneauDejaPlanifie) {
+                this.logger.warn(`Création d'une notification EN_ATTENTE refusée : patient ${dto.patientId} a déjà un créneau planifié (${creneauDejaPlanifie.type} le ${creneauDejaPlanifie.date})`);
+                throw new common_1.ConflictException(`Patient ${dto.patientId} a déjà un RDV planifié — notification non créée.`);
+            }
         }
         const saved = await this.notificationRepo.save(this.notificationRepo.create(dto));
         return Array.isArray(saved) ? saved[0] : saved;
@@ -82,13 +92,27 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         const patientIds = Array.from(new Set([...internalDataRaw, ...externalDataRaw]
             .map((n) => n.patientId)
             .filter(Boolean)));
-        const patients = patientIds.length
-            ? await this.patientBlocRepo.find({
-                where: { patientId: (0, typeorm_2.In)(patientIds) },
-            })
-            : [];
+        const [patients, creneaux] = await Promise.all([
+            patientIds.length
+                ? this.patientBlocRepo.find({
+                    where: { patientId: (0, typeorm_2.In)(patientIds) },
+                })
+                : Promise.resolve([]),
+            patientIds.length
+                ? this.creneauRepo.find({
+                    where: { patientId: (0, typeorm_2.In)(patientIds) },
+                })
+                : Promise.resolve([]),
+        ]);
         const patientMap = new Map(patients.map((p) => [p.patientId, p]));
-        const estPatientTraite = (statut) => !!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
+        const patientsAvecRdvPlanifie = new Set(creneaux
+            .filter((c) => c.statut === creneau_bloc_entity_1.StatutCreneau.PLANIFIE)
+            .map((c) => c.patientId));
+        const estPatientTraite = (patientId, statut) => {
+            if (patientId && patientsAvecRdvPlanifie.has(patientId))
+                return true;
+            return !!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
+        };
         const internalData = internalDataRaw.map((n, idx) => {
             const identity = identities[idx] || {};
             const pb = patientMap.get(n.patientId);
@@ -132,7 +156,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             return getDate(b) - getDate(a);
         });
         const actionnables = merged.filter((n) => n.statut !== notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE ||
-            !estPatientTraite(n.patient?.statut));
+            !estPatientTraite(n.patient?.id, n.patient?.statut));
         const start = (page - 1) * limite;
         const end = start + limite;
         const paginated = actionnables.slice(start, end);
@@ -156,6 +180,8 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         if (!n)
             throw new common_1.NotFoundException(`Notification ${id} non trouvée`);
         n.statut = notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE;
+        n.lu = true;
+        n.luLe = new Date();
         try {
             const patient = await this.patientBlocRepo.findOne({
                 where: { patientId: n.patientId },
@@ -179,6 +205,11 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             this.logger.error(`Erreur notification service origine après planification RDV CPA: ${err.message}`);
         }
         const saved = await this.notificationRepo.save(n);
+        if (n.patientId) {
+            await this.webhookRepo
+                .update({ patientId: n.patientId }, { processed: true })
+                .catch(() => { });
+        }
         this.notificationBackClient
             .notifyService({
             serviceId: this.blocServiceId,
@@ -213,12 +244,43 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         return { message: 'Notification supprimée' };
     }
     async getUnreadCount() {
-        const internalUnread = await this.notificationRepo.count({
-            where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, lu: false },
-        });
-        const externalUnread = await this.webhookRepo.count({
-            where: { processed: false },
-        });
+        const [internalRaw, externalRaw] = await Promise.all([
+            this.notificationRepo.find({
+                where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE, lu: false },
+            }),
+            this.webhookRepo.find({ where: { processed: false } }),
+        ]);
+        const ids = Array.from(new Set([...internalRaw, ...externalRaw]
+            .map((n) => n.patientId)
+            .filter(Boolean)));
+        if (ids.length === 0)
+            return 0;
+        const [patients, creneaux] = await Promise.all([
+            this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(ids) } }),
+            this.creneauRepo.find({ where: { patientId: (0, typeorm_2.In)(ids) } }),
+        ]);
+        const statutPatient = new Map(patients.map((p) => [p.patientId, p.statut]));
+        const dejaPlanifie = new Set(creneaux
+            .filter((c) => c.statut === creneau_bloc_entity_1.StatutCreneau.PLANIFIE)
+            .map((c) => c.patientId));
+        const statutsTraites = new Set([
+            patient_bloc_entity_1.PatientStatut.CPA_REALISE,
+            patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
+            patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+            patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
+            patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
+            patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION,
+            patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
+            patient_bloc_entity_1.PatientStatut.SORTI,
+        ]);
+        const patientDejaPriseEnCharge = (patientId) => {
+            if (!patientId)
+                return false;
+            const statut = statutPatient.get(patientId);
+            return dejaPlanifie.has(patientId) || (!!statut && statutsTraites.has(statut));
+        };
+        const internalUnread = internalRaw.filter((n) => !patientDejaPriseEnCharge(n.patientId)).length;
+        const externalUnread = externalRaw.filter((n) => !patientDejaPriseEnCharge(n.patientId)).length;
         return internalUnread + externalUnread;
     }
 };
@@ -228,7 +290,9 @@ exports.NotificationCPAService = NotificationCPAService = NotificationCPAService
     __param(0, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __param(1, (0, typeorm_1.InjectRepository)(webhook_notification_entity_1.WebhookNotification)),
     __param(2, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
+    __param(3, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         accueil_client_1.AccueilClient,

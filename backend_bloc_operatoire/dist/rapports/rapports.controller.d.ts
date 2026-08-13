@@ -9,7 +9,6 @@ export declare class RapportsController {
         };
         genereLe: string;
         statistiques: any;
-        activiteParChirurgien: any;
         activiteParAnesthesiste: any;
         activiteParIbode: any;
         activiteParResponsableCpa: any;
@@ -29,7 +28,6 @@ export declare class RapportsController {
         patientsParStatut: any[];
         urgencesParNiveau: any[];
     }>;
-    activiteChirurgiens(dd?: string, df?: string): Promise<any[]>;
     cpaEnAttente(): Promise<Record<string, any>[]>;
     tauxOccupation(): Promise<any[]>;
     exportStats(): Promise<{
@@ -39,7 +37,6 @@ export declare class RapportsController {
         };
         genereLe: string;
         statistiques: any;
-        activiteParChirurgien: any;
         activiteParAnesthesiste: any;
         activiteParIbode: any;
         activiteParResponsableCpa: any;

@@ -17,6 +17,7 @@ import {
   PatientStatut,
   NiveauUrgence,
 } from '../entities/patient-bloc.entity';
+import { CreneauBloc, StatutCreneau } from '../entities/creneau-bloc.entity';
 import {
   PrescriptionImagerieClient,
   PrescriptionImagerieExterne,
@@ -59,6 +60,8 @@ export class PrescriptionImagerieListenerService
     private readonly notificationRepo: Repository<NotificationCPA>,
     @InjectRepository(PatientBloc)
     private readonly patientBlocRepo: Repository<PatientBloc>,
+    @InjectRepository(CreneauBloc)
+    private readonly creneauRepo: Repository<CreneauBloc>,
   ) {
     this.serviceId =
       this.config.get<string>('externalServices.serviceId') ?? '';
@@ -174,22 +177,48 @@ export class PrescriptionImagerieListenerService
     // EN_ATTENTE ou RDV_PLANIFIE. Sans ce second statut, une fois le RDV CPA planifié la même
     // prescription re-poussée par le service était ré-ingérée comme une nouvelle (son + retour
     // dans la cloche et le fil) — voir le commentaire détaillé côté PrescriptionService.ingerer.
-    const dejaOuverte = await this.notificationRepo.findOne({
-      where: {
-        patientId: prescription.patientId,
-        statut: In([
-          StatutNotificationCPA.EN_ATTENTE,
-          StatutNotificationCPA.RDV_PLANIFIE,
-        ]),
-      },
+    // Comme pour le bloc, on bloque tant que le patient est déjà PRIS EN CHARGE : notification
+    // ouverte, créneau déjà planifié au calendrier, ou épisode déjà engagé. Seul un épisode
+    // terminé (SORTI / CPA_INAPTE) laisse passer une nouvelle prise en charge.
+    let patient = await this.patientBlocRepo.findOne({
+      where: { patientId: prescription.patientId },
     });
-    if (dejaOuverte) return;
+    const episodeActif: PatientStatut[] = [
+      PatientStatut.CPA_REALISE,
+      PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+      PatientStatut.VERIFICATION_VEILLE_REALISEE,
+      PatientStatut.PRET_POUR_BLOC,
+      PatientStatut.EN_COURS_OPERATION,
+      PatientStatut.EN_SALLE_REVEIL,
+    ];
+    const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
+      this.notificationRepo.findOne({
+        where: {
+          patientId: prescription.patientId,
+          statut: In([
+            StatutNotificationCPA.EN_ATTENTE,
+            StatutNotificationCPA.RDV_PLANIFIE,
+          ]),
+        },
+      }),
+      this.creneauRepo.findOne({
+        where: {
+          patientId: prescription.patientId,
+          statut: StatutCreneau.PLANIFIE,
+        },
+      }),
+    ]);
+    const dejaPriseEnCharge =
+      !!notificationDejaOuverte ||
+      !!creneauDejaPlanifie ||
+      (!!patient && episodeActif.includes(patient.statut));
+    if (dejaPriseEnCharge) return;
 
-    // Un patient déjà passé par le bloc (statut SORTI, CPA_REALISE, EN_COURS_OPERATION...) peut
-    // revenir pour une NOUVELLE prise en charge : cette prescription imagerie est un nouveau
-    // séjour, pas une ré-ingestion de l'ancien. Le dédoublonnage se fait par
-    // `notificationDejaEnAttente` ci-dessus ; ici on laisse passer, et la fiche PatientBloc est
-    // re-basculée en EN_ATTENTE_CPA plus bas pour ce nouvel épisode.
+    // Un patient déjà passé par le bloc (statut SORTI, CPA_INAPTE) peut revenir pour une
+    // NOUVELLE prise en charge : cette prescription imagerie est un nouveau séjour, pas une
+    // ré-ingestion de l'ancien. Le garde-fou ci-dessus écarte tout patient déjà pris en charge ;
+    // ici on laisse passer, et la fiche PatientBloc est re-basculée en EN_ATTENTE_CPA pour ce
+    // nouvel épisode (voir le bloc de création/mise à jour ci-dessous).
 
     const urgence = (prescription.urgence || '').toUpperCase();
     const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
@@ -213,23 +242,15 @@ export class PrescriptionImagerieListenerService
     // une prescription imagerie ultérieure (le circuit CPA/chirurgical prime). Un patient dont le
     // précédent séjour est terminé (SORTI / CPA_INAPTE) qui revient pour une nouvelle prise en
     // charge est, lui, re-basculé en EN_ATTENTE_CPA — sinon la nouvelle notification restait
-    // invisible dans le fil "à traiter".
+    // invisible dans le fil "à traiter". Le patient réutilisé ici est celui du garde-fou
+    // ci-dessus : il est forcément inconnu ou en épisode terminé.
     try {
-      const dejaSuivi = await this.patientBlocRepo.findOne({
-        where: { patientId: prescription.patientId },
-      });
-      if (dejaSuivi) {
-        const episodeTermine: PatientStatut[] = [
-          PatientStatut.SORTI,
-          PatientStatut.CPA_INAPTE,
-        ];
-        if (episodeTermine.includes(dejaSuivi.statut)) {
-          dejaSuivi.statut = PatientStatut.EN_ATTENTE_CPA;
-          dejaSuivi.niveauUrgence = this.mapUrgence(prescription.urgence);
-          dejaSuivi.serviceOrigineId = prescription.serviceIdSource || null;
-          dejaSuivi.serviceOrigine = serviceSourceNom || null;
-          await this.patientBlocRepo.save(dejaSuivi);
-        }
+      if (patient) {
+        patient.statut = PatientStatut.EN_ATTENTE_CPA;
+        patient.niveauUrgence = this.mapUrgence(prescription.urgence);
+        patient.serviceOrigineId = prescription.serviceIdSource || null;
+        patient.serviceOrigine = serviceSourceNom || null;
+        await this.patientBlocRepo.save(patient);
       } else {
         await this.patientBlocRepo.save(
           this.patientBlocRepo.create({

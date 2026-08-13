@@ -13,6 +13,7 @@ import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
+import { CreneauBloc, StatutCreneau } from '../entities/creneau-bloc.entity';
 import {
   PrescriptionExterneClient,
   PrescriptionBlocExterne,
@@ -31,6 +32,8 @@ export class PrescriptionService {
     private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(NotificationCPA)
     private notificationRepo: Repository<NotificationCPA>,
+    @InjectRepository(CreneauBloc)
+    private creneauRepo: Repository<CreneauBloc>,
     private prescriptionClient: PrescriptionExterneClient,
     private notificationBackClient: NotificationBackClient,
     private serviceRegistryClient: ServiceRegistryClient,
@@ -127,30 +130,58 @@ export class PrescriptionService {
     // Filet de sécurité complémentaire : le service Prescriptions externe peut renvoyer un `id`
     // différent à chaque interrogation pour ce qui est conceptuellement la même prescription
     // (ex: source de test sans persistance), ce qui rend le dédoublonnage ci-dessus par `p.id`
-    // inefficace et créait une nouvelle notification à chaque cycle de 15s. Filet anti-ré-ingestion
-    // étendu au RDV planifié : une fois le RDV CPA planifié, la notification interne passe
-    // d'EN_ATTENTE à RDV_PLANIFIE — le seul garde-fou EN_ATTENTE ne bloquait donc plus rien, et le
-    // patient était ré-ingéré comme une NOUVELLE prescription (nouveau son + ligne webhook +
-    // réapparition dans la cloche et le fil) juste après la planification. On bloque tant qu'une
-    // prescription reste ouverte pour ce patient (EN_ATTENTE ou RDV_PLANIFIE) ; seul un épisode
-    // terminé (notification REALISE) laisse passer un nouveau séjour.
-    const notificationDejaOuverte = await this.notificationRepo.findOne({
-      where: {
-        patientId: p.patientId,
-        statut: In([
-          StatutNotificationCPA.EN_ATTENTE,
-          StatutNotificationCPA.RDV_PLANIFIE,
-        ]),
-      },
+    // inefficace et créait une nouvelle notification à chaque cycle de 15s — le patient réapparaissait
+    // en "prescription" dans la cloche même après planification de son RDV CPA. Les gardes seuls par
+    // statut de notification étaient eux aussi insuffisants : dès que la notification passait
+    // REALISE, la même prescription (nouvel `id`) était ré-ingérée en EN_ATTENTE. On bloque donc tant
+    // que le patient est déjà PRIS EN CHARGE, quel que soit le signal :
+    //  - notification encore ouverte (EN_ATTENTE / RDV_PLANIFIE) ;
+    //  - créneau déjà planifié au calendrier (RDV CPA ou vérification de veille) — c'est LE signal
+    //    fiable du "RDV déjà planifié", jamais consulté jusqu'ici ;
+    //  - patient déjà engagé dans le parcours (CPA faite, veille, prêt bloc, opération, réveil).
+    // Seul un épisode terminé (SORTI / CPA_INAPTE) — ou un patient inconnu — laisse passer une
+    // NOUVELLE prise en charge.
+    let patient = await this.patientBlocRepo.findOne({
+      where: { patientId: p.patientId },
     });
-    if (notificationDejaOuverte) return;
+    const episodeActif: PatientStatut[] = [
+      PatientStatut.CPA_REALISE,
+      PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+      PatientStatut.VERIFICATION_VEILLE_REALISEE,
+      PatientStatut.PRET_POUR_BLOC,
+      PatientStatut.EN_COURS_OPERATION,
+      PatientStatut.EN_SALLE_REVEIL,
+    ];
+    const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
+      this.notificationRepo.findOne({
+        where: {
+          patientId: p.patientId,
+          statut: In([
+            StatutNotificationCPA.EN_ATTENTE,
+            StatutNotificationCPA.RDV_PLANIFIE,
+          ]),
+        },
+      }),
+      this.creneauRepo.findOne({
+        where: { patientId: p.patientId, statut: StatutCreneau.PLANIFIE },
+      }),
+    ]);
+    const dejaPriseEnCharge =
+      !!notificationDejaOuverte ||
+      !!creneauDejaPlanifie ||
+      (!!patient && episodeActif.includes(patient.statut));
+    if (dejaPriseEnCharge) {
+      this.logger.log(
+        `🛡️ Ingestion ignorée : patient ${p.patientId} déjà pris en charge` +
+          (creneauDejaPlanifie
+            ? ` (créneau ${creneauDejaPlanifie.type} planifié le ${creneauDejaPlanifie.date})`
+            : notificationDejaOuverte
+              ? ` (notification ${notificationDejaOuverte.statut})`
+              : ` (statut ${patient?.statut})`),
+      );
+      return;
+    }
 
-    // Un patient déjà passé par le bloc (statut SORTI, CPA_REALISE, EN_COURS_OPERATION...) peut
-    // revenir pour une NOUVELLE prise en charge : cette nouvelle prescription est un nouveau
-    // séjour, pas une ré-ingestion de l'ancien. Le dédoublonnage se fait plus haut par
-    // `prescriptionExterneId` (même prescription) et par `notificationDejaEnAttente` (même
-    // patient déjà en attente) ; ici on laisse passer, et la fiche PatientBloc est re-basculée
-    // en EN_ATTENTE_CPA ci-dessous (Object.assign + statut) pour ce nouvel épisode.
     const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
     const niveauUrgence = this.mapUrgence(p.urgence);
     const dateIntervention = this.extraireDateIntervention(acte);
@@ -160,10 +191,6 @@ export class PrescriptionService {
     const serviceSourceNom = await this.serviceRegistryClient.getServiceName(
       p.serviceIdSource,
     );
-
-    let patient = await this.patientBlocRepo.findOne({
-      where: { patientId: p.patientId },
-    });
     const donneesPatient = {
       patientId: p.patientId,
       chuId: p.chuId,
@@ -177,6 +204,9 @@ export class PrescriptionService {
       alertes: p.alertes || undefined,
       prescripteurId: p.prescripteurId,
       chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
+      // On n'arrive ici que pour un patient inconnu ou en épisode terminé (SORTI/CPA_INAPTE) — le
+      // garde-fou ci-dessus a déjà exclu tout patient pris en charge. Rebasculement en
+      // EN_ATTENTE_CPA = nouvelle prise en charge, jamais une dégradation d'un épisode en cours.
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence,
       serviceOrigineId: p.serviceIdSource || undefined,

@@ -2,15 +2,17 @@ import { Repository } from 'typeorm';
 import { CreneauBloc, TypeRDV } from '../entities/creneau-bloc.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
 import { NotificationCPA } from '../entities/notification-cpa.entity';
+import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 export declare class PlanningService {
     private creneauRepo;
     private patientBlocRepo;
     private notificationRepo;
+    private webhookRepo;
     private accueilClient;
     private medecinIdentiteService;
-    constructor(creneauRepo: Repository<CreneauBloc>, patientBlocRepo: Repository<PatientBloc>, notificationRepo: Repository<NotificationCPA>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService);
+    constructor(creneauRepo: Repository<CreneauBloc>, patientBlocRepo: Repository<PatientBloc>, notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService);
     private enrichCreneaux;
     getPlanningJour(jour: string, type?: TypeRDV): Promise<any[]>;
     getPlanningSemaine(debut: string, fin: string, type?: TypeRDV): Promise<any[]>;

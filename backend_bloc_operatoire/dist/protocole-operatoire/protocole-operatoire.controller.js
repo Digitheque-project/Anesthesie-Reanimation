@@ -46,9 +46,9 @@ let ProtocoleOperatoireController = class ProtocoleOperatoireController {
 exports.ProtocoleOperatoireController = ProtocoleOperatoireController;
 __decorate([
     (0, common_1.Post)(),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN, role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
     (0, swagger_1.ApiOperation)({
-        summary: 'Creer un protocole operatoire / protocole anesthesique (Chirurgien ou Anesthesiste)',
+        summary: 'Creer un protocole anesthesique (Anesthesiste)',
     }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
@@ -85,8 +85,8 @@ __decorate([
 ], ProtocoleOperatoireController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN, role_clinique_1.RoleClinique.ANESTHESISTE),
-    (0, swagger_1.ApiOperation)({ summary: 'Modifier un protocole (Chirurgien ou Anesthesiste)' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Modifier un protocole (Anesthesiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Request)()),
@@ -96,8 +96,8 @@ __decorate([
 ], ProtocoleOperatoireController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.CHIRURGIEN),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un protocole (Chirurgien)' }),
+    (0, require_role_decorator_1.RequireRoleClinique)(role_clinique_1.RoleClinique.ANESTHESISTE),
+    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un protocole (Anesthesiste)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

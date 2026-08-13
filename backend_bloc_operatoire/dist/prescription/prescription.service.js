@@ -21,21 +21,24 @@ const config_1 = require("@nestjs/config");
 const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
+const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const prescription_externe_client_1 = require("../external/prescription-externe.client");
 const notification_back_client_1 = require("../external/notification-back.client");
 const service_registry_client_1 = require("../external/service-registry.client");
 let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
     patientBlocRepo;
     notificationRepo;
+    creneauRepo;
     prescriptionClient;
     notificationBackClient;
     serviceRegistryClient;
     config;
     logger = new common_1.Logger(PrescriptionService_1.name);
     polling = false;
-    constructor(patientBlocRepo, notificationRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, config) {
+    constructor(patientBlocRepo, notificationRepo, creneauRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, config) {
         this.patientBlocRepo = patientBlocRepo;
         this.notificationRepo = notificationRepo;
+        this.creneauRepo = creneauRepo;
         this.prescriptionClient = prescriptionClient;
         this.notificationBackClient = notificationBackClient;
         this.serviceRegistryClient = serviceRegistryClient;
@@ -92,21 +95,47 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         });
         if (dejaIngeree)
             return;
-        const notificationDejaEnAttente = await this.notificationRepo.findOne({
-            where: {
-                patientId: p.patientId,
-                statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
-            },
+        let patient = await this.patientBlocRepo.findOne({
+            where: { patientId: p.patientId },
         });
-        if (notificationDejaEnAttente)
+        const episodeActif = [
+            patient_bloc_entity_1.PatientStatut.CPA_REALISE,
+            patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+            patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
+            patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
+            patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION,
+            patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
+        ];
+        const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
+            this.notificationRepo.findOne({
+                where: {
+                    patientId: p.patientId,
+                    statut: (0, typeorm_2.In)([
+                        notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+                        notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
+                    ]),
+                },
+            }),
+            this.creneauRepo.findOne({
+                where: { patientId: p.patientId, statut: creneau_bloc_entity_1.StatutCreneau.PLANIFIE },
+            }),
+        ]);
+        const dejaPriseEnCharge = !!notificationDejaOuverte ||
+            !!creneauDejaPlanifie ||
+            (!!patient && episodeActif.includes(patient.statut));
+        if (dejaPriseEnCharge) {
+            this.logger.log(`🛡️ Ingestion ignorée : patient ${p.patientId} déjà pris en charge` +
+                (creneauDejaPlanifie
+                    ? ` (créneau ${creneauDejaPlanifie.type} planifié le ${creneauDejaPlanifie.date})`
+                    : notificationDejaOuverte
+                        ? ` (notification ${notificationDejaOuverte.statut})`
+                        : ` (statut ${patient?.statut})`));
             return;
+        }
         const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
         const niveauUrgence = this.mapUrgence(p.urgence);
         const dateIntervention = this.extraireDateIntervention(acte);
         const serviceSourceNom = await this.serviceRegistryClient.getServiceName(p.serviceIdSource);
-        let patient = await this.patientBlocRepo.findOne({
-            where: { patientId: p.patientId },
-        });
         const donneesPatient = {
             patientId: p.patientId,
             chuId: p.chuId,
@@ -175,7 +204,9 @@ exports.PrescriptionService = PrescriptionService = PrescriptionService_1 = __de
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
+    __param(2, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         prescription_externe_client_1.PrescriptionExterneClient,
         notification_back_client_1.NotificationBackClient,

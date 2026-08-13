@@ -47,9 +47,7 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
     async create(dto, centralUser) {
         const { drainages, ...data } = dto;
         const role = centralUser ? (0, role_clinique_1.matchRoleClinique)(centralUser.role) : null;
-        if (role === role_clinique_1.RoleClinique.CHIRURGIEN)
-            data.chirurgienId = centralUser.userId;
-        else if ((0, role_clinique_1.agitCommeAnesthesiste)(role))
+        if ((0, role_clinique_1.agitCommeAnesthesiste)(role))
             data.anesthesisteId = centralUser.userId;
         const existant = data.patientId && data.dateOperation
             ? await this.repo.findOne({
@@ -101,9 +99,7 @@ let ProtocoleOperatoireService = class ProtocoleOperatoireService {
             throw new common_1.NotFoundException(`Protocole ${id} non trouvé`);
         const { drainages, ...data } = dto;
         const role = centralUser ? (0, role_clinique_1.matchRoleClinique)(centralUser.role) : null;
-        if (role === role_clinique_1.RoleClinique.CHIRURGIEN)
-            data.chirurgienId = centralUser.userId;
-        else if ((0, role_clinique_1.agitCommeAnesthesiste)(role))
+        if ((0, role_clinique_1.agitCommeAnesthesiste)(role))
             data.anesthesisteId = centralUser.userId;
         const updated = await this.repo.save(Object.assign(p, data));
         if (drainages !== undefined) {
