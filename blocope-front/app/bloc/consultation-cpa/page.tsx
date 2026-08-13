@@ -650,8 +650,8 @@ function ConsultationCpaPageContent() {
           // (voir CPAService.create, bascule PRET_POUR_BLOC), jamais dans le Fil de travail —
           // proposer à l'anesthésiste d'enchaîner directement sur sa prise en charge plutôt que
           // de le renvoyer vers un écran où ce patient n'apparaît pas. Le patient d'un service
-          // non-opératoire (Endoscopie, Imagerie, Urgence...) apparaît dans la "Programmation
-          // anesthésique", les autres dans le "Programme opératoire" (même distinction par
+          // non-opératoire (Endoscopie, Imagerie, Urgence...) apparaît dans le "Programme
+          // non-chirurgical", les autres dans le "Programme opératoire" (même distinction par
           // serviceOrigine que les listes elles-mêmes).
           const proposerRaccourci = decision === 'APTE' && estAnesthesisteConnecte;
           const allerDirectement = proposerRaccourci && confirm(
@@ -673,7 +673,7 @@ function ConsultationCpaPageContent() {
           // d'origine — seul cas où le parcours s'arrête réellement à la décision, l'écran de fin
           // de parcours le renvoie vers son service (accueil ou archive). Tous les autres patients
           // continuent exactement comme les patients du bloc : APTE → liste Vérification veille du
-          // Fil de travail (puis Programme Anesthésique) — direction unique vers le rendez-vous.
+          // Fil de travail (puis Programme non-chirurgical) — direction unique vers le rendez-vous.
           const retourneServiceOrigine =
             estServiceNonOperatoire(patient?.serviceOrigine) &&
             (decision === 'INAPTE' || decision === 'REPORT');
