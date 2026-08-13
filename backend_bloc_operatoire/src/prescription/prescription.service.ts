@@ -152,6 +152,18 @@ export class PrescriptionService {
       PatientStatut.EN_COURS_OPERATION,
       PatientStatut.EN_SALLE_REVEIL,
     ];
+    // Retour d'un patient dont le précédent épisode est terminé (SORTI / CPA_INAPTE) : sa
+    // nouvelle prescription (ex. du service Chirurgie) est une NOUVELLE prise en charge — on le
+    // traite comme un nouveau patient qui arrive (réouverture du dossier en EN_ATTENTE_CPA +
+    // nouvelle notification, voir le bloc de création/mise à jour ci-dessous). Les restes du
+    // précédent épisode (notification encore ouverte, créneau encore planifié) n'ont plus cours
+    // et ne doivent donc pas le bloquer : seuls les patients ENCORE pris en charge sont protégés
+    // de la ré-ingestion (anti-réapparition dans la cloche).
+    const episodeTermine: PatientStatut[] = [
+      PatientStatut.SORTI,
+      PatientStatut.CPA_INAPTE,
+    ];
+    const retourPatient = !!patient && episodeTermine.includes(patient.statut);
     const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
       this.notificationRepo.findOne({
         where: {
@@ -167,9 +179,10 @@ export class PrescriptionService {
       }),
     ]);
     const dejaPriseEnCharge =
-      !!notificationDejaOuverte ||
-      !!creneauDejaPlanifie ||
-      (!!patient && episodeActif.includes(patient.statut));
+      !retourPatient &&
+      (!!notificationDejaOuverte ||
+        !!creneauDejaPlanifie ||
+        (!!patient && episodeActif.includes(patient.statut)));
     if (dejaPriseEnCharge) {
       this.logger.log(
         `🛡️ Ingestion ignorée : patient ${p.patientId} déjà pris en charge` +
@@ -180,6 +193,11 @@ export class PrescriptionService {
               : ` (statut ${patient?.statut})`),
       );
       return;
+    }
+    if (retourPatient) {
+      this.logger.log(
+        `↩️ Patient ${p.patientId} revient d'un épisode terminé (${patient!.statut}) — nouvelle prescription traitée comme une nouvelle prise en charge`,
+      );
     }
 
     const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
