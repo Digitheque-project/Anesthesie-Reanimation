@@ -98,41 +98,45 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         let patient = await this.patientBlocRepo.findOne({
             where: { patientId: p.patientId },
         });
-        const episodeActif = [
-            patient_bloc_entity_1.PatientStatut.CPA_REALISE,
-            patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
-            patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
-            patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
+        const episodeTermine = [
+            patient_bloc_entity_1.PatientStatut.SORTI,
+            patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
+        ];
+        const retourPatient = !!patient && episodeTermine.includes(patient.statut);
+        const enCoursOperation = [
             patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION,
             patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
         ];
-        const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
-            this.notificationRepo.findOne({
-                where: {
-                    patientId: p.patientId,
-                    statut: (0, typeorm_2.In)([
-                        notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
-                        notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
-                    ]),
-                },
-            }),
-            this.creneauRepo.findOne({
-                where: { patientId: p.patientId, statut: creneau_bloc_entity_1.StatutCreneau.PLANIFIE },
-            }),
-        ]);
-        const dejaPriseEnCharge = !!notificationDejaOuverte ||
-            !!creneauDejaPlanifie ||
-            (!!patient && episodeActif.includes(patient.statut));
+        const notificationDejaOuverte = await this.notificationRepo.findOne({
+            where: {
+                patientId: p.patientId,
+                statut: (0, typeorm_2.In)([
+                    notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+                    notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
+                ]),
+            },
+        });
+        const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
+        const interventionEntrante = (acte?.libelle || '').trim().toLowerCase();
+        const memeInterventionOuverte = (!!notificationDejaOuverte &&
+            (notificationDejaOuverte.intervention || '').trim().toLowerCase() ===
+                interventionEntrante) ||
+            (!!patient &&
+                interventionEntrante !== '' &&
+                (patient.libelle || '').trim().toLowerCase() === interventionEntrante);
+        const dejaPriseEnCharge = !retourPatient &&
+            ((!!patient && enCoursOperation.includes(patient.statut)) ||
+                memeInterventionOuverte);
         if (dejaPriseEnCharge) {
-            this.logger.log(`🛡️ Ingestion ignorée : patient ${p.patientId} déjà pris en charge` +
-                (creneauDejaPlanifie
-                    ? ` (créneau ${creneauDejaPlanifie.type} planifié le ${creneauDejaPlanifie.date})`
-                    : notificationDejaOuverte
-                        ? ` (notification ${notificationDejaOuverte.statut})`
-                        : ` (statut ${patient?.statut})`));
+            this.logger.log(`🛡️ Ingestion ignorée : patient ${p.patientId}` +
+                (memeInterventionOuverte
+                    ? ` — même intervention "${acte?.libelle}" déjà en cours`
+                    : ` — statut ${patient?.statut}, opération en cours`));
             return;
         }
-        const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
+        if (retourPatient) {
+            this.logger.log(`↩️ Patient ${p.patientId} revient d'un épisode terminé (${patient.statut}) — nouvelle prescription traitée comme une nouvelle prise en charge`);
+        }
         const niveauUrgence = this.mapUrgence(p.urgence);
         const dateIntervention = this.extraireDateIntervention(acte);
         const serviceSourceNom = await this.serviceRegistryClient.getServiceName(p.serviceIdSource);

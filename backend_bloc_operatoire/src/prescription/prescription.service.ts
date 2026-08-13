@@ -13,7 +13,7 @@ import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
-import { CreneauBloc, StatutCreneau } from '../entities/creneau-bloc.entity';
+import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import {
   PrescriptionExterneClient,
   PrescriptionBlocExterne,
@@ -127,70 +127,64 @@ export class PrescriptionService {
     });
     if (dejaIngeree) return;
 
-    // Filet de sécurité complémentaire : le service Prescriptions externe peut renvoyer un `id`
-    // différent à chaque interrogation pour ce qui est conceptuellement la même prescription
-    // (ex: source de test sans persistance), ce qui rend le dédoublonnage ci-dessus par `p.id`
-    // inefficace et créait une nouvelle notification à chaque cycle de 15s — le patient réapparaissait
-    // en "prescription" dans la cloche même après planification de son RDV CPA. Les gardes seuls par
-    // statut de notification étaient eux aussi insuffisants : dès que la notification passait
-    // REALISE, la même prescription (nouvel `id`) était ré-ingérée en EN_ATTENTE. On bloque donc tant
-    // que le patient est déjà PRIS EN CHARGE, quel que soit le signal :
-    //  - notification encore ouverte (EN_ATTENTE / RDV_PLANIFIE) ;
-    //  - créneau déjà planifié au calendrier (RDV CPA ou vérification de veille) — c'est LE signal
-    //    fiable du "RDV déjà planifié", jamais consulté jusqu'ici ;
-    //  - patient déjà engagé dans le parcours (CPA faite, veille, prêt bloc, opération, réveil).
-    // Seul un épisode terminé (SORTI / CPA_INAPTE) — ou un patient inconnu — laisse passer une
-    // NOUVELLE prise en charge.
     let patient = await this.patientBlocRepo.findOne({
       where: { patientId: p.patientId },
     });
-    const episodeActif: PatientStatut[] = [
-      PatientStatut.CPA_REALISE,
-      PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
-      PatientStatut.VERIFICATION_VEILLE_REALISEE,
-      PatientStatut.PRET_POUR_BLOC,
-      PatientStatut.EN_COURS_OPERATION,
-      PatientStatut.EN_SALLE_REVEIL,
-    ];
     // Retour d'un patient dont le précédent épisode est terminé (SORTI / CPA_INAPTE) : sa
     // nouvelle prescription (ex. du service Chirurgie) est une NOUVELLE prise en charge — on le
     // traite comme un nouveau patient qui arrive (réouverture du dossier en EN_ATTENTE_CPA +
     // nouvelle notification, voir le bloc de création/mise à jour ci-dessous). Les restes du
     // précédent épisode (notification encore ouverte, créneau encore planifié) n'ont plus cours
-    // et ne doivent donc pas le bloquer : seuls les patients ENCORE pris en charge sont protégés
-    // de la ré-ingestion (anti-réapparition dans la cloche).
+    // et ne doivent donc pas le bloquer.
     const episodeTermine: PatientStatut[] = [
       PatientStatut.SORTI,
       PatientStatut.CPA_INAPTE,
     ];
     const retourPatient = !!patient && episodeTermine.includes(patient.statut);
-    const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
-      this.notificationRepo.findOne({
-        where: {
-          patientId: p.patientId,
-          statut: In([
-            StatutNotificationCPA.EN_ATTENTE,
-            StatutNotificationCPA.RDV_PLANIFIE,
-          ]),
-        },
-      }),
-      this.creneauRepo.findOne({
-        where: { patientId: p.patientId, statut: StatutCreneau.PLANIFIE },
-      }),
-    ]);
+
+    // Anti-ré-ingestion ciblée : une nouvelle prescription (nouvel `id`) doit ARRIVER dans la
+    // cloche — sauf si c'est manifestement la re-poussée de la même intervention déjà en cours.
+    // Le service Prescriptions peut renvoyer un `id` différent à chaque interrogation pour ce
+    // qui est conceptuellement la même prescription (ex: source de test sans persistance), ce
+    // qui faisait réapparaître le patient dans la cloche même après planification de son RDV CPA.
+    // On ne bloque donc que :
+    //  - patient en cours d'opération / en salle de réveil (épisode chirurgical réellement engagé) ;
+    //  - même intervention déjà ouverte : notification EN_ATTENTE / RDV_PLANIFIE pour le même
+    //    acte, ou libellé d'acte du patient identique à la prescription entrante.
+    // Un ancien RDV / créneau sur une AUTRE intervention ne bloque plus : c'est un nouveau
+    // passage au bloc → on traite le patient comme un nouveau patient qui arrive.
+    const enCoursOperation: PatientStatut[] = [
+      PatientStatut.EN_COURS_OPERATION,
+      PatientStatut.EN_SALLE_REVEIL,
+    ];
+    const notificationDejaOuverte = await this.notificationRepo.findOne({
+      where: {
+        patientId: p.patientId,
+        statut: In([
+          StatutNotificationCPA.EN_ATTENTE,
+          StatutNotificationCPA.RDV_PLANIFIE,
+        ]),
+      },
+    });
+    const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
+    const interventionEntrante = (acte?.libelle || '').trim().toLowerCase();
+    const memeInterventionOuverte =
+      (!!notificationDejaOuverte &&
+        (notificationDejaOuverte.intervention || '').trim().toLowerCase() ===
+          interventionEntrante) ||
+      (!!patient &&
+        interventionEntrante !== '' &&
+        (patient.libelle || '').trim().toLowerCase() === interventionEntrante);
     const dejaPriseEnCharge =
       !retourPatient &&
-      (!!notificationDejaOuverte ||
-        !!creneauDejaPlanifie ||
-        (!!patient && episodeActif.includes(patient.statut)));
+      ((!!patient && enCoursOperation.includes(patient.statut)) ||
+        memeInterventionOuverte);
     if (dejaPriseEnCharge) {
       this.logger.log(
-        `🛡️ Ingestion ignorée : patient ${p.patientId} déjà pris en charge` +
-          (creneauDejaPlanifie
-            ? ` (créneau ${creneauDejaPlanifie.type} planifié le ${creneauDejaPlanifie.date})`
-            : notificationDejaOuverte
-              ? ` (notification ${notificationDejaOuverte.statut})`
-              : ` (statut ${patient?.statut})`),
+        `🛡️ Ingestion ignorée : patient ${p.patientId}` +
+          (memeInterventionOuverte
+            ? ` — même intervention "${acte?.libelle}" déjà en cours`
+            : ` — statut ${patient?.statut}, opération en cours`),
       );
       return;
     }
@@ -199,8 +193,6 @@ export class PrescriptionService {
         `↩️ Patient ${p.patientId} revient d'un épisode terminé (${patient!.statut}) — nouvelle prescription traitée comme une nouvelle prise en charge`,
       );
     }
-
-    const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
     const niveauUrgence = this.mapUrgence(p.urgence);
     const dateIntervention = this.extraireDateIntervention(acte);
     // Le service Prescriptions ne transmet que l'id du service demandeur, jamais son nom — sans
@@ -222,9 +214,10 @@ export class PrescriptionService {
       alertes: p.alertes || undefined,
       prescripteurId: p.prescripteurId,
       chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
-      // On n'arrive ici que pour un patient inconnu ou en épisode terminé (SORTI/CPA_INAPTE) — le
-      // garde-fou ci-dessus a déjà exclu tout patient pris en charge. Rebasculement en
-      // EN_ATTENTE_CPA = nouvelle prise en charge, jamais une dégradation d'un épisode en cours.
+      // On n'arrive ici que pour un patient inconnu, un patient en épisode terminé (SORTI /
+      // CPA_INAPTE), ou une nouvelle intervention différente de celle déjà en cours — le garde
+      // ci-dessus a exclu les re-poussées d'une même intervention et les opérations en cours.
+      // Rebasculement en EN_ATTENTE_CPA = nouvelle prise en charge.
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence,
       serviceOrigineId: p.serviceIdSource || undefined,
