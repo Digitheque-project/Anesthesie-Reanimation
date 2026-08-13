@@ -8,7 +8,7 @@ import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { OperationGateway } from '../operation-gateway/operation.gateway';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CentralUser } from '../central-auth/central-user.interface';
-import { agitCommeAnesthesiste, RoleClinique, matchRoleClinique } from '../central-auth/role-clinique';
+import { agitCommeAnesthesiste, matchRoleClinique } from '../central-auth/role-clinique';
 import { CreateProtocoleOperatoireDto } from './dto/create-protocole-operatoire.dto';
 import { UpdateProtocoleOperatoireDto } from './dto/update-protocole-operatoire.dto';
 
@@ -35,24 +35,19 @@ export class ProtocoleOperatoireService {
     centralUser?: CentralUser,
   ): Promise<ProtocoleOperatoire> {
     const { drainages, ...data } = dto as any;
-    // Le formulaire ne propose aucun sélecteur pour désigner le chirurgien/l'anesthésiste (voir
-    // le commentaire sur l'entité) — cette route est réservée aux rôles Chirurgien et
-    // Anesthésiste (@RequireRoleClinique, ouverte au Major qui le remplace totalement) :
-    // l'utilisateur connecté EST l'un des deux, on l'auto-renseigne sur le bon champ selon son
-    // rôle plutôt que de dépendre d'une saisie manuelle. Sans identité connectée (jamais en
-    // pratique ici), on garde la valeur du DTO.
+    // Le formulaire ne propose aucun sélecteur pour désigner l'anesthésiste (voir le
+    // commentaire sur l'entité) — cette route est réservée à l'anesthésiste (et au Major qui le
+    // remplace totalement) : l'utilisateur connecté EST l'anesthésiste, on l'auto-renseigne sur
+    // le champ anesthesisteId plutôt que de dépendre d'une saisie manuelle. Sans identité
+    // connectée (jamais en pratique ici), on garde la valeur du DTO.
     const role = centralUser ? matchRoleClinique(centralUser.role) : null;
-    if (role === RoleClinique.CHIRURGIEN) data.chirurgienId = centralUser!.userId;
-    else if (agitCommeAnesthesiste(role))
+    if (agitCommeAnesthesiste(role))
       data.anesthesisteId = centralUser!.userId;
 
-    // Chirurgien et anesthésiste partagent un seul enregistrement par patient/jour d'opération
-    // (Instructions Post-Opératoires communes, voir l'entité) : le frontend préremplit son
-    // formulaire depuis un GET puis PATCH s'il trouve déjà une ligne — mais si les deux ouvrent
-    // leur page avant que l'un ait sauvegardé, chacun POST et crée sa propre ligne. findOne()
-    // trie par date de création et ne renvoie que la plus récente : le compte-rendu de celui qui
-    // a sauvegardé en premier redevenait alors invisible. On fusionne donc dans la ligne
-    // existante plutôt que d'en créer une seconde.
+    // Un seul enregistrement par patient/jour d'opération (Instructions Post-Opératoires, voir
+    // l'entité) : le frontend préremplit son formulaire depuis un GET puis PATCH s'il trouve déjà
+    // une ligne — mais si l'utilisateur ouvre sa page avant d'avoir sauvegardé puis enregistre,
+    // on fusionne dans la ligne existante plutôt que d'en créer une seconde.
     const existant = data.patientId && data.dateOperation
       ? await this.repo.findOne({
           where: { patientId: data.patientId, dateOperation: data.dateOperation },
@@ -126,8 +121,7 @@ export class ProtocoleOperatoireService {
     if (!p) throw new NotFoundException(`Protocole ${id} non trouvé`);
     const { drainages, ...data } = dto as any;
     const role = centralUser ? matchRoleClinique(centralUser.role) : null;
-    if (role === RoleClinique.CHIRURGIEN) data.chirurgienId = centralUser!.userId;
-    else if (agitCommeAnesthesiste(role))
+    if (agitCommeAnesthesiste(role))
       data.anesthesisteId = centralUser!.userId;
     const updated = await this.repo.save(Object.assign(p, data));
     // Remplacement complet du set de drainages à chaque sauvegarde — pas d'identité stable côté

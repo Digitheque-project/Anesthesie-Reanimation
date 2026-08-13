@@ -28,8 +28,8 @@ export class BonCommandeController {
   constructor(private readonly service: BonCommandeService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN)
-  @ApiOperation({ summary: 'Créer un bon de commande (Anesthésiste, Chirurgien)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Créer un bon de commande (Anesthésiste)' })
   create(@Body() dto: CreateBonCommandeDto) {
     return this.service.create(dto);
   }
@@ -49,8 +49,8 @@ export class BonCommandeController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN)
-  @ApiOperation({ summary: 'Modifier un bon (Anesthésiste, Chirurgien)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier un bon (Anesthésiste)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateBonCommandeDto,
@@ -59,8 +59,8 @@ export class BonCommandeController {
   }
 
   @Delete(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.CHIRURGIEN)
-  @ApiOperation({ summary: 'Supprimer un bon (Anesthésiste, Chirurgien)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Supprimer un bon (Anesthésiste)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.remove(id);
   }

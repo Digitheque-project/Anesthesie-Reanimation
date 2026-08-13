@@ -234,6 +234,15 @@ export class NotificationCPAService {
     }
 
     const saved = await this.notificationRepo.save(n);
+    // La prescription de ce patient peut aussi avoir été reçue par webhook (même épisode) : sa
+    // ligne restait `processed: false`, donc après planification la cloche recomptait ce doublon
+    // comme non lu et le fil comme une nouvelle notification (carillon), alors que le RDV vient
+    // d'être planifié. On bascule ces lignes à `true` — le patient est pris en charge.
+    if (n.patientId) {
+      await this.webhookRepo
+        .update({ patientId: n.patientId }, { processed: true })
+        .catch(() => {});
+    }
     // Retire cette notification de la liste "à planifier" sur tous les postes connectés du
     // bloc, sans attendre un rechargement manuel — même canal que les nouvelles prescriptions,
     // type ignoré par TopBar (voir PatientBlocStatutService.diffuserChangementStatut).

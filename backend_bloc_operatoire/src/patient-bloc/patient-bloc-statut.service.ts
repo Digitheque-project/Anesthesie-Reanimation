@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
-import { estServiceNonOperatoire } from './service-non-operatoire';
+import { aSaPropreSalleDeReveil } from './service-non-operatoire';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 
@@ -96,9 +96,11 @@ export class PatientBlocStatutService {
       [PatientStatut.PRET_POUR_BLOC]: [PatientStatut.EN_COURS_OPERATION],
       [PatientStatut.EN_COURS_OPERATION]: [
         PatientStatut.EN_SALLE_REVEIL,
-        // Acte anesthésique réalisé hors bloc (Endoscopie, Urgence, Imagerie) : le service
-        // d'origine possède sa propre salle de réveil — retour au service + archivage direct,
-        // sans passer par la salle de réveil du Bloc (voir checklist-apres-op / protocole).
+        // Acte anesthésique réalisé hors bloc pour un service qui possède sa propre salle de
+        // réveil (Imagerie, Scanner) : retour au service + archivage direct, sans passer par la
+        // salle de réveil du Bloc (voir checklist-apres-op / protocole). Endoscopie et Urgence,
+        // eux, sont surveillés par le même anesthésiste du Bloc : ils suivent le flux complet et
+        // passent par EN_SALLE_REVEIL comme les patients de la chirurgie.
         PatientStatut.SORTI,
       ],
       [PatientStatut.EN_SALLE_REVEIL]: [PatientStatut.SORTI],
@@ -333,13 +335,15 @@ export class PatientBlocStatutService {
     return patient;
   }
 
-  // Vrai si le patient vient d'un service qui possède sa propre salle de réveil (Endoscopie,
-  // Urgence, Imagerie...) : la check-list après intervention ne doit pas le transférer vers la
-  // salle de réveil du Bloc — il y retournera et sera archivé après le protocole anesthésique.
-  async provientServiceNonOperatoire(patientId: string): Promise<boolean> {
+  // Vrai si le patient vient d'un service qui possède sa propre salle de réveil (Imagerie,
+  // Scanner...) : la check-list après intervention ne doit pas le transférer vers la salle de
+  // réveil du Bloc — il y retournera et sera archivé après le protocole anesthésique. Les
+  // patients d'Endoscopie/Urgence, surveillés par le même anesthésiste du Bloc, suivent au
+  // contraire le flux complet (transfert + surveillance + sortie en salle de réveil du Bloc).
+  async aSaPropreSalleDeReveil(patientId: string): Promise<boolean> {
     const patient = await this.patientBlocRepo.findOne({
       where: { patientId },
     });
-    return estServiceNonOperatoire(patient?.serviceOrigine);
+    return aSaPropreSalleDeReveil(patient?.serviceOrigine);
   }
 }
