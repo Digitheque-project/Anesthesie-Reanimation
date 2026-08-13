@@ -11,7 +11,6 @@ import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
-import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import { useRole } from '@/lib/hooks/useRole'
 
 export default function ActivitePendantOperationPage() {
@@ -138,7 +137,15 @@ function ActivitePendantOperationPageContent() {
             </span>
             <span className="text-[10px] font-extrabold tracking-wider">PROCÉDURE EN COURS</span>
           </div>
-          <VoirDossierButton patientId={patientId} variant="icon" />
+          <button
+            type="button"
+            onClick={() => router.push(`/bloc/dossier-patient/${patientId}`)}
+            title="Voir le dossier patient à jour"
+            aria-label="Voir le dossier patient à jour"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">folder_shared</span>
+          </button>
         </div>
       </header>
 
