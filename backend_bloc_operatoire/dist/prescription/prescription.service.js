@@ -100,13 +100,6 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         });
         if (notificationDejaEnAttente)
             return;
-        const patientDejaTraite = await this.patientBlocRepo.findOne({
-            where: { patientId: p.patientId },
-        });
-        if (patientDejaTraite &&
-            patientDejaTraite.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
-            return;
-        }
         const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
         const niveauUrgence = this.mapUrgence(p.urgence);
         const dateIntervention = this.extraireDateIntervention(acte);

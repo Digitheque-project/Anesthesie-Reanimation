@@ -31,14 +31,6 @@ export class PatientBlocService {
     });
     if (!demande) throw new Error('Demande non trouvée');
 
-    // Idempotent : patientId est la clé primaire de PatientBloc, un second appel (nouvelle
-    // demande externe pour un patient déjà suivi au bloc) ne doit pas planter sur un conflit de
-    // clé — on renvoie simplement la fiche existante plutôt que d'échouer.
-    const existant = await this.patientRepo.findOne({
-      where: { patientId: demande.patientId },
-    });
-    if (existant) return existant;
-
     const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
     const niveauUrgence = estUrgence
       ? NiveauUrgence.TRES_URGENT
@@ -46,6 +38,35 @@ export class PatientBlocService {
     // Un patient urgent n'a pas de "vérification à la veille" (chirurgie immédiate) : il passe
     // par la même consultation que la CPA, juste étiquetée VPA côté interface. Le statut initial
     // est donc toujours EN_ATTENTE_CPA, urgent ou non.
+
+    // Patient déjà suivi au bloc : patientId est la clé primaire de PatientBloc. Un patient dont
+    // le précédent séjour est terminé (SORTI) ou dont la CPA avait été refusée (CPA_INAPTE) peut
+    // REVENIR pour une nouvelle prise en charge : on rouvre sa fiche pour ce nouvel épisode
+    // (statut EN_ATTENTE_CPA + infos du service demandeur), au lieu de la renvoyer telle quelle —
+    // sinon la nouvelle demande externe restait invisible dans le fil "à traiter". Un patient en
+    // pleine prise en charge (CPA_REALISE, veille, bloc, réveil...) n'est, lui, pas réinitialisé.
+    const existant = await this.patientRepo.findOne({
+      where: { patientId: demande.patientId },
+    });
+    if (existant) {
+      const episodeTermine: PatientStatut[] = [
+        PatientStatut.SORTI,
+        PatientStatut.CPA_INAPTE,
+      ];
+      if (episodeTermine.includes(existant.statut)) {
+        Object.assign(existant, {
+          statut: PatientStatut.EN_ATTENTE_CPA,
+          niveauUrgence,
+          prescripteurId: demande.sourceServiceId,
+          serviceOrigine: demande.sourceServiceName || null,
+          serviceOrigineId: demande.sourceServiceId || null,
+          dateIntervention: demande.dateExamenSouhaitee || null,
+        });
+        const saved = await this.patientRepo.save(existant);
+        return Array.isArray(saved) ? saved[0] : saved;
+      }
+      return existant;
+    }
 
     const patient = new PatientBloc();
     patient.patientId = demande.patientId;

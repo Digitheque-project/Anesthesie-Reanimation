@@ -16,7 +16,6 @@ export declare class NotificationCPAController {
                 statut: import("../entities").PatientStatut | undefined;
                 niveauUrgence: import("../entities").NiveauUrgence | undefined;
                 dateIntervention: Date | null;
-                cpaFinaleRealisee: boolean;
             };
             id: string;
             heurePrescription: string;
@@ -40,7 +39,6 @@ export declare class NotificationCPAController {
                 statut: import("../entities").PatientStatut;
                 niveauUrgence: import("../entities").NiveauUrgence;
                 dateIntervention: Date;
-                cpaFinaleRealisee: boolean;
             } | undefined;
             id: string;
             type: string;

@@ -180,16 +180,11 @@ export class PrescriptionImagerieListenerService
     });
     if (dejaEnAttente) return;
 
-    // Même garde-fou que dans PrescriptionService.ingerer : si le patient est déjà suivi et que
-    // sa CPA a été traitée (statut différent de EN_ATTENTE_CPA), on ne recrée plus de notification
-    // pour lui — sans quoi une nouvelle prescription imagerie faisait réapparaître un patient déjà
-    // pris en charge dans le fil "à traiter".
-    const dejaTraite = await this.patientBlocRepo.findOne({
-      where: { patientId: prescription.patientId },
-    });
-    if (dejaTraite && dejaTraite.statut !== PatientStatut.EN_ATTENTE_CPA) {
-      return;
-    }
+    // Un patient déjà passé par le bloc (statut SORTI, CPA_REALISE, EN_COURS_OPERATION...) peut
+    // revenir pour une NOUVELLE prise en charge : cette prescription imagerie est un nouveau
+    // séjour, pas une ré-ingestion de l'ancien. Le dédoublonnage se fait par
+    // `notificationDejaEnAttente` ci-dessus ; ici on laisse passer, et la fiche PatientBloc est
+    // re-basculée en EN_ATTENTE_CPA plus bas pour ce nouvel épisode.
 
     const urgence = (prescription.urgence || '').toUpperCase();
     const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
@@ -210,12 +205,27 @@ export class PrescriptionImagerieListenerService
     // (patientService.getById renvoyait null), et le patient n'apparaissait dans aucune liste du
     // bloc (Fil de travail...), toutes basées sur patients_bloc. Idempotent par patientId, comme
     // PatientBlocService.creerDepuisPrescription : un patient déjà suivi n'est jamais écrasé par
-    // une prescription imagerie ultérieure (le circuit CPA/chirurgical prime).
+    // une prescription imagerie ultérieure (le circuit CPA/chirurgical prime). Un patient dont le
+    // précédent séjour est terminé (SORTI / CPA_INAPTE) qui revient pour une nouvelle prise en
+    // charge est, lui, re-basculé en EN_ATTENTE_CPA — sinon la nouvelle notification restait
+    // invisible dans le fil "à traiter".
     try {
       const dejaSuivi = await this.patientBlocRepo.findOne({
         where: { patientId: prescription.patientId },
       });
-      if (!dejaSuivi) {
+      if (dejaSuivi) {
+        const episodeTermine: PatientStatut[] = [
+          PatientStatut.SORTI,
+          PatientStatut.CPA_INAPTE,
+        ];
+        if (episodeTermine.includes(dejaSuivi.statut)) {
+          dejaSuivi.statut = PatientStatut.EN_ATTENTE_CPA;
+          dejaSuivi.niveauUrgence = this.mapUrgence(prescription.urgence);
+          dejaSuivi.serviceOrigineId = prescription.serviceIdSource || null;
+          dejaSuivi.serviceOrigine = serviceSourceNom || null;
+          await this.patientBlocRepo.save(dejaSuivi);
+        }
+      } else {
         await this.patientBlocRepo.save(
           this.patientBlocRepo.create({
             patientId: prescription.patientId,

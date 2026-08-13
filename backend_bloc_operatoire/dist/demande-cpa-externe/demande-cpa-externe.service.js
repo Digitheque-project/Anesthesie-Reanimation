@@ -23,7 +23,6 @@ const typeorm_2 = require("typeorm");
 const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.entity");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const cpa_entity_1 = require("../entities/cpa.entity");
-const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_back_client_1 = require("../external/notification-back.client");
 const accueil_client_1 = require("../external/accueil.client");
 const patient_bloc_service_1 = require("../patient-bloc/patient-bloc.service");
@@ -33,7 +32,6 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
     repo;
     creneauRepo;
     cpaRepo;
-    patientBlocRepo;
     config;
     http;
     notificationBackClient;
@@ -42,11 +40,10 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
     serviceRegistryClient;
     logger = new common_1.Logger(DemandeCpaExterneService_1.name);
     blocServiceId;
-    constructor(repo, creneauRepo, cpaRepo, patientBlocRepo, config, http, notificationBackClient, accueilClient, patientBlocService, serviceRegistryClient) {
+    constructor(repo, creneauRepo, cpaRepo, config, http, notificationBackClient, accueilClient, patientBlocService, serviceRegistryClient) {
         this.repo = repo;
         this.creneauRepo = creneauRepo;
         this.cpaRepo = cpaRepo;
-        this.patientBlocRepo = patientBlocRepo;
         this.config = config;
         this.http = http;
         this.notificationBackClient = notificationBackClient;
@@ -104,55 +101,11 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
             where,
             order: { createdAt: 'DESC' },
         });
-        const ids = Array.from(new Set(demandes.map((d) => d.patientId).filter(Boolean)));
-        const [patients, cpas] = await Promise.all([
-            ids.length
-                ? this.patientBlocRepo.find({ where: { patientId: (0, typeorm_2.In)(ids) } })
-                : [],
-            ids.length ? this.cpaRepo.find({ where: { patientId: (0, typeorm_2.In)(ids) } }) : [],
-        ]);
-        const patientMap = new Map(patients.map((p) => [p.patientId, p]));
-        const derniereCpaParPatient = new Map();
-        for (const c of cpas) {
-            const existante = derniereCpaParPatient.get(c.patientId);
-            if (!existante ||
-                new Date(c.dateConsultation) > new Date(existante.dateConsultation)) {
-                derniereCpaParPatient.set(c.patientId, c);
-            }
-        }
-        const cpaTraitee = (c) => !!c &&
-            ['APTE', 'INAPTE'].includes(c.decision) &&
-            c.decisionOperation !== 'REPORTEE';
-        const enrichies = demandes.map((d) => {
-            const pb = patientMap.get(d.patientId);
-            const derniereCpa = derniereCpaParPatient.get(d.patientId);
-            return {
-                ...d,
-                patient: {
-                    id: d.patientId,
-                    statut: pb?.statut ?? null,
-                    niveauUrgence: pb?.niveauUrgence ?? null,
-                    dateIntervention: pb?.dateIntervention ?? null,
-                },
-                cpaFinaleRealisee: cpaTraitee(derniereCpa),
-            };
-        });
-        let resultat = enrichies;
-        if (statut === demande_cpa_externe_entity_1.StatutDemandeCpaExterne.EN_ATTENTE) {
-            resultat = enrichies.filter((d) => {
-                if (d.patient?.statut && d.patient.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
-                    return false;
-                }
-                if (d.cpaFinaleRealisee)
-                    return false;
-                return true;
-            });
-        }
         try {
-            return await this.accueilClient.enrichWithIdentity(resultat);
+            return await this.accueilClient.enrichWithIdentity(demandes);
         }
         catch {
-            return resultat;
+            return demandes;
         }
     }
     async findOne(id) {
@@ -340,9 +293,7 @@ exports.DemandeCpaExterneService = DemandeCpaExterneService = DemandeCpaExterneS
     __param(0, (0, typeorm_1.InjectRepository)(demande_cpa_externe_entity_1.DemandeCpaExterne)),
     __param(1, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
     __param(2, (0, typeorm_1.InjectRepository)(cpa_entity_1.CPA)),
-    __param(3, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         config_1.ConfigService,

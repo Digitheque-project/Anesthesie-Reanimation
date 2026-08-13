@@ -3,7 +3,6 @@ import { Repository } from 'typeorm';
 import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
-import { CPA } from '../entities/cpa.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { NotificationOutgoingService } from '../external/notification-outgoing.service';
@@ -14,7 +13,6 @@ export declare class NotificationCPAService {
     private readonly notificationRepo;
     private readonly webhookRepo;
     private readonly patientBlocRepo;
-    private readonly cpaRepo;
     private accueilClient;
     private medecinIdentiteService;
     private notificationOutgoing;
@@ -22,7 +20,7 @@ export declare class NotificationCPAService {
     private config;
     private readonly logger;
     private readonly blocServiceId;
-    constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, cpaRepo: Repository<CPA>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService, notificationBackClient: NotificationBackClient, config: ConfigService);
+    constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService, notificationBackClient: NotificationBackClient, config: ConfigService);
     create(dto: CreateNotificationCPADto): Promise<NotificationCPA>;
     findAll(page?: number, limite?: number): Promise<{
         data: ({
@@ -35,7 +33,6 @@ export declare class NotificationCPAService {
                 statut: PatientStatut | undefined;
                 niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence | undefined;
                 dateIntervention: Date | null;
-                cpaFinaleRealisee: boolean;
             };
             id: string;
             heurePrescription: string;
@@ -59,7 +56,6 @@ export declare class NotificationCPAService {
                 statut: PatientStatut;
                 niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence;
                 dateIntervention: Date;
-                cpaFinaleRealisee: boolean;
             } | undefined;
             id: string;
             type: string;

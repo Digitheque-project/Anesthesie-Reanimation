@@ -116,12 +116,6 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
         });
         if (dejaEnAttente)
             return;
-        const dejaTraite = await this.patientBlocRepo.findOne({
-            where: { patientId: prescription.patientId },
-        });
-        if (dejaTraite && dejaTraite.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
-            return;
-        }
         const urgence = (prescription.urgence || '').toUpperCase();
         const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
         const prescripteurNom = [
@@ -136,7 +130,20 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
             const dejaSuivi = await this.patientBlocRepo.findOne({
                 where: { patientId: prescription.patientId },
             });
-            if (!dejaSuivi) {
+            if (dejaSuivi) {
+                const episodeTermine = [
+                    patient_bloc_entity_1.PatientStatut.SORTI,
+                    patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
+                ];
+                if (episodeTermine.includes(dejaSuivi.statut)) {
+                    dejaSuivi.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
+                    dejaSuivi.niveauUrgence = this.mapUrgence(prescription.urgence);
+                    dejaSuivi.serviceOrigineId = prescription.serviceIdSource || null;
+                    dejaSuivi.serviceOrigine = serviceSourceNom || null;
+                    await this.patientBlocRepo.save(dejaSuivi);
+                }
+            }
+            else {
                 await this.patientBlocRepo.save(this.patientBlocRepo.create({
                     patientId: prescription.patientId,
                     chuId: prescription.chuId ||

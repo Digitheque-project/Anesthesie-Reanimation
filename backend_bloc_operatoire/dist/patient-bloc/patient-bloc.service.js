@@ -43,15 +43,32 @@ let PatientBlocService = class PatientBlocService {
         });
         if (!demande)
             throw new Error('Demande non trouvée');
-        const existant = await this.patientRepo.findOne({
-            where: { patientId: demande.patientId },
-        });
-        if (existant)
-            return existant;
         const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
         const niveauUrgence = estUrgence
             ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT
             : patient_bloc_entity_1.NiveauUrgence.NORMAL;
+        const existant = await this.patientRepo.findOne({
+            where: { patientId: demande.patientId },
+        });
+        if (existant) {
+            const episodeTermine = [
+                patient_bloc_entity_1.PatientStatut.SORTI,
+                patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
+            ];
+            if (episodeTermine.includes(existant.statut)) {
+                Object.assign(existant, {
+                    statut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA,
+                    niveauUrgence,
+                    prescripteurId: demande.sourceServiceId,
+                    serviceOrigine: demande.sourceServiceName || null,
+                    serviceOrigineId: demande.sourceServiceId || null,
+                    dateIntervention: demande.dateExamenSouhaitee || null,
+                });
+                const saved = await this.patientRepo.save(existant);
+                return Array.isArray(saved) ? saved[0] : saved;
+            }
+            return existant;
+        }
         const patient = new patient_bloc_entity_1.PatientBloc();
         patient.patientId = demande.patientId;
         patient.chuId = demande.chuId;
