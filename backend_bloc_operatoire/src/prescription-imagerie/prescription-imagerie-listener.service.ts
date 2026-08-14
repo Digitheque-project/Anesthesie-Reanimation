@@ -122,6 +122,13 @@ export class PrescriptionImagerieListenerService
 
   private async traiterNotification(notif: any): Promise<void> {
     if (!this.estNotificationPrescription(notif)) return;
+    // Ignore nos propres ré-émissions : après ingestion, PrescriptionService.ingerer /
+    // la partie imagerie repoussent un évènement `new_prescription` (source "bloc-operatoire"),
+    // que le service Notification re-diffuse à tous les abonnés du service — y compris ce
+    // listener. Sans cette garde, chaque ingestion déclenchait un nouveau poll + un GET imagerie
+    // (boucle de rétroaction qui multipliait la charge et les évènements). Les évènements des
+    // vrais services prescripteurs arrivent, eux, sous une autre source.
+    if (String(notif?.source || '').toLowerCase() === 'bloc-operatoire') return;
     const patientId = String(notif.data.patientId);
     this.logger.log(
       `📬 Notification de prescription reçue pour le patient ${patientId}`,

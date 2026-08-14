@@ -38,6 +38,10 @@ export default function NotificationCPAPage() {
   // rafraîchissements — jamais au premier chargement de la page (sinon un carillon à chaque
   // ouverture, même quand rien de nouveau ne s'est passé depuis la dernière visite).
   const idsConnus = useRef<Set<string> | null>(null)
+  // Le loading plein écran n'apparaît qu'au tout premier chargement : les rafraîchissements
+  // d'arrière-plan (temps réel, retour de focus) ne doivent pas faire disparaître la liste —
+  // sinon avec une pluie d'évènements la page clignote "Chargement des notifications..." sans fin.
+  const aDejaCharge = useRef(false)
 
   // Pas d'actualisation automatique périodique : chargement au montage seulement, et via le
   // bouton "Actualiser" du header (onActualiser={charger} ci-dessous) ou en revenant sur la
@@ -56,7 +60,7 @@ export default function NotificationCPAPage() {
 
   const charger = async () => {
     try {
-      setLoading(true)
+      if (!aDejaCharge.current) setLoading(true)
       const [data, demandesExternesRes] = await Promise.all([
         notificationService.getAll(1, 100),
         apiClient.get('/demandes-cpa-externes', { params: { statut: 'EN_ATTENTE' } }).catch(() => ({ data: [] })),
@@ -91,7 +95,10 @@ export default function NotificationCPAPage() {
 
       setNotifications(actionnables)
     } catch (err) { console.error(err) }
-    finally { setLoading(false) }
+    finally {
+      aDejaCharge.current = true
+      setLoading(false)
+    }
   }
 
   // Un patient traité (CPA validée, RDV planifié...) depuis un autre onglet, ou une page

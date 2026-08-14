@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { notificationService } from '@/lib/api/notification.service';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -89,8 +89,30 @@ export default function TopBar() {
     const socket = connecterNotificationsTempsReel();
     if (!socket) return;
 
+    // Filet anti-rafale (même principe que useRefetchOnRealtimeUpdate) : le service
+    // Prescriptions (source de test) peut émettre une pluie de `new_prescription` (~1/s), et le
+    // service Notification re-diffuse chaque évènement. Sans garde, chaque évènement relançait
+    // ici un rechargement complet de la cloche (~1/s). On ignore les évènements déjà vus et on
+    // ne traite qu'un évènement par petite fenêtre : un évènement ignoré n'est pas perdu, le
+    // rechargement suivant relit l'état réel complet côté serveur.
+    const THROTTLE_MS = 2000;
+    const idsDejaVus = new Set<string>();
+    let dernierTraitement = 0;
+
     const onNotification = async (notif: NotificationTempsReel) => {
       if (notif.type !== 'new_prescription' && notif.type !== 'new_demande_cpa_externe') return;
+      const id = notif.id || (notif.data?.notificationId as string | undefined);
+      if (id) {
+        if (idsDejaVus.has(id)) return;
+        idsDejaVus.add(id);
+        if (idsDejaVus.size > 1000) {
+          const premier = idsDejaVus.values().next().value;
+          if (premier) idsDejaVus.delete(premier);
+        }
+      }
+      const maintenant = Date.now();
+      if (maintenant - dernierTraitement < THROTTLE_MS) return;
+      dernierTraitement = maintenant;
       const urgence = (notif.data?.urgence as string | number) ?? '';
       const estUrgent = urgence === 'URGENT' || urgence === 'URGENTE' || urgence === 'TRES_URGENT' || urgence === 'STAT' || Number(urgence) >= 4;
       const patientId = (notif.data?.patientId as string | undefined) ?? '';

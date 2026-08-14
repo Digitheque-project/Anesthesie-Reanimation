@@ -26,6 +26,7 @@ import { ServiceRegistryClient } from '../external/service-registry.client';
 export class PrescriptionService {
   private readonly logger = new Logger(PrescriptionService.name);
   private polling = false;
+  private dernierPoll = 0;
 
   constructor(
     @InjectRepository(PatientBloc)
@@ -64,7 +65,15 @@ export class PrescriptionService {
   // destinées à ce service, et les ingère dans le fil de prescription local.
   @Interval(15000)
   async pollPrescriptionsBloc(): Promise<void> {
+    // Garde anti-chevauchement (un cycle en cours) + garde anti-rafale : l'écoute temps réel
+    // (PrescriptionImagerieListenerService) déclenche ce poll à chaque évènement de prescription,
+    // et le service Prescriptions (source de test en particulier) peut en émettre ~1/s — sans
+    // cette garde, on martelait le service externe en GET. On n'exécute pas plus d'un cycle par
+    // fenêtre de 5s ; un évènement ignoré est rattrapé par le prochain déclenchement.
     if (this.polling) return; // évite le chevauchement si un cycle précédent traîne
+    const maintenant = Date.now();
+    if (maintenant - this.dernierPoll < 5000) return;
+    this.dernierPoll = maintenant;
     const serviceId = this.config.get<string>('externalServices.serviceId');
     if (!serviceId) return;
 
