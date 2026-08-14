@@ -24,6 +24,12 @@ const dossier_patient_client_1 = require("../external/dossier-patient.client");
 const protocole_operatoire_service_1 = require("../protocole-operatoire/protocole-operatoire.service");
 const urgence_1 = require("../common/urgence");
 const id_dossier_1 = require("../common/id-dossier");
+function detailOperatoire(demande) {
+    return {
+        renseignementClinique: demande.motif || null,
+        typeAnesthesie: demande.typeAnesthesie || null,
+    };
+}
 let PatientBlocService = class PatientBlocService {
     patientRepo;
     demandeRepo;
@@ -62,6 +68,7 @@ let PatientBlocService = class PatientBlocService {
                     serviceOrigine: demande.sourceServiceName || null,
                     serviceOrigineId: demande.sourceServiceId || null,
                     dateIntervention: demande.dateExamenSouhaitee || null,
+                    ...detailOperatoire(demande),
                 });
                 const saved = await this.patientRepo.save(existant);
                 return Array.isArray(saved) ? saved[0] : saved;
@@ -79,6 +86,7 @@ let PatientBlocService = class PatientBlocService {
         patient.serviceOrigine = demande.sourceServiceName || null;
         patient.serviceOrigineId = demande.sourceServiceId || null;
         patient.dateIntervention = demande.dateExamenSouhaitee || null;
+        Object.assign(patient, detailOperatoire(demande));
         const saved = await this.patientRepo.save(patient);
         return Array.isArray(saved) ? saved[0] : saved;
     }

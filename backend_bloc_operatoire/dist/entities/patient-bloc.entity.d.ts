@@ -24,6 +24,12 @@ export declare class PatientBloc {
     typeChirurgie: string;
     consignes: string;
     dateIntervention: Date;
+    renseignementClinique: string | null;
+    typeAnesthesie: string | null;
+    dureeInterventionMinutes: number | null;
+    risqueInfectieux: string | null;
+    materielNecessaire: string | null;
+    positionPatient: string | null;
     alertes: string;
     prescripteurId: string;
     chirurgien_nom: string;

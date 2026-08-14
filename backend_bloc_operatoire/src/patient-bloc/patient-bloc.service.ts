@@ -14,6 +14,18 @@ import { ProtocoleOperatoireService } from '../protocole-operatoire/protocole-op
 import { niveauDepuisEchelle } from '../common/urgence';
 import { construireIdDossier } from '../common/id-dossier';
 
+// Une demande de CPA externe transporte déjà deux des champs du détail opératoire affiché dans la
+// section « Prescription chirurgicale » du dossier patient. Les reporter sur la fiche évite que
+// cette section reste vide pour un patient venu d'Endoscopie, d'Imagerie ou d'un autre service :
+// le motif de la demande EST le renseignement clinique, et le type d'anesthésie est demandé au
+// service dès la réception (voir ReceiveDemandeCpaDto).
+function detailOperatoire(demande: DemandeCpaExterne) {
+  return {
+    renseignementClinique: demande.motif || null,
+    typeAnesthesie: demande.typeAnesthesie || null,
+  };
+}
+
 @Injectable()
 export class PatientBlocService {
   constructor(
@@ -63,6 +75,7 @@ export class PatientBlocService {
           serviceOrigine: demande.sourceServiceName || null,
           serviceOrigineId: demande.sourceServiceId || null,
           dateIntervention: demande.dateExamenSouhaitee || null,
+          ...detailOperatoire(demande),
         });
         const saved = await this.patientRepo.save(existant);
         return Array.isArray(saved) ? saved[0] : saved;
@@ -85,6 +98,7 @@ export class PatientBlocService {
     // d'une demande CPA externe — la seule date connue à ce stade est celle souhaitée par le
     // service demandeur, transmise dès la demande.
     patient.dateIntervention = demande.dateExamenSouhaitee || null;
+    Object.assign(patient, detailOperatoire(demande));
 
     const saved = await this.patientRepo.save(patient);
     return Array.isArray(saved) ? saved[0] : saved;

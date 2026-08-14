@@ -15,7 +15,8 @@ interface ModalPlanifierRDVProps {
 export default function ModalPlanifierRDV({
   isOpen, onClose, onValider, patientNom, intervention, estUrgent
 }: ModalPlanifierRDVProps) {
-  const [typeRDV, setTypeRDV] = useState<'CPA'>('CPA')
+  // Seul type planifiable depuis cette fenêtre — conservé pour la charge utile envoyée à l'API.
+  const typeRDV = 'CPA' as const
   const [dateRDV, setDateRDV] = useState(new Date().toISOString().split('T')[0])
   const [heureRDV, setHeureRDV] = useState(estUrgent ? new Date().toTimeString().split(' ')[0].substring(0,5) : '')
   const [lieuRDV, setLieuRDV] = useState(estUrgent ? 'Bloc Opératoire - Urgence' : '')
@@ -35,18 +36,11 @@ export default function ModalPlanifierRDV({
         </p>
 
         <div className="space-y-4">
-          {/* Type de RDV */}
-          <div>
-            <label className="text-xs font-bold text-gray-600 block mb-2">Type de consultation</label>
-            <div className="flex gap-2">
-              <button onClick={() => setTypeRDV('CPA')}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${
-                  typeRDV === 'CPA' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}>
-                CPA (Consultation Pré-Anesthésique)
-              </button>
-            </div>
-          </div>
+          {/* Plus de sélecteur « Type de consultation » : cette fenêtre ne planifie que des CPA.
+              Il ne restait qu'un seul choix possible, affiché comme un onglet actif — donc un
+              contrôle qui ressemblait à un choix sans en être un. La vérification veille se
+              planifie ailleurs (onglet dédié de /bloc/rendez-vous). Le type reste envoyé en dur
+              via `typeRDV` ci-dessous, le contrat de l'API est inchangé. */}
 
           {/* Date */}
           <div>

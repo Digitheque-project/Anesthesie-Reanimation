@@ -56,6 +56,38 @@ export class PatientBloc {
   @Column({ type: 'timestamp', nullable: true })
   dateIntervention: Date;
 
+  // ── Détail de la prescription chirurgicale transmise par le service prescripteur ──────────
+  // Ces champs arrivent avec la prescription (ou la demande de CPA externe) et n'existaient
+  // nulle part en base : la section « Prescription chirurgicale » du dossier patient ne pouvait
+  // donc afficher que l'acte, le type de chirurgie, la date et le risque hémorragique, alors que
+  // le prescripteur les renseigne. Ils conditionnent pourtant la préparation du bloc (position,
+  // matériel, durée à réserver) et l'évaluation pré-anesthésique (renseignement clinique, type
+  // d'anesthésie envisagé, risque infectieux).
+
+  // Contexte clinique motivant l'intervention, rédigé par le prescripteur.
+  @Column({ type: 'text', nullable: true })
+  renseignementClinique: string | null;
+
+  // Anesthésie envisagée par le prescripteur (générale, locorégionale, sédation...) — reste une
+  // proposition : la décision appartient à l'anesthésiste lors de la CPA.
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  typeAnesthesie: string | null;
+
+  // Durée prévue de l'intervention, en minutes — sert à réserver le créneau de salle.
+  @Column({ type: 'int', nullable: true })
+  dureeInterventionMinutes: number | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  risqueInfectieux: string | null;
+
+  // Matériel/implants à prévoir (ancillaire, prothèse, cœlioscopie, amplificateur...).
+  @Column({ type: 'text', nullable: true })
+  materielNecessaire: string | null;
+
+  // Installation du patient sur la table (décubitus dorsal, ventral, gynécologique...).
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  positionPatient: string | null;
+
   @Column({ type: 'text', nullable: true })
   alertes: string;
 

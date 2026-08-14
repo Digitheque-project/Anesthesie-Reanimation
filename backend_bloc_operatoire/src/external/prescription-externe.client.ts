@@ -4,7 +4,25 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ServiceTokenService } from '../central-auth/service-token.service';
 
-export interface ActeBlocExterne {
+// Détail opératoire de la prescription. Les services prescripteurs ne nomment pas tous ces
+// champs à l'identique (et certains les placent sur l'acte, d'autres à la racine de la
+// prescription) : les alias sont donc déclarés ici et résolus à l'ingestion — voir
+// PrescriptionService.champPrescription. Aucun n'est obligatoire.
+export interface DetailOperatoireExterne {
+  renseignementClinique?: string | null;
+  renseignementsCliniques?: string | null;
+  typeAnesthesie?: string | null;
+  dureeIntervention?: number | string | null;
+  dureePrevue?: number | string | null;
+  dureeInterventionMinutes?: number | string | null;
+  risqueInfectieux?: string | null;
+  materielNecessaire?: string | null;
+  materiel?: string | null;
+  positionPatient?: string | null;
+  position?: string | null;
+}
+
+export interface ActeBlocExterne extends DetailOperatoireExterne {
   id: string;
   libelle: string;
   cote?: string | null;
@@ -15,7 +33,7 @@ export interface ActeBlocExterne {
   nomChirurgien?: string | null;
 }
 
-export interface PrescriptionBlocExterne {
+export interface PrescriptionBlocExterne extends DetailOperatoireExterne {
   id: string;
   patientId: string;
   prescripteurId: string;
@@ -24,6 +42,8 @@ export interface PrescriptionBlocExterne {
   dateIntervention?: string | null;
   chirurgien?: string | null;
   consignes?: string | null;
+  typeChirurgie?: string | null;
+  risqueHemorragique?: string | null;
   statut: string;
   chuId: string;
   serviceIdSource?: string | null;

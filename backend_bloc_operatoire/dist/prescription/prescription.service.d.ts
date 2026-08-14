@@ -23,5 +23,7 @@ export declare class PrescriptionService {
     pollPrescriptionsBloc(): Promise<void>;
     private extraireDateIntervention;
     private libelleComplet;
+    private champPrescription;
+    private dureeEnMinutes;
     private ingerer;
 }

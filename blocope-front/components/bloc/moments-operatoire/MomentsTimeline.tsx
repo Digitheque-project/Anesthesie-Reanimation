@@ -245,12 +245,17 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
         </div>
       )}
 
-      <div className="flex flex-col">
+      {/* `flex-1 min-h-0` : la carte est en `h-full` (elle occupe toute la hauteur de la colonne),
+          mais tous ses blocs précédents sont `shrink-0` et l'historique était, lui, à hauteur
+          automatique plafonnée à `max-h-80`. Rien n'absorbait donc la hauteur restante : une large
+          bande vide s'étalait en bas de la carte, à côté du bouton « Valider ». L'historique
+          occupe désormais cet espace et défile à l'intérieur. */}
+      <div className="flex flex-col flex-1 min-h-0">
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 shrink-0">Historique</h3>
         {moments.length === 0 ? (
           <p className="text-xs text-on-surface-variant">Aucun moment horodaté pour l'instant.</p>
         ) : (
-          <ul className="space-y-1.5 overflow-y-auto max-h-80">
+          <ul className="space-y-1.5 overflow-y-auto flex-1 min-h-0">
             {moments.map((m) => {
               const style = CATEGORIE_STYLE[m.categorie] || CATEGORIE_STYLE.DIVERS
               return (

@@ -135,6 +135,39 @@ export class PrescriptionService {
     return Array.from(new Set(libelles)).join(' + ');
   }
 
+  // Lit un champ du détail opératoire là où le service prescripteur l'a mis : sur l'acte
+  // d'abord (le plus précis), sinon à la racine de la prescription. Plusieurs noms sont
+  // acceptés pour un même champ car le vocabulaire varie d'un service à l'autre.
+  private champPrescription(
+    p: PrescriptionBlocExterne,
+    acte: ActeBlocExterne | undefined,
+    ...noms: string[]
+  ): string | undefined {
+    for (const source of [acte, p]) {
+      if (!source) continue;
+      for (const nom of noms) {
+        const valeur = (source as unknown as Record<string, unknown>)[nom];
+        if (valeur === null || valeur === undefined) continue;
+        const texte = String(valeur).trim();
+        if (texte !== '') return texte;
+      }
+    }
+    return undefined;
+  }
+
+  // La durée prévue peut arriver en nombre de minutes ou en texte ("90", "90 min", "1h30").
+  private dureeEnMinutes(valeur?: string): number | undefined {
+    if (!valeur) return undefined;
+    const heuresMinutes = valeur.match(/^(\d+)\s*h\s*(\d*)$/i);
+    if (heuresMinutes) {
+      return (
+        Number(heuresMinutes[1]) * 60 + Number(heuresMinutes[2] || 0)
+      );
+    }
+    const minutes = parseInt(valeur, 10);
+    return Number.isFinite(minutes) && minutes > 0 ? minutes : undefined;
+  }
+
   private async ingerer(
     p: PrescriptionBlocExterne,
     serviceId: string,
@@ -263,10 +296,43 @@ export class PrescriptionService {
       idDossier: patient?.idDossier || construireIdDossier(p.patientId),
       groupeSanguin: patient?.groupeSanguin || 'INCONNU',
       libelle: libelleEntrant || undefined,
-      risqueHemorragique: acte?.risqueHemorragique || undefined,
-      typeChirurgie: acte?.typeChirurgie || undefined,
+      risqueHemorragique:
+        this.champPrescription(p, acte, 'risqueHemorragique') || undefined,
+      typeChirurgie:
+        this.champPrescription(p, acte, 'typeChirurgie') || undefined,
       consignes: p.consignes || undefined,
       dateIntervention,
+      // Détail opératoire complet transmis par le prescripteur : il était jusqu'ici reçu puis
+      // jeté, faute de colonnes pour l'accueillir (voir PatientBloc).
+      renseignementClinique: this.champPrescription(
+        p,
+        acte,
+        'renseignementClinique',
+        'renseignementsCliniques',
+      ),
+      typeAnesthesie: this.champPrescription(p, acte, 'typeAnesthesie'),
+      dureeInterventionMinutes: this.dureeEnMinutes(
+        this.champPrescription(
+          p,
+          acte,
+          'dureeInterventionMinutes',
+          'dureeIntervention',
+          'dureePrevue',
+        ),
+      ),
+      risqueInfectieux: this.champPrescription(p, acte, 'risqueInfectieux'),
+      materielNecessaire: this.champPrescription(
+        p,
+        acte,
+        'materielNecessaire',
+        'materiel',
+      ),
+      positionPatient: this.champPrescription(
+        p,
+        acte,
+        'positionPatient',
+        'position',
+      ),
       alertes: p.alertes || undefined,
       prescripteurId: p.prescripteurId,
       chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,

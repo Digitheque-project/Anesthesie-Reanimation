@@ -98,6 +98,31 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             .filter((l) => l !== '');
         return Array.from(new Set(libelles)).join(' + ');
     }
+    champPrescription(p, acte, ...noms) {
+        for (const source of [acte, p]) {
+            if (!source)
+                continue;
+            for (const nom of noms) {
+                const valeur = source[nom];
+                if (valeur === null || valeur === undefined)
+                    continue;
+                const texte = String(valeur).trim();
+                if (texte !== '')
+                    return texte;
+            }
+        }
+        return undefined;
+    }
+    dureeEnMinutes(valeur) {
+        if (!valeur)
+            return undefined;
+        const heuresMinutes = valeur.match(/^(\d+)\s*h\s*(\d*)$/i);
+        if (heuresMinutes) {
+            return (Number(heuresMinutes[1]) * 60 + Number(heuresMinutes[2] || 0));
+        }
+        const minutes = parseInt(valeur, 10);
+        return Number.isFinite(minutes) && minutes > 0 ? minutes : undefined;
+    }
     async ingerer(p, serviceId) {
         if (await this.ingestionLedger.dejaIngeree(ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_BLOC, p.id)) {
             await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
@@ -168,10 +193,16 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             idDossier: patient?.idDossier || (0, id_dossier_1.construireIdDossier)(p.patientId),
             groupeSanguin: patient?.groupeSanguin || 'INCONNU',
             libelle: libelleEntrant || undefined,
-            risqueHemorragique: acte?.risqueHemorragique || undefined,
-            typeChirurgie: acte?.typeChirurgie || undefined,
+            risqueHemorragique: this.champPrescription(p, acte, 'risqueHemorragique') || undefined,
+            typeChirurgie: this.champPrescription(p, acte, 'typeChirurgie') || undefined,
             consignes: p.consignes || undefined,
             dateIntervention,
+            renseignementClinique: this.champPrescription(p, acte, 'renseignementClinique', 'renseignementsCliniques'),
+            typeAnesthesie: this.champPrescription(p, acte, 'typeAnesthesie'),
+            dureeInterventionMinutes: this.dureeEnMinutes(this.champPrescription(p, acte, 'dureeInterventionMinutes', 'dureeIntervention', 'dureePrevue')),
+            risqueInfectieux: this.champPrescription(p, acte, 'risqueInfectieux'),
+            materielNecessaire: this.champPrescription(p, acte, 'materielNecessaire', 'materiel'),
+            positionPatient: this.champPrescription(p, acte, 'positionPatient', 'position'),
             alertes: p.alertes || undefined,
             prescripteurId: p.prescripteurId,
             chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,

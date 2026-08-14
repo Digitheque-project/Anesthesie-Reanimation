@@ -39,6 +39,12 @@ let PatientBloc = class PatientBloc {
     typeChirurgie;
     consignes;
     dateIntervention;
+    renseignementClinique;
+    typeAnesthesie;
+    dureeInterventionMinutes;
+    risqueInfectieux;
+    materielNecessaire;
+    positionPatient;
     alertes;
     prescripteurId;
     chirurgien_nom;
@@ -89,6 +95,30 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], PatientBloc.prototype, "dateIntervention", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "renseignementClinique", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "typeAnesthesie", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "dureeInterventionMinutes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "risqueInfectieux", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "materielNecessaire", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 150, nullable: true }),
+    __metadata("design:type", Object)
+], PatientBloc.prototype, "positionPatient", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
