@@ -194,7 +194,7 @@ let CPAService = CPAService_1 = class CPAService {
                 const patient = await this.patientBlocRepo.findOne({
                     where: { patientId: dto.patientId },
                 });
-                if (patient?.serviceOrigineId && patient?.serviceOrigine) {
+                if (patient?.serviceOrigineId) {
                     await this.notificationOutgoing.notifyOriginService({
                         patientId: dto.patientId,
                         type: dto.decision === cpa_entity_1.DecisionCPA.INAPTE

@@ -22,6 +22,8 @@ const demande_cpa_externe_entity_1 = require("../entities/demande-cpa-externe.en
 const accueil_client_1 = require("../external/accueil.client");
 const dossier_patient_client_1 = require("../external/dossier-patient.client");
 const protocole_operatoire_service_1 = require("../protocole-operatoire/protocole-operatoire.service");
+const urgence_1 = require("../common/urgence");
+const id_dossier_1 = require("../common/id-dossier");
 let PatientBlocService = class PatientBlocService {
     patientRepo;
     demandeRepo;
@@ -43,10 +45,7 @@ let PatientBlocService = class PatientBlocService {
         });
         if (!demande)
             throw new Error('Demande non trouvée');
-        const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
-        const niveauUrgence = estUrgence
-            ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT
-            : patient_bloc_entity_1.NiveauUrgence.NORMAL;
+        const niveauUrgence = (0, urgence_1.niveauDepuisEchelle)(demande.urgence);
         const existant = await this.patientRepo.findOne({
             where: { patientId: demande.patientId },
         });
@@ -72,7 +71,7 @@ let PatientBlocService = class PatientBlocService {
         const patient = new patient_bloc_entity_1.PatientBloc();
         patient.patientId = demande.patientId;
         patient.chuId = demande.chuId;
-        patient.idDossier = `CHU-${Date.now()}`;
+        patient.idDossier = (0, id_dossier_1.construireIdDossier)(demande.patientId);
         patient.groupeSanguin = 'INCONNU';
         patient.niveauUrgence = niveauUrgence;
         patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;

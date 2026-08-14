@@ -11,6 +11,8 @@ import { DemandeCpaExterne } from '../entities/demande-cpa-externe.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { DossierPatientClient } from '../external/dossier-patient.client';
 import { ProtocoleOperatoireService } from '../protocole-operatoire/protocole-operatoire.service';
+import { niveauDepuisEchelle } from '../common/urgence';
+import { construireIdDossier } from '../common/id-dossier';
 
 @Injectable()
 export class PatientBlocService {
@@ -31,10 +33,10 @@ export class PatientBlocService {
     });
     if (!demande) throw new Error('Demande non trouvée');
 
-    const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
-    const niveauUrgence = estUrgence
-      ? NiveauUrgence.TRES_URGENT
-      : NiveauUrgence.NORMAL;
+    // Échelle commune à tous les canaux d'arrivée (voir common/urgence.ts) : le seuil local
+    // "urgence >= 3 -> TRES_URGENT" ne correspondait ni au seuil ">= 4" utilisé par le même
+    // service pour marquer la notification et le créneau urgents, ni au "=== 3" du frontend.
+    const niveauUrgence = niveauDepuisEchelle(demande.urgence);
     // Un patient urgent n'a pas de "vérification à la veille" (chirurgie immédiate) : il passe
     // par la même consultation que la CPA, juste étiquetée VPA côté interface. Le statut initial
     // est donc toujours EN_ATTENTE_CPA, urgent ou non.
@@ -71,7 +73,7 @@ export class PatientBlocService {
     const patient = new PatientBloc();
     patient.patientId = demande.patientId;
     patient.chuId = demande.chuId;
-    patient.idDossier = `CHU-${Date.now()}`;
+    patient.idDossier = construireIdDossier(demande.patientId);
     // Jamais un groupe inventé : un groupe sanguin faux est plus dangereux qu'une case vide.
     patient.groupeSanguin = 'INCONNU';
     patient.niveauUrgence = niveauUrgence;

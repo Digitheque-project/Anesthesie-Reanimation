@@ -28,6 +28,7 @@ const accueil_client_1 = require("../external/accueil.client");
 const patient_bloc_service_1 = require("../patient-bloc/patient-bloc.service");
 const service_registry_client_1 = require("../external/service-registry.client");
 const creneau_validation_util_1 = require("../planning/creneau-validation.util");
+const urgence_1 = require("../common/urgence");
 let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExterneService {
     repo;
     creneauRepo;
@@ -86,7 +87,7 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         catch (err) {
             this.logger.error(`❌ Échec création PatientBloc depuis la demande CPA externe ${saved.id}: ${err.message}`);
         }
-        const estUrgent = (dto.urgence ?? 0) >= 4;
+        const estUrgent = (0, urgence_1.estNiveauUrgent)((0, urgence_1.niveauDepuisEchelle)(dto.urgence));
         await this.notificationBackClient.notifyService({
             serviceId: this.blocServiceId,
             title: estUrgent
@@ -164,7 +165,7 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
             chirurgienId: dto.chirurgienId ?? null,
             responsable: dto.responsable ?? null,
             type,
-            estUrgence: (demande.urgence ?? 0) >= 4,
+            estUrgence: (0, urgence_1.estNiveauUrgent)((0, urgence_1.niveauDepuisEchelle)(demande.urgence)),
         });
         await this.creneauRepo.save(creneau);
         if (type === creneau_bloc_entity_1.TypeRDV.VERIFICATION_VEILLE) {

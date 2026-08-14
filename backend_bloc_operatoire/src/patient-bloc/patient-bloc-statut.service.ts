@@ -215,7 +215,9 @@ export class PatientBlocStatutService {
     await this.patientBlocRepo.save(patient);
 
     try {
-      if (patient.serviceOrigineId && patient.serviceOrigine) {
+      // Identifiant suffisant : voir NotificationOutgoingService.notifyOriginService — exiger
+      // aussi le nom résolu privait de retour les services que le registre central ne résout pas.
+      if (patient.serviceOrigineId) {
         await this.notificationOutgoing.notifyOriginService({
           patientId,
           type: 'CPA_INAPTE',
@@ -271,7 +273,7 @@ export class PatientBlocStatutService {
     // être répercutée sans délai vers le service demandeur — mais pas un simple ré-enregistrement
     // de la même date (ex. re-soumission du formulaire), qui déclenchait une alerte "date
     // modifiée" trompeuse sans rien de changé.
-    if (!dateInchangee && patient.serviceOrigineId && patient.serviceOrigine) {
+    if (!dateInchangee && patient.serviceOrigineId) {
       try {
         await this.notificationOutgoing.notifyOriginService({
           patientId,
@@ -308,7 +310,7 @@ export class PatientBlocStatutService {
       utilisateurId,
     );
 
-    if (patient.serviceOrigineId && patient.serviceOrigine) {
+    if (patient.serviceOrigineId) {
       try {
         // CPA non conforme : pas de notification supplémentaire ici — le service d'origine est
         // déjà notifié par le flux CPA lui-même (CPA_INAPTE / CPA_REPORT, voir CPAService.create).

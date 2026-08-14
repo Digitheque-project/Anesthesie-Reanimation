@@ -21,27 +21,31 @@ const config_1 = require("@nestjs/config");
 const typeorm_2 = require("typeorm");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
-const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const prescription_externe_client_1 = require("../external/prescription-externe.client");
 const notification_back_client_1 = require("../external/notification-back.client");
 const service_registry_client_1 = require("../external/service-registry.client");
+const ingestion_ledger_service_1 = require("../ingestion/ingestion-ledger.service");
+const ingestion_externe_entity_1 = require("../entities/ingestion-externe.entity");
+const urgence_1 = require("../common/urgence");
+const id_dossier_1 = require("../common/id-dossier");
 let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
     patientBlocRepo;
     notificationRepo;
-    creneauRepo;
     prescriptionClient;
     notificationBackClient;
     serviceRegistryClient;
+    ingestionLedger;
     config;
     logger = new common_1.Logger(PrescriptionService_1.name);
     polling = false;
-    constructor(patientBlocRepo, notificationRepo, creneauRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, config) {
+    dernierPoll = 0;
+    constructor(patientBlocRepo, notificationRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, ingestionLedger, config) {
         this.patientBlocRepo = patientBlocRepo;
         this.notificationRepo = notificationRepo;
-        this.creneauRepo = creneauRepo;
         this.prescriptionClient = prescriptionClient;
         this.notificationBackClient = notificationBackClient;
         this.serviceRegistryClient = serviceRegistryClient;
+        this.ingestionLedger = ingestionLedger;
         this.config = config;
     }
     async processPrescription(dto) {
@@ -52,6 +56,10 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
     async pollPrescriptionsBloc() {
         if (this.polling)
             return;
+        const maintenant = Date.now();
+        if (maintenant - this.dernierPoll < 5000)
+            return;
+        this.dernierPoll = maintenant;
         const serviceId = this.config.get('externalServices.serviceId');
         if (!serviceId)
             return;
@@ -71,30 +79,30 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             this.polling = false;
         }
     }
-    mapUrgence(urgence) {
-        const u = (urgence || '').toUpperCase();
-        if (u === 'TRES_URGENT' || u === 'STAT')
-            return patient_bloc_entity_1.NiveauUrgence.TRES_URGENT;
-        if (u === 'URGENT' || u === 'URGENTE')
-            return patient_bloc_entity_1.NiveauUrgence.URGENT;
-        return patient_bloc_entity_1.NiveauUrgence.NORMAL;
-    }
-    extraireDateIntervention(acte) {
-        if (!acte?.dateIntervention)
+    extraireDateIntervention(p, acte) {
+        const source = acte?.dateIntervention ?? p.dateIntervention;
+        if (!source)
             return undefined;
-        const base = new Date(acte.dateIntervention);
-        const heure = acte.heureIntervention;
+        const base = new Date(source);
+        if (isNaN(base.getTime()))
+            return undefined;
+        const heure = acte?.heureIntervention;
         const [h, m] = (heure || '').split(':').map(Number);
         if (isNaN(h))
             return base;
         return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate(), h, isNaN(m) ? 0 : m, 0, 0));
     }
+    libelleComplet(actes) {
+        const libelles = actes
+            .map((a) => (a?.libelle || '').trim())
+            .filter((l) => l !== '');
+        return Array.from(new Set(libelles)).join(' + ');
+    }
     async ingerer(p, serviceId) {
-        const dejaIngeree = await this.patientBlocRepo.findOne({
-            where: { prescriptionExterneId: p.id },
-        });
-        if (dejaIngeree)
+        if (await this.ingestionLedger.dejaIngeree(ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_BLOC, p.id)) {
+            await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
             return;
+        }
         let patient = await this.patientBlocRepo.findOne({
             where: { patientId: p.patientId },
         });
@@ -116,36 +124,50 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
                 ]),
             },
         });
-        const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
-        const interventionEntrante = (acte?.libelle || '').trim().toLowerCase();
-        const memeInterventionOuverte = (!!notificationDejaOuverte &&
-            (notificationDejaOuverte.intervention || '').trim().toLowerCase() ===
-                interventionEntrante) ||
-            (!!patient &&
-                interventionEntrante !== '' &&
-                (patient.libelle || '').trim().toLowerCase() === interventionEntrante);
+        const actes = p.actes ?? p.ActeBloc ?? [];
+        const acte = actes[0];
+        const libelleEntrant = this.libelleComplet(actes);
+        const interventionEntrante = libelleEntrant.toLowerCase();
+        const memeInterventionOuverte = interventionEntrante !== '' &&
+            ((!!notificationDejaOuverte &&
+                (notificationDejaOuverte.intervention || '').trim().toLowerCase() ===
+                    interventionEntrante) ||
+                (!!patient &&
+                    (patient.libelle || '').trim().toLowerCase() === interventionEntrante));
+        const demandeSansLibelleDejaOuverte = interventionEntrante === '' && !!notificationDejaOuverte;
         const dejaPriseEnCharge = !retourPatient &&
             ((!!patient && enCoursOperation.includes(patient.statut)) ||
-                memeInterventionOuverte);
+                memeInterventionOuverte ||
+                demandeSansLibelleDejaOuverte);
         if (dejaPriseEnCharge) {
             this.logger.log(`🛡️ Ingestion ignorée : patient ${p.patientId}` +
                 (memeInterventionOuverte
-                    ? ` — même intervention "${acte?.libelle}" déjà en cours`
-                    : ` — statut ${patient?.statut}, opération en cours`));
+                    ? ` — même intervention "${libelleEntrant}" déjà en cours`
+                    : demandeSansLibelleDejaOuverte
+                        ? ' — demande sans acte nommé, notification déjà ouverte'
+                        : ` — statut ${patient?.statut}, opération en cours`));
+            await this.ingestionLedger.marquerIngeree({
+                canal: ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_BLOC,
+                referenceExterne: p.id,
+                patientId: p.patientId,
+                serviceSourceId: p.serviceIdSource,
+                libelle: libelleEntrant || null,
+            });
+            await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
             return;
         }
         if (retourPatient) {
             this.logger.log(`↩️ Patient ${p.patientId} revient d'un épisode terminé (${patient.statut}) — nouvelle prescription traitée comme une nouvelle prise en charge`);
         }
-        const niveauUrgence = this.mapUrgence(p.urgence);
-        const dateIntervention = this.extraireDateIntervention(acte);
+        const niveauUrgence = (0, urgence_1.niveauDepuisLibelle)(p.urgence);
+        const dateIntervention = this.extraireDateIntervention(p, acte);
         const serviceSourceNom = await this.serviceRegistryClient.getServiceName(p.serviceIdSource);
         const donneesPatient = {
             patientId: p.patientId,
             chuId: p.chuId,
-            idDossier: patient?.idDossier || p.patientId,
+            idDossier: patient?.idDossier || (0, id_dossier_1.construireIdDossier)(p.patientId),
             groupeSanguin: patient?.groupeSanguin || 'INCONNU',
-            libelle: acte?.libelle || undefined,
+            libelle: libelleEntrant || undefined,
             risqueHemorragique: acte?.risqueHemorragique || undefined,
             typeChirurgie: acte?.typeChirurgie || undefined,
             consignes: p.consignes || undefined,
@@ -170,23 +192,30 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             heurePrescription: new Date().toTimeString().substring(0, 5),
             dateIntervention,
             patientId: p.patientId,
-            intervention: acte?.libelle || 'Intervention',
+            intervention: libelleEntrant || 'Intervention',
             chirurgienId: undefined,
             chirurgienNom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
             professeurCPA: undefined,
             serviceSourceId: p.serviceIdSource || undefined,
             serviceSourceNom: serviceSourceNom || undefined,
-            estUrgent: niveauUrgence !== patient_bloc_entity_1.NiveauUrgence.NORMAL,
+            estUrgent: (0, urgence_1.estNiveauUrgent)(niveauUrgence),
             statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
         }));
-        this.logger.log(`📋 Nouvelle prescription bloc ingérée pour patient ${p.patientId} (${acte?.libelle || 'intervention'})`);
+        this.logger.log(`📋 Nouvelle prescription bloc ingérée pour patient ${p.patientId} (${libelleEntrant || 'intervention'})`);
+        await this.ingestionLedger.marquerIngeree({
+            canal: ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_BLOC,
+            referenceExterne: p.id,
+            patientId: p.patientId,
+            serviceSourceId: p.serviceIdSource,
+            libelle: libelleEntrant || null,
+        });
         await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
         await this.notificationBackClient.notifyService({
             serviceId,
-            title: niveauUrgence !== patient_bloc_entity_1.NiveauUrgence.NORMAL
+            title: (0, urgence_1.estNiveauUrgent)(niveauUrgence)
                 ? '🔴 Prescription urgente reçue'
                 : '📋 Nouvelle prescription reçue',
-            message: `${acte?.libelle || 'Intervention'} — patient ${p.patientId}`,
+            message: `${libelleEntrant || 'Intervention'} — patient ${p.patientId}`,
             type: 'new_prescription',
             source: 'bloc-operatoire',
             data: {
@@ -208,13 +237,12 @@ exports.PrescriptionService = PrescriptionService = PrescriptionService_1 = __de
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(1, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
-    __param(2, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         prescription_externe_client_1.PrescriptionExterneClient,
         notification_back_client_1.NotificationBackClient,
         service_registry_client_1.ServiceRegistryClient,
+        ingestion_ledger_service_1.IngestionLedgerService,
         config_1.ConfigService])
 ], PrescriptionService);
 //# sourceMappingURL=prescription.service.js.map

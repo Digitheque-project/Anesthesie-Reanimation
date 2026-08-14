@@ -8,23 +8,24 @@ import { PrescriptionImagerieClient } from '../external/prescription-imagerie.cl
 import { PrescriptionService } from '../prescription/prescription.service';
 import { ServiceRegistryClient } from '../external/service-registry.client';
 import { NotificationBackClient } from '../external/notification-back.client';
+import { IngestionLedgerService } from '../ingestion/ingestion-ledger.service';
 export declare class PrescriptionImagerieListenerService implements OnModuleInit, OnModuleDestroy {
     private readonly config;
     private readonly prescriptionImagerieClient;
     private readonly prescriptionService;
     private readonly serviceRegistryClient;
     private readonly notificationBackClient;
+    private readonly ingestionLedger;
     private readonly notificationRepo;
     private readonly patientBlocRepo;
     private readonly creneauRepo;
     private readonly logger;
     private socket;
     private readonly serviceId;
-    constructor(config: ConfigService, prescriptionImagerieClient: PrescriptionImagerieClient, prescriptionService: PrescriptionService, serviceRegistryClient: ServiceRegistryClient, notificationBackClient: NotificationBackClient, notificationRepo: Repository<NotificationCPA>, patientBlocRepo: Repository<PatientBloc>, creneauRepo: Repository<CreneauBloc>);
+    constructor(config: ConfigService, prescriptionImagerieClient: PrescriptionImagerieClient, prescriptionService: PrescriptionService, serviceRegistryClient: ServiceRegistryClient, notificationBackClient: NotificationBackClient, ingestionLedger: IngestionLedgerService, notificationRepo: Repository<NotificationCPA>, patientBlocRepo: Repository<PatientBloc>, creneauRepo: Repository<CreneauBloc>);
     onModuleInit(): void;
     onModuleDestroy(): void;
     private estNotificationPrescription;
     private traiterNotification;
-    private mapUrgence;
     private ingerer;
 }

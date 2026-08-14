@@ -20,3 +20,4 @@ export { HistoriqueModification } from './historique-modification.entity';
 export { WebhookNotification } from './webhook-notification.entity';
 export { DemandeCpaExterne, StatutDemandeCpaExterne, } from './demande-cpa-externe.entity';
 export { MomentOperatoire, CategorieMoment } from './moment-operatoire.entity';
+export { IngestionExterne, CanalIngestion } from './ingestion-externe.entity';

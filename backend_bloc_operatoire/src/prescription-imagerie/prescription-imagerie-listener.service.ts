@@ -12,11 +12,7 @@ import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
-import {
-  PatientBloc,
-  PatientStatut,
-  NiveauUrgence,
-} from '../entities/patient-bloc.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import { CreneauBloc, StatutCreneau } from '../entities/creneau-bloc.entity';
 import {
   PrescriptionImagerieClient,
@@ -25,6 +21,10 @@ import {
 import { PrescriptionService } from '../prescription/prescription.service';
 import { ServiceRegistryClient } from '../external/service-registry.client';
 import { NotificationBackClient } from '../external/notification-back.client';
+import { IngestionLedgerService } from '../ingestion/ingestion-ledger.service';
+import { CanalIngestion } from '../entities/ingestion-externe.entity';
+import { niveauDepuisLibelle, estNiveauUrgent } from '../common/urgence';
+import { construireIdDossier } from '../common/id-dossier';
 
 // Ni le service Prescription (bloc), ni le service Prescription (imagerie) ne nous poussent
 // jamais la donnée directement : ils créent une prescription puis avertissent le service
@@ -56,6 +56,7 @@ export class PrescriptionImagerieListenerService
     private readonly prescriptionService: PrescriptionService,
     private readonly serviceRegistryClient: ServiceRegistryClient,
     private readonly notificationBackClient: NotificationBackClient,
+    private readonly ingestionLedger: IngestionLedgerService,
     @InjectRepository(NotificationCPA)
     private readonly notificationRepo: Repository<NotificationCPA>,
     @InjectRepository(PatientBloc)
@@ -166,19 +167,23 @@ export class PrescriptionImagerieListenerService
     }
   }
 
-  // Même vocabulaire que PrescriptionService.mapUrgence (bloc) — dupliqué ici plutôt
-  // qu'exposé publiquement sur l'autre service pour une correspondance à 3 niveaux qui
-  // n'était pas nécessaire ici.
-  private mapUrgence(urgence: string): NiveauUrgence {
-    const u = (urgence || '').toUpperCase();
-    if (u === 'TRES_URGENT' || u === 'STAT') return NiveauUrgence.TRES_URGENT;
-    if (u === 'URGENT' || u === 'URGENTE') return NiveauUrgence.URGENT;
-    return NiveauUrgence.NORMAL;
-  }
-
   private async ingerer(
     prescription: PrescriptionImagerieExterne,
   ): Promise<void> {
+    // Aucune trace de ce qui avait déjà été ingéré n'existait pour ce canal (contrairement aux
+    // prescriptions bloc, qui posaient au moins `PatientBloc.prescriptionExterneId`) : la seule
+    // protection était l'état courant du patient. Dès que son épisode était clos (SORTI /
+    // CPA_INAPTE), la MÊME prescription imagerie re-poussée par le service source était
+    // ré-ingérée comme une nouvelle arrivée — nouvelle notification, nouveau carillon, patient
+    // rebasculé en EN_ATTENTE_CPA.
+    if (
+      await this.ingestionLedger.dejaIngeree(
+        CanalIngestion.PRESCRIPTION_IMAGERIE,
+        prescription.id,
+      )
+    ) {
+      return;
+    }
     // Même filet anti-doublon que l'ingestion des prescriptions bloc (prescription.service.ts),
     // étendu au RDV planifié : une prescription reste "ouverte" tant que sa notification est
     // EN_ATTENTE ou RDV_PLANIFIE. Sans ce second statut, une fois le RDV CPA planifié la même
@@ -227,8 +232,12 @@ export class PrescriptionImagerieListenerService
     // ici on laisse passer, et la fiche PatientBloc est re-basculée en EN_ATTENTE_CPA pour ce
     // nouvel épisode (voir le bloc de création/mise à jour ci-dessous).
 
-    const urgence = (prescription.urgence || '').toUpperCase();
-    const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
+    // Échelle commune à tous les canaux (voir common/urgence.ts). L'ancien calcul local
+    // ("tout ce qui ne commence pas par NORMAL est urgent") divergeait de mapUrgence utilisé
+    // juste en dessous pour la fiche patient : un libellé inconnu marquait la notification
+    // urgente alors que la fiche restait NORMAL.
+    const niveauUrgence = niveauDepuisLibelle(prescription.urgence);
+    const estUrgent = estNiveauUrgent(niveauUrgence);
     const prescripteurNom = [
       prescription.prescripteurPrenomManuel,
       prescription.prescripteurNomManuel,
@@ -254,7 +263,7 @@ export class PrescriptionImagerieListenerService
     try {
       if (patient) {
         patient.statut = PatientStatut.EN_ATTENTE_CPA;
-        patient.niveauUrgence = this.mapUrgence(prescription.urgence);
+        patient.niveauUrgence = niveauUrgence;
         patient.serviceOrigineId = prescription.serviceIdSource || null;
         patient.serviceOrigine = serviceSourceNom || null;
         await this.patientBlocRepo.save(patient);
@@ -266,13 +275,13 @@ export class PrescriptionImagerieListenerService
               prescription.chuId ||
               this.config.get<string>('externalServices.chuId') ||
               undefined,
-            idDossier: `CHU-${Date.now()}`,
+            idDossier: construireIdDossier(prescription.patientId),
             groupeSanguin: 'INCONNU',
             libelle: prescription.type || 'Prescription imagerie',
             alertes: prescription.alertes || undefined,
             prescripteurId: prescription.prescripteurId,
             statut: PatientStatut.EN_ATTENTE_CPA,
-            niveauUrgence: this.mapUrgence(prescription.urgence),
+            niveauUrgence,
             serviceOrigineId: prescription.serviceIdSource || undefined,
             serviceOrigine: serviceSourceNom || undefined,
           }),
@@ -300,6 +309,14 @@ export class PrescriptionImagerieListenerService
     this.logger.log(
       `📋 Prescription imagerie ingérée pour le patient ${prescription.patientId} (${prescription.type || 'examen'})`,
     );
+
+    await this.ingestionLedger.marquerIngeree({
+      canal: CanalIngestion.PRESCRIPTION_IMAGERIE,
+      referenceExterne: prescription.id,
+      patientId: prescription.patientId,
+      serviceSourceId: prescription.serviceIdSource,
+      libelle: prescription.type || null,
+    });
 
     // Sans ceci, cette notification n'était poussée à personne en temps réel : elle restait
     // invisible côté TopBar (pas de bip, pas de badge) jusqu'au prochain rafraîchissement

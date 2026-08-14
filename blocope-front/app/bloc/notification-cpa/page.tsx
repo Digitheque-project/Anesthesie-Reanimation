@@ -52,7 +52,7 @@ export default function NotificationCPAPage() {
   }, [])
 
   const determinerSon = (n: any): TypeNotificationSon =>
-    (n.estUrgent || n.urgence === 3) ? 'PATIENT_URGENT' : n.origineExterne ? 'CPA_NORMALE' : 'PRESCRIPTION_NORMALE'
+    n.estUrgent ? 'PATIENT_URGENT' : n.origineExterne ? 'CPA_NORMALE' : 'PRESCRIPTION_NORMALE'
 
   // Priorité d'affichage si plusieurs nouvelles notifications arrivent dans le même cycle : un
   // patient urgent prime toujours, puis une demande CPA externe, puis une prescription normale.
@@ -174,7 +174,8 @@ export default function NotificationCPAPage() {
   }
 
   // 🟢 FONCTION MODIFIÉE : Vérifier si patient STAT
-  const estPatientStat = (notif: any) => Boolean(notif.estUrgent || notif.urgence === 3)
+  // `estUrgent` porte désormais l'échelle commune pour les deux origines (voir lib/urgence.ts).
+  const estPatientStat = (notif: any) => Boolean(notif.estUrgent)
 
   // 🟢 FONCTION MODIFIÉE : Action selon type
   const handleActionPrescription = (notif: any) => {

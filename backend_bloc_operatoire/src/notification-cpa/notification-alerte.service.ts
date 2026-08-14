@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual } from 'typeorm';
+import { Repository, LessThanOrEqual, In } from 'typeorm';
 import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
-import { PatientBloc, NiveauUrgence } from '../entities/patient-bloc.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CreneauBloc, StatutCreneau } from '../entities/creneau-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
+import { NIVEAUX_URGENTS } from '../common/urgence';
 
 @Injectable()
 export class NotificationAlerteService {
@@ -21,9 +22,13 @@ export class NotificationAlerteService {
   ) {}
 
   async getAlertesUrgentes(): Promise<any> {
-    // Patients urgents sans créneau planifié
+    // Patients urgents sans créneau planifié. Filtrer sur le seul niveau URGENT excluait les
+    // patients TRES_URGENT — c'est-à-dire les plus prioritaires, et notamment TOUS les patients
+    // urgents arrivés par demande de CPA externe (Endoscopie, Imagerie, Urgence...), que
+    // l'ancienne échelle plaçait systématiquement en TRES_URGENT : ils n'apparaissaient jamais
+    // dans les alertes.
     const patientsUrgents = await this.patientBlocRepo.find({
-      where: { niveauUrgence: NiveauUrgence.URGENT },
+      where: { niveauUrgence: In(NIVEAUX_URGENTS) },
     });
     const patientsUrgentsEnrichis =
       await this.accueilClient.enrichWithIdentity(patientsUrgents);
@@ -76,7 +81,7 @@ export class NotificationAlerteService {
     const [creneauxJourRaw, urgences, notifsEnAttente] = await Promise.all([
       this.creneauRepo.find({ where: { date: new Date(aujourdhui) } }),
       this.patientBlocRepo.count({
-        where: { niveauUrgence: NiveauUrgence.URGENT },
+        where: { niveauUrgence: In(NIVEAUX_URGENTS) },
       }),
       this.notifRepo.count({
         where: { statut: StatutNotificationCPA.EN_ATTENTE },

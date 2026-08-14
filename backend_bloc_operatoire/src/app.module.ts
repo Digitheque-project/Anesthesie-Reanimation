@@ -28,6 +28,7 @@ import { PrescriptionModule } from './prescription/prescription.module';
 import { PrescriptionImagerieModule } from './prescription-imagerie/prescription-imagerie.module';
 import { DemandeCpaExterneModule } from './demande-cpa-externe/demande-cpa-externe.module';
 import { ExternalModule } from './external/external.module';
+import { IngestionModule } from './ingestion/ingestion.module';
 import { CentralAuthModule } from './central-auth/central-auth.module';
 import { CentralAuthGuard } from './central-auth/central-auth.guard';
 import { OperationGatewayModule } from './operation-gateway/operation-gateway.module';
@@ -58,6 +59,7 @@ import centralAuthConfig from './config/central-auth.config';
         synchronize: true,
       }),
     }),
+    IngestionModule,
     PatientBlocModule,
     MedecinModule,
     CPAModule,

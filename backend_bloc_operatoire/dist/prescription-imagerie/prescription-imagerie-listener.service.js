@@ -26,24 +26,30 @@ const prescription_imagerie_client_1 = require("../external/prescription-imageri
 const prescription_service_1 = require("../prescription/prescription.service");
 const service_registry_client_1 = require("../external/service-registry.client");
 const notification_back_client_1 = require("../external/notification-back.client");
+const ingestion_ledger_service_1 = require("../ingestion/ingestion-ledger.service");
+const ingestion_externe_entity_1 = require("../entities/ingestion-externe.entity");
+const urgence_1 = require("../common/urgence");
+const id_dossier_1 = require("../common/id-dossier");
 let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 = class PrescriptionImagerieListenerService {
     config;
     prescriptionImagerieClient;
     prescriptionService;
     serviceRegistryClient;
     notificationBackClient;
+    ingestionLedger;
     notificationRepo;
     patientBlocRepo;
     creneauRepo;
     logger = new common_1.Logger(PrescriptionImagerieListenerService_1.name);
     socket = null;
     serviceId;
-    constructor(config, prescriptionImagerieClient, prescriptionService, serviceRegistryClient, notificationBackClient, notificationRepo, patientBlocRepo, creneauRepo) {
+    constructor(config, prescriptionImagerieClient, prescriptionService, serviceRegistryClient, notificationBackClient, ingestionLedger, notificationRepo, patientBlocRepo, creneauRepo) {
         this.config = config;
         this.prescriptionImagerieClient = prescriptionImagerieClient;
         this.prescriptionService = prescriptionService;
         this.serviceRegistryClient = serviceRegistryClient;
         this.notificationBackClient = notificationBackClient;
+        this.ingestionLedger = ingestionLedger;
         this.notificationRepo = notificationRepo;
         this.patientBlocRepo = patientBlocRepo;
         this.creneauRepo = creneauRepo;
@@ -86,6 +92,8 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
     async traiterNotification(notif) {
         if (!this.estNotificationPrescription(notif))
             return;
+        if (String(notif?.source || '').toLowerCase() === 'bloc-operatoire')
+            return;
         const patientId = String(notif.data.patientId);
         this.logger.log(`📬 Notification de prescription reçue pour le patient ${patientId}`);
         this.prescriptionService
@@ -102,15 +110,10 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
             this.logger.error(`Erreur ingestion prescription imagerie pour ${patientId}: ${err.message}`);
         }
     }
-    mapUrgence(urgence) {
-        const u = (urgence || '').toUpperCase();
-        if (u === 'TRES_URGENT' || u === 'STAT')
-            return patient_bloc_entity_1.NiveauUrgence.TRES_URGENT;
-        if (u === 'URGENT' || u === 'URGENTE')
-            return patient_bloc_entity_1.NiveauUrgence.URGENT;
-        return patient_bloc_entity_1.NiveauUrgence.NORMAL;
-    }
     async ingerer(prescription) {
+        if (await this.ingestionLedger.dejaIngeree(ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_IMAGERIE, prescription.id)) {
+            return;
+        }
         let patient = await this.patientBlocRepo.findOne({
             where: { patientId: prescription.patientId },
         });
@@ -144,8 +147,8 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
             (!!patient && episodeActif.includes(patient.statut));
         if (dejaPriseEnCharge)
             return;
-        const urgence = (prescription.urgence || '').toUpperCase();
-        const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
+        const niveauUrgence = (0, urgence_1.niveauDepuisLibelle)(prescription.urgence);
+        const estUrgent = (0, urgence_1.estNiveauUrgent)(niveauUrgence);
         const prescripteurNom = [
             prescription.prescripteurPrenomManuel,
             prescription.prescripteurNomManuel,
@@ -157,7 +160,7 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
         try {
             if (patient) {
                 patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
-                patient.niveauUrgence = this.mapUrgence(prescription.urgence);
+                patient.niveauUrgence = niveauUrgence;
                 patient.serviceOrigineId = prescription.serviceIdSource || null;
                 patient.serviceOrigine = serviceSourceNom || null;
                 await this.patientBlocRepo.save(patient);
@@ -168,13 +171,13 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
                     chuId: prescription.chuId ||
                         this.config.get('externalServices.chuId') ||
                         undefined,
-                    idDossier: `CHU-${Date.now()}`,
+                    idDossier: (0, id_dossier_1.construireIdDossier)(prescription.patientId),
                     groupeSanguin: 'INCONNU',
                     libelle: prescription.type || 'Prescription imagerie',
                     alertes: prescription.alertes || undefined,
                     prescripteurId: prescription.prescripteurId,
                     statut: patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA,
-                    niveauUrgence: this.mapUrgence(prescription.urgence),
+                    niveauUrgence,
                     serviceOrigineId: prescription.serviceIdSource || undefined,
                     serviceOrigine: serviceSourceNom || undefined,
                 }));
@@ -194,6 +197,13 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
             statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
         }));
         this.logger.log(`📋 Prescription imagerie ingérée pour le patient ${prescription.patientId} (${prescription.type || 'examen'})`);
+        await this.ingestionLedger.marquerIngeree({
+            canal: ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_IMAGERIE,
+            referenceExterne: prescription.id,
+            patientId: prescription.patientId,
+            serviceSourceId: prescription.serviceIdSource,
+            libelle: prescription.type || null,
+        });
         await this.notificationBackClient.notifyService({
             serviceId: this.serviceId,
             title: estUrgent
@@ -213,14 +223,15 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
 exports.PrescriptionImagerieListenerService = PrescriptionImagerieListenerService;
 exports.PrescriptionImagerieListenerService = PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(5, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
-    __param(6, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
-    __param(7, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
+    __param(6, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
+    __param(7, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
+    __param(8, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
     __metadata("design:paramtypes", [config_1.ConfigService,
         prescription_imagerie_client_1.PrescriptionImagerieClient,
         prescription_service_1.PrescriptionService,
         service_registry_client_1.ServiceRegistryClient,
         notification_back_client_1.NotificationBackClient,
+        ingestion_ledger_service_1.IngestionLedgerService,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])

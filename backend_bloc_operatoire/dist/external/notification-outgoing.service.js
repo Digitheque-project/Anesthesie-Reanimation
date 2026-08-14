@@ -27,7 +27,8 @@ let NotificationOutgoingService = NotificationOutgoingService_1 = class Notifica
             this.config.get('externalServices.serviceId') ?? '';
     }
     async notifyOriginService(params) {
-        const { patientId, type, serviceOrigineId, serviceOrigineName, payload, notificationUrl, } = params;
+        const { patientId, type, serviceOrigineId, payload, notificationUrl, } = params;
+        const serviceOrigineName = params.serviceOrigineName || serviceOrigineId;
         const url = notificationUrl ||
             this.config.get('externalServices.notificationOrigineUrl');
         if (!url) {

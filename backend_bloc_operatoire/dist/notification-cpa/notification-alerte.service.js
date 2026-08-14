@@ -20,6 +20,7 @@ const notification_cpa_entity_1 = require("../entities/notification-cpa.entity")
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
 const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const accueil_client_1 = require("../external/accueil.client");
+const urgence_1 = require("../common/urgence");
 let NotificationAlerteService = class NotificationAlerteService {
     notifRepo;
     patientBlocRepo;
@@ -33,7 +34,7 @@ let NotificationAlerteService = class NotificationAlerteService {
     }
     async getAlertesUrgentes() {
         const patientsUrgents = await this.patientBlocRepo.find({
-            where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT },
+            where: { niveauUrgence: (0, typeorm_2.In)(urgence_1.NIVEAUX_URGENTS) },
         });
         const patientsUrgentsEnrichis = await this.accueilClient.enrichWithIdentity(patientsUrgents);
         const alertes = [];
@@ -78,7 +79,7 @@ let NotificationAlerteService = class NotificationAlerteService {
         const [creneauxJourRaw, urgences, notifsEnAttente] = await Promise.all([
             this.creneauRepo.find({ where: { date: new Date(aujourdhui) } }),
             this.patientBlocRepo.count({
-                where: { niveauUrgence: patient_bloc_entity_1.NiveauUrgence.URGENT },
+                where: { niveauUrgence: (0, typeorm_2.In)(urgence_1.NIVEAUX_URGENTS) },
             }),
             this.notifRepo.count({
                 where: { statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE },

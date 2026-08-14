@@ -10,7 +10,7 @@ export declare class NotificationOutgoingService {
         patientId: string;
         type: string;
         serviceOrigineId: string;
-        serviceOrigineName: string;
+        serviceOrigineName?: string | null;
         payload: any;
         notificationUrl?: string;
     }): Promise<void>;

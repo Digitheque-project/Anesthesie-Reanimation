@@ -252,7 +252,10 @@ export class NotificationCPAService {
       const patient = await this.patientBlocRepo.findOne({
         where: { patientId: n.patientId },
       });
-      if (patient?.serviceOrigineId && patient?.serviceOrigine) {
+      // Seul l'identifiant du service est nécessaire pour l'avertir : exiger aussi son nom
+      // (résolu best-effort auprès du registre central) privait de retour tout service dont le
+      // nom n'a pas pu être résolu — voir NotificationOutgoingService.notifyOriginService.
+      if (patient?.serviceOrigineId) {
         await this.notificationOutgoing.notifyOriginService({
           patientId: n.patientId,
           type: 'RDV_CPA_PLANIFIE',

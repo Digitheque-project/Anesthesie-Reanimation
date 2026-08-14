@@ -40,6 +40,7 @@ const prescription_module_1 = require("./prescription/prescription.module");
 const prescription_imagerie_module_1 = require("./prescription-imagerie/prescription-imagerie.module");
 const demande_cpa_externe_module_1 = require("./demande-cpa-externe/demande-cpa-externe.module");
 const external_module_1 = require("./external/external.module");
+const ingestion_module_1 = require("./ingestion/ingestion.module");
 const central_auth_module_1 = require("./central-auth/central-auth.module");
 const central_auth_guard_1 = require("./central-auth/central-auth.guard");
 const operation_gateway_module_1 = require("./operation-gateway/operation-gateway.module");
@@ -73,6 +74,7 @@ exports.AppModule = AppModule = __decorate([
                     synchronize: true,
                 }),
             }),
+            ingestion_module_1.IngestionModule,
             patient_bloc_module_1.PatientBlocModule,
             medecin_module_1.MedecinModule,
             cpa_module_1.CPAModule,

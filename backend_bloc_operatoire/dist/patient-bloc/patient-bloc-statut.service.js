@@ -130,7 +130,7 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         patient.motifRefusCpa = motifRefus.trim();
         await this.patientBlocRepo.save(patient);
         try {
-            if (patient.serviceOrigineId && patient.serviceOrigine) {
+            if (patient.serviceOrigineId) {
                 await this.notificationOutgoing.notifyOriginService({
                     patientId,
                     type: 'CPA_INAPTE',
@@ -161,7 +161,7 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         patient.dateIntervention = new Date(dateIntervention);
         const saved = await this.patientBlocRepo.save(patient);
         await this.tracabiliteService.log('PatientBloc', patientId, 'UPDATE', { champ: 'dateIntervention', ancienneValeur: ancienneDate, nouvelleValeur: patient.dateIntervention }, utilisateurId);
-        if (!dateInchangee && patient.serviceOrigineId && patient.serviceOrigine) {
+        if (!dateInchangee && patient.serviceOrigineId) {
             try {
                 await this.notificationOutgoing.notifyOriginService({
                     patientId,
@@ -182,7 +182,7 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
     }
     async archiverRetourServiceOrigine(patientId, utilisateurId, raison = 'FIN_ACTE_ANESTHESIQUE') {
         const patient = await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.SORTI, utilisateurId);
-        if (patient.serviceOrigineId && patient.serviceOrigine) {
+        if (patient.serviceOrigineId) {
             try {
                 if (raison === 'FIN_ACTE_ANESTHESIQUE') {
                     await this.notificationOutgoing.notifyOriginService({

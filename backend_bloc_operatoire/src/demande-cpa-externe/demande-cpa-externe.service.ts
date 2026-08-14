@@ -24,6 +24,7 @@ import { AccueilClient } from '../external/accueil.client';
 import { PatientBlocService } from '../patient-bloc/patient-bloc.service';
 import { ServiceRegistryClient } from '../external/service-registry.client';
 import { verifierCreneauValide } from '../planning/creneau-validation.util';
+import { niveauDepuisEchelle, estNiveauUrgent } from '../common/urgence';
 
 @Injectable()
 export class DemandeCpaExterneService {
@@ -106,7 +107,10 @@ export class DemandeCpaExterneService {
     // Pousse la même notification temps réel que les prescriptions internes (voir
     // PrescriptionService.ingerer) — sans ça, cette demande n'apparaît que si l'utilisateur
     // ouvre manuellement la page /bloc/notification-cpa (aucune alerte sonore ni badge live).
-    const estUrgent = (dto.urgence ?? 0) >= 4;
+    // Même échelle que la fiche patient créée juste au-dessus (voir common/urgence.ts) : le
+    // seuil local ">= 4" laissait une demande transmise en urgence 3 créer un patient urgent
+    // avec une notification et un créneau NON urgents.
+    const estUrgent = estNiveauUrgent(niveauDepuisEchelle(dto.urgence));
     await this.notificationBackClient.notifyService({
       serviceId: this.blocServiceId,
       title: estUrgent
@@ -202,7 +206,7 @@ export class DemandeCpaExterneService {
       chirurgienId: dto.chirurgienId ?? null,
       responsable: dto.responsable ?? null,
       type,
-      estUrgence: (demande.urgence ?? 0) >= 4,
+      estUrgence: estNiveauUrgent(niveauDepuisEchelle(demande.urgence)),
     });
     await this.creneauRepo.save(creneau);
 

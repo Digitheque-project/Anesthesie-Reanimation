@@ -186,7 +186,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             const patient = await this.patientBlocRepo.findOne({
                 where: { patientId: n.patientId },
             });
-            if (patient?.serviceOrigineId && patient?.serviceOrigine) {
+            if (patient?.serviceOrigineId) {
                 await this.notificationOutgoing.notifyOriginService({
                     patientId: n.patientId,
                     type: 'RDV_CPA_PLANIFIE',

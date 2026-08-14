@@ -16,11 +16,19 @@ export class NotificationOutgoingService {
       this.config.get<string>('externalServices.serviceId') ?? '';
   }
 
+  // `serviceOrigineName` est purement décoratif (libellé du destinataire dans le message) : seul
+  // `serviceOrigineId` sert réellement à router la notification. Il était pourtant exigé par
+  // chaque appelant, alors que le nom provient d'une résolution best-effort auprès du registre
+  // central (ServiceRegistryClient renvoie null si le registre est injoignable, non configuré, ou
+  // si le service demandeur y est inconnu — cas de tout nouveau service du CHU). Résultat : dès
+  // que le nom manquait, le service demandeur n'était JAMAIS averti du RDV planifié, d'une CPA
+  // refusée, d'une date d'opération modifiée ni du retour de son patient. Il est désormais
+  // optionnel, avec repli sur l'identifiant.
   async notifyOriginService(params: {
     patientId: string;
     type: string;
     serviceOrigineId: string;
-    serviceOrigineName: string;
+    serviceOrigineName?: string | null;
     payload: any;
     notificationUrl?: string;
   }): Promise<void> {
@@ -28,10 +36,10 @@ export class NotificationOutgoingService {
       patientId,
       type,
       serviceOrigineId,
-      serviceOrigineName,
       payload,
       notificationUrl,
     } = params;
+    const serviceOrigineName = params.serviceOrigineName || serviceOrigineId;
 
     const url =
       notificationUrl ||

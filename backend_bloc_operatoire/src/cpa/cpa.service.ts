@@ -314,7 +314,9 @@ export class CPAService {
         const patient = await this.patientBlocRepo.findOne({
           where: { patientId: dto.patientId },
         });
-        if (patient?.serviceOrigineId && patient?.serviceOrigine) {
+        // Identifiant suffisant : le nom du service (résolution best-effort) n'est qu'un libellé
+        // d'affichage — voir NotificationOutgoingService.notifyOriginService.
+        if (patient?.serviceOrigineId) {
           await this.notificationOutgoing.notifyOriginService({
             patientId: dto.patientId,
             type:

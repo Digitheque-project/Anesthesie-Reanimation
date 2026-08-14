@@ -4,16 +4,11 @@ import { Interval } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { In, Repository } from 'typeorm';
 import { ReceivePrescriptionDto } from './dto/receive-prescription.dto';
-import {
-  PatientBloc,
-  PatientStatut,
-  NiveauUrgence,
-} from '../entities/patient-bloc.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
-import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import {
   PrescriptionExterneClient,
   PrescriptionBlocExterne,
@@ -21,6 +16,10 @@ import {
 } from '../external/prescription-externe.client';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { ServiceRegistryClient } from '../external/service-registry.client';
+import { IngestionLedgerService } from '../ingestion/ingestion-ledger.service';
+import { CanalIngestion } from '../entities/ingestion-externe.entity';
+import { niveauDepuisLibelle, estNiveauUrgent } from '../common/urgence';
+import { construireIdDossier } from '../common/id-dossier';
 
 @Injectable()
 export class PrescriptionService {
@@ -33,11 +32,10 @@ export class PrescriptionService {
     private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(NotificationCPA)
     private notificationRepo: Repository<NotificationCPA>,
-    @InjectRepository(CreneauBloc)
-    private creneauRepo: Repository<CreneauBloc>,
     private prescriptionClient: PrescriptionExterneClient,
     private notificationBackClient: NotificationBackClient,
     private serviceRegistryClient: ServiceRegistryClient,
+    private ingestionLedger: IngestionLedgerService,
     private config: ConfigService,
   ) {}
 
@@ -95,23 +93,21 @@ export class PrescriptionService {
     }
   }
 
-  private mapUrgence(urgence: string): NiveauUrgence {
-    // Le service Prescription (bloc) envoie 'TRES_URGENT'/'URGENT'/'NORMAL' — 'STAT'/'URGENTE'
-    // conservés en compatibilité avec d'anciens payloads ou d'autres sources.
-    const u = (urgence || '').toUpperCase();
-    if (u === 'TRES_URGENT' || u === 'STAT') return NiveauUrgence.TRES_URGENT;
-    if (u === 'URGENT' || u === 'URGENTE') return NiveauUrgence.URGENT;
-    return NiveauUrgence.NORMAL;
-  }
-
-  private extraireDateIntervention(acte?: ActeBlocExterne): Date | undefined {
+  private extraireDateIntervention(
+    p: PrescriptionBlocExterne,
+    acte?: ActeBlocExterne,
+  ): Date | undefined {
     // La date et l'heure prévues de l'opération sont fixées par le chirurgien sur l'acte
-    // (Planification et Logistique) — le service Prescriptions les renvoie dans ActeBloc, pas à
-    // la racine de la prescription. La date porte minuit UTC ; on y injecte l'heure "11:05" pour
-    // ne pas stocker une date à 00h00 qui ne reflétait ni la date ni l'heure réelles.
-    if (!acte?.dateIntervention) return undefined;
-    const base = new Date(acte.dateIntervention);
-    const heure = acte.heureIntervention;
+    // (Planification et Logistique) — le service Prescriptions les renvoie dans ActeBloc. Mais
+    // seuls les services qui remplissent un ActeBloc complet (Chirurgie) le font : Urgence,
+    // Endoscopie ou Consultation externe portent volontiers la date à la RACINE de la
+    // prescription (champ `dateIntervention`, présent au contrat). Ne lire que l'acte perdait
+    // purement et simplement leur date, et "Date et heure prévues de l'opération" restait vide.
+    const source = acte?.dateIntervention ?? p.dateIntervention;
+    if (!source) return undefined;
+    const base = new Date(source);
+    if (isNaN(base.getTime())) return undefined;
+    const heure = acte?.heureIntervention;
     const [h, m] = (heure || '').split(':').map(Number);
     if (isNaN(h)) return base;
     return new Date(
@@ -127,14 +123,37 @@ export class PrescriptionService {
     );
   }
 
+  // Une prescription peut porter PLUSIEURS actes (interventions combinées lors d'un même passage
+  // au bloc). Seul le premier était retenu : les suivants disparaissaient du libellé affiché à
+  // l'équipe, qui ne voyait donc pas tout ce qui était prévu. On garde le premier acte comme
+  // porteur des métadonnées (type de chirurgie, risque hémorragique, date/heure, chirurgien) et
+  // on concatène tous les libellés.
+  private libelleComplet(actes: ActeBlocExterne[]): string {
+    const libelles = actes
+      .map((a) => (a?.libelle || '').trim())
+      .filter((l) => l !== '');
+    return Array.from(new Set(libelles)).join(' + ');
+  }
+
   private async ingerer(
     p: PrescriptionBlocExterne,
     serviceId: string,
   ): Promise<void> {
-    const dejaIngeree = await this.patientBlocRepo.findOne({
-      where: { prescriptionExterneId: p.id },
-    });
-    if (dejaIngeree) return;
+    // Déjà traitée lors d'un cycle précédent. On s'appuie sur le journal d'ingestion, pas sur
+    // `PatientBloc.prescriptionExterneId` : cette colonne ne garde que la DERNIÈRE référence du
+    // patient et perdait donc la trace des prescriptions antérieures (voir IngestionExterne).
+    if (
+      await this.ingestionLedger.dejaIngeree(
+        CanalIngestion.PRESCRIPTION_BLOC,
+        p.id,
+      )
+    ) {
+      // Acquitter malgré tout : sans cela, une prescription déjà ingérée mais dont
+      // l'acquittement avait échoué (service Prescriptions momentanément indisponible) restait
+      // indéfiniment dans la file du service source, re-téléchargée à chaque cycle.
+      await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
+      return;
+    }
 
     let patient = await this.patientBlocRepo.findOne({
       where: { patientId: p.patientId },
@@ -175,26 +194,54 @@ export class PrescriptionService {
         ]),
       },
     });
-    const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
-    const interventionEntrante = (acte?.libelle || '').trim().toLowerCase();
+    // `actes` (contrat courant) ou `ActeBloc` (nom historique) — un service peut n'en fournir
+    // aucun (prescription de bloc simple, sans acte détaillé : Urgence, Endoscopie...).
+    const actes = p.actes ?? p.ActeBloc ?? [];
+    const acte = actes[0];
+    const libelleEntrant = this.libelleComplet(actes);
+    const interventionEntrante = libelleEntrant.toLowerCase();
     const memeInterventionOuverte =
-      (!!notificationDejaOuverte &&
+      interventionEntrante !== '' &&
+      ((!!notificationDejaOuverte &&
         (notificationDejaOuverte.intervention || '').trim().toLowerCase() ===
           interventionEntrante) ||
-      (!!patient &&
-        interventionEntrante !== '' &&
-        (patient.libelle || '').trim().toLowerCase() === interventionEntrante);
+        (!!patient &&
+          (patient.libelle || '').trim().toLowerCase() === interventionEntrante));
+    // Prescription sans acte nommé (Urgence, Endoscopie, Consultation externe...) : aucun
+    // libellé ne permet de distinguer deux demandes successives. Une notification déjà ouverte
+    // pour ce patient vaut alors "même demande" — sinon la garde par libellé ne s'appliquait
+    // jamais à ces prescriptions, et le service source qui renvoie un `id` différent à chaque
+    // interrogation faisait réapparaître le patient dans la cloche, avec carillon, toutes les
+    // 15 secondes.
+    const demandeSansLibelleDejaOuverte =
+      interventionEntrante === '' && !!notificationDejaOuverte;
     const dejaPriseEnCharge =
       !retourPatient &&
       ((!!patient && enCoursOperation.includes(patient.statut)) ||
-        memeInterventionOuverte);
+        memeInterventionOuverte ||
+        demandeSansLibelleDejaOuverte);
     if (dejaPriseEnCharge) {
       this.logger.log(
         `🛡️ Ingestion ignorée : patient ${p.patientId}` +
           (memeInterventionOuverte
-            ? ` — même intervention "${acte?.libelle}" déjà en cours`
-            : ` — statut ${patient?.statut}, opération en cours`),
+            ? ` — même intervention "${libelleEntrant}" déjà en cours`
+            : demandeSansLibelleDejaOuverte
+              ? ' — demande sans acte nommé, notification déjà ouverte'
+              : ` — statut ${patient?.statut}, opération en cours`),
       );
+      // Ignorée ≠ jamais reçue : sans cet acquittement, la prescription restait DEMANDE_CPA côté
+      // service source, donc renvoyée par getPrescriptionsBloc à CHAQUE cycle (toutes les 15 s,
+      // et à chaque évènement temps réel) — la file du service demandeur ne se vidait jamais et
+      // le bloc rejouait indéfiniment les mêmes lignes. C'est très exactement l'échec que
+      // signale le script test-prescription-arrivee.mjs ("toujours bloquée").
+      await this.ingestionLedger.marquerIngeree({
+        canal: CanalIngestion.PRESCRIPTION_BLOC,
+        referenceExterne: p.id,
+        patientId: p.patientId,
+        serviceSourceId: p.serviceIdSource,
+        libelle: libelleEntrant || null,
+      });
+      await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
       return;
     }
     if (retourPatient) {
@@ -202,8 +249,8 @@ export class PrescriptionService {
         `↩️ Patient ${p.patientId} revient d'un épisode terminé (${patient!.statut}) — nouvelle prescription traitée comme une nouvelle prise en charge`,
       );
     }
-    const niveauUrgence = this.mapUrgence(p.urgence);
-    const dateIntervention = this.extraireDateIntervention(acte);
+    const niveauUrgence = niveauDepuisLibelle(p.urgence);
+    const dateIntervention = this.extraireDateIntervention(p, acte);
     // Le service Prescriptions ne transmet que l'id du service demandeur, jamais son nom — sans
     // cette résolution, "service source" restait vide partout où ce patient est affiché (fiche
     // patient, prescription au sein de la CPA, notification).
@@ -213,9 +260,9 @@ export class PrescriptionService {
     const donneesPatient = {
       patientId: p.patientId,
       chuId: p.chuId,
-      idDossier: patient?.idDossier || p.patientId,
+      idDossier: patient?.idDossier || construireIdDossier(p.patientId),
       groupeSanguin: patient?.groupeSanguin || 'INCONNU',
-      libelle: acte?.libelle || undefined,
+      libelle: libelleEntrant || undefined,
       risqueHemorragique: acte?.risqueHemorragique || undefined,
       typeChirurgie: acte?.typeChirurgie || undefined,
       consignes: p.consignes || undefined,
@@ -248,30 +295,36 @@ export class PrescriptionService {
         heurePrescription: new Date().toTimeString().substring(0, 5),
         dateIntervention,
         patientId: p.patientId,
-        intervention: acte?.libelle || 'Intervention',
+        intervention: libelleEntrant || 'Intervention',
         chirurgienId: undefined,
         chirurgienNom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
         professeurCPA: undefined,
         serviceSourceId: p.serviceIdSource || undefined,
         serviceSourceNom: serviceSourceNom || undefined,
-        estUrgent: niveauUrgence !== NiveauUrgence.NORMAL,
+        estUrgent: estNiveauUrgent(niveauUrgence),
         statut: StatutNotificationCPA.EN_ATTENTE,
       }),
     );
 
     this.logger.log(
-      `📋 Nouvelle prescription bloc ingérée pour patient ${p.patientId} (${acte?.libelle || 'intervention'})`,
+      `📋 Nouvelle prescription bloc ingérée pour patient ${p.patientId} (${libelleEntrant || 'intervention'})`,
     );
 
+    await this.ingestionLedger.marquerIngeree({
+      canal: CanalIngestion.PRESCRIPTION_BLOC,
+      referenceExterne: p.id,
+      patientId: p.patientId,
+      serviceSourceId: p.serviceIdSource,
+      libelle: libelleEntrant || null,
+    });
     await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
 
     await this.notificationBackClient.notifyService({
       serviceId,
-      title:
-        niveauUrgence !== NiveauUrgence.NORMAL
-          ? '🔴 Prescription urgente reçue'
-          : '📋 Nouvelle prescription reçue',
-      message: `${acte?.libelle || 'Intervention'} — patient ${p.patientId}`,
+      title: estNiveauUrgent(niveauUrgence)
+        ? '🔴 Prescription urgente reçue'
+        : '📋 Nouvelle prescription reçue',
+      message: `${libelleEntrant || 'Intervention'} — patient ${p.patientId}`,
       type: 'new_prescription',
       source: 'bloc-operatoire',
       data: {
