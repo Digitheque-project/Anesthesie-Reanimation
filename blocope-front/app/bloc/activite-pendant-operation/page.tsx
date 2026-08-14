@@ -145,7 +145,16 @@ function ActivitePendantOperationPageContent() {
               « /bloc/dossier-patient/ » — une URL sans dossier, donc un bouton qui ne faisait
               rien ; et quitter la page en pleine opération démontait le formulaire per-opératoire
               en cours de saisie. Sans patientId, le bouton ne s'affiche simplement pas. */}
-          <VoirDossierButton patientId={patientId} variant="icon" chuId={patient?.chuId} />
+          {/* Pendant l'opération, le dossier s'ouvre sur l'HISTORIQUE et non sur l'observation
+              médicale : au bloc, ce qu'on vient vérifier en cours d'intervention, c'est le
+              parcours du patient (CPA, vérification veille, actes déjà posés), pas la rédaction
+              d'une observation. Les autres écrans gardent l'onglet par défaut. */}
+          <VoirDossierButton
+            patientId={patientId}
+            variant="icon"
+            chuId={patient?.chuId}
+            initialTab="historique"
+          />
         </div>
       </header>
 

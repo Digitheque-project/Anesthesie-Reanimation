@@ -2,7 +2,10 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import { DossierPatientComplet } from "@/components/clinical/dossier-patient/DossierPatientComplet";
+import {
+  DossierPatientComplet,
+  type TabKey,
+} from "@/components/clinical/dossier-patient/DossierPatientComplet";
 
 interface DossierPatientModalProps {
   open: boolean;
@@ -11,6 +14,8 @@ interface DossierPatientModalProps {
   chuId?: string;
   serviceId?: string;
   hospitalisationId?: string;
+  /** Onglet ouvert par défaut (défaut : « Observation médicale »). */
+  initialTab?: TabKey;
 }
 
 // Ouvre le dossier patient en surimpression plutôt qu'en changeant de page — le but précis est
@@ -26,6 +31,7 @@ export default function DossierPatientModal({
   chuId,
   serviceId,
   hospitalisationId,
+  initialTab,
 }: DossierPatientModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -68,6 +74,7 @@ export default function DossierPatientModal({
           chuId={chuId}
           serviceId={serviceId}
           hospitalisationId={hospitalisationId}
+          initialTab={initialTab}
           onBack={onClose}
           backLabel="Fermer"
         />
