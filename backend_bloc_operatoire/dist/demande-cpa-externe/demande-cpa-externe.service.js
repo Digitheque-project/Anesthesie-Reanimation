@@ -153,9 +153,9 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
         return this.repo.save(demande);
     }
     async planifier(id, dto) {
-        await (0, creneau_validation_util_1.verifierCreneauValide)(this.creneauRepo, dto.date, dto.heureDebut);
-        const demande = await this.findOne(id);
         const type = dto.type ?? creneau_bloc_entity_1.TypeRDV.CPA;
+        await (0, creneau_validation_util_1.verifierCreneauValide)(this.creneauRepo, dto.date, dto.heureDebut, type);
+        const demande = await this.findOne(id);
         const creneau = this.creneauRepo.create({
             date: dto.date,
             heureDebut: dto.heureDebut,

@@ -117,12 +117,17 @@ export class PlanningService {
   }
 
   async reserverCreneau(dto: any) {
-    await verifierCreneauValide(this.creneauRepo, dto.date, dto.heureDebut);
+    const type: TypeRDV = dto.type || TypeRDV.CPA;
+    // Le type conditionne la règle d'unicité d'horaire (voir verifierCreneauValide) : une
+    // vérification veille n'occupe pas un créneau à elle seule.
+    await verifierCreneauValide(
+      this.creneauRepo,
+      dto.date,
+      dto.heureDebut,
+      type,
+    );
 
-    const creneau = this.creneauRepo.create({
-      ...dto,
-      type: dto.type || TypeRDV.CPA,
-    });
+    const creneau = this.creneauRepo.create({ ...dto, type });
     const saved = await this.creneauRepo.save(creneau);
 
     // Ferme une faille où un RDV réservé directement depuis la fiche patient (au lieu du

@@ -192,10 +192,17 @@ export class DemandeCpaExterneService {
     id: string,
     dto: PlanifierDemandeCpaDto,
   ): Promise<DemandeCpaExterne> {
-    await verifierCreneauValide(this.creneauRepo, dto.date, dto.heureDebut);
+    const type = dto.type ?? TypeRDV.CPA;
+    // Le type est déterminé avant la validation : il conditionne la règle d'unicité d'horaire
+    // (une vérification veille peut concerner plusieurs patients au même moment).
+    await verifierCreneauValide(
+      this.creneauRepo,
+      dto.date,
+      dto.heureDebut,
+      type,
+    );
 
     const demande = await this.findOne(id);
-    const type = dto.type ?? TypeRDV.CPA;
 
     const creneau = this.creneauRepo.create({
       date: dto.date,

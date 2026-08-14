@@ -105,11 +105,9 @@ let PlanningService = class PlanningService {
         return this.enrichCreneaux(data);
     }
     async reserverCreneau(dto) {
-        await (0, creneau_validation_util_1.verifierCreneauValide)(this.creneauRepo, dto.date, dto.heureDebut);
-        const creneau = this.creneauRepo.create({
-            ...dto,
-            type: dto.type || creneau_bloc_entity_1.TypeRDV.CPA,
-        });
+        const type = dto.type || creneau_bloc_entity_1.TypeRDV.CPA;
+        await (0, creneau_validation_util_1.verifierCreneauValide)(this.creneauRepo, dto.date, dto.heureDebut, type);
+        const creneau = this.creneauRepo.create({ ...dto, type });
         const saved = await this.creneauRepo.save(creneau);
         const patientId = saved.patientId;
         if (patientId) {
