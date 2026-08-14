@@ -81,14 +81,10 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         return Array.isArray(saved) ? saved[0] : saved;
     }
     async findAll(page = 1, limite = 10) {
-        const internalDataRaw = await this.notificationRepo.find({
-            order: { createdAt: 'DESC' },
-        });
-        const identities = await this.accueilClient.enrichWithIdentity(internalDataRaw);
-        const avecChirurgien = await this.medecinIdentiteService.enrichir(internalDataRaw, 'chirurgienId', 'chirurgien');
-        const externalDataRaw = await this.webhookRepo.find({
-            order: { receivedAt: 'DESC' },
-        });
+        const [internalDataRaw, externalDataRaw] = await Promise.all([
+            this.notificationRepo.find({ order: { createdAt: 'DESC' } }),
+            this.webhookRepo.find({ order: { receivedAt: 'DESC' } }),
+        ]);
         const patientIds = Array.from(new Set([...internalDataRaw, ...externalDataRaw]
             .map((n) => n.patientId)
             .filter(Boolean)));
@@ -113,17 +109,14 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                 return true;
             return !!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
         };
-        const internalData = internalDataRaw.map((n, idx) => {
-            const identity = identities[idx] || {};
+        const internalData = internalDataRaw.map((n) => {
             const pb = patientMap.get(n.patientId);
             return {
                 ...n,
-                chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
+                estInterne: true,
                 patient: {
                     id: n.patientId,
-                    nom: identity.nom,
-                    prenom: identity.prenom,
-                    idDossier: identity.idDossier ?? pb?.idDossier,
+                    idDossier: pb?.idDossier,
                     statut: pb?.statut,
                     niveauUrgence: pb?.niveauUrgence,
                     dateIntervention: pb?.dateIntervention ?? null,
@@ -160,8 +153,35 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
         const start = (page - 1) * limite;
         const end = start + limite;
         const paginated = actionnables.slice(start, end);
+        const aEnrichir = paginated.filter((n) => n.estInterne);
+        const [identites, avecChirurgien] = await Promise.all([
+            this.accueilClient.enrichWithIdentity(aEnrichir),
+            this.medecinIdentiteService.enrichir(aEnrichir, 'chirurgienId', 'chirurgien'),
+        ]);
+        const identiteParIndex = new Map();
+        const chirurgienParIndex = new Map();
+        aEnrichir.forEach((n, idx) => {
+            identiteParIndex.set(n.id, identites[idx] || {});
+            chirurgienParIndex.set(n.id, avecChirurgien[idx]?.chirurgien ?? null);
+        });
+        const data = paginated.map((n) => {
+            if (!n.estInterne)
+                return n;
+            const identite = identiteParIndex.get(n.id) || {};
+            const { estInterne, ...ligne } = n;
+            return {
+                ...ligne,
+                chirurgien: chirurgienParIndex.get(n.id) ?? null,
+                patient: {
+                    ...n.patient,
+                    nom: identite.nom,
+                    prenom: identite.prenom,
+                    idDossier: identite.idDossier ?? n.patient?.idDossier,
+                },
+            };
+        });
         return {
-            data: paginated,
+            data,
             total: actionnables.length,
             page,
             pages: Math.ceil(actionnables.length / limite),

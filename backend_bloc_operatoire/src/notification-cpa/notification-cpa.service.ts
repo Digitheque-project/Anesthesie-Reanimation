@@ -104,19 +104,19 @@ export class NotificationCPAService {
     // et `total`/`pages` ne reflétaient que les lots déjà limités, pas le nombre réel. On
     // récupère donc l'intégralité des deux sources (volumes hospitaliers, pas internet-scale) et
     // on ne pagine qu'une fois, sur la liste fusionnée, filtrée et triée.
-    const internalDataRaw = await this.notificationRepo.find({
-      order: { createdAt: 'DESC' },
-    });
-    const identities =
-      await this.accueilClient.enrichWithIdentity(internalDataRaw);
-    const avecChirurgien = await this.medecinIdentiteService.enrichir(
-      internalDataRaw,
-      'chirurgienId',
-      'chirurgien',
-    );
-    const externalDataRaw = await this.webhookRepo.find({
-      order: { receivedAt: 'DESC' },
-    });
+    // ⚠️ Ordre des opérations : on filtre, trie et PAGINE d'abord, on n'enrichit qu'ensuite.
+    // L'enrichissement identité (service Accueil) et chirurgien (SSO central) portait auparavant
+    // sur l'INTÉGRALITÉ de la table de notifications, avant toute pagination — soit un appel HTTP
+    // sortant par patient distinct (jusqu'à 8 s chacun, service hébergé sur une offre qui
+    // s'endort), pour ne renvoyer au final que 10 à 50 lignes. La TopBar interrogeant cette route
+    // toutes les 10 s, le backend rejouait ces centaines d'appels en boucle : c'est la cause du
+    // chargement interminable de la cloche et du fil de prescription. Les données nécessaires au
+    // FILTRE (statut du patient, créneau planifié) viennent de notre propre base et restent, elles,
+    // chargées en totalité — c'est peu coûteux et la pagination doit rester exacte.
+    const [internalDataRaw, externalDataRaw] = await Promise.all([
+      this.notificationRepo.find({ order: { createdAt: 'DESC' } }),
+      this.webhookRepo.find({ order: { receivedAt: 'DESC' } }),
+    ]);
 
     // Enrichissement PatientBloc partagé entre les deux sources (notifications internes et
     // webhooks externes) : c'est lui qui fournit le statut courant du patient, utilisé plus bas
@@ -154,17 +154,17 @@ export class NotificationCPAService {
       return !!statut && statut !== PatientStatut.EN_ATTENTE_CPA;
     };
 
-    const internalData = internalDataRaw.map((n, idx) => {
-      const identity = identities[idx] || {};
+    // Identité (nom/prénom) volontairement absente à ce stade : elle demande un aller-retour
+    // réseau et n'intervient ni dans le filtre ni dans le tri. Elle est ajoutée plus bas, sur la
+    // seule page retenue.
+    const internalData = internalDataRaw.map((n) => {
       const pb = patientMap.get(n.patientId);
       return {
         ...n,
-        chirurgien: avecChirurgien[idx]?.chirurgien ?? null,
+        estInterne: true,
         patient: {
           id: n.patientId,
-          nom: identity.nom,
-          prenom: identity.prenom,
-          idDossier: identity.idDossier ?? pb?.idDossier,
+          idDossier: pb?.idDossier,
           statut: pb?.statut,
           niveauUrgence: pb?.niveauUrgence,
           dateIntervention: pb?.dateIntervention ?? null,
@@ -217,8 +217,44 @@ export class NotificationCPAService {
     const end = start + limite;
     const paginated = actionnables.slice(start, end);
 
+    // Enrichissement réseau limité à la page renvoyée : au plus `limite` patients distincts par
+    // requête, au lieu de la table entière. Chaque source est tolérante à la panne (voir
+    // AccueilClient / MedecinIdentiteService) — un service externe indisponible laisse les champs
+    // vides sans faire échouer la liste.
+    const aEnrichir = paginated.filter((n: any) => n.estInterne);
+    const [identites, avecChirurgien] = await Promise.all([
+      this.accueilClient.enrichWithIdentity(aEnrichir),
+      this.medecinIdentiteService.enrichir(
+        aEnrichir,
+        'chirurgienId',
+        'chirurgien',
+      ),
+    ]);
+    const identiteParIndex = new Map<string, any>();
+    const chirurgienParIndex = new Map<string, any>();
+    aEnrichir.forEach((n: any, idx: number) => {
+      identiteParIndex.set(n.id, identites[idx] || {});
+      chirurgienParIndex.set(n.id, avecChirurgien[idx]?.chirurgien ?? null);
+    });
+
+    const data = paginated.map((n: any) => {
+      if (!n.estInterne) return n;
+      const identite = identiteParIndex.get(n.id) || {};
+      const { estInterne, ...ligne } = n;
+      return {
+        ...ligne,
+        chirurgien: chirurgienParIndex.get(n.id) ?? null,
+        patient: {
+          ...n.patient,
+          nom: identite.nom,
+          prenom: identite.prenom,
+          idDossier: identite.idDossier ?? n.patient?.idDossier,
+        },
+      };
+    });
+
     return {
-      data: paginated,
+      data,
       total: actionnables.length,
       page,
       pages: Math.ceil(actionnables.length / limite),

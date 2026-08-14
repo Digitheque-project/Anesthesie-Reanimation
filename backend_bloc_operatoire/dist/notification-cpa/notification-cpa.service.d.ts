@@ -1,8 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
-import { NotificationCPA, StatutNotificationCPA } from '../entities/notification-cpa.entity';
+import { NotificationCPA } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
-import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
+import { PatientBloc } from '../entities/patient-bloc.entity';
 import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
@@ -25,54 +25,7 @@ export declare class NotificationCPAService {
     constructor(notificationRepo: Repository<NotificationCPA>, webhookRepo: Repository<WebhookNotification>, patientBlocRepo: Repository<PatientBloc>, creneauRepo: Repository<CreneauBloc>, accueilClient: AccueilClient, medecinIdentiteService: MedecinIdentiteService, notificationOutgoing: NotificationOutgoingService, notificationBackClient: NotificationBackClient, config: ConfigService);
     create(dto: CreateNotificationCPADto): Promise<NotificationCPA>;
     findAll(page?: number, limite?: number): Promise<{
-        data: ({
-            chirurgien: any;
-            patient: {
-                id: string;
-                nom: any;
-                prenom: any;
-                idDossier: any;
-                statut: PatientStatut | undefined;
-                niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence | undefined;
-                dateIntervention: Date | null;
-            };
-            id: string;
-            heurePrescription: string;
-            dateIntervention: Date | null;
-            patientId: string;
-            intervention: string;
-            chirurgienId: string | null;
-            chirurgienNom: string | null;
-            professeurCPA: string | null;
-            serviceSourceId: string | null;
-            serviceSourceNom: string | null;
-            estUrgent: boolean;
-            statut: StatutNotificationCPA;
-            lu: boolean;
-            luLe: Date | null;
-            createdAt: Date;
-            updatedAt: Date;
-        } | {
-            patient: {
-                id: string;
-                statut: PatientStatut;
-                niveauUrgence: import("../entities/patient-bloc.entity").NiveauUrgence;
-                dateIntervention: Date;
-            } | undefined;
-            id: string;
-            type: string;
-            motif: string;
-            patientId: string;
-            sourceServiceId: string;
-            sourceServiceName: string;
-            targetServiceId: string;
-            targetServiceName: string;
-            urgence: number;
-            payload: any;
-            channels: string[];
-            processed: boolean;
-            receivedAt: Date;
-        })[];
+        data: any[];
         total: number;
         page: number;
         pages: number;

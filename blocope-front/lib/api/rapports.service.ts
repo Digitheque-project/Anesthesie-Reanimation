@@ -1,23 +1,15 @@
 import { apiClient } from './client'
 
-const MOCK_STATS = {
-  totalPatients: 42,
-  totalOperations: 156,
-  totalUrgences: 8,
-  totalMedecins: 12,
-  enAttente: 5,
-  aujourdhui: 8
-}
-
+// Même principe que notification.service.ts : plus aucun repli sur des chiffres inventés.
+// En cas de panne de l'API, cette fonction renvoyait des statistiques fictives (42 patients,
+// 156 opérations, 8 urgences...) affichées telles quelles sur le tableau de bord du bloc, sans
+// rien qui les distingue de vrais chiffres. L'appelant (app/bloc/page.tsx) utilise
+// `Promise.allSettled` et conserve son état initial à zéro si l'appel échoue : l'absence de
+// données se voit, au lieu d'être maquillée.
 export const rapportsService = {
   getStatistiques: async (dateDebut?: string, dateFin?: string) => {
-    try {
-      const { data } = await apiClient.get('/rapports/statistiques', { params: { dateDebut, dateFin } })
-      return data
-    } catch (error) {
-      console.warn('⚠️ API indisponible - utilisation des stats simulées')
-      return MOCK_STATS
-    }
+    const { data } = await apiClient.get('/rapports/statistiques', { params: { dateDebut, dateFin } })
+    return data
   },
 
   getTableauDeBord: async (dateDebut?: string, dateFin?: string) => {

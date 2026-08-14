@@ -9,10 +9,34 @@ function isAxiosError(error) {
     return error && error.isAxiosError === true;
 }
 const TIMEOUT_MS = 8000;
+const CACHE_IDENTITE_MS = 5 * 60 * 1000;
 class AccueilClient {
     baseUrl;
+    cacheIdentites = new Map();
+    enVol = new Map();
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
+    }
+    async getPatientCache(patientId) {
+        const enCache = this.cacheIdentites.get(patientId);
+        if (enCache && enCache.expireLe > Date.now())
+            return enCache.valeur;
+        const dejaEnVol = this.enVol.get(patientId);
+        if (dejaEnVol)
+            return dejaEnVol;
+        const requete = this.getPatientData(patientId)
+            .then((valeur) => {
+            this.cacheIdentites.set(patientId, {
+                valeur,
+                expireLe: Date.now() + CACHE_IDENTITE_MS,
+            });
+            return valeur;
+        })
+            .finally(() => {
+            this.enVol.delete(patientId);
+        });
+        this.enVol.set(patientId, requete);
+        return requete;
     }
     async getAccueilData() {
         try {
@@ -60,7 +84,7 @@ class AccueilClient {
         const identities = {};
         await Promise.all(ids.map(async (id) => {
             try {
-                const p = await this.getPatient(id);
+                const p = await this.getPatientCache(id);
                 if (p)
                     identities[id] = p;
             }

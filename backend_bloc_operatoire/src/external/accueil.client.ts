@@ -13,12 +13,50 @@ function isAxiosError(error: any): boolean {
 // traîner tout un tableau de bord, assez long pour un aller-retour normal.
 const TIMEOUT_MS = 8000;
 
+// L'identité d'un patient (nom, prénom, date de naissance...) ne change pratiquement jamais, mais
+// elle était redemandée au service Accueil à CHAQUE affichage de liste — or la cloche de
+// notifications interroge le backend toutes les 10 secondes, et plusieurs postes du bloc sont
+// connectés en même temps. Ce cache court évite de marteler un service externe (hébergé sur une
+// offre qui s'endort, d'où des réponses de plusieurs secondes) pour une donnée quasi figée.
+const CACHE_IDENTITE_MS = 5 * 60 * 1000;
+
 // Classe AccueilClient qui gère les appels vers l'API externe
 export class AccueilClient {
   private readonly baseUrl: string;
+  private readonly cacheIdentites = new Map<
+    string,
+    { valeur: any; expireLe: number }
+  >();
+  // Requêtes en vol : sans cela, une liste de 40 patients affichée simultanément sur 3 postes
+  // déclenchait 3 appels identiques par patient. On partage la même promesse.
+  private readonly enVol = new Map<string, Promise<any>>();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  private async getPatientCache(patientId: string): Promise<any> {
+    const enCache = this.cacheIdentites.get(patientId);
+    if (enCache && enCache.expireLe > Date.now()) return enCache.valeur;
+
+    const dejaEnVol = this.enVol.get(patientId);
+    if (dejaEnVol) return dejaEnVol;
+
+    const requete = this.getPatientData(patientId)
+      .then((valeur) => {
+        // Un patient introuvable (null) est mis en cache lui aussi : sans cela, chaque
+        // rafraîchissement relançait un appel voué au même 404.
+        this.cacheIdentites.set(patientId, {
+          valeur,
+          expireLe: Date.now() + CACHE_IDENTITE_MS,
+        });
+        return valeur;
+      })
+      .finally(() => {
+        this.enVol.delete(patientId);
+      });
+    this.enVol.set(patientId, requete);
+    return requete;
   }
 
   // Méthode pour récupérer les données d'accueil
@@ -83,7 +121,7 @@ export class AccueilClient {
     await Promise.all(
       ids.map(async (id) => {
         try {
-          const p = await this.getPatient(id);
+          const p = await this.getPatientCache(id);
           if (p) identities[id] = p;
         } catch (e) {
           // ignore individual failures but log
