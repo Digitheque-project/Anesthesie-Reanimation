@@ -8,6 +8,7 @@ import { apiClient } from '@/lib/api/client'
 import { useRole } from '@/lib/hooks/useRole'
 import { obtenirSessionValide } from '@/lib/auth/central-session'
 import Checkbox from '@/components/ui/Checkbox'
+import Radio from '@/components/ui/Radio'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
@@ -351,11 +352,11 @@ function SalleDeReveilPageContent() {
             <h3 className="text-xl font-extrabold text-primary mb-6">Orientation du patient</h3>
             <div className="space-y-4">
               <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
-                <input type="radio" name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} className="w-7 h-7 text-primary" />
+                <Radio name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} />
                 <span className="font-bold">Service d'origine</span>
               </label>
               <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
-                <input type="radio" name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} className="w-7 h-7 text-primary" />
+                <Radio name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} />
                 <span className="font-bold">Autres services</span>
               </label>
               {orientation === 'autres' && (

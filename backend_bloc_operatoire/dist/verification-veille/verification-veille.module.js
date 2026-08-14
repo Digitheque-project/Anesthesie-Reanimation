@@ -39,8 +39,8 @@ exports.VerificationVeilleModule = VerificationVeilleModule = __decorate([
             tracabilite_module_1.TracabiliteModule,
         ],
         controllers: [
-            verification_veille_controller_1.VerificationVeilleController,
             fichiers_verification_veille_controller_1.FichiersVerificationVeilleController,
+            verification_veille_controller_1.VerificationVeilleController,
         ],
         providers: [verification_veille_service_1.VerificationVeilleService, fichiers_verification_veille_service_1.FichiersVerificationVeilleService],
         exports: [verification_veille_service_1.VerificationVeilleService, fichiers_verification_veille_service_1.FichiersVerificationVeilleService],

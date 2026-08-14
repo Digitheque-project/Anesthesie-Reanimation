@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Checkbox from "@/components/ui/Checkbox";
 
 export default function EtatRespiratoire() {
   const [etatRespiratoire, setEtatRespiratoire] = useState({
@@ -32,24 +33,20 @@ export default function EtatRespiratoire() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center p-3 rounded-lg bg-surface-container-low border border-surface-dim/20">
-              <input
+              <Checkbox
                 id="init-intub"
-                type="checkbox"
                 checked={etatRespiratoire.initIntub}
                 onChange={() => toggle("initIntub")}
-                className="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary"
               />
               <label htmlFor="init-intub" className="ml-3 text-sm font-medium text-on-surface">
                 Intubation
               </label>
             </div>
             <div className="flex items-center p-3 rounded-lg bg-surface-container-low border border-surface-dim/20">
-              <input
+              <Checkbox
                 id="init-curar"
-                type="checkbox"
                 checked={etatRespiratoire.initCurar}
                 onChange={() => toggle("initCurar")}
-                className="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary"
               />
               <label htmlFor="init-curar" className="ml-3 text-sm font-medium text-on-surface">
                 Curarisation
@@ -65,24 +62,20 @@ export default function EtatRespiratoire() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center p-3 rounded-lg bg-surface-container-low border border-surface-dim/20">
-              <input
+              <Checkbox
                 id="resp-intub"
-                type="checkbox"
                 checked={etatRespiratoire.respIntub}
                 onChange={() => toggle("respIntub")}
-                className="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary"
               />
               <label htmlFor="resp-intub" className="ml-3 text-sm font-medium text-on-surface">
                 Intubation
               </label>
             </div>
             <div className="flex items-center p-3 rounded-lg bg-surface-container-low border border-surface-dim/20">
-              <input
+              <Checkbox
                 id="resp-curar"
-                type="checkbox"
                 checked={etatRespiratoire.respCurar}
                 onChange={() => toggle("respCurar")}
-                className="w-4 h-4 text-primary border-outline-variant rounded focus:ring-primary"
               />
               <label htmlFor="resp-curar" className="ml-3 text-sm font-medium text-on-surface">
                 Curarisation

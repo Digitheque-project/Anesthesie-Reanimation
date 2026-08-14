@@ -11,6 +11,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import Radio from '@/components/ui/Radio'
 
 export default function VerificationPostOpPage() {
   return (
@@ -120,10 +121,10 @@ function VerificationPostOpPageContent() {
               {item.desc && <p className="text-xs mb-3">{item.desc}</p>}
               <div className="flex space-x-6">
                 <label className="flex items-center text-sm font-medium cursor-pointer">
-                  <input className="mr-2 text-secondary focus:ring-secondary w-7 h-7" name={item.key} type="radio" checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({ ...form, [item.key]: true })} /><span>Oui</span>
+                  <Radio className="mr-2" accent="secondary" name={item.key} checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({ ...form, [item.key]: true })} /><span>Oui</span>
                 </label>
                 <label className="flex items-center text-sm font-medium cursor-pointer">
-                  <input className="mr-2 text-secondary focus:ring-secondary w-7 h-7" name={item.key} type="radio" checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({ ...form, [item.key]: false })} /><span>Non</span>
+                  <Radio className="mr-2" accent="secondary" name={item.key} checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({ ...form, [item.key]: false })} /><span>Non</span>
                 </label>
               </div>
             </div>

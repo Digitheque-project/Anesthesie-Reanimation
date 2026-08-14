@@ -12,6 +12,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import Radio from '@/components/ui/Radio'
 
 export default function ApresOperationPage() {
   return (
@@ -118,12 +119,12 @@ function ApresOperationPageContent() {
                 <span className="font-medium text-on-surface">{item.label}</span>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input className="w-7 h-7 text-primary rounded" type="radio" name={item.key}
+                    <Radio name={item.key}
                       checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({...form, [item.key]: true})} />
                     <span className="text-sm font-semibold">Oui</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input className="w-7 h-7 text-primary rounded" type="radio" name={item.key}
+                    <Radio name={item.key}
                       checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({...form, [item.key]: false})} />
                     <span className="text-sm font-semibold">Non/N/A</span>
                   </label>

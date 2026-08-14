@@ -26,9 +26,17 @@ import { FichiersVerificationVeilleController } from './fichiers-verification-ve
     MedecinModule,
     TracabiliteModule,
   ],
+  // ⚠️ L'ORDRE COMPTE. NestJS teste les routes dans l'ordre d'enregistrement des contrôleurs, et
+  // « verification-veille/fichiers » est un sous-chemin de « verification-veille ». Enregistré en
+  // second, GET /verification-veille/fichiers tombait d'abord sur le @Get(':id') du contrôleur
+  // parent, avec id = "fichiers" : son ParseUUIDPipe rejetait la requête avec
+  // « Validation failed (uuid is expected) ». La liste des pièces jointes échouait donc
+  // systématiquement — au chargement de l'écran comme après chaque import, ce dernier affichant
+  // « Erreur d'import » alors que le fichier venait bel et bien d'être enregistré.
+  // Le contrôleur le plus spécifique doit être déclaré en premier.
   controllers: [
-    VerificationVeilleController,
     FichiersVerificationVeilleController,
+    VerificationVeilleController,
   ],
   providers: [VerificationVeilleService, FichiersVerificationVeilleService],
   exports: [VerificationVeilleService, FichiersVerificationVeilleService],
