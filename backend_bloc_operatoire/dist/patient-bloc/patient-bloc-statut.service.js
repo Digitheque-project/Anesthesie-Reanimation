@@ -59,6 +59,10 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         if (!patient)
             throw new common_1.NotFoundException(`Patient ${patientId} non trouvé`);
         const ancienStatut = patient.statut;
+        if (ancienStatut === nouveauStatut) {
+            this.logger.log(`Statut inchangé pour ${patientId} (déjà ${nouveauStatut}) — aucune transition à appliquer`);
+            return patient;
+        }
         const transitionsValides = {
             [patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA]: [
                 patient_bloc_entity_1.PatientStatut.CPA_REALISE,
@@ -181,8 +185,12 @@ let PatientBlocStatutService = PatientBlocStatutService_1 = class PatientBlocSta
         return saved;
     }
     async archiverRetourServiceOrigine(patientId, utilisateurId, raison = 'FIN_ACTE_ANESTHESIQUE') {
+        const dejaSorti = (await this.patientBlocRepo.findOne({
+            where: { patientId },
+            select: { patientId: true, statut: true },
+        }))?.statut === patient_bloc_entity_1.PatientStatut.SORTI;
         const patient = await this.changerStatut(patientId, patient_bloc_entity_1.PatientStatut.SORTI, utilisateurId);
-        if (patient.serviceOrigineId) {
+        if (!dejaSorti && patient.serviceOrigineId) {
             try {
                 if (raison === 'FIN_ACTE_ANESTHESIQUE') {
                     await this.notificationOutgoing.notifyOriginService({

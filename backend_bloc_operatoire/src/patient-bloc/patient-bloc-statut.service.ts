@@ -70,6 +70,24 @@ export class PatientBlocStatutService {
 
     const ancienStatut = patient.statut;
 
+    // Demander le statut que le patient porte DÉJÀ n'est pas une erreur : c'est une opération
+    // sans effet. La table de transitions ci-dessous ne liste jamais un statut comme successeur
+    // de lui-même, si bien qu'une CPA validée pour un patient déjà CPA_REALISE remontait
+    // « Transition invalide : CPA_REALISE → CPA_REALISE » — un message technique et surtout un
+    // échec à mi-parcours. Dans CPAService.create, la consultation est enregistrée AVANT cet
+    // appel : l'exception laissait donc la CPA en base mais sautait tout ce qui suit — bascule de
+    // la notification en REALISE (le patient restait affiché dans le fil), clôture de la demande
+    // de CPA externe, envoi du résultat au service demandeur, passage éventuel en PRET_POUR_BLOC
+    // ou en attente de vérification veille. Le clinicien voyait un échec et recommençait, ce qui
+    // enregistrait une CPA de plus à chaque tentative. On sort ici sans rien modifier et sans
+    // journaliser de changement — il n'y en a pas.
+    if (ancienStatut === nouveauStatut) {
+      this.logger.log(
+        `Statut inchangé pour ${patientId} (déjà ${nouveauStatut}) — aucune transition à appliquer`,
+      );
+      return patient;
+    }
+
     const transitionsValides: Record<PatientStatut, PatientStatut[]> = {
       [PatientStatut.EN_ATTENTE_CPA]: [
         PatientStatut.CPA_REALISE,
@@ -304,13 +322,24 @@ export class PatientBlocStatutService {
     utilisateurId?: string,
     raison: 'CPA_NON_CONFORME' | 'FIN_ACTE_ANESTHESIQUE' = 'FIN_ACTE_ANESTHESIQUE',
   ): Promise<PatientBloc> {
+    // Patient déjà archivé : changerStatut est désormais idempotent (il ne lève plus d'exception
+    // sur un statut inchangé), il faut donc éviter ici de renotifier une seconde fois le service
+    // d'origine du retour de son patient. On ne notifie que si l'archivage a réellement eu lieu.
+    const dejaSorti =
+      (
+        await this.patientBlocRepo.findOne({
+          where: { patientId },
+          select: { patientId: true, statut: true },
+        })
+      )?.statut === PatientStatut.SORTI;
+
     const patient = await this.changerStatut(
       patientId,
       PatientStatut.SORTI,
       utilisateurId,
     );
 
-    if (patient.serviceOrigineId) {
+    if (!dejaSorti && patient.serviceOrigineId) {
       try {
         // CPA non conforme : pas de notification supplémentaire ici — le service d'origine est
         // déjà notifié par le flux CPA lui-même (CPA_INAPTE / CPA_REPORT, voir CPAService.create).
