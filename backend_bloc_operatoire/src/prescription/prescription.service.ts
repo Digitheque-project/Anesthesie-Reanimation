@@ -148,21 +148,60 @@ export class PrescriptionService {
       for (const nom of noms) {
         const valeur = (source as unknown as Record<string, unknown>)[nom];
         if (valeur === null || valeur === undefined) continue;
-        const texte = String(valeur).trim();
-        if (texte !== '') return texte;
+        // `materiels` et `positions` peuvent arriver sous forme de liste (plusieurs matériels,
+        // plusieurs positions d'installation) : sans ce traitement, String() sur un tableau
+        // d'objets produisait "[object Object]" à l'écran.
+        const texte = Array.isArray(valeur)
+          ? valeur
+              .map((v) =>
+                v && typeof v === 'object'
+                  ? String(
+                      (v as any).libelle ?? (v as any).nom ?? (v as any).label ?? '',
+                    )
+                  : String(v ?? ''),
+              )
+              .map((v) => v.trim())
+              .filter((v) => v !== '')
+              .join(', ')
+          : String(valeur).trim();
+        if (texte !== '' && texte !== '[object Object]') return texte;
       }
     }
     return undefined;
   }
 
-  // La durée prévue peut arriver en nombre de minutes ou en texte ("90", "90 min", "1h30").
-  private dureeEnMinutes(valeur?: string): number | undefined {
+  // Durée prévue. Le service Prescriptions la transmet en DEUX champs distincts sur l'acte
+  // (`dureeHeures` et `dureeMinutes`) — vérifié sur le contrat réel. On accepte aussi une durée
+  // en un seul champ, en minutes ou en texte ("90", "90 min", "1h30"), pour les services qui
+  // s'en tiennent à cette forme.
+  private dureeEnMinutes(
+    p: PrescriptionBlocExterne,
+    acte: ActeBlocExterne | undefined,
+  ): number | undefined {
+    const heures = Number(
+      this.champPrescription(p, acte, 'dureeHeures') ?? NaN,
+    );
+    const minutesSeules = Number(
+      this.champPrescription(p, acte, 'dureeMinutes') ?? NaN,
+    );
+    if (Number.isFinite(heures) || Number.isFinite(minutesSeules)) {
+      const total =
+        (Number.isFinite(heures) ? heures : 0) * 60 +
+        (Number.isFinite(minutesSeules) ? minutesSeules : 0);
+      return total > 0 ? total : undefined;
+    }
+
+    const valeur = this.champPrescription(
+      p,
+      acte,
+      'dureeInterventionMinutes',
+      'dureeIntervention',
+      'dureePrevue',
+    );
     if (!valeur) return undefined;
     const heuresMinutes = valeur.match(/^(\d+)\s*h\s*(\d*)$/i);
     if (heuresMinutes) {
-      return (
-        Number(heuresMinutes[1]) * 60 + Number(heuresMinutes[2] || 0)
-      );
+      return Number(heuresMinutes[1]) * 60 + Number(heuresMinutes[2] || 0);
     }
     const minutes = parseInt(valeur, 10);
     return Number.isFinite(minutes) && minutes > 0 ? minutes : undefined;
@@ -262,18 +301,12 @@ export class PrescriptionService {
               ? ' — demande sans acte nommé, notification déjà ouverte'
               : ` — statut ${patient?.statut}, opération en cours`),
       );
-      // Ignorée ≠ jamais reçue : sans cet acquittement, la prescription restait DEMANDE_CPA côté
-      // service source, donc renvoyée par getPrescriptionsBloc à CHAQUE cycle (toutes les 15 s,
-      // et à chaque évènement temps réel) — la file du service demandeur ne se vidait jamais et
-      // le bloc rejouait indéfiniment les mêmes lignes. C'est très exactement l'échec que
-      // signale le script test-prescription-arrivee.mjs ("toujours bloquée").
-      await this.ingestionLedger.marquerIngeree({
-        canal: CanalIngestion.PRESCRIPTION_BLOC,
-        referenceExterne: p.id,
-        patientId: p.patientId,
-        serviceSourceId: p.serviceIdSource,
-        libelle: libelleEntrant || null,
-      });
+      // On acquitte (le service source ne doit pas rester à attendre) mais on n'inscrit
+      // DÉLIBÉRÉMENT PAS au journal d'ingestion : « ignorée maintenant » ne veut pas dire
+      // « ignorée pour toujours ». L'inscrire rendait le rejet définitif — une prescription
+      // écartée parce qu'une notification était ouverte au même instant ne pouvait plus JAMAIS
+      // entrer au bloc, même une fois cette notification traitée. Hors du journal, elle est
+      // réévaluée au cycle suivant et entrera dès que la situation du patient le permettra.
       await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
       return;
     }
@@ -311,25 +344,21 @@ export class PrescriptionService {
         'renseignementsCliniques',
       ),
       typeAnesthesie: this.champPrescription(p, acte, 'typeAnesthesie'),
-      dureeInterventionMinutes: this.dureeEnMinutes(
-        this.champPrescription(
-          p,
-          acte,
-          'dureeInterventionMinutes',
-          'dureeIntervention',
-          'dureePrevue',
-        ),
-      ),
+      dureeInterventionMinutes: this.dureeEnMinutes(p, acte),
       risqueInfectieux: this.champPrescription(p, acte, 'risqueInfectieux'),
+      // Noms réels côté service Prescriptions : `materiels` et `positions` (au pluriel), vérifiés
+      // sur le contrat en production. Les variantes au singulier restent acceptées.
       materielNecessaire: this.champPrescription(
         p,
         acte,
+        'materiels',
         'materielNecessaire',
         'materiel',
       ),
       positionPatient: this.champPrescription(
         p,
         acte,
+        'positions',
         'positionPatient',
         'position',
       ),

@@ -141,16 +141,38 @@ export class NotificationCPAService {
         : Promise.resolve([]),
     ]);
     const patientMap = new Map(patients.map((p) => [p.patientId, p]));
-    // Un RDV déjà planifié au calendrier = patient pris en charge : sa ligne EN_ATTENTE obsolète
-    // (ré-ingestion antérieure au garde-fou) ne doit pas rester actionnable dans la cloche.
-    const patientsAvecRdvPlanifie = new Set(
-      creneaux
-        .filter((c) => c.statut === StatutCreneau.PLANIFIE)
-        .map((c) => c.patientId),
-    );
+    // Un RDV déjà planifié au calendrier masque les notifications EN_ATTENTE devenues obsolètes —
+    // mais UNIQUEMENT celles qui lui sont antérieures.
+    //
+    // Le filtre portait auparavant sur le patient entier : dès qu'un créneau PLANIFIE existait,
+    // TOUTES ses notifications EN_ATTENTE disparaissaient du fil, y compris une prescription
+    // arrivée APRÈS la planification. Concrètement, un service (Chirurgie) envoyait une nouvelle
+    // prescription, elle était bien reçue et enregistrée en base... et restait invisible à
+    // l'écran, masquée par un rendez-vous CPA planifié des jours plus tôt pour un tout autre acte.
+    // De l'extérieur, la prescription semblait « ne jamais arriver ».
+    // On retient donc la date du dernier créneau planifié : une notification postérieure est une
+    // nouvelle demande, elle reste actionnable.
+    const dernierRdvPlanifie = new Map<string, number>();
+    for (const c of creneaux) {
+      if (c.statut !== StatutCreneau.PLANIFIE) continue;
+      const quand = new Date(c.createdAt).getTime();
+      const connu = dernierRdvPlanifie.get(c.patientId);
+      if (connu === undefined || quand > connu) {
+        dernierRdvPlanifie.set(c.patientId, quand);
+      }
+    }
 
-    const estPatientTraite = (patientId?: string, statut?: string) => {
-      if (patientId && patientsAvecRdvPlanifie.has(patientId)) return true;
+    const estPatientTraite = (
+      patientId?: string,
+      statut?: string,
+      creeLe?: Date | string | null,
+    ) => {
+      const rdv = patientId ? dernierRdvPlanifie.get(patientId) : undefined;
+      if (rdv !== undefined) {
+        const quandNotif = creeLe ? new Date(creeLe).getTime() : 0;
+        // Notification antérieure (ou contemporaine) au RDV : déjà couverte par ce rendez-vous.
+        if (!quandNotif || quandNotif <= rdv) return true;
+      }
       return !!statut && statut !== PatientStatut.EN_ATTENTE_CPA;
     };
 
@@ -210,7 +232,11 @@ export class NotificationCPAService {
     const actionnables = merged.filter(
       (n: any) =>
         n.statut !== StatutNotificationCPA.EN_ATTENTE ||
-        !estPatientTraite(n.patient?.id, n.patient?.statut),
+        !estPatientTraite(
+          n.patient?.id,
+          n.patient?.statut,
+          n.createdAt ?? n.receivedAt,
+        ),
     );
 
     const start = (page - 1) * limite;
@@ -390,11 +416,18 @@ export class NotificationCPAService {
       this.creneauRepo.find({ where: { patientId: In(ids) } }),
     ]);
     const statutPatient = new Map(patients.map((p) => [p.patientId, p.statut]));
-    const dejaPlanifie = new Set(
-      creneaux
-        .filter((c) => c.statut === StatutCreneau.PLANIFIE)
-        .map((c) => c.patientId),
-    );
+    // Même correction que findAll : un RDV planifié ne neutralise que les notifications qui lui
+    // sont ANTÉRIEURES. Sinon une prescription reçue après la planification n'était pas comptée
+    // dans la cloche — le badge restait à zéro alors qu'une nouvelle demande venait d'arriver.
+    const dernierRdvPlanifie = new Map<string, number>();
+    for (const c of creneaux) {
+      if (c.statut !== StatutCreneau.PLANIFIE) continue;
+      const quand = new Date(c.createdAt).getTime();
+      const connu = dernierRdvPlanifie.get(c.patientId);
+      if (connu === undefined || quand > connu) {
+        dernierRdvPlanifie.set(c.patientId, quand);
+      }
+    }
     // Mêmes statuts "traités" que STATUTS_PATIENT_TRAITES côté frontend (patient-traite.ts).
     const statutsTraites = new Set<PatientStatut>([
       PatientStatut.CPA_REALISE,
@@ -406,17 +439,25 @@ export class NotificationCPAService {
       PatientStatut.EN_SALLE_REVEIL,
       PatientStatut.SORTI,
     ]);
-    const patientDejaPriseEnCharge = (patientId?: string) => {
+    const patientDejaPriseEnCharge = (
+      patientId?: string,
+      creeLe?: Date | string | null,
+    ) => {
       if (!patientId) return false;
+      const rdv = dernierRdvPlanifie.get(patientId);
+      if (rdv !== undefined) {
+        const quandNotif = creeLe ? new Date(creeLe).getTime() : 0;
+        if (!quandNotif || quandNotif <= rdv) return true;
+      }
       const statut = statutPatient.get(patientId);
-      return dejaPlanifie.has(patientId) || (!!statut && statutsTraites.has(statut));
+      return !!statut && statutsTraites.has(statut);
     };
 
     const internalUnread = internalRaw.filter(
-      (n) => !patientDejaPriseEnCharge(n.patientId),
+      (n) => !patientDejaPriseEnCharge(n.patientId, n.createdAt),
     ).length;
     const externalUnread = externalRaw.filter(
-      (n) => !patientDejaPriseEnCharge(n.patientId),
+      (n) => !patientDejaPriseEnCharge(n.patientId, n.receivedAt),
     ).length;
     return internalUnread + externalUnread;
   }

@@ -9,13 +9,22 @@ import { ServiceTokenService } from '../central-auth/service-token.service';
 // prescription) : les alias sont donc déclarés ici et résolus à l'ingestion — voir
 // PrescriptionService.champPrescription. Aucun n'est obligatoire.
 export interface DetailOperatoireExterne {
-  renseignementClinique?: string | null;
+  // Noms effectivement émis par le service Prescriptions (contrat vérifié en production) :
+  // renseignementsCliniques, typeAnesthesie, dureeHeures + dureeMinutes, risqueInfectieux,
+  // materiels, positions.
   renseignementsCliniques?: string | null;
   typeAnesthesie?: string | null;
+  typeAnesthesieAutre?: string | null;
+  dureeHeures?: number | string | null;
+  dureeMinutes?: number | string | null;
+  risqueInfectieux?: string | null;
+  materiels?: string | string[] | null;
+  positions?: string | string[] | null;
+  // Variantes acceptées pour les autres services prescripteurs.
+  renseignementClinique?: string | null;
   dureeIntervention?: number | string | null;
   dureePrevue?: number | string | null;
   dureeInterventionMinutes?: number | string | null;
-  risqueInfectieux?: string | null;
   materielNecessaire?: string | null;
   materiel?: string | null;
   positionPatient?: string | null;

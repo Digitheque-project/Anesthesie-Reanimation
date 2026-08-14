@@ -106,19 +106,35 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
                 const valeur = source[nom];
                 if (valeur === null || valeur === undefined)
                     continue;
-                const texte = String(valeur).trim();
-                if (texte !== '')
+                const texte = Array.isArray(valeur)
+                    ? valeur
+                        .map((v) => v && typeof v === 'object'
+                        ? String(v.libelle ?? v.nom ?? v.label ?? '')
+                        : String(v ?? ''))
+                        .map((v) => v.trim())
+                        .filter((v) => v !== '')
+                        .join(', ')
+                    : String(valeur).trim();
+                if (texte !== '' && texte !== '[object Object]')
                     return texte;
             }
         }
         return undefined;
     }
-    dureeEnMinutes(valeur) {
+    dureeEnMinutes(p, acte) {
+        const heures = Number(this.champPrescription(p, acte, 'dureeHeures') ?? NaN);
+        const minutesSeules = Number(this.champPrescription(p, acte, 'dureeMinutes') ?? NaN);
+        if (Number.isFinite(heures) || Number.isFinite(minutesSeules)) {
+            const total = (Number.isFinite(heures) ? heures : 0) * 60 +
+                (Number.isFinite(minutesSeules) ? minutesSeules : 0);
+            return total > 0 ? total : undefined;
+        }
+        const valeur = this.champPrescription(p, acte, 'dureeInterventionMinutes', 'dureeIntervention', 'dureePrevue');
         if (!valeur)
             return undefined;
         const heuresMinutes = valeur.match(/^(\d+)\s*h\s*(\d*)$/i);
         if (heuresMinutes) {
-            return (Number(heuresMinutes[1]) * 60 + Number(heuresMinutes[2] || 0));
+            return Number(heuresMinutes[1]) * 60 + Number(heuresMinutes[2] || 0);
         }
         const minutes = parseInt(valeur, 10);
         return Number.isFinite(minutes) && minutes > 0 ? minutes : undefined;
@@ -171,13 +187,6 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
                     : demandeSansLibelleDejaOuverte
                         ? ' — demande sans acte nommé, notification déjà ouverte'
                         : ` — statut ${patient?.statut}, opération en cours`));
-            await this.ingestionLedger.marquerIngeree({
-                canal: ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_BLOC,
-                referenceExterne: p.id,
-                patientId: p.patientId,
-                serviceSourceId: p.serviceIdSource,
-                libelle: libelleEntrant || null,
-            });
             await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
             return;
         }
@@ -199,10 +208,10 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             dateIntervention,
             renseignementClinique: this.champPrescription(p, acte, 'renseignementClinique', 'renseignementsCliniques'),
             typeAnesthesie: this.champPrescription(p, acte, 'typeAnesthesie'),
-            dureeInterventionMinutes: this.dureeEnMinutes(this.champPrescription(p, acte, 'dureeInterventionMinutes', 'dureeIntervention', 'dureePrevue')),
+            dureeInterventionMinutes: this.dureeEnMinutes(p, acte),
             risqueInfectieux: this.champPrescription(p, acte, 'risqueInfectieux'),
-            materielNecessaire: this.champPrescription(p, acte, 'materielNecessaire', 'materiel'),
-            positionPatient: this.champPrescription(p, acte, 'positionPatient', 'position'),
+            materielNecessaire: this.champPrescription(p, acte, 'materiels', 'materielNecessaire', 'materiel'),
+            positionPatient: this.champPrescription(p, acte, 'positions', 'positionPatient', 'position'),
             alertes: p.alertes || undefined,
             prescripteurId: p.prescripteurId,
             chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,

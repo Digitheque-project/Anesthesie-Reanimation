@@ -101,12 +101,23 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
                 : Promise.resolve([]),
         ]);
         const patientMap = new Map(patients.map((p) => [p.patientId, p]));
-        const patientsAvecRdvPlanifie = new Set(creneaux
-            .filter((c) => c.statut === creneau_bloc_entity_1.StatutCreneau.PLANIFIE)
-            .map((c) => c.patientId));
-        const estPatientTraite = (patientId, statut) => {
-            if (patientId && patientsAvecRdvPlanifie.has(patientId))
-                return true;
+        const dernierRdvPlanifie = new Map();
+        for (const c of creneaux) {
+            if (c.statut !== creneau_bloc_entity_1.StatutCreneau.PLANIFIE)
+                continue;
+            const quand = new Date(c.createdAt).getTime();
+            const connu = dernierRdvPlanifie.get(c.patientId);
+            if (connu === undefined || quand > connu) {
+                dernierRdvPlanifie.set(c.patientId, quand);
+            }
+        }
+        const estPatientTraite = (patientId, statut, creeLe) => {
+            const rdv = patientId ? dernierRdvPlanifie.get(patientId) : undefined;
+            if (rdv !== undefined) {
+                const quandNotif = creeLe ? new Date(creeLe).getTime() : 0;
+                if (!quandNotif || quandNotif <= rdv)
+                    return true;
+            }
             return !!statut && statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
         };
         const internalData = internalDataRaw.map((n) => {
@@ -149,7 +160,7 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             return getDate(b) - getDate(a);
         });
         const actionnables = merged.filter((n) => n.statut !== notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE ||
-            !estPatientTraite(n.patient?.id, n.patient?.statut));
+            !estPatientTraite(n.patient?.id, n.patient?.statut, n.createdAt ?? n.receivedAt));
         const start = (page - 1) * limite;
         const end = start + limite;
         const paginated = actionnables.slice(start, end);
@@ -280,9 +291,16 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             this.creneauRepo.find({ where: { patientId: (0, typeorm_2.In)(ids) } }),
         ]);
         const statutPatient = new Map(patients.map((p) => [p.patientId, p.statut]));
-        const dejaPlanifie = new Set(creneaux
-            .filter((c) => c.statut === creneau_bloc_entity_1.StatutCreneau.PLANIFIE)
-            .map((c) => c.patientId));
+        const dernierRdvPlanifie = new Map();
+        for (const c of creneaux) {
+            if (c.statut !== creneau_bloc_entity_1.StatutCreneau.PLANIFIE)
+                continue;
+            const quand = new Date(c.createdAt).getTime();
+            const connu = dernierRdvPlanifie.get(c.patientId);
+            if (connu === undefined || quand > connu) {
+                dernierRdvPlanifie.set(c.patientId, quand);
+            }
+        }
         const statutsTraites = new Set([
             patient_bloc_entity_1.PatientStatut.CPA_REALISE,
             patient_bloc_entity_1.PatientStatut.CPA_INAPTE,
@@ -293,14 +311,20 @@ let NotificationCPAService = NotificationCPAService_1 = class NotificationCPASer
             patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
             patient_bloc_entity_1.PatientStatut.SORTI,
         ]);
-        const patientDejaPriseEnCharge = (patientId) => {
+        const patientDejaPriseEnCharge = (patientId, creeLe) => {
             if (!patientId)
                 return false;
+            const rdv = dernierRdvPlanifie.get(patientId);
+            if (rdv !== undefined) {
+                const quandNotif = creeLe ? new Date(creeLe).getTime() : 0;
+                if (!quandNotif || quandNotif <= rdv)
+                    return true;
+            }
             const statut = statutPatient.get(patientId);
-            return dejaPlanifie.has(patientId) || (!!statut && statutsTraites.has(statut));
+            return !!statut && statutsTraites.has(statut);
         };
-        const internalUnread = internalRaw.filter((n) => !patientDejaPriseEnCharge(n.patientId)).length;
-        const externalUnread = externalRaw.filter((n) => !patientDejaPriseEnCharge(n.patientId)).length;
+        const internalUnread = internalRaw.filter((n) => !patientDejaPriseEnCharge(n.patientId, n.createdAt)).length;
+        const externalUnread = externalRaw.filter((n) => !patientDejaPriseEnCharge(n.patientId, n.receivedAt)).length;
         return internalUnread + externalUnread;
     }
 };
