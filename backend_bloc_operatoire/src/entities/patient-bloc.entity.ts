@@ -110,6 +110,11 @@ export class PatientBloc {
   @Column({ length: 20, nullable: true })
   chambre: string;
 
+  // Salle de bloc où l'intervention est prévue — distincte de `chambre` (lit d'hospitalisation).
+  // Renseignée manuellement (admission ou consultation CPA), aucune source externe ne la transmet.
+  @Column({ length: 50, nullable: true })
+  salleOperation: string;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   serviceOrigine: string | null;
 

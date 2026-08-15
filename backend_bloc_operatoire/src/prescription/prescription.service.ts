@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interval } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ReceivePrescriptionDto } from './dto/receive-prescription.dto';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import {
@@ -25,7 +25,6 @@ import { construireIdDossier } from '../common/id-dossier';
 export class PrescriptionService {
   private readonly logger = new Logger(PrescriptionService.name);
   private polling = false;
-  private dernierPoll = 0;
 
   constructor(
     @InjectRepository(PatientBloc)
@@ -63,15 +62,7 @@ export class PrescriptionService {
   // destinées à ce service, et les ingère dans le fil de prescription local.
   @Interval(15000)
   async pollPrescriptionsBloc(): Promise<void> {
-    // Garde anti-chevauchement (un cycle en cours) + garde anti-rafale : l'écoute temps réel
-    // (PrescriptionImagerieListenerService) déclenche ce poll à chaque évènement de prescription,
-    // et le service Prescriptions (source de test en particulier) peut en émettre ~1/s — sans
-    // cette garde, on martelait le service externe en GET. On n'exécute pas plus d'un cycle par
-    // fenêtre de 5s ; un évènement ignoré est rattrapé par le prochain déclenchement.
     if (this.polling) return; // évite le chevauchement si un cycle précédent traîne
-    const maintenant = Date.now();
-    if (maintenant - this.dernierPoll < 5000) return;
-    this.dernierPoll = maintenant;
     const serviceId = this.config.get<string>('externalServices.serviceId');
     if (!serviceId) return;
 
@@ -227,32 +218,24 @@ export class PrescriptionService {
       return;
     }
 
+    // Filet de sécurité complémentaire : le service Prescriptions externe peut renvoyer un `id`
+    // différent à chaque interrogation pour ce qui est conceptuellement la même prescription
+    // (ex: source de test sans persistance), ce qui rend le dédoublonnage ci-dessus par `p.id`
+    // inefficace et créait une nouvelle notification à chaque cycle de 15s. On refuse aussi de
+    // ré-ingérer si ce patient a déjà une notification de prescription encore en attente — sauf
+    // pour un patient qui revient d'un épisode terminé (voir retourPatient plus bas).
     let patient = await this.patientBlocRepo.findOne({
       where: { patientId: p.patientId },
     });
-    // Retour d'un patient dont le précédent épisode est terminé (SORTI / CPA_INAPTE) : sa
-    // nouvelle prescription (ex. du service Chirurgie) est une NOUVELLE prise en charge — on le
-    // traite comme un nouveau patient qui arrive (réouverture du dossier en EN_ATTENTE_CPA +
-    // nouvelle notification, voir le bloc de création/mise à jour ci-dessous). Les restes du
-    // précédent épisode (notification encore ouverte, créneau encore planifié) n'ont plus cours
-    // et ne doivent donc pas le bloquer.
     const episodeTermine: PatientStatut[] = [
       PatientStatut.SORTI,
       PatientStatut.CPA_INAPTE,
     ];
-    const retourPatient = !!patient && episodeTermine.includes(patient.statut);
-
-    // Anti-ré-ingestion ciblée : une nouvelle prescription (nouvel `id`) doit ARRIVER dans la
-    // cloche — sauf si c'est manifestement la re-poussée de la même intervention déjà en cours.
-    // Le service Prescriptions peut renvoyer un `id` différent à chaque interrogation pour ce
-    // qui est conceptuellement la même prescription (ex: source de test sans persistance), ce
-    // qui faisait réapparaître le patient dans la cloche même après planification de son RDV CPA.
-    // On ne bloque donc que :
-    //  - patient en cours d'opération / en salle de réveil (épisode chirurgical réellement engagé) ;
-    //  - même intervention déjà ouverte : notification EN_ATTENTE / RDV_PLANIFIE pour le même
-    //    acte, ou libellé d'acte du patient identique à la prescription entrante.
-    // Un ancien RDV / créneau sur une AUTRE intervention ne bloque plus : c'est un nouveau
-    // passage au bloc → on traite le patient comme un nouveau patient qui arrive.
+    // Un patient dont le précédent séjour est terminé revient pour une NOUVELLE prise en charge :
+    // cette prescription ne doit jamais être écartée comme "déjà prise en charge" sous prétexte
+    // qu'une notification ou un statut opératoire résiduel traînerait encore de l'épisode clos.
+    const retourPatient =
+      !!patient && episodeTermine.includes(patient.statut);
     const enCoursOperation: PatientStatut[] = [
       PatientStatut.EN_COURS_OPERATION,
       PatientStatut.EN_SALLE_REVEIL,
@@ -260,10 +243,7 @@ export class PrescriptionService {
     const notificationDejaOuverte = await this.notificationRepo.findOne({
       where: {
         patientId: p.patientId,
-        statut: In([
-          StatutNotificationCPA.EN_ATTENTE,
-          StatutNotificationCPA.RDV_PLANIFIE,
-        ]),
+        statut: StatutNotificationCPA.EN_ATTENTE,
       },
     });
     // `actes` (contrat courant) ou `ActeBloc` (nom historique) — un service peut n'en fournir
@@ -323,6 +303,7 @@ export class PrescriptionService {
     const serviceSourceNom = await this.serviceRegistryClient.getServiceName(
       p.serviceIdSource,
     );
+
     const donneesPatient = {
       patientId: p.patientId,
       chuId: p.chuId,
@@ -365,10 +346,6 @@ export class PrescriptionService {
       alertes: p.alertes || undefined,
       prescripteurId: p.prescripteurId,
       chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
-      // On n'arrive ici que pour un patient inconnu, un patient en épisode terminé (SORTI /
-      // CPA_INAPTE), ou une nouvelle intervention différente de celle déjà en cours — le garde
-      // ci-dessus a exclu les re-poussées d'une même intervention et les opérations en cours.
-      // Rebasculement en EN_ATTENTE_CPA = nouvelle prise en charge.
       statut: PatientStatut.EN_ATTENTE_CPA,
       niveauUrgence,
       serviceOrigineId: p.serviceIdSource || undefined,

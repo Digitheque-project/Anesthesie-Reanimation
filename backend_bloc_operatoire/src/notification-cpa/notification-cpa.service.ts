@@ -76,20 +76,6 @@ export class NotificationCPAService {
           `Patient ${dto.patientId} déjà en cours de prise en charge (statut ${patient.statut}) — notification non créée.`,
         );
       }
-      // Un RDV déjà planifié au calendrier est lui aussi une prise en charge engagée : la même
-      // prescription ne doit pas être re-poussée comme nouvelle notification pour un patient
-      // qui a déjà son RDV CPA (voir le garde-fou d'ingestion dans PrescriptionService.ingerer).
-      const creneauDejaPlanifie = await this.creneauRepo.findOne({
-        where: { patientId: dto.patientId, statut: StatutCreneau.PLANIFIE },
-      });
-      if (creneauDejaPlanifie) {
-        this.logger.warn(
-          `Création d'une notification EN_ATTENTE refusée : patient ${dto.patientId} a déjà un créneau planifié (${creneauDejaPlanifie.type} le ${creneauDejaPlanifie.date})`,
-        );
-        throw new ConflictException(
-          `Patient ${dto.patientId} a déjà un RDV planifié — notification non créée.`,
-        );
-      }
     }
     const saved = await this.notificationRepo.save(
       this.notificationRepo.create(dto),
@@ -128,18 +114,12 @@ export class NotificationCPAService {
           .filter(Boolean),
       ),
     );
-    const [patients, creneaux] = await Promise.all([
-      patientIds.length
-        ? this.patientBlocRepo.find({
-            where: { patientId: In(patientIds) },
-          })
-        : Promise.resolve([]),
-      patientIds.length
-        ? this.creneauRepo.find({
-            where: { patientId: In(patientIds) },
-          })
-        : Promise.resolve([]),
-    ]);
+    const [patients, creneaux] = patientIds.length
+      ? await Promise.all([
+          this.patientBlocRepo.find({ where: { patientId: In(patientIds) } }),
+          this.creneauRepo.find({ where: { patientId: In(patientIds) } }),
+        ])
+      : [[], []];
     const patientMap = new Map(patients.map((p) => [p.patientId, p]));
     // Un RDV déjà planifié au calendrier masque les notifications EN_ATTENTE devenues obsolètes —
     // mais UNIQUEMENT celles qui lui sont antérieures.
@@ -303,12 +283,6 @@ export class NotificationCPAService {
     const n = await this.notificationRepo.findOne({ where: { id } });
     if (!n) throw new NotFoundException(`Notification ${id} non trouvée`);
     n.statut = StatutNotificationCPA.RDV_PLANIFIE;
-    // Planifier = consommer la ligne : le RDV existe désormais au calendrier, la notification ne
-    // doit plus apparaître dans la cloche comme une prescription à traiter (la popup ne filtre que
-    // `lu`/`estPatientTraite`, pas le statut — sans ceci, un patient planifié restait visible avec
-    // un bouton "Voir prescription" dans la cloche).
-    n.lu = true;
-    n.luLe = new Date();
 
     try {
       const patient = await this.patientBlocRepo.findOne({
@@ -338,15 +312,6 @@ export class NotificationCPAService {
     }
 
     const saved = await this.notificationRepo.save(n);
-    // La prescription de ce patient peut aussi avoir été reçue par webhook (même épisode) : sa
-    // ligne restait `processed: false`, donc après planification la cloche recomptait ce doublon
-    // comme non lu et le fil comme une nouvelle notification (carillon), alors que le RDV vient
-    // d'être planifié. On bascule ces lignes à `true` — le patient est pris en charge.
-    if (n.patientId) {
-      await this.webhookRepo
-        .update({ patientId: n.patientId }, { processed: true })
-        .catch(() => {});
-    }
     // Retire cette notification de la liste "à planifier" sur tous les postes connectés du
     // bloc, sans attendre un rechargement manuel — même canal que les nouvelles prescriptions,
     // type ignoré par TopBar (voir PatientBlocStatutService.diffuserChangementStatut).

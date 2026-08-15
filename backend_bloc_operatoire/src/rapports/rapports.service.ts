@@ -97,9 +97,37 @@ export class RapportsService {
     };
   }
 
-  // Source : ProtocoleOperatoire, pas ActivitePerOp — l'anesthésiste ne visite pas l'écran
-  // "Activité pendant l'opération" (réservé Anesthésiste/IBODE). ActivitePerOp.chirurgienId, lui,
-  // n'est renseigné par aucun flux existant et resterait toujours vide.
+  // Source : ProtocoleOperatoire, pas ActivitePerOp — le chirurgien ne visite jamais l'écran
+  // "Activité pendant l'opération" (réservé Anesthésiste/IBODE), son seul acte enregistré dans le
+  // bloc est le protocole opératoire (chirurgienId désormais auto-rempli depuis sa session à la
+  // création, voir ProtocoleOperatoireService.create). ActivitePerOp.chirurgienId, lui, n'est
+  // renseigné par aucun flux existant et resterait toujours vide.
+  async activiteParChirurgien(dateDebut?: string, dateFin?: string) {
+    const whereAct =
+      dateDebut && dateFin
+        ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) }
+        : {};
+    const rows = await this.protocoleRepo
+      .createQueryBuilder('p')
+      .select('p.chirurgienId', 'medecinId')
+      .addSelect('COUNT(*)', 'nbOperations')
+      .where(whereAct)
+      .andWhere('p.chirurgienId IS NOT NULL')
+      .groupBy('p.chirurgienId')
+      .orderBy('nbOperations', 'DESC')
+      .getRawMany();
+    const identites = await this.medecinIdentiteService.resoudreLot(
+      rows.map((r) => r.medecinId),
+    );
+    return rows.map((r) => {
+      const identite = identites[r.medecinId];
+      return {
+        ...r,
+        nomComplet: identite ? `${identite.prenom} ${identite.nom}` : '—',
+      };
+    });
+  }
+
   // Activité par anesthésiste : combine les CPA réalisées, les scores de réveil évalués et les
   // opérations suivies — les trois actes cliniques distincts que l'anesthésiste réalise le long
   // du parcours patient (miroir de la gestion des rôles CPA/pendant l'opération/salle de réveil).
@@ -417,6 +445,7 @@ export class RapportsService {
   async tableauDeBord(dateDebut?: string, dateFin?: string) {
     const sections = await Promise.allSettled([
       this.statistiquesGenerales(dateDebut, dateFin),
+      this.activiteParChirurgien(dateDebut, dateFin),
       this.activiteParAnesthesiste(dateDebut, dateFin),
       this.activiteParIbode(dateDebut, dateFin),
       this.activiteParResponsableCpa(dateDebut, dateFin),
@@ -430,6 +459,7 @@ export class RapportsService {
 
     const noms = [
       'statistiquesGenerales',
+      'activiteParChirurgien',
       'activiteParAnesthesiste',
       'activiteParIbode',
       'activiteParResponsableCpa',
@@ -440,7 +470,7 @@ export class RapportsService {
       'operationsDetail',
       'sortiesReveil',
     ];
-    const valeursParDefaut: any[] = [{}, [], [], [], [], [], [], {}, [], 0];
+    const valeursParDefaut: any[] = [{}, [], [], [], [], [], [], {}, [], [], 0];
 
     const resultats = sections.map((s, i) => {
       if (s.status === 'fulfilled') return s.value;
@@ -452,6 +482,7 @@ export class RapportsService {
 
     const [
       statistiques,
+      activiteParChirurgien,
       activiteParAnesthesiste,
       activiteParIbode,
       activiteParResponsableCpa,
@@ -467,6 +498,7 @@ export class RapportsService {
       periode: { dateDebut: dateDebut || null, dateFin: dateFin || null },
       genereLe: new Date().toISOString(),
       statistiques: { ...statistiques, totalSortiesReveil: sortiesReveil },
+      activiteParChirurgien,
       activiteParAnesthesiste,
       activiteParIbode,
       activiteParResponsableCpa,

@@ -51,6 +51,7 @@ let PatientBlocService = class PatientBlocService {
         });
         if (!demande)
             throw new Error('Demande non trouvée');
+<<<<<<< HEAD
         const niveauUrgence = (0, urgence_1.niveauDepuisEchelle)(demande.urgence);
         const existant = await this.patientRepo.findOne({
             where: { patientId: demande.patientId },
@@ -75,6 +76,17 @@ let PatientBlocService = class PatientBlocService {
             }
             return existant;
         }
+=======
+        const existant = await this.patientRepo.findOne({
+            where: { patientId: demande.patientId },
+        });
+        if (existant)
+            return existant;
+        const estUrgence = demande.urgence !== undefined && demande.urgence >= 3;
+        const niveauUrgence = estUrgence
+            ? patient_bloc_entity_1.NiveauUrgence.TRES_URGENT
+            : patient_bloc_entity_1.NiveauUrgence.NORMAL;
+>>>>>>> a733407 (commit 1508)
         const patient = new patient_bloc_entity_1.PatientBloc();
         patient.patientId = demande.patientId;
         patient.chuId = demande.chuId;

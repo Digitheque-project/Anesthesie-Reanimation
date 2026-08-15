@@ -37,6 +37,8 @@ export const notificationService = {
   // il faisait croire à l'utilisateur qu'une vérification pré-anesthésique avait été créée alors
   // qu'aucune n'était enregistrée. L'échec doit remonter à l'appelant.
   creerVpaDirect: async (payload: any) => {
+    // Pas de simulation : la création doit passer par l'API réelle, sinon on crée des VPA
+    // "fantômes" qui n'existent pas côté serveur.
     const { data } = await apiClient.post('/vpa/direct', payload)
     return data
   },

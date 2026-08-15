@@ -176,7 +176,7 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
   const categoriesVisibles = categoriesAutorisees
 
   return (
-    <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5 h-full flex flex-col">
+    <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm space-y-5 h-full min-h-0 flex flex-col overflow-y-auto">
       <h2 className="text-lg font-bold font-headline text-primary flex items-center gap-2 shrink-0">
         <span className="material-symbols-outlined">timeline</span> Chronologie de l'opération
       </h2>

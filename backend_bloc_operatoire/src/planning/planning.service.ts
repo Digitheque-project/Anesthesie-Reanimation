@@ -15,7 +15,6 @@ import {
   NotificationCPA,
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
-import { WebhookNotification } from '../entities/webhook-notification.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { verifierCreneauValide } from './creneau-validation.util';
@@ -28,8 +27,6 @@ export class PlanningService {
     private patientBlocRepo: Repository<PatientBloc>,
     @InjectRepository(NotificationCPA)
     private notificationRepo: Repository<NotificationCPA>,
-    @InjectRepository(WebhookNotification)
-    private webhookRepo: Repository<WebhookNotification>,
     private accueilClient: AccueilClient,
     private medecinIdentiteService: MedecinIdentiteService,
   ) {}
@@ -135,23 +132,13 @@ export class PlanningService {
     // NotificationCPAService.planifierRDV) laissait la notification bloquée à EN_ATTENTE pour
     // toujours — le patient restait donc affiché indéfiniment dans le fil de prescription même
     // après avoir déjà un rendez-vous. Toute réservation de créneau CPA fait maintenant avancer
-    // la notification correspondante, quel que soit l'écran d'où elle a été créée. On la marque
-    // aussi lue (lu=true) : planifier consomme la ligne, elle ne doit plus apparaître dans la
-    // cloche comme prescription à traiter.
+    // la notification correspondante, quel que soit l'écran d'où elle a été créée.
     const patientId = (saved as any).patientId;
     if (patientId) {
       await this.notificationRepo.update(
         { patientId, statut: StatutNotificationCPA.EN_ATTENTE },
-        {
-          statut: StatutNotificationCPA.RDV_PLANIFIE,
-          lu: true,
-          luLe: new Date(),
-        },
+        { statut: StatutNotificationCPA.RDV_PLANIFIE },
       );
-      // La même prescription peut aussi être arrivée par webhook (ligne processed:false) : sans
-      // cette bascule, après planification la cloche recomptait ce doublon comme non lu — même
-      // symptôme que celui corrigé dans NotificationCPAService.planifierRDV.
-      await this.webhookRepo.update({ patientId }, { processed: true });
     }
 
     return saved;
@@ -166,13 +153,11 @@ export class PlanningService {
     // Symétrique du basculement fait dans reserverCreneau : sans ça, annuler un RDV CPA laissait
     // la notification bloquée à RDV_PLANIFIE pour toujours — le patient disparaissait du fil de
     // prescription alors qu'il n'a plus aucun rendez-vous réel. On ne touche pas à REALISE (CPA
-    // déjà faite : annuler un créneau obsolète après coup ne doit pas rouvrir le dossier). On
-    // rouvre aussi la ligne à la cloche (lu=false) : plus de RDV planifié, le patient redevient
-    // une prescription à traiter.
+    // déjà faite : annuler un créneau obsolète après coup ne doit pas rouvrir le dossier).
     if (creneau.type === TypeRDV.CPA && creneau.patientId) {
       await this.notificationRepo.update(
         { patientId: creneau.patientId, statut: StatutNotificationCPA.RDV_PLANIFIE },
-        { statut: StatutNotificationCPA.EN_ATTENTE, lu: false, luLe: null },
+        { statut: StatutNotificationCPA.EN_ATTENTE },
       );
     }
 

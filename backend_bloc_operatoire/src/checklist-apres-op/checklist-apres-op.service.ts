@@ -65,22 +65,11 @@ export class ChecklistApresOpService {
       centralUser.userId,
     );
     if (dto.transfertSalleReveil) {
-      // Patient d'un service qui possède sa propre salle de réveil (Imagerie, Scanner) : pas de
-      // transfert vers celle du Bloc. Le patient reste EN_COURS_OPERATION jusqu'au protocole
-      // anesthésique, qui le renvoie au service et l'archive (SORTI) sans jamais passer par la
-      // salle de réveil du Bloc. Les patients d'Endoscopie/Urgence, surveillés par le même
-      // anesthésiste du Bloc, sont transférés comme ceux de la chirurgie.
-      const transfertEnSalleReveilBloc =
-        !(await this.patientBlocStatutService.aSaPropreSalleDeReveil(
-          saved.patientId,
-        ));
-      if (transfertEnSalleReveilBloc) {
-        await this.patientBlocStatutService.changerStatut(
-          saved.patientId,
-          PatientStatut.EN_SALLE_REVEIL,
-          centralUser.userId,
-        );
-      }
+      await this.patientBlocStatutService.changerStatut(
+        saved.patientId,
+        PatientStatut.EN_SALLE_REVEIL,
+        centralUser.userId,
+      );
     }
     return saved;
   }
@@ -126,21 +115,13 @@ export class ChecklistApresOpService {
 
     // Le passage en salle de réveil est déclaré ici (checklist de sortie du bloc) — on
     // synchronise automatiquement le statut du patient plutôt que de laisser cette transition
-    // manuelle et déconnectée de la machine à états. Sauf patient d'un service qui possède sa
-    // propre salle de réveil (Imagerie, Scanner), qui reste EN_COURS_OPERATION jusqu'au protocole
-    // anesthésique (retour service + archivage direct). Endoscopie/Urgence suivent le flux complet.
+    // manuelle et déconnectée de la machine à états.
     if (transfertVientDEtreConfirme) {
-      const transfertEnSalleReveilBloc =
-        !(await this.patientBlocStatutService.aSaPropreSalleDeReveil(
-          updated.patientId,
-        ));
-      if (transfertEnSalleReveilBloc) {
-        await this.patientBlocStatutService.changerStatut(
-          updated.patientId,
-          PatientStatut.EN_SALLE_REVEIL,
-          centralUser?.userId,
-        );
-      }
+      await this.patientBlocStatutService.changerStatut(
+        updated.patientId,
+        PatientStatut.EN_SALLE_REVEIL,
+        centralUser?.userId,
+      );
     }
 
     this.gateway.emitToOperation(updated.patientId, 'checklist-apres-op:maj', {

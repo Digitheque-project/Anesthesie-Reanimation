@@ -27,6 +27,9 @@ let RapportsController = class RapportsController {
     statistiques(dd, df) {
         return this.rapportsService.statistiquesGenerales(dd, df);
     }
+    activiteChirurgiens(dd, df) {
+        return this.rapportsService.activiteParChirurgien(dd, df);
+    }
     cpaEnAttente() {
         return this.rapportsService.cpaEnAttente();
     }
@@ -58,6 +61,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], RapportsController.prototype, "statistiques", null);
+__decorate([
+    (0, common_1.Get)('activite-chirurgiens'),
+    (0, swagger_1.ApiOperation)({ summary: 'Activité par chirurgien' }),
+    __param(0, (0, common_1.Query)('dateDebut')),
+    __param(1, (0, common_1.Query)('dateFin')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], RapportsController.prototype, "activiteChirurgiens", null);
 __decorate([
     (0, common_1.Get)('cpa-en-attente'),
     (0, swagger_1.ApiOperation)({ summary: 'CPA en attente' }),

@@ -13,6 +13,7 @@ import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
 import Radio from '@/components/ui/Radio'
+import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 
 export default function ApresOperationPage() {
   return (
@@ -51,6 +52,7 @@ function ApresOperationPageContent() {
     signalementsEffectues: null,
   })
   const [loading, setLoading] = useState(false)
+  const [showRecap, setShowRecap] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
   const { on } = useOperationRealtime(patientId)
   const { peutValiderChecklistApresOp, roleName } = useRole()
@@ -60,7 +62,7 @@ function ApresOperationPageContent() {
   const reponsesIncompletes = form.interventionEnregistree === null || form.compteFinalCorrect === null
     || form.etiquetageVerifie === null || form.signalementsEffectues === null
 
-  const handleSubmit = async () => {
+  const handleOuvrirRecap = () => {
     if (!peutValiderChecklistApresOp) {
       alert('❌ La check-list après intervention est réservée à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
       return
@@ -69,12 +71,17 @@ function ApresOperationPageContent() {
       alert('❌ Répondez à chaque item Oui/Non avant de valider.')
       return
     }
+    setShowRecap(true)
+  }
+
+  const handleSubmit = async () => {
     setLoading(true)
     try {
       // Cette check-list EST le check de sortie du bloc (titre de l'écran) — sa validation par
       // l'anesthésiste transfère donc toujours le patient en salle de réveil, sans case à cocher
       // à part : il n'y a pas de cas où on validerait cette sortie sans transfert.
       await apiClient.post('/checklists-apres-op', { patientId, ...form, transfertSalleReveil: true })
+      setShowRecap(false)
       alert('✅ Check-list après intervention enregistrée ! Complétez maintenant le protocole anesthésique et les instructions post-opératoires.')
       router.push(`/bloc/protocole-anesthesique?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
     } catch (err: any) {
@@ -85,8 +92,21 @@ function ApresOperationPageContent() {
     finally { setLoading(false) }
   }
 
+  const sectionsRecap: RecapSection[] = [
+    {
+      titre: "Confirmation orale par l'équipe",
+      icone: 'record_voice_over',
+      champs: [
+        { label: 'Intervention enregistrée', valeur: form.interventionEnregistree === true ? 'Oui' : form.interventionEnregistree === false ? 'Non/N/A' : '' },
+        { label: 'Compte final compresses/aiguilles/instruments', valeur: form.compteFinalCorrect === true ? 'Oui' : form.compteFinalCorrect === false ? 'Non/N/A' : '' },
+        { label: 'Étiquetage des prélèvements vérifié', valeur: form.etiquetageVerifie === true ? 'Oui' : form.etiquetageVerifie === false ? 'Non/N/A' : '' },
+        { label: 'Signalement dysfonctionnements/événements', valeur: form.signalementsEffectues === true ? 'Oui' : form.signalementsEffectues === false ? 'Non/N/A' : '' },
+      ],
+    },
+  ]
+
   return (
-    <div className="p-6 max-w-5xl mx-auto w-full">
+    <div className="p-6 max-w-6xl mx-auto w-full">
       <BackButton className="mb-4" />
 
       <h1 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight mb-4">Check-list après intervention – Check de sortie du bloc</h1>
@@ -108,14 +128,14 @@ function ApresOperationPageContent() {
             <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold">1</div>
             <h3 className="text-lg font-bold font-headline text-on-surface">Confirmation orale par l'équipe</h3>
           </div>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { key: 'interventionEnregistree', label: 'Intervention enregistrée' },
               { key: 'compteFinalCorrect', label: 'Compte final des compresses, aiguilles, instruments correct' },
               { key: 'etiquetageVerifie', label: 'Étiquetage des prélèvements/pièces opératoires vérifié' },
               { key: 'signalementsEffectues', label: 'Signalement des dysfonctionnements matériels et événements indésirables' },
             ].map(item => (
-              <div key={item.key} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/10">
+              <div key={item.key} className="flex flex-col gap-3 p-4 bg-white rounded-2xl border border-outline-variant/10">
                 <span className="font-medium text-on-surface">{item.label}</span>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -137,13 +157,24 @@ function ApresOperationPageContent() {
 
       {/* Footer Action */}
       <div className="mt-10 flex justify-end pt-6 border-t border-outline-variant/10">
-        <button onClick={handleSubmit} disabled={loading || !peutValiderChecklistApresOp}
+        <button onClick={handleOuvrirRecap} disabled={loading || !peutValiderChecklistApresOp}
           title={!peutValiderChecklistApresOp ? 'Réservé à l\'anesthésiste' : undefined}
           className="px-8 py-4 bg-primary text-white font-headline font-bold rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
           <span>{loading ? 'Enregistrement...' : !peutValiderChecklistApresOp ? 'Accès non autorisé' : 'Valider et enregistrer'}</span>
           <span className="material-symbols-outlined">save_as</span>
         </button>
       </div>
+
+      <ConfirmationRecapModal
+        open={showRecap}
+        titre="Check-list après intervention"
+        sousTitre="Check de sortie du bloc — relisez avant de confirmer"
+        sections={sectionsRecap}
+        onAnnuler={() => setShowRecap(false)}
+        onConfirmer={handleSubmit}
+        confirmEnCours={loading}
+        labelConfirmer="Confirmer et enregistrer"
+      />
     </div>
   )
   }

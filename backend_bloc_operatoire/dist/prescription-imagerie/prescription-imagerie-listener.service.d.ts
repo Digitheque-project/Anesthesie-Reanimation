@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { NotificationCPA } from '../entities/notification-cpa.entity';
 import { PatientBloc } from '../entities/patient-bloc.entity';
-import { CreneauBloc } from '../entities/creneau-bloc.entity';
 import { PrescriptionImagerieClient } from '../external/prescription-imagerie.client';
 import { PrescriptionService } from '../prescription/prescription.service';
 import { ServiceRegistryClient } from '../external/service-registry.client';
@@ -18,11 +17,14 @@ export declare class PrescriptionImagerieListenerService implements OnModuleInit
     private readonly ingestionLedger;
     private readonly notificationRepo;
     private readonly patientBlocRepo;
-    private readonly creneauRepo;
     private readonly logger;
     private socket;
     private readonly serviceId;
+<<<<<<< HEAD
     constructor(config: ConfigService, prescriptionImagerieClient: PrescriptionImagerieClient, prescriptionService: PrescriptionService, serviceRegistryClient: ServiceRegistryClient, notificationBackClient: NotificationBackClient, ingestionLedger: IngestionLedgerService, notificationRepo: Repository<NotificationCPA>, patientBlocRepo: Repository<PatientBloc>, creneauRepo: Repository<CreneauBloc>);
+=======
+    constructor(config: ConfigService, prescriptionImagerieClient: PrescriptionImagerieClient, prescriptionService: PrescriptionService, serviceRegistryClient: ServiceRegistryClient, notificationBackClient: NotificationBackClient, notificationRepo: Repository<NotificationCPA>, patientBlocRepo: Repository<PatientBloc>);
+>>>>>>> a733407 (commit 1508)
     onModuleInit(): void;
     onModuleDestroy(): void;
     private estNotificationPrescription;

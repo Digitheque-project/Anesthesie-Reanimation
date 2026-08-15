@@ -55,18 +55,6 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
             this.config.get('externalServices.serviceId') ?? '';
     }
     async receive(dto) {
-        const existante = await this.repo.findOne({
-            where: {
-                patientId: dto.patientId,
-                sourceReferenceType: dto.sourceReferenceType,
-                sourceReferenceId: dto.sourceReferenceId,
-            },
-            order: { createdAt: 'DESC' },
-        });
-        if (existante) {
-            this.logger.log(`↩️ Demande de CPA externe déjà reçue pour le patient ${dto.patientId} (réf. ${dto.sourceReferenceId}) — ignorée (idempotent)`);
-            return existante;
-        }
         const sourceServiceName = (await this.serviceRegistryClient.getServiceName(dto.sourceServiceId)) ||
             dto.sourceServiceName;
         const demande = this.repo.create({
@@ -217,10 +205,6 @@ let DemandeCpaExterneService = DemandeCpaExterneService_1 = class DemandeCpaExte
     async marquerVpaRealisee(demande, vpaId) {
         demande.vpaId = vpaId;
         demande.statut = demande_cpa_externe_entity_1.StatutDemandeCpaExterne.CONFIRMEE;
-        return this.repo.save(demande);
-    }
-    async marquerReportee(demande) {
-        demande.statut = demande_cpa_externe_entity_1.StatutDemandeCpaExterne.REPORTEE;
         return this.repo.save(demande);
     }
     async notifierResultat(demande, type, payload) {

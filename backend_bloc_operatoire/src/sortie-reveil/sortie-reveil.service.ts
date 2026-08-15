@@ -34,11 +34,23 @@ export class SortieReveilService {
     dto: CreateSortieReveilDto,
     centralUser: CentralUser,
   ): Promise<SortieReveil> {
-    // La sortie de réveil n'est plus bloquée par une checklist entièrement cochée ni par un
-    // seuil de score ≥ 9 : la validation finale est confiée à l'anesthésiste via la fenêtre de
-    // confirmation de l'interface (re-vérification de la surveillance). On conserve uniquement
-    // l'intégrité des données : le score référencé doit exister et appartenir à CE patient (pas
-    // un scoreSCCREId d'un autre patient envoyé par erreur ou de façon malveillante).
+    // @IsBoolean() sur ChecklistSortieReveilDto accepte aussi bien true que false : il valide le
+    // type, pas que chaque point ait réellement été confirmé. La checklist de sortie doit être
+    // entièrement cochée (comme déjà exigé côté frontend, salle-de-reveil/*) avant d'autoriser
+    // la sortie du patient.
+    const itemsNonConfirmes = Object.entries(dto.checklistSortie ?? {}).filter(
+      ([, valeur]) => valeur !== true,
+    );
+    if (itemsNonConfirmes.length) {
+      throw new BadRequestException(
+        `Checklist de sortie incomplète — items non confirmés : ${itemsNonConfirmes.map(([cle]) => cle).join(', ')}`,
+      );
+    }
+
+    // Le seuil "score >= 9" n'était vérifié que côté frontend (bouton désactivé) — un appel API
+    // direct pouvait autoriser la sortie d'un patient au réveil non stabilisé. On revérifie ici
+    // le score réellement enregistré, et qu'il appartient bien à CE patient (pas un scoreSCCREId
+    // d'un autre patient envoyé par erreur ou de façon malveillante).
     const score = await this.scoreRepo.findOne({
       where: { id: dto.scoreSCCREId },
     });
@@ -48,6 +60,11 @@ export class SortieReveilService {
     if (score.patientId !== dto.patientId) {
       throw new BadRequestException(
         "Ce score de réveil n'appartient pas à ce patient.",
+      );
+    }
+    if (score.scoreTotal < 9) {
+      throw new BadRequestException(
+        `Score de réveil insuffisant (${score.scoreTotal}/10) — la sortie nécessite un score ≥ 9.`,
       );
     }
 

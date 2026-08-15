@@ -24,7 +24,7 @@ import { RequirePermission } from '../central-auth/require-permission.decorator'
 import { RoleClinique } from '../central-auth/role-clinique';
 
 // Permission du catalogue central ouvrant la LECTURE transversale du programme operatoire aux
-// autres services du CHU (clinique-front). L'ecriture reste reservee a l'Anesthesiste.
+// autres services du CHU (clinique-front). L'ecriture reste reservee au Chirurgien du bloc.
 const LECTURE_PROTOCOLE = 'protocole-operatoire:read';
 
 @ApiTags('Protocoles')
@@ -34,10 +34,10 @@ export class ProtocoleOperatoireController {
   constructor(private readonly service: ProtocoleOperatoireService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.CHIRURGIEN, RoleClinique.ANESTHESISTE)
   @ApiOperation({
     summary:
-      'Creer un protocole anesthesique (Anesthesiste)',
+      'Creer un protocole operatoire / protocole anesthesique (Chirurgien ou Anesthesiste)',
   })
   create(@Body() dto: CreateProtocoleOperatoireDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
@@ -71,8 +71,8 @@ export class ProtocoleOperatoireController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Modifier un protocole (Anesthesiste)' })
+  @RequireRoleClinique(RoleClinique.CHIRURGIEN, RoleClinique.ANESTHESISTE)
+  @ApiOperation({ summary: 'Modifier un protocole (Chirurgien ou Anesthesiste)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProtocoleOperatoireDto,
@@ -82,8 +82,8 @@ export class ProtocoleOperatoireController {
   }
 
   @Delete(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Supprimer un protocole (Anesthesiste)' })
+  @RequireRoleClinique(RoleClinique.CHIRURGIEN)
+  @ApiOperation({ summary: 'Supprimer un protocole (Chirurgien)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.remove(id);
   }

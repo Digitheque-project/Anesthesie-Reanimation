@@ -25,6 +25,15 @@ export class RapportsController {
     return this.rapportsService.statistiquesGenerales(dd, df);
   }
 
+  @Get('activite-chirurgiens')
+  @ApiOperation({ summary: 'Activité par chirurgien' })
+  activiteChirurgiens(
+    @Query('dateDebut') dd?: string,
+    @Query('dateFin') df?: string,
+  ) {
+    return this.rapportsService.activiteParChirurgien(dd, df);
+  }
+
   @Get('cpa-en-attente')
   @ApiOperation({ summary: 'CPA en attente' })
   cpaEnAttente() {

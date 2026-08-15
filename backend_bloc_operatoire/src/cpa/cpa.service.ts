@@ -24,9 +24,8 @@ import { DemandeCpaExterneService } from '../demande-cpa-externe/demande-cpa-ext
 import { MedecinService } from '../medecin/medecin.service';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
-import { estServiceNonOperatoire } from '../patient-bloc/service-non-operatoire';
 import { CentralUser } from '../central-auth/central-user.interface';
-import { agitCommeAnesthesiste, matchRoleClinique } from '../central-auth/role-clinique';
+import { matchRoleClinique, RoleClinique } from '../central-auth/role-clinique';
 import { RoleMedecin } from '../entities/medecin.entity';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 import { CreateCPADto } from './dto/create-cpa.dto';
@@ -67,17 +66,17 @@ export class CPAService {
       );
     }
 
-    // Si c'est l'anesthésiste (ou le Major, qui le remplace totalement — même rôle clinique)
-    // qui est connecté, il est toujours celui qui a réalisé la CPA — jamais une saisie manuelle
-    // du client. Son identité SSO (userId central) sert directement de référence, sans exiger de
-    // fiche Médecin locale préalable. Si c'est un Responsable CPA qui saisit la CPA (traitement
-    // administratif au nom de l'anesthésiste), ce rôle n'a pas d'identité anesthésiste propre :
-    // l'anesthésiste ayant réalisé l'examen doit être désigné explicitement dans le formulaire,
-    // via la table locale `medecins` (traitée comme un médecin externe par convention).
+    // Si c'est l'anesthésiste lui-même qui est connecté, il est toujours celui qui a réalisé la
+    // CPA — jamais une saisie manuelle du client. Son identité SSO (userId central) sert
+    // directement de référence, sans exiger de fiche Médecin locale préalable. Si c'est un
+    // Responsable CPA ou un Major qui saisit la CPA (traitement administratif au nom de
+    // l'anesthésiste), ces rôles n'ont pas d'identité anesthésiste propre : l'anesthésiste
+    // ayant réalisé l'examen doit être désigné explicitement dans le formulaire, via la table
+    // locale `medecins` (traitée comme un médecin externe par convention).
     const roleUtilisateur = matchRoleClinique(centralUser.role);
     let anesthesisteId: string | null;
 
-    if (agitCommeAnesthesiste(roleUtilisateur)) {
+    if (roleUtilisateur === RoleClinique.ANESTHESISTE) {
       anesthesisteId = centralUser.userId;
     } else if (dto.anesthesisteId) {
       // Désignation facultative : la liste (table locale `medecins`) peut être vide si aucun
@@ -99,9 +98,11 @@ export class CPAService {
     // CPA seul : sa décision engage sa propre responsabilité, ce qui vaut validation immédiate.
     // Un Responsable CPA seul (sans Major) doit encore passer la main à un anesthésiste pour les
     // médicaments et la vérification veille — tant que ce n'est pas fait, en attente.
-    const statutValidationProf = agitCommeAnesthesiste(roleUtilisateur)
-      ? StatutValidationProf.VALIDE
-      : StatutValidationProf.EN_ATTENTE_VALIDATION;
+    const statutValidationProf =
+      roleUtilisateur === RoleClinique.ANESTHESISTE ||
+      roleUtilisateur === RoleClinique.MAJOR
+        ? StatutValidationProf.VALIDE
+        : StatutValidationProf.EN_ATTENTE_VALIDATION;
 
     const { premedicaments, anesthesisteId: _ignored, ...cpaData } = dto as any;
     const cpa = this.cpaRepository.create({
@@ -138,41 +139,6 @@ export class CPAService {
           nouveauStatut,
           centralUser.userId,
         );
-      }
-
-      // Patient de statut NORMAL venu d'un service non-opératoire (Endoscopie, Urgence, Imagerie)
-      // dont la CPA est refusée ou reportée : fin de parcours au Bloc. Contrairement aux patients
-      // urgents (simplement notifiés, toujours suivis), il ne fera jamais l'acte anesthésique ici —
-      // retour au service d'origine + archivage du dossier (SORTI), sans passer par le programme.
-      if (
-        dto.decision === DecisionCPA.INAPTE ||
-        dto.decision === DecisionCPA.REPORT
-      ) {
-        const patientApresCpa = await this.patientBlocRepo.findOne({
-          where: { patientId: dto.patientId },
-        });
-        if (
-          patientApresCpa &&
-          patientApresCpa.niveauUrgence === NiveauUrgence.NORMAL &&
-          estServiceNonOperatoire(patientApresCpa.serviceOrigine)
-        ) {
-          await this.patientBlocStatutService.archiverRetourServiceOrigine(
-            dto.patientId,
-            centralUser.userId,
-            'CPA_NON_CONFORME',
-          );
-
-          // REPORT : la demande CPA du service est close (reportée) — la décision étant prise, il
-          // ne reste pas de "tentative à reprendre" dans notre circuit (le patient est archivé).
-          if (dto.decision === DecisionCPA.REPORT) {
-            const demande = await this.demandeCpaExterneService.trouverDemandeOuverte(
-              dto.patientId,
-            );
-            if (demande) {
-              await this.demandeCpaExterneService.marquerReportee(demande);
-            }
-          }
-        }
       }
 
       // Une décision APTE/INAPTE ferme réellement le dossier de prescription : la notification
@@ -410,7 +376,8 @@ export class CPAService {
       (dto as any).dateVerificationVeille !== undefined;
     if (
       cpa.statutValidationProf === StatutValidationProf.EN_ATTENTE_VALIDATION &&
-      agitCommeAnesthesiste(roleUtilisateur) &&
+      (roleUtilisateur === RoleClinique.ANESTHESISTE ||
+        roleUtilisateur === RoleClinique.MAJOR) &&
       (cpa.decision !== DecisionCPA.APTE || contientSuiviAnesthesiste)
     ) {
       cpa.statutValidationProf = StatutValidationProf.VALIDE;
@@ -432,7 +399,8 @@ export class CPAService {
     if (
       patientApresCpa?.statut === PatientStatut.CPA_REALISE &&
       cpa.decision === DecisionCPA.APTE &&
-      agitCommeAnesthesiste(roleUtilisateur) &&
+      (roleUtilisateur === RoleClinique.ANESTHESISTE ||
+        roleUtilisateur === RoleClinique.MAJOR) &&
       contientSuiviAnesthesiste
     ) {
       await this.patientBlocStatutService.changerStatut(

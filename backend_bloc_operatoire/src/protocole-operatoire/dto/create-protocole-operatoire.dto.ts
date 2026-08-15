@@ -31,6 +31,7 @@ export class CreateProtocoleOperatoireDto {
   // indépendamment (le premier arrivé crée, l'autre met à jour) — voir ProtocoleOperatoireService.
   @IsOptional() @IsString() compteRenduIntervention?: string;
   @IsOptional() @IsString() compteRenduAnesthesique?: string;
+  @IsOptional() @IsString() personnelIntervention?: string;
   @IsOptional() surveillance?: any;
   @IsOptional()
   @IsArray()

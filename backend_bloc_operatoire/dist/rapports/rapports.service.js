@@ -101,6 +101,28 @@ let RapportsService = RapportsService_1 = class RapportsService {
             urgencesParNiveau,
         };
     }
+    async activiteParChirurgien(dateDebut, dateFin) {
+        const whereAct = dateDebut && dateFin
+            ? { dateOperation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
+            : {};
+        const rows = await this.protocoleRepo
+            .createQueryBuilder('p')
+            .select('p.chirurgienId', 'medecinId')
+            .addSelect('COUNT(*)', 'nbOperations')
+            .where(whereAct)
+            .andWhere('p.chirurgienId IS NOT NULL')
+            .groupBy('p.chirurgienId')
+            .orderBy('nbOperations', 'DESC')
+            .getRawMany();
+        const identites = await this.medecinIdentiteService.resoudreLot(rows.map((r) => r.medecinId));
+        return rows.map((r) => {
+            const identite = identites[r.medecinId];
+            return {
+                ...r,
+                nomComplet: identite ? `${identite.prenom} ${identite.nom}` : '—',
+            };
+        });
+    }
     async activiteParAnesthesiste(dateDebut, dateFin) {
         const periodeCPA = dateDebut && dateFin
             ? { dateConsultation: (0, typeorm_2.Between)(new Date(dateDebut), new Date(dateFin)) }
@@ -341,6 +363,7 @@ let RapportsService = RapportsService_1 = class RapportsService {
     async tableauDeBord(dateDebut, dateFin) {
         const sections = await Promise.allSettled([
             this.statistiquesGenerales(dateDebut, dateFin),
+            this.activiteParChirurgien(dateDebut, dateFin),
             this.activiteParAnesthesiste(dateDebut, dateFin),
             this.activiteParIbode(dateDebut, dateFin),
             this.activiteParResponsableCpa(dateDebut, dateFin),
@@ -353,6 +376,7 @@ let RapportsService = RapportsService_1 = class RapportsService {
         ]);
         const noms = [
             'statistiquesGenerales',
+            'activiteParChirurgien',
             'activiteParAnesthesiste',
             'activiteParIbode',
             'activiteParResponsableCpa',
@@ -363,18 +387,19 @@ let RapportsService = RapportsService_1 = class RapportsService {
             'operationsDetail',
             'sortiesReveil',
         ];
-        const valeursParDefaut = [{}, [], [], [], [], [], [], {}, [], 0];
+        const valeursParDefaut = [{}, [], [], [], [], [], [], {}, [], [], 0];
         const resultats = sections.map((s, i) => {
             if (s.status === 'fulfilled')
                 return s.value;
             this.logger.error(`Section "${noms[i]}" du tableau de bord en échec, dégradée à vide: ${s.reason?.message ?? s.reason}`);
             return valeursParDefaut[i];
         });
-        const [statistiques, activiteParAnesthesiste, activiteParIbode, activiteParResponsableCpa, decisionsCPA, typesChirurgie, tachesAccomplies, evolutionQuotidienne, operationsDetail, sortiesReveil,] = resultats;
+        const [statistiques, activiteParChirurgien, activiteParAnesthesiste, activiteParIbode, activiteParResponsableCpa, decisionsCPA, typesChirurgie, tachesAccomplies, evolutionQuotidienne, operationsDetail, sortiesReveil,] = resultats;
         return {
             periode: { dateDebut: dateDebut || null, dateFin: dateFin || null },
             genereLe: new Date().toISOString(),
             statistiques: { ...statistiques, totalSortiesReveil: sortiesReveil },
+            activiteParChirurgien,
             activiteParAnesthesiste,
             activiteParIbode,
             activiteParResponsableCpa,

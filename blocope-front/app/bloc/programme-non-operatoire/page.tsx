@@ -50,7 +50,7 @@ export default function ProgrammeNonOperatoirePage() {
           statut: p.statut || '',
           chirurgien: notif?.chirurgien?.nom || p.chirurgien_nom || '',
           dateIntervention: p.dateIntervention || null,
-          salle: p.chambre || '',
+          salle: p.salleOperation || '',
         }
       })
 

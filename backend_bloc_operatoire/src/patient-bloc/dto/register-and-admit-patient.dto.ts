@@ -33,4 +33,5 @@ export class RegisterAndAdmitPatientDto {
 
   @IsOptional() @IsEnum(PatientStatut) statut?: PatientStatut;
   @IsOptional() @IsString() chambre?: string;
+  @IsOptional() @IsString() salleOperation?: string;
 }

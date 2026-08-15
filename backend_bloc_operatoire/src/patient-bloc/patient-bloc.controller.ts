@@ -195,20 +195,6 @@ export class PatientBlocController {
     );
   }
 
-  @Patch(':patientId/retour-service-origine')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
-  @ApiOperation({
-    summary:
-      "Fin d'acte anesthésique hors bloc : retour au service d'origine + archivage du dossier (SORTI) sans passer par la salle de réveil du Bloc (Anesthésiste, Major)",
-  })
-  retourServiceOrigine(@Param('patientId') patientId: string, @Request() req: any) {
-    return this.patientBlocStatutService.archiverRetourServiceOrigine(
-      patientId,
-      req.centralUser?.userId,
-      'FIN_ACTE_ANESTHESIQUE',
-    );
-  }
-
   @Delete(':patientId')
   @RequireRoleClinique(RoleClinique.MAJOR, RoleClinique.RESPONSABLE_CPA)
   @ApiOperation({ summary: 'Supprimer une fiche de suivi bloc (Major, Responsable CPA)' })

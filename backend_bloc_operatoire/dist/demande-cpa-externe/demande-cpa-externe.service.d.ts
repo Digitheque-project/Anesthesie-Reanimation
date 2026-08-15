@@ -34,7 +34,6 @@ export declare class DemandeCpaExterneService {
     marquerLu(id: string): Promise<DemandeCpaExterne>;
     marquerCpaRealisee(demande: DemandeCpaExterne, cpaId: string, apte: boolean): Promise<DemandeCpaExterne>;
     marquerVpaRealisee(demande: DemandeCpaExterne, vpaId: string): Promise<DemandeCpaExterne>;
-    marquerReportee(demande: DemandeCpaExterne): Promise<DemandeCpaExterne>;
     notifierResultat(demande: DemandeCpaExterne, type: string, payload: any): Promise<void>;
     findStatutPublic(id: string): Promise<StatutDemandeCpaPubliqueDto>;
 }

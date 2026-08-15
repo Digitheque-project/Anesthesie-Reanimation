@@ -38,8 +38,12 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
     config;
     logger = new common_1.Logger(PrescriptionService_1.name);
     polling = false;
+<<<<<<< HEAD
     dernierPoll = 0;
     constructor(patientBlocRepo, notificationRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, ingestionLedger, config) {
+=======
+    constructor(patientBlocRepo, notificationRepo, prescriptionClient, notificationBackClient, serviceRegistryClient, config) {
+>>>>>>> a733407 (commit 1508)
         this.patientBlocRepo = patientBlocRepo;
         this.notificationRepo = notificationRepo;
         this.prescriptionClient = prescriptionClient;
@@ -143,6 +147,7 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         if (await this.ingestionLedger.dejaIngeree(ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_BLOC, p.id)) {
             await this.prescriptionClient.updateStatut(p.id, 'RECU_BLOC');
             return;
+<<<<<<< HEAD
         }
         let patient = await this.patientBlocRepo.findOne({
             where: { patientId: p.patientId },
@@ -157,14 +162,15 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
             patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
         ];
         const notificationDejaOuverte = await this.notificationRepo.findOne({
+=======
+        const notificationDejaEnAttente = await this.notificationRepo.findOne({
+>>>>>>> a733407 (commit 1508)
             where: {
                 patientId: p.patientId,
-                statut: (0, typeorm_2.In)([
-                    notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
-                    notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
-                ]),
+                statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
             },
         });
+<<<<<<< HEAD
         const actes = p.actes ?? p.ActeBloc ?? [];
         const acte = actes[0];
         const libelleEntrant = this.libelleComplet(actes);
@@ -195,7 +201,24 @@ let PrescriptionService = PrescriptionService_1 = class PrescriptionService {
         }
         const niveauUrgence = (0, urgence_1.niveauDepuisLibelle)(p.urgence);
         const dateIntervention = this.extraireDateIntervention(p, acte);
+=======
+        if (notificationDejaEnAttente)
+            return;
+        const patientDejaTraite = await this.patientBlocRepo.findOne({
+            where: { patientId: p.patientId },
+        });
+        if (patientDejaTraite &&
+            patientDejaTraite.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
+            return;
+        }
+        const acte = p.actes?.[0] ?? p.ActeBloc?.[0];
+        const niveauUrgence = this.mapUrgence(p.urgence);
+        const dateIntervention = this.extraireDateIntervention(acte);
+>>>>>>> a733407 (commit 1508)
         const serviceSourceNom = await this.serviceRegistryClient.getServiceName(p.serviceIdSource);
+        let patient = await this.patientBlocRepo.findOne({
+            where: { patientId: p.patientId },
+        });
         const donneesPatient = {
             patientId: p.patientId,
             chuId: p.chuId,

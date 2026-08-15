@@ -14,6 +14,7 @@ import { aSaPropreSalleDeReveil } from '@/lib/programme-non-operatoire'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
 import InstructionsPostOpForm, { DEFAULT_INSTRUCTIONS_POST_OP, InstructionsPostOpData, depuisProtocole, versPayloadProtocole } from '@/components/bloc/protocole/InstructionsPostOpForm'
+import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 
 // Page du protocole anesthésique : compte-rendu libre de l'anesthésiste + Instructions
 // Post-Opératoires (surveillance, drainages, prescriptions). Ouverte juste après validation de la
@@ -43,10 +44,12 @@ function ProtocoleAnesthesiquePageContent() {
 
   const [dateOperation, setDateOperation] = useState(new Date().toISOString().split('T')[0])
   const [compteRenduAnesthesique, setCompteRenduAnesthesique] = useState('')
+  const [personnelIntervention, setPersonnelIntervention] = useState('')
   const [instructions, setInstructions] = useState<InstructionsPostOpData>(DEFAULT_INSTRUCTIONS_POST_OP)
   const [prescriptionsConjointes, setPrescriptionsConjointes] = useState(false)
   const [protocoleId, setProtocoleId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showRecap, setShowRecap] = useState(false)
   const [majDistante, setMajDistante] = useState(false)
   const { on } = useOperationRealtime(patientId)
   const { estAnesthesiste, roleName } = useRole()
@@ -64,27 +67,34 @@ function ProtocoleAnesthesiquePageContent() {
         if (!existant) return
         setProtocoleId(existant.id)
         if (existant.compteRenduAnesthesique) setCompteRenduAnesthesique(existant.compteRenduAnesthesique)
+        if (existant.personnelIntervention) setPersonnelIntervention(existant.personnelIntervention)
         setInstructions(depuisProtocole(existant))
         setPrescriptionsConjointes(!!existant.prescriptionsConjointes)
       })
       .catch(console.error)
   }, [patientId])
 
-  const handleSubmit = async () => {
+  const handleOuvrirRecap = () => {
     if (!estAnesthesiste) {
       alert('❌ Le protocole anesthésique est réservé à l\'anesthésiste.' + (roleName ? ` Votre rôle actuel est : ${roleName}.` : ''))
       return
     }
+    setShowRecap(true)
+  }
+
+  const handleSubmit = async () => {
     setLoading(true)
     try {
       const payload = {
         patientId, dateOperation,
         compteRenduAnesthesique,
+        personnelIntervention,
         ...versPayloadProtocole(instructions),
         prescriptionsConjointes,
       }
       if (protocoleId) await apiClient.patch(`/protocoles-operatoires/${protocoleId}`, payload)
       else await apiClient.post('/protocoles-operatoires', payload)
+      setShowRecap(false)
       // Patient d'un service qui possède sa propre salle de réveil (Imagerie, Scanner) : l'acte
       // anesthésique est terminé, retour au service + archivage du dossier (SORTI) au lieu de la
       // salle de réveil du Bloc. Les patients d'Endoscopie/Urgence, surveillés par le même
@@ -109,6 +119,55 @@ function ProtocoleAnesthesiquePageContent() {
     }
     finally { setLoading(false) }
   }
+
+  const drainageValeur = (actif: boolean, mode: string) => actif ? (mode === 'ASPIRATION' ? 'Actif (aspiratif)' : mode === 'REDON' ? 'Actif (Redon)' : 'Actif (siphonnage)') : ''
+
+  const sectionsRecap: RecapSection[] = [
+    {
+      titre: 'Protocole Anesthésique',
+      icone: 'clinical_notes',
+      champs: [
+        { label: 'Compte-rendu anesthésique', valeur: compteRenduAnesthesique },
+        { label: "Personnel pendant l'intervention", valeur: personnelIntervention },
+      ],
+    },
+    {
+      titre: 'Surveillance',
+      icone: 'monitor_heart',
+      champs: [
+        { label: 'TA (Tension)', valeur: instructions.surveillance.ta.coche ? 'Oui' : '' },
+        { label: 'Pouls', valeur: instructions.surveillance.pouls.coche ? 'Oui' : '' },
+        { label: 'FR (Respiration)', valeur: instructions.surveillance.fr.coche ? 'Oui' : '' },
+        { label: 'Température', valeur: instructions.surveillance.temperature.coche ? 'Oui' : '' },
+        { label: 'Diurèse', valeur: instructions.surveillance.diurese.coche ? 'Oui' : '' },
+        { label: 'Autres', valeur: instructions.surveillance.autres.coche ? 'Oui' : '' },
+      ],
+    },
+    {
+      titre: 'Drainages',
+      icone: 'water_drop',
+      champs: [
+        { label: 'Sonde naso-gastrique', valeur: drainageValeur(instructions.drainages.sondeNasoGastrique.actif, instructions.drainages.sondeNasoGastrique.mode) },
+        { label: 'Drain crâne', valeur: drainageValeur(instructions.drainages.drainCrane.actif, instructions.drainages.drainCrane.mode) },
+        { label: 'Drain thorax', valeur: drainageValeur(instructions.drainages.drainThorax.actif, instructions.drainages.drainThorax.mode) },
+        { label: 'Drain abdomen gauche', valeur: drainageValeur(instructions.drainages.drainAbdomenGauche.actif, instructions.drainages.drainAbdomenGauche.mode) },
+        { label: 'Drain abdomen droit', valeur: drainageValeur(instructions.drainages.drainAbdomenDroit.actif, instructions.drainages.drainAbdomenDroit.mode) },
+        { label: 'Membre - Sein - Autres', valeur: drainageValeur(instructions.drainages.membreSeinAutres.actif, instructions.drainages.membreSeinAutres.mode) },
+      ],
+    },
+    {
+      titre: 'Prescription à suivre',
+      icone: 'prescriptions',
+      champs: [
+        { label: 'Perfusion bras gauche', valeur: [instructions.prescriptions.perfusionBrasGauche.valeur, instructions.prescriptions.perfusionBrasGauche.enY && `En Y : ${instructions.prescriptions.perfusionBrasGauche.enY}`].filter(Boolean).join(' — ') },
+        { label: 'Perfusion bras droit', valeur: [instructions.prescriptions.perfusionBrasDroit.valeur, instructions.prescriptions.perfusionBrasDroit.enY && `En Y : ${instructions.prescriptions.perfusionBrasDroit.enY}`].filter(Boolean).join(' — ') },
+        { label: 'Voie centrale', valeur: [instructions.prescriptions.voieCentrale.valeur, instructions.prescriptions.voieCentrale.enY && `En Y : ${instructions.prescriptions.voieCentrale.enY}`].filter(Boolean).join(' — ') },
+        { label: 'Antibiotiques', valeur: instructions.prescriptions.antibiotiques },
+        { label: 'Antalgiques', valeur: instructions.prescriptions.antalgiques },
+        { label: 'Autres', valeur: instructions.prescriptions.autres },
+      ],
+    },
+  ]
 
   return (
     <main className="p-6">
@@ -135,6 +194,11 @@ function ProtocoleAnesthesiquePageContent() {
           <textarea className="w-full h-56 bg-surface-container-low rounded-lg p-4 text-sm text-on-surface border-none resize-none leading-relaxed overflow-y-auto focus:ring-2 focus:ring-primary/20 focus:outline-none"
             placeholder="Saisissez ici la technique d'anesthésie réalisée, les produits/doses administrés et les éventuels incidents per-opératoires..."
             value={compteRenduAnesthesique} onChange={e => setCompteRenduAnesthesique(e.target.value)}></textarea>
+
+          <label className="text-xs font-bold text-on-surface-variant mb-2 mt-4 block">Personnel pendant l'intervention</label>
+          <textarea className="w-full h-24 bg-surface-container-low rounded-lg p-4 text-sm text-on-surface border-none resize-none leading-relaxed overflow-y-auto focus:ring-2 focus:ring-primary/20 focus:outline-none"
+            placeholder="Chirurgien, aide opératoire, IBODE, IDE... noms du personnel ayant participé à l'intervention"
+            value={personnelIntervention} onChange={e => setPersonnelIntervention(e.target.value)}></textarea>
         </section>
 
         {/* Colonne droite : Instructions post-opératoires */}
@@ -145,7 +209,7 @@ function ProtocoleAnesthesiquePageContent() {
           </h2>
           <InstructionsPostOpForm value={instructions} onChange={setInstructions} />
           <div className="mt-5 pt-4 border-t border-amber-200/70 flex justify-end">
-            <button onClick={handleSubmit} disabled={loading || !estAnesthesiste}
+            <button onClick={handleOuvrirRecap} disabled={loading || !estAnesthesiste}
               title={!estAnesthesiste ? 'Réservé à l\'anesthésiste' : undefined}
               className="bg-primary text-white px-8 py-3 rounded-xl font-bold flex items-center space-x-3 shadow-lg shadow-primary/20 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
               <span className="material-symbols-outlined">save</span>
@@ -154,6 +218,17 @@ function ProtocoleAnesthesiquePageContent() {
           </div>
         </section>
       </div>
+
+      <ConfirmationRecapModal
+        open={showRecap}
+        titre="Protocole anesthésique"
+        sousTitre="Compte-rendu et instructions post-opératoires — relisez avant de confirmer"
+        sections={sectionsRecap}
+        onAnnuler={() => setShowRecap(false)}
+        onConfirmer={handleSubmit}
+        confirmEnCours={loading}
+        labelConfirmer="Confirmer et enregistrer"
+      />
     </main>
   )
   }

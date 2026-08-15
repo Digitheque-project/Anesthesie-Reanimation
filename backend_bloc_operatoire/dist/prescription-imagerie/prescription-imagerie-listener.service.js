@@ -21,7 +21,6 @@ const typeorm_2 = require("typeorm");
 const socket_io_client_1 = require("socket.io-client");
 const notification_cpa_entity_1 = require("../entities/notification-cpa.entity");
 const patient_bloc_entity_1 = require("../entities/patient-bloc.entity");
-const creneau_bloc_entity_1 = require("../entities/creneau-bloc.entity");
 const prescription_imagerie_client_1 = require("../external/prescription-imagerie.client");
 const prescription_service_1 = require("../prescription/prescription.service");
 const service_registry_client_1 = require("../external/service-registry.client");
@@ -39,11 +38,14 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
     ingestionLedger;
     notificationRepo;
     patientBlocRepo;
-    creneauRepo;
     logger = new common_1.Logger(PrescriptionImagerieListenerService_1.name);
     socket = null;
     serviceId;
+<<<<<<< HEAD
     constructor(config, prescriptionImagerieClient, prescriptionService, serviceRegistryClient, notificationBackClient, ingestionLedger, notificationRepo, patientBlocRepo, creneauRepo) {
+=======
+    constructor(config, prescriptionImagerieClient, prescriptionService, serviceRegistryClient, notificationBackClient, notificationRepo, patientBlocRepo) {
+>>>>>>> a733407 (commit 1508)
         this.config = config;
         this.prescriptionImagerieClient = prescriptionImagerieClient;
         this.prescriptionService = prescriptionService;
@@ -52,7 +54,6 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
         this.ingestionLedger = ingestionLedger;
         this.notificationRepo = notificationRepo;
         this.patientBlocRepo = patientBlocRepo;
-        this.creneauRepo = creneauRepo;
         this.serviceId =
             this.config.get('externalServices.serviceId') ?? '';
     }
@@ -111,44 +112,34 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
         }
     }
     async ingerer(prescription) {
+<<<<<<< HEAD
         if (await this.ingestionLedger.dejaIngeree(ingestion_externe_entity_1.CanalIngestion.PRESCRIPTION_IMAGERIE, prescription.id)) {
             return;
         }
         let patient = await this.patientBlocRepo.findOne({
+=======
+        const dejaEnAttente = await this.notificationRepo.findOne({
+            where: {
+                patientId: prescription.patientId,
+                statut: notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
+            },
+        });
+        if (dejaEnAttente)
+            return;
+        const dejaTraite = await this.patientBlocRepo.findOne({
+>>>>>>> a733407 (commit 1508)
             where: { patientId: prescription.patientId },
         });
-        const episodeActif = [
-            patient_bloc_entity_1.PatientStatut.CPA_REALISE,
-            patient_bloc_entity_1.PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
-            patient_bloc_entity_1.PatientStatut.VERIFICATION_VEILLE_REALISEE,
-            patient_bloc_entity_1.PatientStatut.PRET_POUR_BLOC,
-            patient_bloc_entity_1.PatientStatut.EN_COURS_OPERATION,
-            patient_bloc_entity_1.PatientStatut.EN_SALLE_REVEIL,
-        ];
-        const [notificationDejaOuverte, creneauDejaPlanifie] = await Promise.all([
-            this.notificationRepo.findOne({
-                where: {
-                    patientId: prescription.patientId,
-                    statut: (0, typeorm_2.In)([
-                        notification_cpa_entity_1.StatutNotificationCPA.EN_ATTENTE,
-                        notification_cpa_entity_1.StatutNotificationCPA.RDV_PLANIFIE,
-                    ]),
-                },
-            }),
-            this.creneauRepo.findOne({
-                where: {
-                    patientId: prescription.patientId,
-                    statut: creneau_bloc_entity_1.StatutCreneau.PLANIFIE,
-                },
-            }),
-        ]);
-        const dejaPriseEnCharge = !!notificationDejaOuverte ||
-            !!creneauDejaPlanifie ||
-            (!!patient && episodeActif.includes(patient.statut));
-        if (dejaPriseEnCharge)
+        if (dejaTraite && dejaTraite.statut !== patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA) {
             return;
+<<<<<<< HEAD
         const niveauUrgence = (0, urgence_1.niveauDepuisLibelle)(prescription.urgence);
         const estUrgent = (0, urgence_1.estNiveauUrgent)(niveauUrgence);
+=======
+        }
+        const urgence = (prescription.urgence || '').toUpperCase();
+        const estUrgent = urgence !== '' && !urgence.startsWith('NORMAL');
+>>>>>>> a733407 (commit 1508)
         const prescripteurNom = [
             prescription.prescripteurPrenomManuel,
             prescription.prescripteurNomManuel,
@@ -158,6 +149,7 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
             .trim();
         const serviceSourceNom = await this.serviceRegistryClient.getServiceName(prescription.serviceIdSource);
         try {
+<<<<<<< HEAD
             if (patient) {
                 patient.statut = patient_bloc_entity_1.PatientStatut.EN_ATTENTE_CPA;
                 patient.niveauUrgence = niveauUrgence;
@@ -166,6 +158,12 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
                 await this.patientBlocRepo.save(patient);
             }
             else {
+=======
+            const dejaSuivi = await this.patientBlocRepo.findOne({
+                where: { patientId: prescription.patientId },
+            });
+            if (!dejaSuivi) {
+>>>>>>> a733407 (commit 1508)
                 await this.patientBlocRepo.save(this.patientBlocRepo.create({
                     patientId: prescription.patientId,
                     chuId: prescription.chuId ||
@@ -223,16 +221,20 @@ let PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 
 exports.PrescriptionImagerieListenerService = PrescriptionImagerieListenerService;
 exports.PrescriptionImagerieListenerService = PrescriptionImagerieListenerService = PrescriptionImagerieListenerService_1 = __decorate([
     (0, common_1.Injectable)(),
+<<<<<<< HEAD
     __param(6, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
     __param(7, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
     __param(8, (0, typeorm_1.InjectRepository)(creneau_bloc_entity_1.CreneauBloc)),
+=======
+    __param(5, (0, typeorm_1.InjectRepository)(notification_cpa_entity_1.NotificationCPA)),
+    __param(6, (0, typeorm_1.InjectRepository)(patient_bloc_entity_1.PatientBloc)),
+>>>>>>> a733407 (commit 1508)
     __metadata("design:paramtypes", [config_1.ConfigService,
         prescription_imagerie_client_1.PrescriptionImagerieClient,
         prescription_service_1.PrescriptionService,
         service_registry_client_1.ServiceRegistryClient,
         notification_back_client_1.NotificationBackClient,
         ingestion_ledger_service_1.IngestionLedgerService,
-        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], PrescriptionImagerieListenerService);

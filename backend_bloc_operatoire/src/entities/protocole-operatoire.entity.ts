@@ -49,6 +49,12 @@ export class ProtocoleOperatoire {
   @Column('text', { nullable: true })
   compteRenduAnesthesique: string | null;
 
+  // Personnel ayant participé à l'intervention (chirurgien, aide, IBODE, IDE...), saisi en texte
+  // libre par l'anesthésiste — distinct des champs d'ID structurés ci-dessus (jamais renseignés
+  // par aucun formulaire), symétrique de compteRenduAnesthesique.
+  @Column('text', { nullable: true })
+  personnelIntervention: string | null;
+
   // Instructions post-opératoires — communes au chirurgien et à l'anesthésiste (les deux rôles
   // peuvent lire/compléter le même enregistrement, voir ProtocoleOperatoireController).
   @Column('simple-json')

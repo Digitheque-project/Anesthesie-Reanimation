@@ -19,6 +19,7 @@ import { formaterNomPatient, formaterIdDossier } from '@/lib/patient';
 import { estServiceNonOperatoire } from '@/lib/programme-non-operatoire';
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader';
 import SommaireCpa from '@/components/bloc/consultation-cpa/SommaireCpa';
+import ConfirmationRecapModal from '@/components/ui/ConfirmationRecapModal';
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave';
 
 export default function ConsultationCpaPage() {
@@ -154,6 +155,7 @@ function ConsultationCpaPageContent() {
   const [dateVPA, setDateVPA] = useState('');
   const [heureVPA, setHeureVPA] = useState('08:00');
   const [loading, setLoading] = useState(false);
+  const [showRecap, setShowRecap] = useState(false);
   const [showMedicamentModal, setShowMedicamentModal] = useState(false);
   const [medicaments, setMedicaments] = useState<any[]>([]);
   const [nouveauMedicament, setNouveauMedicament] = useState({ premedication: '', dose: '', voieAdmin: '', debut: '', frequence: '' });
@@ -177,6 +179,8 @@ function ConsultationCpaPageContent() {
   const { peutDeciderAptitudeCpa, estAnesthesisteConnecte, estResponsableCpa, estMajor, roleName } = useRole();
   const [dateInterventionInput, setDateInterventionInput] = useState('');
   const [savingDateIntervention, setSavingDateIntervention] = useState(false);
+  const [salleOperationInput, setSalleOperationInput] = useState('');
+  const [savingSalleOperation, setSavingSalleOperation] = useState(false);
   const [cpaExistante, setCpaExistante] = useState<any>(null);
   const [chargementCpa, setChargementCpa] = useState(true);
   const [historiqueCpa, setHistoriqueCpa] = useState<any[]>([]);
@@ -320,6 +324,11 @@ function ConsultationCpaPageContent() {
     }
   }, [patient?.dateIntervention]);
 
+  // Pré-remplit le champ éditable avec la salle de bloc actuellement enregistrée
+  useEffect(() => {
+    setSalleOperationInput(patient?.salleOperation || '');
+  }, [patient?.salleOperation]);
+
   const estUrgent = patient?.niveauUrgence === 'URGENT' || patient?.niveauUrgence === 'TRES_URGENT';
 
   // La CPA se remplit en deux temps : le Major/Responsable CPA saisit l'examen et la décision
@@ -433,6 +442,22 @@ function ConsultationCpaPageContent() {
     }
   };
 
+  const handleEnregistrerSalleOperation = async () => {
+    const patientIdFinal = patientId || patient?.id;
+    if (!patientIdFinal || !salleOperationInput.trim()) return;
+    setSavingSalleOperation(true);
+    try {
+      const updated = await patientService.modifierSalleOperation(patientIdFinal, salleOperationInput.trim());
+      setPatient((p: any) => ({ ...p, salleOperation: updated?.salleOperation ?? p?.salleOperation }));
+      alert('✅ Salle de bloc mise à jour');
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Erreur inconnue';
+      alert('❌ Erreur: ' + JSON.stringify(message));
+    } finally {
+      setSavingSalleOperation(false);
+    }
+  };
+
   const setField = (key: keyof typeof DEFAULT_FORM) => (e: any) => setForm(f => ({ ...f, [key]: e.target.value }))
 
   const ajouterMedicament = () => {
@@ -483,6 +508,29 @@ function ConsultationCpaPageContent() {
     });
   };
 
+  // Vérifie tout ce qui bloquerait la sauvegarde (rôle, champs obligatoires) AVANT d'ouvrir la
+  // popup de relecture — la popup elle-même ne fait qu'enregistrer ce qui a déjà été validé ici.
+  const handleOuvrirRecap = () => {
+    const patientIdFinal = patientId || patient?.id;
+    if (!patientIdFinal) { alert('❌ Patient introuvable'); return; }
+    if (!cpaDejaRemplie) {
+      if (!peutEditerExamenEtDecision) { alert('❌ Seul un anesthésiste, un responsable CPA ou un major peut remplir et valider la CPA'); return; }
+      // Seuls « Patient mineur » (choix majeur/mineur) et la décision finale ci-dessous restent
+      // obligatoires sur toute la fiche — tous les autres champs (autorisation signée, examen
+      // clinique, voies aériennes, ASA, protocole, instructions...) sont volontairement laissés
+      // libres.
+      if (form.patientMineur === null) { alert('❌ Complétez ces champs avant de valider :\n— Patient mineur (OUI/NON)'); return; }
+      if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); return; }
+      if ((decision === 'INAPTE' || decision === 'REPORT') && !motifRefus.trim()) {
+        alert(`❌ Le motif ${decision === 'INAPTE' ? 'du refus' : 'du report'} est obligatoire`); return;
+      }
+    } else {
+      // Deuxième étape : l'anesthésiste complète la CPA déjà remplie par le Major/Responsable CPA.
+      if (!peutEditerMedicamentsEtVpa) { alert("❌ Seul l'anesthésiste peut compléter les médicaments et la date de vérification veille"); return; }
+    }
+    setShowRecap(true);
+  };
+
   const handleValider = async () => {
     const patientIdFinal = patientId || patient?.id;
     if (!patientIdFinal) { alert('❌ Patient introuvable'); return; }
@@ -494,28 +542,6 @@ function ConsultationCpaPageContent() {
     setLoading(true);
     try {
       if (!cpaDejaRemplie) {
-        // Première étape : le Major/Responsable CPA (ou l'anesthésiste s'il réalise seul sa
-        // propre CPA) remplit l'examen et pose la décision.
-        if (!peutEditerExamenEtDecision) { alert('❌ Seul un anesthésiste, un responsable CPA ou un major peut remplir et valider la CPA'); setLoading(false); return; }
-          // Aucune valeur n'étant plus pré-cochée par défaut, ce champ cliniquement structurant
-          // doit être activement choisi avant de pouvoir valider — plutôt que de silencieusement
-          // retomber sur une valeur jamais vraiment observée.
-          const champsManquants: string[] = [];
-          // Seuls « Patient mineur » (choix majeur/mineur) et la décision finale ci-dessous
-          // restent obligatoires sur toute la fiche — tous les autres champs (autorisation
-          // signée, examen clinique, voies aériennes, ASA, protocole, instructions...) sont
-          // volontairement laissés libres.
-          if (form.patientMineur === null) champsManquants.push('Patient mineur (OUI/NON)');
-        if (champsManquants.length) {
-          alert('❌ Complétez ces champs avant de valider :\n— ' + champsManquants.join('\n— '));
-          setLoading(false);
-          return;
-        }
-        if (!decision) { alert('❌ Sélectionnez une décision (Apte / Inapte / Report)'); setLoading(false); return; }
-        if ((decision === 'INAPTE' || decision === 'REPORT') && !motifRefus.trim()) {
-          alert(`❌ Le motif ${decision === 'INAPTE' ? 'du refus' : 'du report'} est obligatoire`); setLoading(false); return;
-        }
-
         const payload = {
           patientId: patientIdFinal,
           dateConsultation: new Date().toISOString().split('T')[0],
@@ -625,6 +651,7 @@ function ConsultationCpaPageContent() {
         };
 
         await apiClient.post('/cpa', payload);
+        setShowRecap(false);
         await planifierVerificationVeille(patientIdFinal);
         // Date de report : posée par qui décide le REPORT (Respo CPA/Major ou l'anesthésiste
         // solo), pas réservée à l'anesthésiste — contrairement à la vérification veille.
@@ -687,8 +714,6 @@ function ConsultationCpaPageContent() {
       } else {
         // Deuxième étape : l'anesthésiste complète la CPA déjà remplie par le Major/Responsable
         // CPA — uniquement les médicaments d'anesthésie/réanimation et la vérification veille.
-        if (!peutEditerMedicamentsEtVpa) { alert("❌ Seul l'anesthésiste peut compléter les médicaments et la date de vérification veille"); setLoading(false); return; }
-
         await apiClient.patch(`/cpa/${cpaExistante.id}`, {
           medicamentsAnesthesieReanimation: medicamentsSelectionnes.length
             ? medicamentsSelectionnes.map(r => ({
@@ -701,6 +726,7 @@ function ConsultationCpaPageContent() {
             : undefined,
           dateVerificationVeille: (!estUrgent && decision === 'APTE' && dateVPA) ? dateVPA : undefined,
         });
+        setShowRecap(false);
         await planifierVerificationVeille(patientIdFinal);
         if (brouillonKey) effacerBrouillon(brouillonKey);
 
@@ -1042,6 +1068,31 @@ function ConsultationCpaPageContent() {
         )}
       </div>
 
+      {/* Salle de bloc prévue pour l'intervention — même logique et mêmes rôles éditeurs que la
+          date/heure ci-dessus, distincte de la chambre d'hospitalisation du patient. */}
+      <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-wrap items-center gap-3">
+        <span className="material-symbols-outlined text-primary">meeting_room</span>
+        {estResponsableOuMajor ? (
+          <>
+            <div className="flex-1 min-w-[220px]">
+              <label className="text-xs font-semibold text-on-surface-variant block mb-1">Salle de bloc prévue</label>
+              <input type="text" value={salleOperationInput} onChange={e => setSalleOperationInput(e.target.value)}
+                placeholder="Ex. Salle 3"
+                className="w-full bg-surface-container-low border-none rounded-lg p-2 text-sm font-bold" />
+            </div>
+            <button onClick={handleEnregistrerSalleOperation} disabled={savingSalleOperation || !salleOperationInput.trim()}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50 self-end">
+              <span className="material-symbols-outlined text-lg">save</span>
+              {savingSalleOperation ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </>
+        ) : (
+          <div>
+            <p className="text-xs font-semibold text-on-surface-variant">Salle de bloc prévue</p>
+            <p className="text-sm font-bold text-on-surface">{patient?.salleOperation || '—'}</p>
+          </div>
+        )}
+      </div>
 
       <SommaireCpa />
 
@@ -1806,7 +1857,7 @@ function ConsultationCpaPageContent() {
                     ? 'Enregistrer les médicaments et la vérification veille'
                     : 'Valider la CPA';
               return (
-                <button onClick={handleValider} disabled={loading || chargementCpa || !peutSoumettre}
+                <button onClick={handleOuvrirRecap} disabled={loading || chargementCpa || !peutSoumettre}
                   className="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 shadow-sm transition-all disabled:opacity-50">
                   {libelle}
                 </button>
@@ -1815,6 +1866,17 @@ function ConsultationCpaPageContent() {
           </div>
         </div>
       </div>
+
+      <ConfirmationRecapModal
+        open={showRecap}
+        titre={estUrgent ? 'Visite Pré-Anesthésique (VPA)' : 'Consultation Pré-Anesthésique (CPA)'}
+        sousTitre="Relisez la fiche complète avant de confirmer — rien n'est encore enregistré"
+        sections={construireSectionsCpa()}
+        onAnnuler={() => setShowRecap(false)}
+        onConfirmer={handleValider}
+        confirmEnCours={loading}
+        labelConfirmer={cpaDejaRemplie ? 'Confirmer et enregistrer' : 'Confirmer et valider la CPA'}
+      />
     </main>
   );
 }

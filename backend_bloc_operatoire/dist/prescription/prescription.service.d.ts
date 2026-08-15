@@ -17,8 +17,12 @@ export declare class PrescriptionService {
     private config;
     private readonly logger;
     private polling;
+<<<<<<< HEAD
     private dernierPoll;
     constructor(patientBlocRepo: Repository<PatientBloc>, notificationRepo: Repository<NotificationCPA>, prescriptionClient: PrescriptionExterneClient, notificationBackClient: NotificationBackClient, serviceRegistryClient: ServiceRegistryClient, ingestionLedger: IngestionLedgerService, config: ConfigService);
+=======
+    constructor(patientBlocRepo: Repository<PatientBloc>, notificationRepo: Repository<NotificationCPA>, prescriptionClient: PrescriptionExterneClient, notificationBackClient: NotificationBackClient, serviceRegistryClient: ServiceRegistryClient, config: ConfigService);
+>>>>>>> a733407 (commit 1508)
     processPrescription(dto: ReceivePrescriptionDto): Promise<boolean>;
     pollPrescriptionsBloc(): Promise<void>;
     private extraireDateIntervention;

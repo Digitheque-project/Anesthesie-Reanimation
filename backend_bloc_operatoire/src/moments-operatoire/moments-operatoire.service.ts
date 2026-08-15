@@ -24,13 +24,11 @@ export class MomentsOperatoireService {
     centralUser: CentralUser,
   ): Promise<MomentOperatoire> {
     // Séparation stricte par rôle : pendant l'opération, l'IBODE n'a aucune interface propre —
-    // tous les boutons (toutes catégories) sont réservés à l'anesthésiste et au Major (qui le
-    // remplace totalement). L'IBODE retrouve une interface partagée avec l'anesthésiste plus
-    // tard, en salle de réveil.
+    // tous les boutons (toutes catégories) sont réservés à l'anesthésiste. L'IBODE retrouve une
+    // interface partagée avec l'anesthésiste plus tard, en salle de réveil.
     const role = matchRoleClinique(centralUser.role);
     const categoriesAutorisees: Record<string, string[]> = {
       [RoleClinique.ANESTHESISTE]: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
-      [RoleClinique.MAJOR]: ['ANESTHESIE', 'CHIRURGIE', 'DIVERS'],
     };
     const autorisees = role ? categoriesAutorisees[role] : undefined;
     if (!autorisees || !autorisees.includes(dto.categorie)) {

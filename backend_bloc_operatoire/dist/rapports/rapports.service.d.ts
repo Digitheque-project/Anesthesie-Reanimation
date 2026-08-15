@@ -40,6 +40,7 @@ export declare class RapportsService {
         patientsParStatut: any[];
         urgencesParNiveau: any[];
     }>;
+    activiteParChirurgien(dateDebut?: string, dateFin?: string): Promise<any[]>;
     activiteParAnesthesiste(dateDebut?: string, dateFin?: string): Promise<{
         medecinId: string;
         nomComplet: string;
@@ -86,6 +87,7 @@ export declare class RapportsService {
         };
         genereLe: string;
         statistiques: any;
+        activiteParChirurgien: any;
         activiteParAnesthesiste: any;
         activiteParIbode: any;
         activiteParResponsableCpa: any;
@@ -102,6 +104,7 @@ export declare class RapportsService {
         };
         genereLe: string;
         statistiques: any;
+        activiteParChirurgien: any;
         activiteParAnesthesiste: any;
         activiteParIbode: any;
         activiteParResponsableCpa: any;

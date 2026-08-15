@@ -49,7 +49,6 @@ const CATALOGUE_INITIAL = {
 };
 const CATEGORIES_AUTORISEES = {
     [role_clinique_1.RoleClinique.ANESTHESISTE]: [moment_operatoire_entity_1.CategorieMoment.ANESTHESIE],
-    [role_clinique_1.RoleClinique.MAJOR]: [moment_operatoire_entity_1.CategorieMoment.ANESTHESIE],
     [role_clinique_1.RoleClinique.IBODE]: [moment_operatoire_entity_1.CategorieMoment.CHIRURGIE, moment_operatoire_entity_1.CategorieMoment.DIVERS],
 };
 let MomentsCatalogueService = MomentsCatalogueService_1 = class MomentsCatalogueService {

@@ -88,7 +88,7 @@ let ActivitePerOpService = class ActivitePerOpService {
         const patch = { ...dto };
         if (!patch.anesthesisteId &&
             centralUser &&
-            (0, role_clinique_1.agitCommeAnesthesiste)((0, role_clinique_1.matchRoleClinique)(centralUser.role))) {
+            (0, role_clinique_1.matchRoleClinique)(centralUser.role) === role_clinique_1.RoleClinique.ANESTHESISTE) {
             patch.anesthesisteId = centralUser.userId;
         }
         return this.repo.save(Object.assign(a, patch));

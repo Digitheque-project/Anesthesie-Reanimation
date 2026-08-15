@@ -12,6 +12,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
 import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
+import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import { useRole } from '@/lib/hooks/useRole'
 
 export default function ActivitePendantOperationPage() {
@@ -54,6 +55,7 @@ function ActivitePendantOperationPageContent() {
   })
 
   const [loading, setLoading] = useState(false)
+  const [showRecap, setShowRecap] = useState(false)
   // Enregistrement ActivitePerOp de ce patient — créé tôt (dès l'arrivée sur l'écran) pour que
   // les constantes puissent y être rattachées et synchronisées en temps réel au fur et à mesure
   // de l'opération, plutôt qu'une seule grosse saisie à la toute fin.
@@ -100,6 +102,7 @@ function ActivitePendantOperationPageContent() {
           circuitFerme: form.ventilationCircuitFermeOn ? (form.ventilationCircuitFerme || 'Oui') : undefined,
         },
       })
+      setShowRecap(false)
 
       alert('✅ Activité enregistrée ! Passage à la check-list après intervention.')
       router.push(`/bloc/apres-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
@@ -111,6 +114,38 @@ function ActivitePendantOperationPageContent() {
       setLoading(false)
     }
   }
+
+  const sectionsRecap: RecapSection[] = [
+    {
+      titre: 'Apports (entrées)',
+      icone: 'input',
+      champs: [
+        { label: 'Perfusions', valeur: form.perfusions },
+        { label: 'Transfusions', valeur: form.transfusions },
+      ],
+    },
+    {
+      titre: 'Sorties',
+      icone: 'output',
+      champs: [
+        { label: 'Journal des sorties', valeur: form.journalSorties },
+      ],
+    },
+    {
+      titre: 'Ventilation',
+      icone: 'ventilator',
+      champs: [
+        { label: 'Intub. Orotrachéale (IOT)', valeur: form.intubationOT ? 'Oui' : '' },
+        { label: 'Intub. Nasotrachéale (INT)', valeur: form.sArme ? 'Oui' : '' },
+        { label: 'Masque Laryngé', valeur: form.masqueLarynge ? 'Oui' : '' },
+        { label: 'Spontanée', valeur: form.ventilationSpontaneeOn ? (form.ventilationSpontanee || 'Oui') : '' },
+        { label: 'Assistée', valeur: form.ventilationAssisteeOn ? (form.ventilationAssistee || 'Oui') : '' },
+        { label: 'Contrôlée', valeur: form.ventilationControleeOn ? (form.ventilationControlee || 'Oui') : '' },
+        { label: 'PEEP', valeur: form.ventilationPEEPOn ? (form.ventilationPEEP || 'Oui') : '' },
+        { label: 'Circuit fermé', valeur: form.ventilationCircuitFermeOn ? (form.ventilationCircuitFerme || 'Oui') : '' },
+      ],
+    },
+  ]
 
   return (
     <main className="h-[calc(100vh-6rem)] flex flex-col">
@@ -271,7 +306,7 @@ function ActivitePendantOperationPageContent() {
         {/* VALIDER */}
         <div className="flex justify-end shrink-0">
           <button
-            onClick={handleSubmit}
+            onClick={() => setShowRecap(true)}
             disabled={loading || !activiteId}
             className="bg-gradient-to-r from-primary to-primary-container text-white px-8 py-4 rounded-xl font-headline font-extrabold shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
           >
@@ -288,6 +323,17 @@ function ActivitePendantOperationPageContent() {
           <MomentsTimeline patientId={patientId} />
         </div>
       </div>
+
+      <ConfirmationRecapModal
+        open={showRecap}
+        titre="Activité per-opératoire"
+        sousTitre="Apports, sorties et ventilation — relisez avant de confirmer"
+        sections={sectionsRecap}
+        onAnnuler={() => setShowRecap(false)}
+        onConfirmer={handleSubmit}
+        confirmEnCours={loading}
+        labelConfirmer="Confirmer et enregistrer"
+      />
     </main>
   )
 }

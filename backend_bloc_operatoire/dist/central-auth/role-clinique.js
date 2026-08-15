@@ -2,11 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoleClinique = void 0;
 exports.matchRoleClinique = matchRoleClinique;
-exports.agitCommeAnesthesiste = agitCommeAnesthesiste;
 var RoleClinique;
 (function (RoleClinique) {
     RoleClinique["RESPONSABLE_CPA"] = "RESPONSABLE_CPA";
     RoleClinique["ANESTHESISTE"] = "ANESTHESISTE";
+    RoleClinique["CHIRURGIEN"] = "CHIRURGIEN";
     RoleClinique["IBODE"] = "IBODE";
     RoleClinique["MAJOR"] = "MAJOR";
 })(RoleClinique || (exports.RoleClinique = RoleClinique = {}));
@@ -22,13 +22,12 @@ function matchRoleClinique(roleName) {
         return RoleClinique.RESPONSABLE_CPA;
     if (normalise.includes('anesthesist'))
         return RoleClinique.ANESTHESISTE;
+    if (normalise.includes('chirurgien'))
+        return RoleClinique.CHIRURGIEN;
     if (normalise.includes('ibode'))
         return RoleClinique.IBODE;
     if (normalise.includes('major'))
         return RoleClinique.MAJOR;
     return null;
-}
-function agitCommeAnesthesiste(role) {
-    return (role === RoleClinique.ANESTHESISTE || role === RoleClinique.MAJOR);
 }
 //# sourceMappingURL=role-clinique.js.map

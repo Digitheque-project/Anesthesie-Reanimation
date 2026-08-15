@@ -39,6 +39,10 @@ let SortieReveilService = class SortieReveilService {
         this.tracabiliteService = tracabiliteService;
     }
     async create(dto, centralUser) {
+        const itemsNonConfirmes = Object.entries(dto.checklistSortie ?? {}).filter(([, valeur]) => valeur !== true);
+        if (itemsNonConfirmes.length) {
+            throw new common_1.BadRequestException(`Checklist de sortie incomplète — items non confirmés : ${itemsNonConfirmes.map(([cle]) => cle).join(', ')}`);
+        }
         const score = await this.scoreRepo.findOne({
             where: { id: dto.scoreSCCREId },
         });
@@ -47,6 +51,9 @@ let SortieReveilService = class SortieReveilService {
         }
         if (score.patientId !== dto.patientId) {
             throw new common_1.BadRequestException("Ce score de réveil n'appartient pas à ce patient.");
+        }
+        if (score.scoreTotal < 9) {
+            throw new common_1.BadRequestException(`Score de réveil insuffisant (${score.scoreTotal}/10) — la sortie nécessite un score ≥ 9.`);
         }
         const saved = await this.repo.save(this.repo.create({ ...dto, medecinId: centralUser.userId }));
         const sortie = Array.isArray(saved) ? saved[0] : saved;

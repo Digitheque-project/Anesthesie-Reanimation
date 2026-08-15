@@ -9,8 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
-import { NotificationOutgoingService } from '../external/notification-outgoing.service';
 import { aSaPropreSalleDeReveil } from './service-non-operatoire';
+import { NotificationOutgoingService } from '../external/notification-outgoing.service';
 import { NotificationBackClient } from '../external/notification-back.client';
 import { TracabiliteService } from '../tracabilite/tracabilite.service';
 
@@ -92,10 +92,6 @@ export class PatientBlocStatutService {
       [PatientStatut.EN_ATTENTE_CPA]: [
         PatientStatut.CPA_REALISE,
         PatientStatut.CPA_INAPTE,
-        // Patient de statut NORMAL venu d'un service non-opératoire (Endoscopie, Urgence,
-        // Imagerie) dont la CPA est refusée ou reportée : retour au service d'origine + archivage
-        // (voir CPAService.create). Les patients urgents, eux, restent suivis (simple notification).
-        PatientStatut.SORTI,
       ],
       [PatientStatut.CPA_REALISE]: [
         PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
@@ -104,7 +100,7 @@ export class PatientBlocStatutService {
         // CPAService.create, qui ne déclenche ce saut que pour niveauUrgence URGENT/TRES_URGENT).
         PatientStatut.PRET_POUR_BLOC,
       ],
-      [PatientStatut.CPA_INAPTE]: [PatientStatut.SORTI],
+      [PatientStatut.CPA_INAPTE]: [],
       [PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE]: [
         PatientStatut.VERIFICATION_VEILLE_REALISEE,
       ],
@@ -112,15 +108,7 @@ export class PatientBlocStatutService {
         PatientStatut.PRET_POUR_BLOC,
       ],
       [PatientStatut.PRET_POUR_BLOC]: [PatientStatut.EN_COURS_OPERATION],
-      [PatientStatut.EN_COURS_OPERATION]: [
-        PatientStatut.EN_SALLE_REVEIL,
-        // Acte anesthésique réalisé hors bloc pour un service qui possède sa propre salle de
-        // réveil (Imagerie, Scanner) : retour au service + archivage direct, sans passer par la
-        // salle de réveil du Bloc (voir checklist-apres-op / protocole). Endoscopie et Urgence,
-        // eux, sont surveillés par le même anesthésiste du Bloc : ils suivent le flux complet et
-        // passent par EN_SALLE_REVEIL comme les patients de la chirurgie.
-        PatientStatut.SORTI,
-      ],
+      [PatientStatut.EN_COURS_OPERATION]: [PatientStatut.EN_SALLE_REVEIL],
       [PatientStatut.EN_SALLE_REVEIL]: [PatientStatut.SORTI],
       [PatientStatut.SORTI]: [],
     };

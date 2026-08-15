@@ -11,6 +11,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import { libelleAnesthesie } from '@/lib/export/dossier-patient'
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
@@ -50,6 +51,7 @@ function VerificationVeillePageContent() {
   const [patient, setPatient] = useState<any>(null)
   const [cpa, setCpa] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [showRecap, setShowRecap] = useState(false)
   const { estAnesthesiste, roleName } = useRole()
   const [form, setForm] = useState<{
     dateVisite: string
@@ -131,7 +133,7 @@ function VerificationVeillePageContent() {
   const securiteIncomplete = form.identiteConfirmee === null || form.jeuneRespected === null
     || form.instructionsRespectees === null || form.premedicationFaite === null
 
-  const handleSubmit = async () => {
+  const handleOuvrirRecap = () => {
     if (!estAnesthesiste) {
       alert('❌ La vérification veille est réservée à l\'anesthésiste' + (roleName ? ` (votre rôle : ${roleName})` : ''))
       return
@@ -144,6 +146,10 @@ function VerificationVeillePageContent() {
       alert('❌ Répondez à chaque item de vérification de sécurité (OUI/NON) avant de valider.')
       return
     }
+    setShowRecap(true)
+  }
+
+  const handleSubmit = async () => {
     setLoading(true)
     try {
       await apiClient.post('/verification-veille', {
@@ -152,6 +158,7 @@ function VerificationVeillePageContent() {
         ...form,
         medicamentsVerifies,
       })
+      setShowRecap(false)
       if (brouillonKey) effacerBrouillon(brouillonKey)
       alert('✅ Vérification veille validée avec succès ! Le patient est basculé dans la liste des patients à opérer.')
       router.push('/bloc/rendez-vous')
@@ -232,6 +239,43 @@ function VerificationVeillePageContent() {
     if (octets < 1024 * 1024) return `${(octets / 1024).toFixed(1)} Ko`
     return `${(octets / (1024 * 1024)).toFixed(2)} Mo`
   }
+
+  const ouiNonSecurite = (v: ReponseSecurite) => v === true ? 'Oui' : v === false ? 'Non' : ''
+
+  const sectionsRecap: RecapSection[] = [
+    {
+      titre: 'Vérification de sécurité',
+      icone: 'verified_user',
+      champs: [
+        { label: 'Identité du patient confirmée', valeur: ouiNonSecurite(form.identiteConfirmee) },
+        { label: 'Jeûne pré-opératoire respecté', valeur: ouiNonSecurite(form.jeuneRespected) },
+        { label: 'Instructions pré-anesthésiques respectées', valeur: ouiNonSecurite(form.instructionsRespectees) },
+      ],
+    },
+    {
+      titre: 'Prémédication & Préparation',
+      icone: 'medication_liquid',
+      champs: [
+        { label: 'Prémédication', valeur: form.premedicationFaite === true ? 'Faite' : form.premedicationFaite === false ? 'Non-faite' : '' },
+        { label: 'Jeûne complet à partir de', valeur: form.jeune },
+        { label: 'Heure de départ au bloc', valeur: form.heureDepart },
+      ],
+    },
+    {
+      titre: 'Médicaments re-vérifiés',
+      icone: 'medication',
+      champs: [
+        { label: 'Médicaments reconfirmés', valeur: medicamentsAnesthesie.length ? `${medicamentsVerifies.length}/${medicamentsAnesthesie.length} — ${medicamentsVerifies.join(', ') || 'aucun'}` : '' },
+      ],
+    },
+    {
+      titre: "Autorisation d'anesthésie et d'intervention",
+      icone: 'assignment',
+      champs: [
+        { label: 'Documents importés', valeur: fichiers.length ? fichiers.map(f => f.nomOriginal).join(', ') : '' },
+      ],
+    },
+  ]
 
   const iconeFichier = (mimeType: string) => {
     if (mimeType.startsWith('image/')) return 'image'
@@ -480,7 +524,7 @@ function VerificationVeillePageContent() {
         {/* Footer Actions */}
         <section className="lg:col-span-12 flex items-center justify-end gap-4 p-6 bg-surface-container text-on-surface rounded-xl shadow-sm border border-outline-variant/30">
           <button
-            onClick={handleSubmit}
+            onClick={handleOuvrirRecap}
             disabled={loading || !cpaId || securiteIncomplete}
             title={securiteIncomplete ? 'Répondez à chaque item de vérification de sécurité avant de valider' : undefined}
             className={`px-10 py-4 rounded-lg font-extrabold text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 whitespace-nowrap ${
@@ -492,6 +536,17 @@ function VerificationVeillePageContent() {
           </button>
         </section>
       </div>
+
+      <ConfirmationRecapModal
+        open={showRecap}
+        titre="Vérification veille"
+        sousTitre="Contrôle final avant le passage au bloc — relisez avant de confirmer"
+        sections={sectionsRecap}
+        onAnnuler={() => setShowRecap(false)}
+        onConfirmer={handleSubmit}
+        confirmEnCours={loading}
+        labelConfirmer="Confirmer et enregistrer"
+      />
     </main>
   )
 }
