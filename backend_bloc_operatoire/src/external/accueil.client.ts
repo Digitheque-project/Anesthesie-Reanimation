@@ -31,8 +31,13 @@ export class AccueilClient {
   // déclenchait 3 appels identiques par patient. On partage la même promesse.
   private readonly enVol = new Map<string, Promise<any>>();
 
+  // `baseUrl` reçu ici est la racine nue du service Accueil (ex. https://acceuil-back.onrender.com,
+  // voir ACCUEIL_API_URL) — le suffixe `/accueil` vivait auparavant dans la variable
+  // d'environnement elle-même ; il est maintenant posé une bonne fois pour toutes ici, pour que
+  // toutes les URLs construites plus bas (`${this.baseUrl}/patients/...`, etc.) continuent de
+  // résoudre exactement comme avant.
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+    this.baseUrl = `${baseUrl.replace(/\/+$/, '')}/accueil`;
   }
 
   private async getPatientCache(patientId: string): Promise<any> {

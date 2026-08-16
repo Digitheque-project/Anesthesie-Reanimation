@@ -12,7 +12,9 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
+import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
 export default function ChecklistAvantOpPage() {
   return (
@@ -65,6 +67,23 @@ function ChecklistAvantOpPageContent() {
   const [showRecap, setShowRecap] = useState(false)
   const { estAnesthesiste, roleName } = useRole()
 
+  // Filet de sécurité contre la perte de saisie en cliquant "Retour" avant validation — même
+  // mécanique que consultation-cpa/verification-veille (voir useDraftAutosave).
+  const brouillonKey = patientId ? `checklist-avant-brouillon:${patientId}` : null
+  useDraftAutosave(brouillonKey, form)
+  const [brouillonTrouve, setBrouillonTrouve] = useState<Brouillon<typeof form> | null>(null)
+  useEffect(() => {
+    if (!brouillonKey) return
+    const brouillon = chargerBrouillon<typeof form>(brouillonKey)
+    if (brouillon) setBrouillonTrouve(brouillon)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillonKey])
+  const restaurerBrouillon = () => {
+    if (!brouillonTrouve) return
+    setForm(brouillonTrouve.data)
+    setBrouillonTrouve(null)
+  }
+
   // Tous les items de la checklist sont obligatoires : les 4 items Oui/Non, les 2 confirmations
   // de matériel (doivent être cochées), et les 3 points de vérification croisée (doivent être
   // activement répondus Oui/Non, jamais laissés sur une valeur par défaut).
@@ -95,6 +114,7 @@ function ChecklistAvantOpPageContent() {
       // Envoyer la checklist au backend
       await apiClient.post('/checklists-avant-op', { patientId, ...form })
       setShowRecap(false)
+      if (brouillonKey) effacerBrouillon(brouillonKey)
 
       // Rediriger vers le Time Out (dernière pause d'équipe avant incision)
       router.push(`/bloc/verification-post-op?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
@@ -137,9 +157,12 @@ function ChecklistAvantOpPageContent() {
   return (
     <main className="p-6">
       {/* Header */}
-      <header className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
-        <BackButton className="order-first" />
-        <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
+      <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <BackButton className="order-first" />
+          <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
+        </div>
+        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
       </header>
 
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />

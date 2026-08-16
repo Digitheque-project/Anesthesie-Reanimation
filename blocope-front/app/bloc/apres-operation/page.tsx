@@ -12,8 +12,10 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import Radio from '@/components/ui/Radio'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
+import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
 export default function ApresOperationPage() {
   return (
@@ -59,6 +61,22 @@ function ApresOperationPageContent() {
 
   useEffect(() => on('checklist-apres-op:maj', () => setMajDistante(true)), [on])
 
+  // Filet de sécurité contre la perte de saisie en cliquant "Retour" avant validation.
+  const brouillonKey = patientId ? `checklist-apres-brouillon:${patientId}` : null
+  useDraftAutosave(brouillonKey, form)
+  const [brouillonTrouve, setBrouillonTrouve] = useState<Brouillon<typeof form> | null>(null)
+  useEffect(() => {
+    if (!brouillonKey) return
+    const brouillon = chargerBrouillon<typeof form>(brouillonKey)
+    if (brouillon) setBrouillonTrouve(brouillon)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillonKey])
+  const restaurerBrouillon = () => {
+    if (!brouillonTrouve) return
+    setForm(brouillonTrouve.data)
+    setBrouillonTrouve(null)
+  }
+
   const reponsesIncompletes = form.interventionEnregistree === null || form.compteFinalCorrect === null
     || form.etiquetageVerifie === null || form.signalementsEffectues === null
 
@@ -82,6 +100,7 @@ function ApresOperationPageContent() {
       // à part : il n'y a pas de cas où on validerait cette sortie sans transfert.
       await apiClient.post('/checklists-apres-op', { patientId, ...form, transfertSalleReveil: true })
       setShowRecap(false)
+      if (brouillonKey) effacerBrouillon(brouillonKey)
       alert('✅ Check-list après intervention enregistrée ! Complétez maintenant le protocole anesthésique et les instructions post-opératoires.')
       router.push(`/bloc/protocole-anesthesique?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
     } catch (err: any) {
@@ -107,7 +126,10 @@ function ApresOperationPageContent() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto w-full">
-      <BackButton className="mb-4" />
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <BackButton />
+        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+      </div>
 
       <h1 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight mb-4">Check-list après intervention – Check de sortie du bloc</h1>
 

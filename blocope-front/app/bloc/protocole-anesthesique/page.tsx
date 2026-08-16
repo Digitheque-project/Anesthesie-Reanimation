@@ -13,8 +13,10 @@ import { patientService } from '@/lib/api'
 import { aSaPropreSalleDeReveil } from '@/lib/programme-non-operatoire'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import InstructionsPostOpForm, { DEFAULT_INSTRUCTIONS_POST_OP, InstructionsPostOpData, depuisProtocole, versPayloadProtocole } from '@/components/bloc/protocole/InstructionsPostOpForm'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
+import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
 // Page du protocole anesthésique : compte-rendu libre de l'anesthésiste + Instructions
 // Post-Opératoires (surveillance, drainages, prescriptions). Ouverte juste après validation de la
@@ -56,6 +58,28 @@ function ProtocoleAnesthesiquePageContent() {
 
   useEffect(() => on('protocole-operatoire:maj', () => setMajDistante(true)), [on])
 
+  // Filet de sécurité contre la perte de saisie en cliquant "Retour" avant validation.
+  const brouillonKey = patientId ? `protocole-anesthesique-brouillon:${patientId}` : null
+  const brouillonSnapshot = { dateOperation, compteRenduAnesthesique, personnelIntervention, instructions, prescriptionsConjointes }
+  useDraftAutosave(brouillonKey, brouillonSnapshot)
+  const [brouillonTrouve, setBrouillonTrouve] = useState<Brouillon<typeof brouillonSnapshot> | null>(null)
+  useEffect(() => {
+    if (!brouillonKey) return
+    const brouillon = chargerBrouillon<typeof brouillonSnapshot>(brouillonKey)
+    if (brouillon) setBrouillonTrouve(brouillon)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillonKey])
+  const restaurerBrouillon = () => {
+    if (!brouillonTrouve) return
+    const d = brouillonTrouve.data
+    setDateOperation(d.dateOperation)
+    setCompteRenduAnesthesique(d.compteRenduAnesthesique)
+    setPersonnelIntervention(d.personnelIntervention)
+    setInstructions(d.instructions)
+    setPrescriptionsConjointes(d.prescriptionsConjointes)
+    setBrouillonTrouve(null)
+  }
+
   // Préchargement : si un protocole anesthésique existe déjà pour ce patient aujourd'hui, on
   // récupère le compte-rendu et les Instructions Post-Op déjà saisies au lieu de repartir d'un
   // formulaire vide (sinon la sauvegarde ici écraserait les précédentes).
@@ -95,6 +119,7 @@ function ProtocoleAnesthesiquePageContent() {
       if (protocoleId) await apiClient.patch(`/protocoles-operatoires/${protocoleId}`, payload)
       else await apiClient.post('/protocoles-operatoires', payload)
       setShowRecap(false)
+      if (brouillonKey) effacerBrouillon(brouillonKey)
       // Patient d'un service qui possède sa propre salle de réveil (Imagerie, Scanner) : l'acte
       // anesthésique est terminé, retour au service + archivage du dossier (SORTI) au lieu de la
       // salle de réveil du Bloc. Les patients d'Endoscopie/Urgence, surveillés par le même
@@ -171,7 +196,10 @@ function ProtocoleAnesthesiquePageContent() {
 
   return (
     <main className="p-6">
-      <BackButton className="mb-3" />
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <BackButton />
+        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+      </div>
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole anesthésique" patientId={patientId} />
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
       {!estAnesthesiste && (

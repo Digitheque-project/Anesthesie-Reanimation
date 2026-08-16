@@ -11,6 +11,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import { libelleAnesthesie } from '@/lib/export/dossier-patient'
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
@@ -298,7 +299,10 @@ function VerificationVeillePageContent() {
 
   return (
     <main className="p-6">
-      <BackButton className="mb-3" />
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <BackButton />
+        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+      </div>
       <PatientIdentityHeader patient={patient || { nom: patientNom }} patientId={patientId} />
       <div className="flex justify-end -mt-2 mb-3">
         {cpaId ? (

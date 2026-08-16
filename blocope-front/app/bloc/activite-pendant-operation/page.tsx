@@ -11,8 +11,10 @@ import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
+import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 import { useRole } from '@/lib/hooks/useRole'
 
 export default function ActivitePendantOperationPage() {
@@ -56,6 +58,24 @@ function ActivitePendantOperationPageContent() {
 
   const [loading, setLoading] = useState(false)
   const [showRecap, setShowRecap] = useState(false)
+
+  // Filet de sécurité contre la perte de saisie en cliquant "Retour" avant validation — ne
+  // couvre que ce formulaire (apports, sorties, ventilation) : les constantes de SurveillancePanel
+  // sont déjà sauvegardées en continu côté backend, pas besoin de brouillon pour elles.
+  const brouillonKey = patientId ? `activite-perop-brouillon:${patientId}` : null
+  useDraftAutosave(brouillonKey, form)
+  const [brouillonTrouve, setBrouillonTrouve] = useState<Brouillon<typeof form> | null>(null)
+  useEffect(() => {
+    if (!brouillonKey) return
+    const brouillon = chargerBrouillon<typeof form>(brouillonKey)
+    if (brouillon) setBrouillonTrouve(brouillon)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillonKey])
+  const restaurerBrouillon = () => {
+    if (!brouillonTrouve) return
+    setForm(brouillonTrouve.data)
+    setBrouillonTrouve(null)
+  }
   // Enregistrement ActivitePerOp de ce patient — créé tôt (dès l'arrivée sur l'écran) pour que
   // les constantes puissent y être rattachées et synchronisées en temps réel au fur et à mesure
   // de l'opération, plutôt qu'une seule grosse saisie à la toute fin.
@@ -103,6 +123,7 @@ function ActivitePendantOperationPageContent() {
         },
       })
       setShowRecap(false)
+      if (brouillonKey) effacerBrouillon(brouillonKey)
 
       alert('✅ Activité enregistrée ! Passage à la check-list après intervention.')
       router.push(`/bloc/apres-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
@@ -166,6 +187,7 @@ function ActivitePendantOperationPageContent() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
           <div className="px-3 py-1.5 rounded-full flex items-center gap-2 border bg-tertiary/10 text-tertiary border-tertiary/20">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>

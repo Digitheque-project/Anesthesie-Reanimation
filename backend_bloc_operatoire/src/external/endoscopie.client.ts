@@ -15,8 +15,17 @@ export class EndoscopieClient {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl =
-      this.config.get<string>('externalServices.endoscopieApiUrl') ?? '';
+    // ENDOSCOPIE_API_URL est désormais la racine nue du service (le suffixe `/api` vivait avant
+    // dans la variable elle-même) — posé ici pour que `${this.baseUrl}/notifications/receive`
+    // continue de résoudre exactement comme avant. Le `?:` évite qu'une variable non configurée
+    // (chaîne vide) devienne faussement "configurée" (`/api`, tronqué mais non vide) et passe le
+    // garde-fou `if (!this.baseUrl)` ci-dessous par erreur.
+    const endoscopieBase = this.config.get<string>(
+      'externalServices.endoscopieApiUrl',
+    );
+    this.baseUrl = endoscopieBase
+      ? `${endoscopieBase.replace(/\/+$/, '')}/api`
+      : '';
     this.serviceId =
       this.config.get<string>('externalServices.endoscopieServiceId') ?? '';
     this.blocServiceId =

@@ -11,8 +11,10 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import Radio from '@/components/ui/Radio'
+import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
 export default function VerificationPostOpPage() {
   return (
@@ -63,6 +65,22 @@ function VerificationPostOpPageContent() {
 
   useEffect(() => on('checklist-pendant-op:maj', () => setMajDistante(true)), [on])
 
+  // Filet de sécurité contre la perte de saisie en cliquant "Retour" avant validation.
+  const brouillonKey = patientId ? `checklist-pendant-brouillon:${patientId}` : null
+  useDraftAutosave(brouillonKey, form)
+  const [brouillonTrouve, setBrouillonTrouve] = useState<Brouillon<typeof form> | null>(null)
+  useEffect(() => {
+    if (!brouillonKey) return
+    const brouillon = chargerBrouillon<typeof form>(brouillonKey)
+    if (brouillon) setBrouillonTrouve(brouillon)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillonKey])
+  const restaurerBrouillon = () => {
+    if (!brouillonTrouve) return
+    setForm(brouillonTrouve.data)
+    setBrouillonTrouve(null)
+  }
+
   const reponsesIncompletes = ITEMS.some(item => form[item.key as keyof typeof form] === null)
 
   const handleOuvrirRecap = () => {
@@ -82,6 +100,7 @@ function VerificationPostOpPageContent() {
     try {
       await apiClient.post('/checklists-pendant-op', { patientId, ...form })
       setShowRecap(false)
+      if (brouillonKey) effacerBrouillon(brouillonKey)
       alert('✅ Checklist avant incision enregistrée !')
       router.push(`/bloc/activite-pendant-operation?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`)
     }
@@ -107,9 +126,12 @@ function VerificationPostOpPageContent() {
   return (
     <main className="p-6">
       {/* Header */}
-      <header className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
-        <BackButton className="order-first" />
-        <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant incision</h1>
+      <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <BackButton className="order-first" />
+          <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant incision</h1>
+        </div>
+        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
       </header>
 
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />

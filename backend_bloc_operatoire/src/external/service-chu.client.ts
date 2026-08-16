@@ -14,8 +14,15 @@ export class ServiceChuClient {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl =
-      this.config.get<string>('externalServices.serviceChuApiUrl') ?? '';
+    // SERVICE_CHU_API_URL est désormais la racine nue du service (le suffixe `/service-chu`
+    // vivait avant dans la variable elle-même) — posé ici pour que les deux appels ci-dessous
+    // continuent de résoudre exactement comme avant.
+    const serviceChuBase = this.config.get<string>(
+      'externalServices.serviceChuApiUrl',
+    );
+    this.baseUrl = serviceChuBase
+      ? `${serviceChuBase.replace(/\/+$/, '')}/service-chu`
+      : '';
     this.chuId = this.config.get<string>('externalServices.chuId') ?? '';
     this.serviceId =
       this.config.get<string>('externalServices.serviceId') ?? '';

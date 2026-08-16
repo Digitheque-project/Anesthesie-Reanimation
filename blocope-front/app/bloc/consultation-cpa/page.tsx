@@ -14,6 +14,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate';
 import { RoleClinique } from '@/lib/auth/role-clinique';
 import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
 import BackButton from '@/components/bloc/layout/BackButton';
+import PasserButton from '@/components/bloc/layout/PasserButton';
 import { exporterFichePdf } from '@/lib/export/export';
 import { formaterNomPatient, formaterIdDossier } from '@/lib/patient';
 import { estServiceNonOperatoire } from '@/lib/programme-non-operatoire';
@@ -1001,7 +1002,10 @@ function ConsultationCpaPageContent() {
 
   return (
     <main className="p-4 space-y-2">
-      <BackButton />
+      <div className="flex items-center justify-between gap-3">
+        <BackButton />
+        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+      </div>
       <div className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-2 ${estUrgent ? 'bg-tertiary/10 text-tertiary' : 'bg-primary/10 text-primary'}`}>
         <span className="material-symbols-outlined text-lg">{estUrgent ? 'bolt' : 'event_available'}</span>
         {estUrgent ? 'Visite Pré-Anesthésique (VPA) — patient urgent, consultation immédiate' : 'Consultation Pré-Anesthésique (CPA)'}

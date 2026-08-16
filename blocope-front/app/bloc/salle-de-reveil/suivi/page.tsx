@@ -12,8 +12,10 @@ import Radio from '@/components/ui/Radio'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
+import PasserButton from '@/components/bloc/layout/PasserButton'
 import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
+import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
 const SERVICES_CLINIQUES = [
   'Médecine Interne', 'Chirurgie', 'Réanimation', 'Soins Intensifs',
@@ -69,6 +71,33 @@ function SalleDeReveilPageContent() {
   // ne bloque le bouton, l'anesthésiste relit les données puis confirme (seule validation).
   const [showConfirmationRevoir, setShowConfirmationRevoir] = useState(false)
   const [envoiEnCours, setEnvoiEnCours] = useState(false)
+
+  // Filet de sécurité contre la perte de saisie en cliquant "Retour" avant validation — tout ce
+  // qui n'est pas déjà enregistré via SurveillancePanel (sauvegardée en continu à part).
+  const brouillonKey = patientId ? `salle-reveil-brouillon:${patientId}` : null
+  const brouillonSnapshot = { scores, evs, eqa, eva, etatInitial, reponse, orientation, serviceChoisi, checklistSortie }
+  useDraftAutosave(brouillonKey, brouillonSnapshot)
+  const [brouillonTrouve, setBrouillonTrouve] = useState<Brouillon<typeof brouillonSnapshot> | null>(null)
+  useEffect(() => {
+    if (!brouillonKey) return
+    const brouillon = chargerBrouillon<typeof brouillonSnapshot>(brouillonKey)
+    if (brouillon) setBrouillonTrouve(brouillon)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brouillonKey])
+  const restaurerBrouillon = () => {
+    if (!brouillonTrouve) return
+    const d = brouillonTrouve.data
+    setScores(d.scores)
+    setEvs(d.evs)
+    setEqa(d.eqa)
+    setEva(d.eva)
+    setEtatInitial(d.etatInitial)
+    setReponse(d.reponse)
+    setOrientation(d.orientation)
+    setServiceChoisi(d.serviceChoisi)
+    setChecklistSortie(d.checklistSortie)
+    setBrouillonTrouve(null)
+  }
 
   useEffect(() => {
     if (patientId) patientService.getById(patientId).then(setPatient).catch(console.error)
@@ -151,6 +180,7 @@ function SalleDeReveilPageContent() {
       })
       setShowConfirmationRevoir(false)
       setShowConfirmation(true)
+      if (brouillonKey) effacerBrouillon(brouillonKey)
     } catch (err: any) {
       console.error(err)
       const message = err.response?.data?.message || err.message || 'Erreur inconnue'
@@ -165,7 +195,10 @@ function SalleDeReveilPageContent() {
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="font-headline font-extrabold tracking-tight text-on-surface text-2xl">🛏️ Salle de réveil — Surveillance</h1>
-        <VoirDossierButton patientId={patientId} variant="icon" />
+        <div className="flex items-center gap-3">
+          {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+          <VoirDossierButton patientId={patientId} variant="icon" />
+        </div>
       </div>
 
       {/* Contexte patient */}
