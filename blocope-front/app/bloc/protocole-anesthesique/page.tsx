@@ -198,7 +198,7 @@ function ProtocoleAnesthesiquePageContent() {
     <main className="p-6">
       <div className="flex items-center justify-between gap-3 mb-3">
         <BackButton />
-        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+        <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </div>
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole anesthésique" patientId={patientId} />
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />

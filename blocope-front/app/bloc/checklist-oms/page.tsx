@@ -162,7 +162,7 @@ function ChecklistAvantOpPageContent() {
           <BackButton className="order-first" />
           <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant opération</h1>
         </div>
-        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+        <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </header>
 
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
@@ -247,22 +247,22 @@ function ChecklistAvantOpPageContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Allergie du patient</span>
                   <div className="flex space-x-4">
-                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="allergie_patient" checked={form.allergiePatient === true} onChange={() => setForm({...form, allergiePatient: true})} /> Oui</label>
-                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="allergie_patient" checked={form.allergiePatient === false} onChange={() => setForm({...form, allergiePatient: false})} /> Non</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="lg" accent="error" name="allergie_patient" checked={form.allergiePatient === true} onChange={() => setForm({...form, allergiePatient: true})} /> Oui</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="lg" accent="error" name="allergie_patient" checked={form.allergiePatient === false} onChange={() => setForm({...form, allergiePatient: false})} /> Non</label>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs leading-tight">- Risque d'inhalation, de difficulté d'intubation</span>
                   <div className="flex space-x-4">
-                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_intubation" checked={form.risqueIntubation === true} onChange={() => setForm({...form, risqueIntubation: true})} /> Oui</label>
-                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_intubation" checked={form.risqueIntubation === false} onChange={() => setForm({...form, risqueIntubation: false})} /> Non</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="lg" accent="error" name="risque_intubation" checked={form.risqueIntubation === true} onChange={() => setForm({...form, risqueIntubation: true})} /> Oui</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="lg" accent="error" name="risque_intubation" checked={form.risqueIntubation === false} onChange={() => setForm({...form, risqueIntubation: false})} /> Non</label>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs">- Risque de saignement important</span>
                   <div className="flex space-x-4">
-                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_saignement" checked={form.risqueSaignement === true} onChange={() => setForm({...form, risqueSaignement: true})} /> Oui</label>
-                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="sm" accent="error" name="risque_saignement" checked={form.risqueSaignement === false} onChange={() => setForm({...form, risqueSaignement: false})} /> Non</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="lg" accent="error" name="risque_saignement" checked={form.risqueSaignement === true} onChange={() => setForm({...form, risqueSaignement: true})} /> Oui</label>
+                    <label className="flex items-center gap-1 text-xs cursor-pointer"><Radio size="lg" accent="error" name="risque_saignement" checked={form.risqueSaignement === false} onChange={() => setForm({...form, risqueSaignement: false})} /> Non</label>
                   </div>
                 </div>
               </div>

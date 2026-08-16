@@ -128,7 +128,7 @@ function ApresOperationPageContent() {
     <div className="p-6 max-w-6xl mx-auto w-full">
       <div className="flex items-center justify-between gap-3 mb-4">
         <BackButton />
-        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+        <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </div>
 
       <h1 className="text-2xl font-extrabold font-headline text-on-surface tracking-tight mb-4">Check-list après intervention – Check de sortie du bloc</h1>
@@ -161,12 +161,12 @@ function ApresOperationPageContent() {
                 <span className="font-medium text-on-surface">{item.label}</span>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <Radio name={item.key}
+                    <Radio size="lg" name={item.key}
                       checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({...form, [item.key]: true})} />
                     <span className="text-sm font-semibold">Oui</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <Radio name={item.key}
+                    <Radio size="lg" name={item.key}
                       checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({...form, [item.key]: false})} />
                     <span className="text-sm font-semibold">Non/N/A</span>
                   </label>

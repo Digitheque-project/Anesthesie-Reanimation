@@ -196,7 +196,7 @@ function SalleDeReveilPageContent() {
         <BackButton />
         <h1 className="font-headline font-extrabold tracking-tight text-on-surface text-2xl">🛏️ Salle de réveil — Surveillance</h1>
         <div className="flex items-center gap-3">
-          {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+          <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
           <VoirDossierButton patientId={patientId} variant="icon" />
         </div>
       </div>
@@ -251,11 +251,11 @@ function SalleDeReveilPageContent() {
             <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">Réponse observée</p>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
-                <Checkbox size="sm" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} />
+                <Checkbox size="lg" checked={reponse.intubation} onChange={e => setReponse({...reponse, intubation: e.target.checked})} />
                 <span className="ml-3 text-sm">Extubation obtenue</span>
               </label>
               <label className="flex items-center p-3 rounded-lg bg-surface-container-low cursor-pointer">
-                <Checkbox size="sm" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} />
+                <Checkbox size="lg" checked={reponse.curarisation} onChange={e => setReponse({...reponse, curarisation: e.target.checked})} />
                 <span className="ml-3 text-sm">Décurarisation obtenue</span>
               </label>
             </div>
@@ -346,6 +346,7 @@ function SalleDeReveilPageContent() {
           ].map(item => (
             <label key={item.key} className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg cursor-pointer">
               <Checkbox
+                size="lg"
                 checked={checklistSortie[item.key as keyof typeof checklistSortie]}
                 onChange={e => setChecklistSortie({ ...checklistSortie, [item.key]: e.target.checked })} />
               <span className="text-sm font-medium text-on-surface">{item.label}</span>
@@ -385,11 +386,11 @@ function SalleDeReveilPageContent() {
             <h3 className="text-xl font-extrabold text-primary mb-6">Orientation du patient</h3>
             <div className="space-y-4">
               <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
-                <Radio name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} />
+                <Radio size="lg" name="orientation" checked={orientation === 'origine'} onChange={() => setOrientation('origine')} />
                 <span className="font-bold">Service d'origine</span>
               </label>
               <label className="flex items-center space-x-3 p-4 rounded-xl border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low">
-                <Radio name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} />
+                <Radio size="lg" name="orientation" checked={orientation === 'autres'} onChange={() => setOrientation('autres')} />
                 <span className="font-bold">Autres services</span>
               </label>
               {orientation === 'autres' && (

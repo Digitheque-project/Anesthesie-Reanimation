@@ -131,7 +131,7 @@ function VerificationPostOpPageContent() {
           <BackButton className="order-first" />
           <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Check-list avant incision</h1>
         </div>
-        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+        <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </header>
 
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
@@ -161,10 +161,10 @@ function VerificationPostOpPageContent() {
               {item.desc && <p className="text-xs mb-3">{item.desc}</p>}
               <div className="flex space-x-6">
                 <label className="flex items-center text-sm font-medium cursor-pointer">
-                  <Radio className="mr-2" accent="secondary" name={item.key} checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({ ...form, [item.key]: true })} /><span>Oui</span>
+                  <Radio size="lg" className="mr-2" accent="secondary" name={item.key} checked={form[item.key as keyof typeof form] === true} onChange={() => setForm({ ...form, [item.key]: true })} /><span>Oui</span>
                 </label>
                 <label className="flex items-center text-sm font-medium cursor-pointer">
-                  <Radio className="mr-2" accent="secondary" name={item.key} checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({ ...form, [item.key]: false })} /><span>Non</span>
+                  <Radio size="lg" className="mr-2" accent="secondary" name={item.key} checked={form[item.key as keyof typeof form] === false} onChange={() => setForm({ ...form, [item.key]: false })} /><span>Non</span>
                 </label>
               </div>
             </div>

@@ -187,7 +187,7 @@ function ActivitePendantOperationPageContent() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+          <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
           <div className="px-3 py-1.5 rounded-full flex items-center gap-2 border bg-tertiary/10 text-tertiary border-tertiary/20">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
@@ -218,10 +218,10 @@ function ActivitePendantOperationPageContent() {
       {/* Body : colonne gauche scrollable (anesthésiste uniquement) + colonne droite fixe
           (boutons de chronologie, ne défile jamais avec la page) — l'IBODE ne voit que les
           boutons, aucun formulaire clinique ni checklist. */}
-      <div className="flex-1 min-h-0 flex gap-6 p-6">
+      <div className="flex-1 min-h-0 flex items-start gap-6 p-6 overflow-y-auto">
         {estAnesthesiste && (
         <div className="flex-1 min-w-0 flex flex-col gap-6">
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-6">
+        <div className="space-y-6">
         {/* Section 1: APPORTS */}
         <section className="bg-white rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
           <div className="bg-emerald-50 px-6 py-3 border-b border-emerald-100 flex items-center gap-2">

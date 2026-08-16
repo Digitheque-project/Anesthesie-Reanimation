@@ -253,7 +253,9 @@ export default function MomentsTimeline({ patientId }: { patientId: string }) {
       <div className="flex flex-col flex-1 min-h-0">
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 shrink-0">Historique</h3>
         {moments.length === 0 ? (
-          <p className="text-xs text-on-surface-variant">Aucun moment horodaté pour l'instant.</p>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <p className="text-xs text-on-surface-variant italic text-center">Aucun moment horodaté pour l'instant.</p>
+          </div>
         ) : (
           <ul className="space-y-1.5 overflow-y-auto flex-1 min-h-0">
             {moments.map((m) => {

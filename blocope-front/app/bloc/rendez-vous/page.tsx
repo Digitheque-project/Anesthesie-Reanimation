@@ -6,6 +6,7 @@ import { planningService, patientService } from '@/lib/api';
 import { formaterNomPatient } from '@/lib/patient';
 import { styleUrgence } from '@/lib/urgence';
 import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton';
+import ProgrammeAVenirModal from '@/components/bloc/patient-du-jour/ProgrammeAVenirModal';
 import { useRefetchOnFocus } from '@/lib/hooks/useRefetchOnFocus';
 import { useRefetchOnRealtimeUpdate } from '@/lib/hooks/useRefetchOnRealtimeUpdate';
 
@@ -43,6 +44,10 @@ export default function RendezVousPage() {
   // chaque intervention) — on prévient du total + de la prochaine, avec un bouton pour tout
   // afficher d'un coup (voirTousVerif), exactement comme l'alerte RDV CPA.
   const [voirTousVerif, setVoirTousVerif] = useState(false);
+  // Vue d'ensemble de la charge à venir (tous patients à opérer, triés par date) — même popup
+  // que sur Programme opératoire / non-chirurgical, utile ici pour anticiper sans devoir changer
+  // d'écran pendant qu'on traite les rendez-vous CPA ou les vérifications veille.
+  const [showProgrammeAVenir, setShowProgrammeAVenir] = useState(false);
   // Le loading plein écran n'apparaît qu'au tout premier chargement : les rafraîchissements
   // d'arrière-plan (temps réel, retour de focus) ne doivent pas faire clignoter "Chargement...".
   const aDejaCharge = useRef(false);
@@ -196,24 +201,31 @@ export default function RendezVousPage() {
             {onglet === 'VERIFICATION_VEILLE' ? 'Tous les patients CPA validée, en attente de vérification' : voirTousCpa ? 'Tous les rendez-vous CPA à venir' : formaterDate(selectedDate)}
           </p>
         </div>
-        {onglet === 'CPA' ? (
-          <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setVoirTousCpa(false); }} disabled={voirTousCpa}
-            className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed" />
-        ) : (
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-lg">filter_alt</span>
-              Filtrer par date d'intervention
-            </label>
-            <input type="date" value={filtreDateVerif} onChange={(e) => setFiltreDateVerif(e.target.value)} disabled={voirTousVerif}
+        <div className="flex flex-wrap items-center gap-2">
+          {onglet === 'CPA' ? (
+            <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setVoirTousCpa(false); }} disabled={voirTousCpa}
               className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed" />
-            {filtreDateVerif && !voirTousVerif && (
-              <button onClick={() => setFiltreDateVerif('')} className="text-xs font-bold text-primary hover:underline">
-                Effacer
-              </button>
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-lg">filter_alt</span>
+                Filtrer par date d'intervention
+              </label>
+              <input type="date" value={filtreDateVerif} onChange={(e) => setFiltreDateVerif(e.target.value)} disabled={voirTousVerif}
+                className="px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-bold cursor-pointer bg-white shadow-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed" />
+              {filtreDateVerif && !voirTousVerif && (
+                <button onClick={() => setFiltreDateVerif('')} className="text-xs font-bold text-primary hover:underline">
+                  Effacer
+                </button>
+              )}
+            </div>
+          )}
+          <button type="button" onClick={() => setShowProgrammeAVenir(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 text-primary rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors">
+            <span className="material-symbols-outlined text-lg">calendar_month</span>
+            Voir le programme à venir
+          </button>
+        </div>
       </div>
 
       {/* Alerte retards — date prévue déjà dépassée sans que l'étape correspondante soit faite.
@@ -393,6 +405,15 @@ export default function RendezVousPage() {
           </table>
         </div>
       </div>
+
+      <ProgrammeAVenirModal
+        open={showProgrammeAVenir}
+        onClose={() => setShowProgrammeAVenir(false)}
+        onChoisirDate={(date) => {
+          if (onglet === 'CPA') { setSelectedDate(date); setVoirTousCpa(false); }
+          else { setFiltreDateVerif(date); setVoirTousVerif(false); }
+        }}
+      />
     </div>
   );
 }

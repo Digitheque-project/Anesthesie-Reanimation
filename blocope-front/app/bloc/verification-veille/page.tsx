@@ -301,7 +301,7 @@ function VerificationVeillePageContent() {
     <main className="p-6">
       <div className="flex items-center justify-between gap-3 mb-3">
         <BackButton />
-        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+        <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </div>
       <PatientIdentityHeader patient={patient || { nom: patientNom }} patientId={patientId} />
       <div className="flex justify-end -mt-2 mb-3">

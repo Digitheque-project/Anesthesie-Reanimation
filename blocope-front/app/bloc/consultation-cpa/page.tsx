@@ -1004,7 +1004,7 @@ function ConsultationCpaPageContent() {
     <main className="p-4 space-y-2">
       <div className="flex items-center justify-between gap-3">
         <BackButton />
-        {brouillonTrouve && <PasserButton onClick={restaurerBrouillon} />}
+        <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </div>
       <div className={`rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-2 ${estUrgent ? 'bg-tertiary/10 text-tertiary' : 'bg-primary/10 text-primary'}`}>
         <span className="material-symbols-outlined text-lg">{estUrgent ? 'bolt' : 'event_available'}</span>

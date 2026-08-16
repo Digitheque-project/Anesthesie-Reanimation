@@ -22,7 +22,10 @@ interface PatientAVenir {
 interface Props {
   open: boolean
   onClose: () => void
-  /** true = Programme non-chirurgical (Imagerie, Endoscopie, Urgence...), false = Programme opératoire du Bloc. */
+  /** true = Programme non-chirurgical (Imagerie, Endoscopie, Urgence...), false = Programme opératoire du Bloc.
+   * Sert de vue par défaut à l'ouverture — l'utilisateur peut ensuite basculer entre les deux
+   * via les onglets internes (voir `vue`), utile depuis les écrans (Fil de travail, Salle de
+   * réveil) qui ne sont pas eux-mêmes limités à un seul flux. */
   nonOperatoire?: boolean
   /** Sélectionne ce jour sur l'écran d'origine et ferme la popup — pour sauter directement à la
    * date d'un patient repéré ici sans devoir naviguer jour par jour depuis le calendrier normal. */
@@ -41,6 +44,14 @@ const formaterDateGroupe = (iso: string) => {
 export default function ProgrammeAVenirModal({ open, onClose, nonOperatoire = false, onChoisirDate }: Props) {
   const [loading, setLoading] = useState(true)
   const [patients, setPatients] = useState<PatientAVenir[]>([])
+  // Vue affichée (chirurgical / non-chirurgical) — initialisée depuis `nonOperatoire` à chaque
+  // ouverture, mais bascule librement ensuite via les onglets internes : les écrans qui ne sont
+  // pas eux-mêmes limités à un seul flux (Fil de travail, Salle de réveil) ont besoin des deux.
+  const [vueNonOperatoire, setVueNonOperatoire] = useState(nonOperatoire)
+
+  useEffect(() => {
+    if (open) setVueNonOperatoire(nonOperatoire)
+  }, [open, nonOperatoire])
 
   useEffect(() => {
     if (!open) return
@@ -54,7 +65,7 @@ export default function ProgrammeAVenirModal({ open, onClose, nonOperatoire = fa
         const notifsData = notifsRes.data || []
         const aujourdhui = new Date().toISOString().split('T')[0]
         const data = [...(pretRes.data || []), ...(encoursRes.data || [])]
-          .filter((p: any) => (nonOperatoire ? estServiceNonOperatoire(p.serviceOrigine) : !estServiceNonOperatoire(p.serviceOrigine)))
+          .filter((p: any) => (vueNonOperatoire ? estServiceNonOperatoire(p.serviceOrigine) : !estServiceNonOperatoire(p.serviceOrigine)))
           .filter((p: any) => p.dateIntervention && new Date(p.dateIntervention).toISOString().split('T')[0] >= aujourdhui)
 
         const liste: PatientAVenir[] = data.map((p: any) => {
@@ -76,7 +87,7 @@ export default function ProgrammeAVenirModal({ open, onClose, nonOperatoire = fa
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [open, nonOperatoire])
+  }, [open, vueNonOperatoire])
 
   const groupes = useMemo(() => {
     const map = new Map<string, PatientAVenir[]>()
@@ -107,6 +118,20 @@ export default function ProgrammeAVenirModal({ open, onClose, nonOperatoire = fa
           <button type="button" onClick={onClose} title="Fermer" aria-label="Fermer"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors">
             <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        {/* Bascule chirurgical / non-chirurgical — utile depuis les écrans qui voient les deux
+            flux (Fil de travail, Salle de réveil) ; sans effet gênant pour les écrans déjà
+            limités à un seul flux, qui n'ont qu'à l'ignorer. */}
+        <div className="shrink-0 flex gap-1.5 px-6 py-3 bg-surface-container-lowest border-b border-outline-variant/10">
+          <button type="button" onClick={() => setVueNonOperatoire(false)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${!vueNonOperatoire ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
+            Programme opératoire
+          </button>
+          <button type="button" onClick={() => setVueNonOperatoire(true)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${vueNonOperatoire ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-container'}`}>
+            Programme non-chirurgical
           </button>
         </div>
 
