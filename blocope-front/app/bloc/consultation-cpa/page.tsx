@@ -198,6 +198,22 @@ function ConsultationCpaPageContent() {
     }
   }, [patientId]);
 
+  // Retard : la date prévue (CPA ou opération) de ce patient est déjà dépassée sans que l'étape
+  // correspondante soit faite (voir PlanningService.getRetards / Fil de travail) — signalé ici
+  // directement sur l'écran où l'action à mener se trouve, en plus du bandeau du Fil de travail.
+  const [cpaEnRetard, setCpaEnRetard] = useState(false);
+  const [operationEnRetard, setOperationEnRetard] = useState(false);
+  useEffect(() => {
+    const idFinal = patientId || patient?.id;
+    if (!idFinal) return;
+    planningService.getRetards()
+      .then((d: any) => {
+        setCpaEnRetard((d?.cpaRetard || []).some((c: any) => c.patientId === idFinal));
+        setOperationEnRetard((d?.operationRetard || []).some((p: any) => p.patientId === idFinal));
+      })
+      .catch(console.error);
+  }, [patientId, patient?.id]);
+
   // Le Major/Responsable CPA remplit et valide la CPA en premier ; l'anesthésiste rouvre
   // ensuite cette même fiche (en lecture seule sur l'examen) pour n'y ajouter que les
   // médicaments d'anesthésie/réanimation et la date de vérification veille.
@@ -1040,9 +1056,29 @@ function ConsultationCpaPageContent() {
         </div>
       </div>
 
+      {/* Alertes retard — date prévue déjà dépassée sans que l'étape correspondante soit faite. */}
+      {cpaEnRetard && !cpaDejaRemplie && (
+        <div className="p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-800 flex items-center gap-2 font-semibold">
+          <span className="material-symbols-outlined text-lg text-red-600">error</span>
+          La date prévue de cette CPA est déjà dépassée — complétez-la ci-dessous dès que possible.
+        </div>
+      )}
+      {operationEnRetard && (
+        <div className="p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-800 flex flex-wrap items-center gap-3">
+          <span className="material-symbols-outlined text-lg text-red-600">error</span>
+          <span className="flex-1 min-w-[220px] font-semibold">La date prévue de l&apos;opération est déjà dépassée.</span>
+          {estResponsableOuMajor && (
+            <button type="button" onClick={() => document.getElementById('date-operation-cpa')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
+              Modifier la date
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Date et heure prévues de l'opération — modifiable par le Responsable CPA ou le Major
           pendant la réalisation de la consultation (ex. créneau chirurgical décalé) */}
-      <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-wrap items-center gap-3">
+      <div id="date-operation-cpa" className="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-wrap items-center gap-3 scroll-mt-36">
         <span className="material-symbols-outlined text-primary">event</span>
         {estResponsableOuMajor ? (
           <>

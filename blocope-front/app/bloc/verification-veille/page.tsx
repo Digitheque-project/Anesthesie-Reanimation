@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
-import { patientService } from '@/lib/api'
+import { patientService, planningService } from '@/lib/api'
 import { useRole } from '@/lib/hooks/useRole'
 import Checkbox from '@/components/ui/Checkbox'
 import RoleGate from '@/components/bloc/auth/RoleGate'
@@ -81,6 +81,16 @@ function VerificationVeillePageContent() {
         if (res.data?.data?.length > 0) setCpa(res.data.data[0])
       }).catch(() => {})
     }
+  }, [patientId])
+
+  // Retard : la date d'intervention de ce patient est déjà dépassée sans que la vérification
+  // veille soit faite (voir PlanningService.getRetards / Fil de travail).
+  const [enRetard, setEnRetard] = useState(false)
+  useEffect(() => {
+    if (!patientId) return
+    planningService.getRetards()
+      .then((d: any) => setEnRetard((d?.verificationVeilleRetard || []).some((p: any) => p.patientId === patientId)))
+      .catch(console.error)
   }, [patientId])
 
   // Charge les fichiers déjà importés pour ce patient (pièces jointes de la vérification la
@@ -297,6 +307,13 @@ function VerificationVeillePageContent() {
           <span className="px-3 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wider">⚠️ CPA non réalisée</span>
         )}
       </div>
+
+      {enRetard && (
+        <div className="mb-3 p-3 bg-red-50 border border-red-300 rounded-lg text-sm text-red-800 flex items-center gap-2 font-semibold">
+          <span className="material-symbols-outlined text-lg text-red-600">error</span>
+          La date d&apos;intervention prévue est déjà dépassée sans que cette vérification soit faite — à réaliser dès que possible.
+        </div>
+      )}
 
       <p className="mt-2 text-sm text-on-surface-variant">Contrôle final réalisé la veille de l'intervention, avant le passage au bloc.</p>
       {!estAnesthesiste && (

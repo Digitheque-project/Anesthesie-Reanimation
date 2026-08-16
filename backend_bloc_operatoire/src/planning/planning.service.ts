@@ -10,7 +10,7 @@ import {
   StatutCreneau,
   TypeRDV,
 } from '../entities/creneau-bloc.entity';
-import { PatientBloc } from '../entities/patient-bloc.entity';
+import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
 import {
   NotificationCPA,
   StatutNotificationCPA,
@@ -183,5 +183,67 @@ export class PlanningService {
       .addOrderBy('c.heureDebut', 'ASC')
       .getMany();
     return this.enrichCreneaux(data);
+  }
+
+  // Retards : trois catégories de dates prévues déjà dépassées sans que l'étape correspondante
+  // ait été faite — utilisé pour la pastille du menu (Fil de travail) et les bandeaux/alertes
+  // d'écran, pour qu'un rendez-vous manqué reste visible au lieu de disparaître silencieusement
+  // (cas de getProchainsRdvCpa, qui exclut au contraire tout ce qui est déjà passé).
+  async getRetards() {
+    const aujourdhui = new Date().toISOString().split('T')[0];
+
+    const creneauxCpa = await this.creneauRepo
+      .createQueryBuilder('c')
+      .where('c.type = :type', { type: TypeRDV.CPA })
+      .andWhere('c.date < :aujourdhui', { aujourdhui })
+      .andWhere('c.statut != :annule', { annule: StatutCreneau.ANNULE })
+      .orderBy('c.date', 'ASC')
+      .getMany();
+    const cpaRetard = (await this.enrichCreneaux(creneauxCpa)).filter(
+      (c: any) => c.patient?.statut === PatientStatut.EN_ATTENTE_CPA,
+    );
+
+    // La vérification veille ne dépend plus d'un créneau planifié à une date précise (voir
+    // rendez-vous/page.tsx) : "en retard" se juge directement sur la date d'intervention du
+    // patient, tant que la vérification n'a pas été faite.
+    const patientsEnAttenteVerif = await this.patientBlocRepo.find({
+      where: { statut: PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE },
+    });
+    const enRetardVerif = patientsEnAttenteVerif.filter(
+      (p) => p.dateIntervention && new Date(p.dateIntervention) < new Date(aujourdhui),
+    );
+    const verificationVeilleRetard = await this.accueilClient.enrichWithIdentity(enRetardVerif);
+
+    // Opération : date prévue dépassée alors que le patient n'est pas encore passé en salle.
+    const statutsAvantOperation = [
+      PatientStatut.EN_ATTENTE_CPA,
+      PatientStatut.CPA_REALISE,
+      PatientStatut.EN_ATTENTE_VERIFICATION_VEILLE,
+      PatientStatut.VERIFICATION_VEILLE_REALISEE,
+      PatientStatut.PRET_POUR_BLOC,
+    ];
+    const patientsAvantOperation = await this.patientBlocRepo.find({
+      where: { statut: In(statutsAvantOperation) },
+    });
+    const enRetardOperation = patientsAvantOperation.filter(
+      (p) => p.dateIntervention && new Date(p.dateIntervention) < new Date(aujourdhui),
+    );
+    const operationRetard = await this.accueilClient.enrichWithIdentity(enRetardOperation);
+
+    // Total en patients distincts, pas en lignes : un même patient peut apparaître dans plusieurs
+    // catégories (ex. vérification veille ET opération en retard), compter les lignes gonflerait
+    // artificiellement la pastille.
+    const idsDistincts = new Set([
+      ...cpaRetard.map((c: any) => c.patientId),
+      ...verificationVeilleRetard.map((p: any) => p.patientId),
+      ...operationRetard.map((p: any) => p.patientId),
+    ]);
+
+    return {
+      cpaRetard,
+      verificationVeilleRetard,
+      operationRetard,
+      total: idsDistincts.size,
+    };
   }
 }

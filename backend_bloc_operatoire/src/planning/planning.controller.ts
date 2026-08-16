@@ -72,4 +72,13 @@ export class PlanningController {
   cpaAVenir() {
     return this.service.getProchainsRdvCpa();
   }
+
+  @Get('retards')
+  @ApiOperation({
+    summary:
+      "CPA, vérification veille et opérations dont la date prévue est dépassée sans que l'étape correspondante soit faite",
+  })
+  retards() {
+    return this.service.getRetards();
+  }
 }
