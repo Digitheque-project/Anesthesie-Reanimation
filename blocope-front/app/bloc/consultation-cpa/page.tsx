@@ -1010,7 +1010,7 @@ function ConsultationCpaPageContent() {
             Une saisie non enregistrée du {new Date(brouillonTrouve.savedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} a été retrouvée pour ce patient.
           </span>
           <button type="button" onClick={restaurerBrouillon}
-            className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors">
+            className="px-3 py-1.5 bg-amber-400 text-amber-950 rounded-lg text-xs font-bold hover:bg-amber-500 transition-colors">
             Restaurer
           </button>
           <button type="button" onClick={ignorerBrouillon}
@@ -1628,7 +1628,7 @@ function ConsultationCpaPageContent() {
               <div className="px-4 py-3 bg-amber-100/70 border-b border-amber-200 flex items-center gap-2">
                 <span className="material-symbols-outlined text-amber-600">gavel</span>
                 <h2 className="text-sm font-extrabold text-amber-900 uppercase tracking-widest">Décision Finale</h2>
-                <span className="ml-auto px-2 py-0.5 bg-amber-500 text-white text-[10px] font-extrabold uppercase rounded-full">Obligatoire</span>
+                <span className="ml-auto px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold uppercase rounded-full">Obligatoire</span>
               </div>
               <div className="p-4">
                 {!peutEditerExamenEtDecision && !cpaDejaRemplie && (
@@ -1644,9 +1644,9 @@ function ConsultationCpaPageContent() {
                 )}
                 <div className={`grid grid-cols-1 gap-2 ${estUrgent ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                   {[
-                    { key: 'APTE', label: "Apte à l'anesthésie", icon: 'check_circle', activeClass: 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30' },
-                    { key: 'INAPTE', label: 'Inapte à ce jour', icon: 'cancel', activeClass: 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/30' },
-                    ...(estUrgent ? [] : [{ key: 'REPORT', label: 'CPA à reporter', sousLabel: '(pas l\'opération — à refaire après examens)', icon: 'schedule', activeClass: 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/30' }]),
+                    { key: 'APTE', label: "Apte à l'anesthésie", icon: 'check_circle', activeClass: 'bg-emerald-50 border-emerald-400 text-emerald-700 shadow-sm' },
+                    { key: 'INAPTE', label: 'Inapte à ce jour', icon: 'cancel', activeClass: 'bg-red-50 border-red-400 text-red-700 shadow-sm' },
+                    ...(estUrgent ? [] : [{ key: 'REPORT', label: 'CPA à reporter', sousLabel: '(pas l\'opération — à refaire après examens)', icon: 'schedule', activeClass: 'bg-orange-50 border-orange-400 text-orange-700 shadow-sm' }]),
                   ].map(opt => (
                     <button key={opt.key} onClick={() => {
                         setDecision(opt.key as any);
@@ -1659,7 +1659,7 @@ function ConsultationCpaPageContent() {
                       }`}>
                       <span className="material-symbols-outlined text-2xl" style={decision === opt.key ? { fontVariationSettings: "'FILL' 1" } : undefined}>{opt.icon}</span>
                       <span className="font-bold text-sm text-center">{opt.label}</span>
-                      {opt.sousLabel && <span className={`text-[10px] font-medium text-center leading-tight ${decision === opt.key ? 'text-white/85' : 'text-on-surface-variant/70'}`}>{opt.sousLabel}</span>}
+                      {opt.sousLabel && <span className="text-[10px] font-medium text-center leading-tight text-on-surface-variant/70">{opt.sousLabel}</span>}
                     </button>
                   ))}
                 </div>
@@ -1674,12 +1674,12 @@ function ConsultationCpaPageContent() {
                     <div className="grid grid-cols-2 gap-2">
                       {(decision === 'APTE'
                         ? [
-                            { key: 'RETENUE', label: "Date d'opération retenue", icon: 'event_available', activeClass: 'bg-emerald-500 border-emerald-500 text-white' },
-                            { key: 'REPORTEE', label: "Date d'opération reportée", icon: 'event_busy', activeClass: 'bg-orange-500 border-orange-500 text-white' },
+                            { key: 'RETENUE', label: "Date d'opération retenue", icon: 'event_available', activeClass: 'bg-emerald-50 border-emerald-400 text-emerald-700' },
+                            { key: 'REPORTEE', label: "Date d'opération reportée", icon: 'event_busy', activeClass: 'bg-orange-50 border-orange-400 text-orange-700' },
                           ]
                         : [
-                            { key: 'REPORTEE', label: "Date d'opération reportée", icon: 'event_busy', activeClass: 'bg-orange-500 border-orange-500 text-white' },
-                            { key: 'REFUSEE', label: 'Opération refusée (impossible)', icon: 'block', activeClass: 'bg-red-600 border-red-600 text-white' },
+                            { key: 'REPORTEE', label: "Date d'opération reportée", icon: 'event_busy', activeClass: 'bg-orange-50 border-orange-400 text-orange-700' },
+                            { key: 'REFUSEE', label: 'Opération refusée (impossible)', icon: 'block', activeClass: 'bg-red-50 border-red-400 text-red-700' },
                           ]
                       ).map(opt => (
                         <button key={opt.key} type="button" onClick={() => setDecisionOperation(opt.key as any)} disabled={!peutEditerExamenEtDecision}
