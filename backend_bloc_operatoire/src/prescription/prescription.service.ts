@@ -20,6 +20,7 @@ import { IngestionLedgerService } from '../ingestion/ingestion-ledger.service';
 import { CanalIngestion } from '../entities/ingestion-externe.entity';
 import { niveauDepuisLibelle, estNiveauUrgent } from '../common/urgence';
 import { construireIdDossier } from '../common/id-dossier';
+import { CPAService } from '../cpa/cpa.service';
 
 @Injectable()
 export class PrescriptionService {
@@ -36,7 +37,33 @@ export class PrescriptionService {
     private serviceRegistryClient: ServiceRegistryClient,
     private ingestionLedger: IngestionLedgerService,
     private config: ConfigService,
+    private cpaService: CPAService,
   ) {}
+
+  // Prescription (au sens anesthésie) d'un patient : médicaments retenus pendant sa CPA la plus
+  // récente — prémédication + anesthésie/réanimation. Exposé pour les autres services de la
+  // plateforme (voir PrescriptionController), qui n'ont sinon aucun moyen de lire cette donnée
+  // sans interroger l'intégralité de la fiche CPA (~80 champs cliniques non pertinents pour eux).
+  async getPrescriptionCpa(patientId: string) {
+    const { data } = await this.cpaService.findAll(1, 1, patientId);
+    const cpa = data[0];
+    if (!cpa) {
+      return {
+        patientId,
+        cpaId: null,
+        dateConsultation: null,
+        premedicaments: [],
+        medicamentsAnesthesieReanimation: [],
+      };
+    }
+    return {
+      patientId,
+      cpaId: cpa.id,
+      dateConsultation: cpa.dateConsultation,
+      premedicaments: cpa.premedicaments || [],
+      medicamentsAnesthesieReanimation: cpa.medicamentsAnesthesieReanimation || [],
+    };
+  }
 
   // Webhook conservé pour compatibilité, mais dans l'architecture réelle le service
   // Prescriptions ne l'appelle jamais directement : il avertit le service Notification, qui

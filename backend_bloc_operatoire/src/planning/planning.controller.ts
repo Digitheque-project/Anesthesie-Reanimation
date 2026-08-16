@@ -8,25 +8,31 @@ import {
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PlanningService } from './planning.service';
 import { TypeRDV } from '../entities/creneau-bloc.entity';
 import { RequireRoleClinique } from '../central-auth/require-role.decorator';
 import { RoleClinique } from '../central-auth/role-clinique';
 
 @ApiTags('Planning')
+@ApiBearerAuth('JWT-auth')
 @Controller('planning')
 export class PlanningController {
   constructor(private readonly service: PlanningService) {}
 
   @Get('jour')
-  @ApiQuery({ name: 'date', required: true })
+  @ApiOperation({ summary: 'Créneaux (CPA / vérification veille) planifiés pour une journée donnée' })
+  @ApiQuery({ name: 'date', required: true, description: 'Date au format AAAA-MM-JJ' })
   @ApiQuery({ name: 'type', required: false, enum: TypeRDV })
   getJour(@Query('date') date: string, @Query('type') type?: TypeRDV) {
     return this.service.getPlanningJour(date, type);
   }
 
   @Get('semaine')
+  @ApiOperation({ summary: 'Créneaux (CPA / vérification veille) planifiés sur une plage de dates' })
+  @ApiQuery({ name: 'debut', required: true, description: 'Date de début au format AAAA-MM-JJ' })
+  @ApiQuery({ name: 'fin', required: true, description: 'Date de fin au format AAAA-MM-JJ' })
+  @ApiQuery({ name: 'type', required: false, enum: TypeRDV })
   getSemaine(
     @Query('debut') debut: string,
     @Query('fin') fin: string,
@@ -60,6 +66,7 @@ export class PlanningController {
   }
 
   @Get('urgences')
+  @ApiOperation({ summary: 'Créneaux marqués urgents, en attente' })
   urgences() {
     return this.service.getUrgencesEnAttente();
   }
