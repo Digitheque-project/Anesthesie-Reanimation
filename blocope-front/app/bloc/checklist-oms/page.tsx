@@ -13,6 +13,7 @@ import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
 import PasserButton from '@/components/bloc/layout/PasserButton'
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
@@ -34,11 +35,16 @@ function ChecklistAvantOpPageContent() {
   const intervention = searchParams.get('intervention') || ''
   const [patient, setPatient] = useState<any>(null)
   const [loadingPatient, setLoadingPatient] = useState(true)
+  const [erreurPatient, setErreurPatient] = useState(false)
 
-  useEffect(() => {
+  const chargerPatient = () => {
     if (!patientId) { setLoadingPatient(false); return }
-    patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
-  }, [patientId])
+    setLoadingPatient(true)
+    setErreurPatient(false)
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true) }).finally(() => setLoadingPatient(false))
+  }
+
+  useEffect(() => { chargerPatient() }, [patientId])
 
   const [form, setForm] = useState<{
     dateCreation: string
@@ -166,6 +172,7 @@ function ChecklistAvantOpPageContent() {
       </header>
 
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
 
       {!estAnesthesiste && (
         <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">

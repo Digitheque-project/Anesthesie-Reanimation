@@ -159,7 +159,10 @@ export default function RendezVousPage() {
   const creneauxFiltres = useMemo(() => {
     let filtres = creneauxAvecRetards;
     if (onglet === 'VERIFICATION_VEILLE' && !voirTousVerif && filtreDateVerif) {
-      filtres = filtres.filter((c: any) => c.dateIntervention && new Date(c.dateIntervention).toISOString().split('T')[0] === filtreDateVerif);
+      // Un patient en retard a par définition une date déjà passée : il ne correspondra jamais
+      // au filtre "date du jour" et disparaîtrait sinon silencieusement (voir commentaire plus
+      // haut sur creneauxAvecRetards) — on l'exempte donc de ce filtre de date.
+      filtres = filtres.filter((c: any) => c.enRetard || (c.dateIntervention && new Date(c.dateIntervention).toISOString().split('T')[0] === filtreDateVerif));
     }
     const q = recherche.trim().toLowerCase();
     if (!q) return filtres;

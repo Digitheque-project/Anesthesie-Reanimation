@@ -14,6 +14,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate';
 import { RoleClinique } from '@/lib/auth/role-clinique';
 import PrescriptionCpaModal from '@/components/bloc/prescription/PrescriptionCpaModal';
 import BackButton from '@/components/bloc/layout/BackButton';
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner';
 import PasserButton from '@/components/bloc/layout/PasserButton';
 import { exporterFichePdf } from '@/lib/export/export';
 import { formaterNomPatient, formaterIdDossier } from '@/lib/patient';
@@ -133,6 +134,7 @@ function ConsultationCpaPageContent() {
   const intervention = searchParams.get('intervention') || '';
 
   const [patient, setPatient] = useState<any>(null);
+  const [erreurPatient, setErreurPatient] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [scoreMallampati, setScoreMallampati] = useState<number | null>(null);
   const [scoreASA, setScoreASA] = useState<number | string | null>(null);
@@ -193,11 +195,13 @@ function ConsultationCpaPageContent() {
 
   const estResponsableOuMajor = estResponsableCpa || estMajor;
 
-  useEffect(() => {
-    if (patientId) {
-      patientService.getById(patientId).then(setPatient).catch(console.error);
-    }
-  }, [patientId]);
+  const chargerPatient = () => {
+    if (!patientId) return;
+    setErreurPatient(false);
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true); });
+  };
+
+  useEffect(() => { chargerPatient(); }, [patientId]);
 
   // Retard : la date prévue (CPA ou opération) de ce patient est déjà dépassée sans que l'étape
   // correspondante soit faite (voir PlanningService.getRetards / Fil de travail) — signalé ici
@@ -657,7 +661,13 @@ function ConsultationCpaPageContent() {
                 nombre: r.nombre !== '' ? Number(r.nombre) : undefined,
               }))
             : undefined,
-          jeune: form.jeune || `Solides : ${form.jeuneSolides || 'À partir de minuit'} — Liquide : ${form.jeuneLiquides || "Jusqu'à H-2"}`,
+          // form.jeune (instructions spécifiques libres) et jeuneSolides/jeuneLiquides (règles
+          // structurées) sont complémentaires, pas alternatifs — l'ancien `||` perdait
+          // silencieusement solides/liquides dès que le texte libre était rempli.
+          jeune: [
+            `Solides : ${form.jeuneSolides || 'À partir de minuit'} — Liquide : ${form.jeuneLiquides || "Jusqu'à H-2"}`,
+            form.jeune,
+          ].filter(Boolean).join(' — '),
           preparationPhysique: form.preparationPhysique,
           tachesInfirmieres: form.tachesInfirmieres,
           // Contrairement aux médicaments (réservés à l'anesthésiste), la date de vérification
@@ -704,12 +714,20 @@ function ConsultationCpaPageContent() {
           if (allerDirectement) {
             router.push(`/bloc/arrivee-bloc?patientId=${patientIdFinal}&patientNom=${encodeURIComponent(patientNom)}&intervention=${encodeURIComponent(intervention)}`);
           } else {
-            if (!proposerRaccourci) alert('✅ VPA validée avec succès !');
-            router.push(
-              estServiceNonOperatoire(patient?.serviceOrigine)
-                ? '/bloc/programme-non-operatoire'
-                : '/bloc/patient-du-jour'
-            );
+            const nonOperatoire = estServiceNonOperatoire(patient?.serviceOrigine);
+            if (decision === 'INAPTE' || (decision === 'REPORT' && nonOperatoire)) {
+              // INAPTE (toute origine) ou REPORT d'un patient non-opératoire : le dossier est
+              // archivé (CPA_INAPTE ou SORTI, voir CPAService.create) — jamais un succès de
+              // programmation, ne pas dire l'inverse ni renvoyer vers une liste où ce patient
+              // n'apparaîtra plus (voir Bug 4).
+              setTermine(true);
+            } else if (decision === 'REPORT') {
+              alert('🕓 CPA reportée — le patient reste en attente de CPA, à refaire.');
+              router.push('/bloc/rendez-vous');
+            } else {
+              if (!proposerRaccourci) alert('✅ VPA validée avec succès !');
+              router.push(nonOperatoire ? '/bloc/programme-non-operatoire' : '/bloc/patient-du-jour');
+            }
           }
         } else {
           // Patient normal venu d'un service non-opératoire (Endoscopie, Urgence, Imagerie) dont
@@ -1059,6 +1077,8 @@ function ConsultationCpaPageContent() {
           </span>
         </div>
       </div>
+
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
 
       {/* Alertes retard — date prévue déjà dépassée sans que l'étape correspondante soit faite. */}
       {cpaEnRetard && !cpaDejaRemplie && (

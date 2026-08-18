@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import PatientStatsCards from '@/components/bloc/patient-du-jour/PatientStatsCards'
 import PatientFiltersNonOp from '@/components/bloc/programme-non-operatoire/PatientFiltersNonOp'
 import PatientsListTableNonOp from '@/components/bloc/programme-non-operatoire/PatientsListTableNonOp'
@@ -8,6 +8,8 @@ import ProgrammeAVenirModal from '@/components/bloc/patient-du-jour/ProgrammeAVe
 import { patientService, notificationService } from '@/lib/api'
 import { estServiceNonOperatoire } from '@/lib/programme-non-operatoire'
 import type { FiltresPatient } from '@/types/bloc'
+import { useRefetchOnFocus } from '@/lib/hooks/useRefetchOnFocus'
+import { useRefetchOnRealtimeUpdate } from '@/lib/hooks/useRefetchOnRealtimeUpdate'
 
 // Miroir de app/bloc/patient-du-jour/page.tsx (Programme opératoire) : même mécanique, mêmes
 // statuts (PRET_POUR_BLOC, EN_COURS_OPERATION), mêmes checklists — seule différence, les patients
@@ -21,12 +23,15 @@ export default function ProgrammeNonOperatoirePage() {
   const [filtres, setFiltres] = useState<FiltresPatient>({ statut: '', specialite: '', recherche: '', sexe: '', heureDebut: '', heureFin: '' })
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [showProgrammeAVenir, setShowProgrammeAVenir] = useState(false)
+  // Le loading plein écran n'apparaît qu'au tout premier chargement : les rafraîchissements
+  // d'arrière-plan (temps réel, retour de focus) ne doivent pas faire clignoter "Chargement...".
+  const aDejaCharge = useRef(false)
 
   useEffect(() => { charger() }, [selectedDate])
 
   const charger = async () => {
     try {
-      setLoading(true)
+      if (!aDejaCharge.current) setLoading(true)
       const [pretRes, encoursRes, notifsRes] = await Promise.all([
         patientService.getAll({ statut: 'PRET_POUR_BLOC', limite: 100 }),
         patientService.getAll({ statut: 'EN_COURS_OPERATION', limite: 100 }),
@@ -60,9 +65,18 @@ export default function ProgrammeNonOperatoirePage() {
     } catch (err) {
       console.error('Erreur:', err)
     } finally {
+      aDejaCharge.current = true
       setLoading(false)
     }
   }
+
+  // Un patient dont l'opération vient d'être traitée (statut avancé depuis un autre onglet, ou
+  // page restaurée depuis le cache de navigation) pouvait rester affiché ici — voir
+  // useRefetchOnFocus. Miroir de patient-du-jour/page.tsx.
+  useRefetchOnFocus(charger)
+  // Rafraîchissement en temps réel (sans recharger la page) dès qu'une action est traitée,
+  // ici ou depuis un autre poste connecté — voir useRefetchOnRealtimeUpdate.
+  useRefetchOnRealtimeUpdate(charger)
 
   const patientsFiltres = patients.filter(p => {
     if (filtres.statut && p.etat !== filtres.statut) return false

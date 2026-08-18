@@ -323,12 +323,18 @@ export class RapportsService {
       dateDebut && dateFin
         ? { dateOperation: Between(new Date(dateDebut), new Date(dateFin)) }
         : {};
+    // Manquait ici alors que les 4 autres compteurs du même widget sont filtrés par période —
+    // "Moments horodatés" restait toujours le total global (voir app/bloc/rapports/page.tsx).
+    const periodeMoment =
+      dateDebut && dateFin
+        ? { horodatage: Between(new Date(dateDebut), new Date(dateFin)) }
+        : {};
     const [signIn, timeOut, signOut, moments, comptesRendus] =
       await Promise.all([
         this.checklistAvantRepo.count({ where: periode }),
         this.checklistPendantRepo.count({ where: periode }),
         this.checklistApresRepo.count({ where: periode }),
-        this.momentRepo.count({ where: { annule: false } }),
+        this.momentRepo.count({ where: { ...periodeMoment, annule: false } }),
         this.protocoleRepo.count({ where: periodeProtocole }),
       ]);
     return {

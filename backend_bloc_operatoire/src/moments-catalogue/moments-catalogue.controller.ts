@@ -19,7 +19,7 @@ export class MomentsCatalogueController {
   }
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
       'Ajouter un bouton réutilisable au catalogue (à sa propre catégorie)',

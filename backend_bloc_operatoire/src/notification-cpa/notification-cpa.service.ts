@@ -12,7 +12,11 @@ import {
   StatutNotificationCPA,
 } from '../entities/notification-cpa.entity';
 import { WebhookNotification } from '../entities/webhook-notification.entity';
-import { PatientBloc, PatientStatut } from '../entities/patient-bloc.entity';
+import {
+  PatientBloc,
+  PatientStatut,
+  NiveauUrgence,
+} from '../entities/patient-bloc.entity';
 import { CreneauBloc, StatutCreneau } from '../entities/creneau-bloc.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
@@ -77,8 +81,16 @@ export class NotificationCPAService {
         );
       }
     }
+    // Ce canal (création manuelle) ne connaît que estUrgent (booléen, pas d'échelle 1-5) : on ne
+    // peut donc pas distinguer TRES_URGENT ici, seulement retenir URGENT/NORMAL — mais on le
+    // renseigne quand même pour que le champ ne reste jamais null sans raison (voir Bug 5).
     const saved = await this.notificationRepo.save(
-      this.notificationRepo.create(dto),
+      this.notificationRepo.create({
+        ...dto,
+        niveauUrgence: dto.estUrgent
+          ? NiveauUrgence.URGENT
+          : NiveauUrgence.NORMAL,
+      }),
     );
     return Array.isArray(saved) ? saved[0] : saved;
   }

@@ -23,10 +23,10 @@ export class VerificationVeilleController {
   constructor(private readonly service: VerificationVeilleService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
-      "Créer une vérification à la veille de l'intervention (Anesthésiste)",
+      "Créer une vérification à la veille de l'intervention (Anesthésiste, Major)",
   })
   create(@Body() d: CreateVerificationVeilleDto, @Request() req: any) {
     return this.service.create(d, req.centralUser?.userId);
@@ -45,8 +45,8 @@ export class VerificationVeilleController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Modifier une vérification veille (Anesthésiste)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Modifier une vérification veille (Anesthésiste, Major)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() d: UpdateVerificationVeilleDto,

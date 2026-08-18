@@ -15,6 +15,7 @@ import BackButton from '@/components/bloc/layout/BackButton'
 import PasserButton from '@/components/bloc/layout/PasserButton'
 import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import SurveillancePanel from '@/components/bloc/surveillance/SurveillancePanel'
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner'
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
 
 const SERVICES_CLINIQUES = [
@@ -46,6 +47,7 @@ function SalleDeReveilPageContent() {
   const peutSurveiller = estAnesthesiste || estIbode
   const [nomPersonnel, setNomPersonnel] = useState('')
   const [patient, setPatient] = useState<any>(null)
+  const [erreurPatient, setErreurPatient] = useState(false)
   const [activiteId, setActiviteId] = useState<string | null>(null)
   // Pré-rempli depuis le vrai horodatage du moment "Arrivée en salle" (posé sur l'écran Arrivée
   // au bloc) — pas une valeur figée : reste modifiable si l'anesthésiste doit la corriger.
@@ -99,9 +101,13 @@ function SalleDeReveilPageContent() {
     setBrouillonTrouve(null)
   }
 
-  useEffect(() => {
-    if (patientId) patientService.getById(patientId).then(setPatient).catch(console.error)
-  }, [patientId])
+  const chargerPatient = () => {
+    if (!patientId) return
+    setErreurPatient(false)
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true) })
+  }
+
+  useEffect(() => { chargerPatient() }, [patientId])
 
   useEffect(() => {
     const session = obtenirSessionValide()
@@ -200,6 +206,8 @@ function SalleDeReveilPageContent() {
           <VoirDossierButton patientId={patientId} variant="icon" />
         </div>
       </div>
+
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
 
       {/* Contexte patient */}
       <div className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 px-6 py-4 flex flex-wrap items-center gap-x-8 gap-y-3 justify-between">
@@ -418,13 +426,9 @@ function SalleDeReveilPageContent() {
             <h3 className="text-xl font-extrabold text-on-surface mb-2">Validation terminée !</h3>
             <p className="text-sm text-on-surface-variant mb-6">Toutes les informations ont été enregistrées avec succès.</p>
             <div className="flex gap-3">
-              <button onClick={() => router.push('/bloc/archives')}
+              <button onClick={() => router.push('/bloc/salle-de-reveil/liste')}
                 className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all">
-                📁 Voir les archives
-              </button>
-              <button onClick={() => router.push('/bloc')}
-                className="flex-1 py-3 border border-primary text-primary font-bold rounded-xl hover:bg-primary/5 transition-all">
-                🏠 Retour à l'accueil
+                🛏️ Retour à la liste des patients
               </button>
             </div>
           </div>

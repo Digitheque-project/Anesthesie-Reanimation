@@ -29,10 +29,10 @@ export class SortieReveilController {
   constructor(private readonly service: SortieReveilService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
-      'Créer une sortie de réveil (Anesthésiste — auto-attribué depuis la session)',
+      'Créer une sortie de réveil (Anesthésiste, Major — auto-attribué depuis la session)',
   })
   create(@Body() dto: CreateSortieReveilDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
@@ -53,8 +53,8 @@ export class SortieReveilController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Modifier une sortie (Anesthésiste)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Modifier une sortie (Anesthésiste, Major)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateSortieReveilDto,

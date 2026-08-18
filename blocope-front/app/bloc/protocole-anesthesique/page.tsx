@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api/client'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner'
 import { useRole } from '@/lib/hooks/useRole'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
@@ -38,11 +39,16 @@ function ProtocoleAnesthesiquePageContent() {
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const [patient, setPatient] = useState<any>(null)
   const [loadingPatient, setLoadingPatient] = useState(true)
+  const [erreurPatient, setErreurPatient] = useState(false)
 
-  useEffect(() => {
+  const chargerPatient = () => {
     if (!patientId) { setLoadingPatient(false); return }
-    patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
-  }, [patientId])
+    setLoadingPatient(true)
+    setErreurPatient(false)
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true) }).finally(() => setLoadingPatient(false))
+  }
+
+  useEffect(() => { chargerPatient() }, [patientId])
 
   const [dateOperation, setDateOperation] = useState(new Date().toISOString().split('T')[0])
   const [compteRenduAnesthesique, setCompteRenduAnesthesique] = useState('')
@@ -127,12 +133,16 @@ function ProtocoleAnesthesiquePageContent() {
       if (aSaPropreSalleDeReveil(patient?.serviceOrigine)) {
         try {
           await patientService.retourServiceOrigine(patientId)
+          alert('✅ Protocole anesthésique enregistré ! Patient renvoyé à son service d\'origine et dossier archivé.')
+          router.push('/bloc/archives')
         } catch (err: any) {
+          // Le protocole EST enregistré (la requête précédente a réussi) mais le patient n'est
+          // PAS archivé : ne jamais dire le contraire ni rediriger vers les archives où il
+          // n'apparaîtra pas. Il reste visible en salle de réveil du Bloc en attendant.
           console.error(err)
-          alert('⚠️ Protocole enregistré, mais le retour du patient à son service d\'origine a échoué : ' + (err.response?.data?.message || err.message || 'erreur inconnue'))
+          alert('⚠️ Protocole enregistré, mais le retour du patient à son service d\'origine a échoué : ' + (err.response?.data?.message || err.message || 'erreur inconnue') + '\nLe patient reste visible dans la salle de réveil du Bloc en attendant de réessayer.')
+          router.push(`/bloc/salle-de-reveil?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)
         }
-        alert('✅ Protocole anesthésique enregistré ! Patient renvoyé à son service d\'origine et dossier archivé.')
-        router.push('/bloc/archives')
       } else {
         alert('✅ Protocole anesthésique enregistré ! Redirection vers la salle de réveil.')
         router.push(`/bloc/salle-de-reveil?patientId=${patientId}&patientNom=${encodeURIComponent(patientNom)}`)
@@ -202,6 +212,7 @@ function ProtocoleAnesthesiquePageContent() {
       </div>
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention="Protocole anesthésique" patientId={patientId} />
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
       {!estAnesthesiste && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
           Le protocole anesthésique est réservé à l'anesthésiste{roleName ? ` (votre rôle actuel est : ${roleName})` : ''}. Vous pouvez consulter cet écran mais pas l'enregistrer.

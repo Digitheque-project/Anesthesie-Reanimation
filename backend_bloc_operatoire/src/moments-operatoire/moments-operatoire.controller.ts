@@ -21,9 +21,9 @@ export class MomentsOperatoireController {
   constructor(private readonly service: MomentsOperatoireService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Horodater un moment opératoire (Anesthésiste ou IBODE)',
+    summary: 'Horodater un moment opératoire (Anesthésiste, IBODE, Major)',
   })
   create(@Body() dto: CreateMomentOperatoireDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
@@ -43,7 +43,7 @@ export class MomentsOperatoireController {
   }
 
   @Patch(':id/annuler')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
       'Annuler (suppression douce) un moment opératoire horodaté par erreur',

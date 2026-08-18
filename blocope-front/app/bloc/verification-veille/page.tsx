@@ -12,6 +12,7 @@ import { RoleClinique } from '@/lib/auth/role-clinique'
 import PatientIdentityHeader from '@/components/bloc/patient/PatientIdentityHeader'
 import BackButton from '@/components/bloc/layout/BackButton'
 import PasserButton from '@/components/bloc/layout/PasserButton'
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import { libelleAnesthesie } from '@/lib/export/dossier-patient'
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
@@ -50,6 +51,7 @@ function VerificationVeillePageContent() {
   const patientId = searchParams.get('patientId') || ''
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const [patient, setPatient] = useState<any>(null)
+  const [erreurPatient, setErreurPatient] = useState(false)
   const [cpa, setCpa] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showRecap, setShowRecap] = useState(false)
@@ -75,14 +77,16 @@ function VerificationVeillePageContent() {
   const [uploadEnCours, setUploadEnCours] = useState(false)
   const inputFichierRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    if (patientId) {
-      patientService.getById(patientId).then(setPatient).catch(console.error)
-      apiClient.get(`/cpa?patientId=${patientId}`).then(res => {
-        if (res.data?.data?.length > 0) setCpa(res.data.data[0])
-      }).catch(() => {})
-    }
-  }, [patientId])
+  const chargerPatient = () => {
+    if (!patientId) return
+    setErreurPatient(false)
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true) })
+    apiClient.get(`/cpa?patientId=${patientId}`).then(res => {
+      if (res.data?.data?.length > 0) setCpa(res.data.data[0])
+    }).catch(() => {})
+  }
+
+  useEffect(() => { chargerPatient() }, [patientId])
 
   // Retard : la date d'intervention de ce patient est déjà dépassée sans que la vérification
   // veille soit faite (voir PlanningService.getRetards / Fil de travail).
@@ -304,6 +308,7 @@ function VerificationVeillePageContent() {
         <PasserButton onClick={restaurerBrouillon} disabled={!brouillonTrouve} />
       </div>
       <PatientIdentityHeader patient={patient || { nom: patientNom }} patientId={patientId} />
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
       <div className="flex justify-end -mt-2 mb-3">
         {cpaId ? (
           <span className="px-3 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase tracking-wider">✅ CPA validée</span>

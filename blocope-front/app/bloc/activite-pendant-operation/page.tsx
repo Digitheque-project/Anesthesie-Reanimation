@@ -12,6 +12,7 @@ import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
 import BackButton from '@/components/bloc/layout/BackButton'
 import PasserButton from '@/components/bloc/layout/PasserButton'
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner'
 import VoirDossierButton from '@/components/bloc/patient/VoirDossierButton'
 import ConfirmationRecapModal, { RecapSection } from '@/components/ui/ConfirmationRecapModal'
 import { useDraftAutosave, chargerBrouillon, effacerBrouillon, type Brouillon } from '@/lib/hooks/useDraftAutosave'
@@ -37,15 +38,19 @@ function ActivitePendantOperationPageContent() {
   const patientNom = searchParams.get('patientNom') || 'Patient'
   const intervention = searchParams.get('intervention') || ''
   const [patient, setPatient] = useState<any>(null)
+  const [erreurPatient, setErreurPatient] = useState(false)
   // Pendant l'opération, seul l'anesthésiste a une interface active ici (formulaire clinique et
   // boutons de chronologie) — l'IBODE n'a aucune interface à ce stade (voir MomentsTimeline),
   // le Major consulte sans agir. Tous deux ne voient que l'historique en lecture seule.
   const { estAnesthesiste } = useRole()
 
-  useEffect(() => {
+  const chargerPatient = () => {
     if (!patientId) return
-    patientService.getById(patientId).then(setPatient).catch(console.error)
-  }, [patientId])
+    setErreurPatient(false)
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true) })
+  }
+
+  useEffect(() => { chargerPatient() }, [patientId])
 
   // État du formulaire (hors constantes, gérées par SurveillancePanel)
   const [form, setForm] = useState({
@@ -214,6 +219,8 @@ function ActivitePendantOperationPageContent() {
           />
         </div>
       </header>
+
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
 
       {/* Body : colonne gauche scrollable (anesthésiste uniquement) + colonne droite fixe
           (boutons de chronologie, ne défile jamais avec la page) — l'IBODE ne voit que les

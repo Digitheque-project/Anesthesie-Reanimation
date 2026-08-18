@@ -25,9 +25,9 @@ export class ChecklistPendantOpController {
   // anesthésiste + IBODE) juste avant l'incision, mais sa saisie/validation dans le système
   // reste un acte réservé à l'anesthésiste (chirurgien et IBODE ne valident pas de check-list).
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste)',
+    summary: 'Créer une checklist pendant opération — Time Out (Anesthésiste, Major)',
   })
   create(@Body() dto: CreateChecklistPendantOpDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
@@ -46,9 +46,9 @@ export class ChecklistPendantOpController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Modifier une checklist pendant opération (Anesthésiste)',
+    summary: 'Modifier une checklist pendant opération (Anesthésiste, Major)',
   })
   update(
     @Param('id', ParseUUIDPipe) id: string,

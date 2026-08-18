@@ -64,8 +64,8 @@ export class ActivitePerOpController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
-  @ApiOperation({ summary: 'Modifier une activité (Anesthésiste, IBODE)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Modifier une activité (Anesthésiste, IBODE, Major)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateActivitePerOpDto,
@@ -75,10 +75,10 @@ export class ActivitePerOpController {
   }
 
   @Post(':id/constantes')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.IBODE, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
-      'Ajouter une mesure de constantes en temps réel (Anesthésiste, IBODE)',
+      'Ajouter une mesure de constantes en temps réel (Anesthésiste, IBODE, Major)',
   })
   ajouterConstante(
     @Param('id', ParseUUIDPipe) id: string,

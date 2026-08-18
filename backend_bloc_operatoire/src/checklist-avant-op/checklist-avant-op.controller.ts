@@ -60,9 +60,9 @@ export class ChecklistAvantOpController {
   ) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Créer une checklist avant opération (Anesthésiste)',
+    summary: 'Créer une checklist avant opération (Anesthésiste, Major)',
   })
   async create(@Body() dto: CreateChecklistAvantOpDto, @Request() req: any) {
     verifierChecklistComplete(dto);
@@ -108,9 +108,9 @@ export class ChecklistAvantOpController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Modifier une checklist avant opération (Anesthésiste)',
+    summary: 'Modifier une checklist avant opération (Anesthésiste, Major)',
   })
   async update(@Param('id') id: string, @Body() dto: UpdateChecklistAvantOpDto, @Request() req: any) {
     const result = await this.repo.update(id, dto);

@@ -29,10 +29,10 @@ export class ScoreSCCREController {
   constructor(private readonly service: ScoreSCCREService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
-      'Créer un score SCCRE (Anesthésiste — auto-attribué depuis la session)',
+      'Créer un score SCCRE (Anesthésiste, Major — auto-attribué depuis la session)',
   })
   create(@Body() dto: CreateScoreSCCREDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
@@ -53,8 +53,8 @@ export class ScoreSCCREController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
-  @ApiOperation({ summary: 'Modifier un score (Anesthésiste)' })
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
+  @ApiOperation({ summary: 'Modifier un score (Anesthésiste, Major)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateScoreSCCREDto,

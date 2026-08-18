@@ -259,6 +259,7 @@ export class PrescriptionImagerieListenerService
         serviceSourceId: prescription.serviceIdSource || undefined,
         serviceSourceNom: serviceSourceNom || undefined,
         estUrgent,
+        niveauUrgence,
         statut: StatutNotificationCPA.EN_ATTENTE,
       }),
     );

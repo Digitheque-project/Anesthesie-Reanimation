@@ -22,9 +22,9 @@ export class ChecklistApresOpController {
   constructor(private readonly service: ChecklistApresOpService) {}
 
   @Post()
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Créer une checklist après opération (Anesthésiste)',
+    summary: 'Créer une checklist après opération (Anesthésiste, Major)',
   })
   create(@Body() dto: CreateChecklistApresOpDto, @Request() req: any) {
     return this.service.create(dto, req.centralUser);
@@ -43,9 +43,9 @@ export class ChecklistApresOpController {
   }
 
   @Patch(':id')
-  @RequireRoleClinique(RoleClinique.ANESTHESISTE)
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
   @ApiOperation({
-    summary: 'Modifier une checklist après opération (Anesthésiste)',
+    summary: 'Modifier une checklist après opération (Anesthésiste, Major)',
   })
   update(
     @Param('id', ParseUUIDPipe) id: string,

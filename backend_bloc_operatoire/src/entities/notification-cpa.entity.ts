@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { NiveauUrgence } from './patient-bloc.entity';
 
 export enum StatutNotificationCPA {
   EN_ATTENTE = 'EN_ATTENTE',
@@ -56,6 +57,16 @@ export class NotificationCPA {
 
   @Column({ default: false })
   estUrgent: boolean;
+
+  // Niveau d'urgence précis (TRES_URGENT distinct d'URGENT) — `estUrgent` seul ne suffit pas à
+  // l'affichage (badge orange vs rouge) : sans ce champ, TRES_URGENT s'affichait comme URGENT
+  // partout où seul le booléen était disponible (voir niveauUrgenceNotification côté front).
+  @Column({
+    type: 'enum',
+    enum: NiveauUrgence,
+    nullable: true,
+  })
+  niveauUrgence: NiveauUrgence | null;
 
   @Column({
     type: 'enum',

@@ -215,6 +215,7 @@ export class WebhookNotificationService {
         serviceSourceId: serviceSourceId ?? undefined,
         serviceSourceNom: serviceSourceNom ?? undefined,
         estUrgent: estNiveauUrgent(niveauUrgence),
+        niveauUrgence,
         statut: StatutNotificationCPA.EN_ATTENTE,
       }),
     );

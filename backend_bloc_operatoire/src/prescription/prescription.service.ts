@@ -373,7 +373,16 @@ export class PrescriptionService {
       alertes: p.alertes || undefined,
       prescripteurId: p.prescripteurId,
       chirurgien_nom: (acte?.nomChirurgien ?? p.chirurgien) || undefined,
-      statut: PatientStatut.EN_ATTENTE_CPA,
+      // Un patient déjà engagé dans un épisode en cours (CPA faite, vérification veille faite,
+      // prêt pour le bloc...) ne doit JAMAIS être renvoyé à EN_ATTENTE_CPA par une prescription
+      // de suivi (libellé mis à jour, acte complété...) — voir Bug 1 : seul un patient nouveau ou
+      // dont l'épisode précédent est réellement terminé (retourPatient) repart de EN_ATTENTE_CPA.
+      // Les autres canaux d'ingestion (demande CPA externe, imagerie, webhook) appliquent déjà
+      // cette règle ; ce canal (Chirurgie) ne l'appliquait pas.
+      statut:
+        !patient || retourPatient
+          ? PatientStatut.EN_ATTENTE_CPA
+          : patient.statut,
       niveauUrgence,
       serviceOrigineId: p.serviceIdSource || undefined,
       serviceOrigine: serviceSourceNom || undefined,
@@ -401,6 +410,7 @@ export class PrescriptionService {
         serviceSourceId: p.serviceIdSource || undefined,
         serviceSourceNom: serviceSourceNom || undefined,
         estUrgent: estNiveauUrgent(niveauUrgence),
+        niveauUrgence,
         statut: StatutNotificationCPA.EN_ATTENTE,
       }),
     );

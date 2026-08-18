@@ -88,12 +88,24 @@ export class PatientBlocController {
   })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limite', required: false })
+  @ApiQuery({
+    name: 'dateDebut',
+    required: false,
+    description: "Filtre sur dateIntervention (ou updatedAt à défaut) >= cette date",
+  })
+  @ApiQuery({
+    name: 'dateFin',
+    required: false,
+    description: "Filtre sur dateIntervention (ou updatedAt à défaut) <= cette date",
+  })
   findAll(
     @Query('statut') statut?: string,
     @Query('niveauUrgence') niveauUrgence?: string,
     @Query('recherche') recherche?: string,
     @Query('page') page?: number,
     @Query('limite') limite?: number,
+    @Query('dateDebut') dateDebut?: string,
+    @Query('dateFin') dateFin?: string,
   ) {
     return this.patientBlocService.findAll({
       statut,
@@ -101,6 +113,8 @@ export class PatientBlocController {
       recherche,
       page,
       limite,
+      dateDebut,
+      dateFin,
     });
   }
 
@@ -178,10 +192,10 @@ export class PatientBlocController {
   }
 
   @Patch(':patientId/date-intervention')
-  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA)
+  @RequireRoleClinique(RoleClinique.RESPONSABLE_CPA, RoleClinique.MAJOR)
   @ApiOperation({
     summary:
-      "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA)",
+      "CPA : modifier la date et l'heure prévues de l'opération (Responsable CPA, Major)",
   })
   modifierDateIntervention(
     @Param('patientId') patientId: string,
@@ -192,6 +206,20 @@ export class PatientBlocController {
       patientId,
       dto.dateIntervention,
       req.centralUser?.userId,
+    );
+  }
+
+  @Patch(':patientId/retour-service-origine')
+  @RequireRoleClinique(RoleClinique.ANESTHESISTE, RoleClinique.MAJOR)
+  @ApiOperation({
+    summary:
+      "Protocole anesthésique : archiver et renvoyer à son service d'origine un patient qui possède sa propre salle de réveil (Imagerie, Scanner...) (Anesthésiste, Major)",
+  })
+  retourServiceOrigine(@Param('patientId') patientId: string, @Request() req: any) {
+    return this.patientBlocStatutService.archiverRetourServiceOrigine(
+      patientId,
+      req.centralUser?.userId,
+      'FIN_ACTE_ANESTHESIQUE',
     );
   }
 

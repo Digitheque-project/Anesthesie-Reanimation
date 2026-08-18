@@ -114,8 +114,11 @@ export class PatientBlocService {
     recherche?: string;
     page?: number;
     limite?: number;
+    dateDebut?: string;
+    dateFin?: string;
   }) {
-    const { statut, niveauUrgence, recherche, page = 1, limite = 10 } = filters;
+    const { statut, niveauUrgence, recherche, page = 1, limite = 10, dateDebut, dateFin } =
+      filters;
     const qb = this.patientRepo.createQueryBuilder('p');
 
     if (statut) qb.andWhere('p.statut = :statut', { statut });
@@ -125,6 +128,19 @@ export class PatientBlocService {
       qb.andWhere('p.idDossier ILIKE :recherche', {
         recherche: `%${recherche}%`,
       });
+    // Même repli que l'ancien filtrage côté front (dateIntervention à défaut updatedAt) — voir
+    // Archives : les filtres de date ne portaient jusqu'ici que sur la page déjà chargée (20
+    // fiches), jamais sur l'ensemble des archives.
+    if (dateDebut)
+      qb.andWhere(
+        'COALESCE(p."dateIntervention", p."updatedAt") >= :dateDebut',
+        { dateDebut },
+      );
+    if (dateFin)
+      qb.andWhere(
+        'COALESCE(p."dateIntervention", p."updatedAt") <= :dateFin',
+        { dateFin },
+      );
 
     qb.orderBy('p.createdAt', 'DESC');
     qb.skip((page - 1) * limite).take(limite);

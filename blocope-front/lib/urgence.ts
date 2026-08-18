@@ -80,10 +80,15 @@ export function estEchelleUrgente(urgence?: number | null): boolean {
   return niveauDepuisEchelle(urgence) !== 'NORMAL'
 }
 
-// Détermine le niveau d'urgence (TRES_URGENT/URGENT/NORMAL) d'une notification/prescription à
-// partir du champ numérique `urgence` ou, à défaut, du booléen `estUrgent` transmis par les
-// notifications internes CPA.
+// Détermine le niveau d'urgence (TRES_URGENT/URGENT/NORMAL) d'une notification/prescription. Le
+// champ `niveauUrgence`, stocké directement sur la notification, est prioritaire — sans lui,
+// TRES_URGENT ne pouvait pas se distinguer d'URGENT une fois réduit au booléen `estUrgent` (voir
+// Bug 5). Repli sur l'échelle numérique `urgence` puis sur `estUrgent`, pour les notifications
+// créées avant l'ajout de ce champ.
 export function niveauUrgenceNotification(n: any): 'TRES_URGENT' | 'URGENT' | 'NORMAL' {
+  if (n?.niveauUrgence === 'TRES_URGENT' || n?.niveauUrgence === 'URGENT' || n?.niveauUrgence === 'NORMAL') {
+    return n.niveauUrgence
+  }
   const urgence = n?.urgence
   if (typeof urgence === 'number') return niveauDepuisEchelle(urgence)
   if (n?.estUrgent) return 'URGENT'

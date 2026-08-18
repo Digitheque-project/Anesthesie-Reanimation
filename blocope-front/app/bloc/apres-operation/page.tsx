@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api/client'
 import { patientService } from '@/lib/api'
 import { useOperationRealtime } from '@/lib/hooks/useOperationRealtime'
 import RealtimeUpdateBanner from '@/components/bloc/layout/RealtimeUpdateBanner'
+import ErreurChargementBanner from '@/components/bloc/layout/ErreurChargementBanner'
 import { useRole } from '@/lib/hooks/useRole'
 import RoleGate from '@/components/bloc/auth/RoleGate'
 import { RoleClinique } from '@/lib/auth/role-clinique'
@@ -35,11 +36,16 @@ function ApresOperationPageContent() {
   const intervention = searchParams.get('intervention') || ''
   const [patient, setPatient] = useState<any>(null)
   const [loadingPatient, setLoadingPatient] = useState(true)
+  const [erreurPatient, setErreurPatient] = useState(false)
 
-  useEffect(() => {
+  const chargerPatient = () => {
     if (!patientId) { setLoadingPatient(false); return }
-    patientService.getById(patientId).then(setPatient).catch(console.error).finally(() => setLoadingPatient(false))
-  }, [patientId])
+    setLoadingPatient(true)
+    setErreurPatient(false)
+    patientService.getById(patientId).then(setPatient).catch((err) => { console.error(err); setErreurPatient(true) }).finally(() => setLoadingPatient(false))
+  }
+
+  useEffect(() => { chargerPatient() }, [patientId])
 
   const [form, setForm] = useState<{
     dateCreation: string
@@ -136,6 +142,7 @@ function ApresOperationPageContent() {
       <PatientIdentityHeader patient={patient || { nom: patientNom }} loading={loadingPatient} intervention={intervention} patientId={patientId} />
 
       <RealtimeUpdateBanner visible={majDistante} onRecharger={() => window.location.reload()} />
+      <ErreurChargementBanner visible={erreurPatient} onRecharger={chargerPatient} />
 
       {!peutValiderChecklistApresOp && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">

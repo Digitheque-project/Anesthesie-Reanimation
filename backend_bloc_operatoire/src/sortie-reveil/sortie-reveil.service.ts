@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SortieReveil } from '../entities/sortie-reveil.entity';
-import { ScoreSCCRE } from '../entities/score-sccre.entity';
+import { ScoreSCCRE, StatutScoreSCCRE } from '../entities/score-sccre.entity';
 import { AccueilClient } from '../external/accueil.client';
 import { MedecinIdentiteService } from '../medecin/medecin-identite.service';
 import { PatientBlocStatutService } from '../patient-bloc/patient-bloc-statut.service';
@@ -67,6 +67,13 @@ export class SortieReveilService {
         `Score de réveil insuffisant (${score.scoreTotal}/10) — la sortie nécessite un score ≥ 9.`,
       );
     }
+
+    // Le score reste sinon marqué EN_COURS / sortieAutorisee=false pour toujours, alors même que
+    // la sortie qu'il a justifiée vient d'être validée — trace interne incohérente avec la sortie
+    // réelle du patient.
+    score.sortieAutorisee = true;
+    score.statut = StatutScoreSCCRE.VALIDE;
+    await this.scoreRepo.save(score);
 
     const saved = await this.repo.save(
       this.repo.create({ ...(dto as any), medecinId: centralUser.userId }),

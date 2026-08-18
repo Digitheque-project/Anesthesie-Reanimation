@@ -257,9 +257,26 @@ export class CPAService {
           );
         }
       } else if (demande && dto.decision === DecisionCPA.REPORT) {
-        // La CPA elle-même est reportée (à refaire) — la demande externe reste ouverte (pas de
-        // marquerCpaRealisee), mais le service demandeur doit tout de même être averti plutôt que
-        // de rester sans nouvelles jusqu'à la prochaine tentative.
+        // La CPA elle-même est reportée (à refaire), pour un patient non-opératoire (Endoscopie,
+        // Imagerie, Urgence — venu par une demande externe) : on archive le dossier (SORTI) et on
+        // clôt la demande côté service demandeur (REPORTEE) — comportement déjà prévu par
+        // DemandeCpaExterneService.marquerReportee, jusqu'ici jamais appelée. Sans ça, le patient
+        // restait indéfiniment en EN_ATTENTE_CPA, invisible de toute liste et de toute alerte de
+        // retard, alors que l'écran du Bloc annonçait déjà au personnel un dossier clos.
+        try {
+          await this.patientBlocStatutService.changerStatut(
+            dto.patientId,
+            PatientStatut.SORTI,
+            centralUser.userId,
+          );
+          await this.demandeCpaExterneService.marquerReportee(demande);
+        } catch (err) {
+          this.logger.error(
+            `Erreur archivage patient après report CPA: ${(err as Error).message}`,
+          );
+        }
+        // La demande externe reste avertie du report, quel que soit le résultat de l'archivage
+        // ci-dessus (best-effort, ne doit pas bloquer la notification).
         try {
           await this.demandeCpaExterneService.notifierResultat(
             demande,
